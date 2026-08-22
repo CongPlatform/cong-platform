@@ -81,14 +81,13 @@
   display: grid;
 
   grid-template-columns:
-    minmax(390px, 430px)
-    minmax(570px, 640px)
-    minmax(430px, 500px);
+    minmax(0, 1fr)
+    minmax(0, 1.5fr)
+    minmax(0, 1fr);
 
   align-items: center;
-  justify-content: center;
 
-  gap: clamp(1.6rem, 2.2vw, 2.7rem);
+  gap: clamp(1.5rem, 2vw, 2.7rem);
 }
 
 /* ==============================
@@ -314,7 +313,7 @@
   position: relative;
   z-index: 2;
 
-  width: 430px;
+  width: min(100%, 430px);
   height: 650px;
 
   justify-self: end;
@@ -998,7 +997,7 @@
   position: relative;
   z-index: 2;
 
-  width: 500px;
+  width: min(100%, 500px);
   height: 680px;
 
   justify-self: center;
@@ -1028,7 +1027,8 @@
   isolation: isolate;
 
   width: 164px;
-  height: 78px;
+  min-height: 78px;
+  height: auto;
 
   overflow: visible;
 
@@ -1172,12 +1172,9 @@
   z-index: 2;
 
   width: 100%;
-  height: 100%;
+  min-height: 78px;
 
-  padding:
-    16px
-    14px
-    11px;
+  padding: 16px 14px 11px;
 
   display: flex;
   align-items: center;
@@ -1186,6 +1183,8 @@
   gap: 0.66rem;
 
   color: var(--color-navy);
+
+  flex-wrap: wrap;
 }
 
 .legoFace svg {
@@ -1203,7 +1202,9 @@
   font-weight: var(--font-bold);
   line-height: var(--line-compact);
 
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: break-word;
 }
 
 .brickBeneficiaries {
@@ -1561,6 +1562,7 @@
    RESPONSIVO
 ================================ */
 
+/* TABLET / NOTEBOOK MENOR */
 @media (max-width: 1660px) {
   .heroInner {
     padding-inline: 1.25rem;
@@ -1574,8 +1576,7 @@
   }
 
   .heroStatement {
-    font-size:
-      var(--font-title-section);
+    font-size: var(--font-title-section);
   }
 
   .leftVisual,
@@ -1585,22 +1586,22 @@
   }
 }
 
-@media (max-width: 1280px) {
-  .hero {
-    min-height: auto;
-  }
+/* ==============================
+   TABLET
+================================ */
 
+@media (max-width: 1400px) {
   .heroInner {
+    grid-template-columns: 1fr;
+
     min-height: auto;
 
     padding:
       3rem
-      1.25rem
+      1.5rem
       4rem;
 
-    grid-template-columns: 1fr;
-
-    gap: 2.5rem;
+    gap: 2rem;
   }
 
   .heroContent {
@@ -1609,94 +1610,365 @@
 
   .leftVisual {
     grid-row: 2;
+
+    width: min(100%, 430px);
+
     justify-self: center;
 
-    transform: none;
+    transform: scale(0.9);
+    transform-origin: top center;
   }
 
   .rightVisual {
     grid-row: 3;
+
+    width: min(100%, 500px);
+
     justify-self: center;
 
-    transform: none;
+    transform: scale(0.9);
+    transform-origin: top center;
   }
 }
 
+/* ==============================
+   CELULAR
+================================ */
+
 @media (max-width: 720px) {
   .hero {
-    background-size:
-      28px
-      28px;
+    width: 100%;
+    min-height: auto;
+
+    overflow: hidden;
+
+    background-size: 28px 28px;
   }
 
   .heroInner {
-    padding:
-      2.2rem
-      1rem
-      3rem;
+    width: 100%;
+    min-height: auto;
+
+    padding: 2rem 0.9rem 3rem;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "content"
+      "blocks"
+      "art";
+
+    gap: 2rem;
+  }
+
+  .heroContent {
+    grid-area: content;
+
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    margin: 0;
+
+    padding-inline: 0.25rem;
+
+    text-align: center;
+  }
+
+  .heroContent h1 {
+    width: 100%;
+  }
+
+  .heroIntro {
+    margin-bottom: 0.75rem;
+
+    font-size: var(--font-md);
+
+    line-height: var(--line-heading);
   }
 
   .heroStatement {
-    font-size: var(--font-h2);
+    width: 100%;
+
+    font-size: clamp(2rem, 9vw, 3rem);
+
+    line-height: var(--line-tight);
+
+    letter-spacing: var(--tracking-tight);
   }
 
   .titleLine,
   .wordLine {
+    width: 100%;
+
     white-space: normal;
+
+    overflow-wrap: break-word;
+  }
+
+  .wordViewport {
+    max-width: 100%;
+
+    padding: 0.05em 0.12em 0.12em;
+  }
+
+  .dynamicWord {
+    max-width: 100%;
+
+    white-space: nowrap;
   }
 
   .heroDescription {
-    font-size: var(--font-md);
-    line-height: var(--line-readable);
+    width: 100%;
+    max-width: 100%;
+
+    margin: 1.35rem auto 0;
+
+    padding-inline: 0.35rem;
+
+    font-size: var(--font-body);
+
+    line-height: var(--line-relaxed);
+
+    overflow-wrap: break-word;
   }
 
-  .leftVisual,
   .rightVisual {
-    transform: scale(0.72);
-    transform-origin: top center;
+    grid-area: blocks;
+
+    position: static;
+
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+
+    margin: 0 auto;
+    justify-self: center;
+
+    transform: none;
+  }
+
+  .thoughtBlocks {
+    position: static;
+
+    top: auto;
+    left: auto;
+
+    width: 100%;
+    height: auto;
+
+    transform: none;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .legoBrick {
+    position: relative;
+
+    top: auto;
+    left: auto;
+    right: auto;
+
+    width: 100%;
+
+    transform: none !important;
+  }
+
+  .miniBrick,
+  .blocksSparkle,
+  .blocksSparkleSmall,
+  .thoughtDotLarge,
+  .thoughtDotMedium,
+  .thoughtDotSmall {
+    display: none;
+  }
+
+
+  .thinkingMascot {
+    position: static;
+
+    left: auto;
+    bottom: auto;
+
+    width: 170px;
+
+    margin: 1.5rem auto 0;
+
+    display: block;
+
+    transform: none;
   }
 
   .leftVisual {
-    margin-bottom: -180px;
+    grid-area: art;
+
+    position: static;
+
+    width: 100%;
+    max-width: 340px;
+    height: auto;
+
+    margin: 0 auto;
+    justify-self: center;
+
+    transform: none;
   }
 
-  .rightVisual {
-    margin-bottom: -170px;
+  .paperCollage {
+    position: static;
+
+    width: 100%;
+    height: auto;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 1.5rem;
+  }
+
+  .sheetPaper,
+  .whatsappPaper,
+  .paperConnectors,
+  .paperSparkleLarge,
+  .paperSparkleSmall {
+    display: none;
+  }
+
+  .formPaper {
+    position: static;
+
+    top: auto;
+    left: auto;
+
+    width: min(240px, 100%);
+    height: auto;
+    aspect-ratio: 220 / 192;
+
+    transform: none;
+  }
+
+  .confusionPaper {
+    position: static;
+
+    top: auto;
+    left: auto;
+
+    width: min(200px, 90%);
+    height: auto;
+    aspect-ratio: 128 / 122;
+
+    transform: none;
   }
 }
 
 @media (max-width: 430px) {
-  .heroStatement {
-    font-size: var(--font-2xl);
+  .heroInner {
+    padding: 1.7rem 0.65rem 2.5rem;
+
+    gap: 1.5rem;
   }
 
   .heroIntro {
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
   }
 
-  .leftVisual,
-  .rightVisual {
-    transform: scale(0.59);
+  .heroStatement {
+    font-size: clamp(1.85rem, 9.5vw, 2.5rem);
   }
 
-  .leftVisual {
-    margin-bottom: -275px;
+  .heroDescription {
+    padding-inline: 0.25rem;
+
+    font-size: var(--font-sm);
+
+    line-height: var(--line-relaxed);
   }
 
-  .rightVisual {
-    margin-bottom: -255px;
+  .legoFace {
+    min-height: 70px;
+
+    padding: 13px 8px 9px;
+  }
+
+  .legoFace strong {
+    font-size: var(--font-xs);
+  }
+
+  .thinkingMascot {
+    width: 150px;
+  }
+
+  .formPaper {
+    width: min(210px, 100%);
+  }
+
+  .confusionPaper {
+    width: min(180px, 90%);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .dynamicWord {
-    transition: none;
+@media (max-width: 360px) {
+  .heroInner {
+    padding-inline: 0.5rem;
   }
 
-  .wordLeaving,
-  .wordEntering {
-    opacity: 1;
+  .heroStatement {
+    font-size: 1.8rem;
+  }
 
-    transform: none;
+  .heroDescription {
+    font-size: 0.9rem;
+  }
+}
+
+/* ==================================================
+   RESPONSIVE HARDENING — como funciona
+   ================================================== */
+@media (max-width: 720px) {
+  .howItWorks,
+  .hero,
+  .heroInner,
+  .heroContent,
+  .leftVisual,
+  .rightVisual,
+  .paperCollage,
+  .thoughtBlocks {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .heroInner {
+    padding-inline: 12px;
+  }
+
+  .heroStatement {
+    font-size: clamp(2rem, 9.5vw, 2.8rem);
+  }
+
+  .titleLine,
+  .wordLine,
+  .dynamicWord {
+    max-width: 100%;
+  }
+
+  .thoughtBlocks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .legoBrick {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .thoughtBlocks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .legoBrick {
+    width: 100%;
   }
 }
