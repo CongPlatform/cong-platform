@@ -1,0 +1,60 @@
+name: ✨ Sugerir melhoria
+description: Proponha uma melhoria para uma funcionalidade ou experiência já existente.
+title: "[Melhoria]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use este formulário para melhorias incrementais. Para propor um módulo novo, utilize o formulário específico de proposta de módulo.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema ou necessidade
+      description: Qual dificuldade a melhoria pretende resolver?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Solução proposta
+      description: Descreva como você imagina a melhoria.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área relacionada
+      options:
+        - Frontend web
+        - Mobile
+        - Backend / API
+        - Banco de dados
+        - Autenticação / conta
+        - Perfis / organizações
+        - Comunidade
+        - Acessibilidade / UX
+        - Documentação
+        - Outra
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: Se houver, descreva outras soluções que você considerou.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verificações
+      options:
+        - label: Procurei por uma issue semelhante antes de abrir esta.
+          required: true
+        - label: A proposta está alinhada ao objetivo social e ao escopo da CONG.
+          required: true
+        - label: Li e concordo em seguir o Código de Conduta do projeto.
+          required: true
