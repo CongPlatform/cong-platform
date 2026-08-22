@@ -1,5 +1,11 @@
 .header {
+  position: relative;
+  z-index: 120;
+
+  width: 100%;
+  max-width: 100%;
   height: 88px;
+
   padding: 0 48px;
 
   display: flex;
@@ -11,7 +17,13 @@
   border-bottom: 1px solid var(--color-gray-200);
 }
 
+/* =========================================================
+   LOGO
+========================================================= */
+
 .logoContainer {
+  min-width: 0;
+
   display: flex;
   align-items: center;
 }
@@ -19,10 +31,19 @@
 .logo {
   width: auto;
   height: 44px;
+
+  object-fit: contain;
 }
 
+/* =========================================================
+   NAVEGAÇÃO DESKTOP
+========================================================= */
+
 .nav {
+  min-width: 0;
+
   display: flex;
+  align-items: center;
 
   gap: 42px;
 }
@@ -53,40 +74,55 @@
   transform: rotate(-1deg);
 }
 
+/* Tracinho desenhado à mão */
 .marker {
   position: absolute;
 
   left: 50%;
-  bottom: -10px;
+  bottom: -4px;
 
-  width: 110%;
-  height: 14px;
+  width: calc(100% + 10px);
+  height: 10px;
+
+  overflow: visible;
 
   opacity: 0;
 
   pointer-events: none;
 
-  transform: translateX(-50%);
+  transform: translateX(-50%) rotate(-1deg);
 
-  transition: opacity 200ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .marker path {
   fill: none;
 
   stroke: var(--color-accent);
-  stroke-width: 7;
-  stroke-linecap: round;
+  stroke-width: 5;
 
-  opacity: 0.95;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  vector-effect: non-scaling-stroke;
 }
 
-.link:hover .marker,
+/* Página ativa */
+.link.active .marker,
 .active .marker {
   opacity: 1;
 }
 
+/* Hover discreto */
+.link:not(.active):hover .marker {
+  opacity: 0.35;
+}
+
 .actions {
+  min-width: 0;
+
   display: flex;
   align-items: center;
 
@@ -102,6 +138,7 @@
 
 .signup {
   height: 44px;
+
   padding: 0 18px;
 
   color: var(--color-white);
@@ -121,130 +158,138 @@
   transform: translateY(-2px);
 }
 
+/* =========================================================
+   BOTÃO MOBILE
+========================================================= */
+
 .menuButton {
   display: none;
+
   width: 44px;
   height: 44px;
+
   align-items: center;
   justify-content: center;
+
+  flex: 0 0 44px;
+
   border: none;
+  border-radius: 11px;
+
   background: transparent;
+
   color: var(--color-navy);
+
   font-size: 28px;
+
   cursor: pointer;
 }
+
+.menuButton:hover,
+.menuButton:focus-visible {
+  background: rgb(var(--color-ink-rgb) / 6%);
+}
+
+/* =========================================================
+   MENU MOBILE
+========================================================= */
 
 .mobileMenu {
   display: none;
 }
 
-@media (max-width: 900px) {
-  .header {
-    position: relative;
-    height: 76px;
-    padding: 0 24px;
-  }
+.mobileNav {
+  display: flex;
+  flex-direction: column;
 
-  .logo {
-  height: 38px;
+  gap: 2px;
 }
 
-  .nav {
-    display: none;
-  }
-
-  .actions {
-    display: none;
-  }
-
-  .menuButton {
-    display: flex;
-  }
-
-  .mobileMenu {
-    position: absolute;
-    top: 76px;
-    left: 0;
-    right: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 24px;
-    gap: 24px;
-    background: var(--color-paper);
-    border-bottom: 1px solid var(--color-gray-200);
-    box-shadow: var(--shadow-sm);
-    z-index: 100;
-  }
-
-  .mobileNav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .mobileLink {
-    display: flex;
-    align-items: center;
-    min-height: 48px;
-    padding: 0 12px;
-    color: var(--color-navy);
-    font-family: var(--font-brand);
-    font-size: var(--font-md);
-    border-radius: 10px;
-  }
-
-  .mobileLink:hover {
-    background: var(--color-gray-200);
-  }
-
-  .mobileActive {
-    background: var(--color-gray-200);
-  }
-
-  .mobileActions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-top: 8px;
-    border-top: 1px solid var(--color-gray-200);
-  }
-
-  .mobileLogin,
-  .mobileSignup {
-    width: 100%;
-    min-height: 46px;
-    border-radius: 12px;
-    font-family: var(--font-brand);
-    font-size: var(--font-md);
-  }
-
-  .mobileLogin {
-    color: var(--color-navy);
-    background: transparent;
-  }
-
-  .mobileSignup {
-    color: var(--color-white);
-    background: var(--color-navy);
-    font-family: var(--font-body);
-    font-weight: var(--font-semibold);
-  }
-}
-/* =========================================
-   RESPONSIVE HARDENING
-========================================= */
-.header {
+.mobileLink {
   position: relative;
-  z-index: 120;
-  width: 100%;
-  max-width: 100%;
+
+  min-height: 46px;
+
+  padding: 0 14px;
+
+  display: flex;
+  align-items: center;
+
+  color: var(--color-navy);
+
+  font-family: var(--font-brand);
+  font-size: var(--font-md);
+
+  border-radius: 10px;
 }
 
-.logoContainer,
-.actions,
-.nav {
-  min-width: 0;
+.mobileLink:hover {
+  background: var(--color-gray-200);
 }
+
+.mobileActive {
+  background: var(--color-gray-200);
+}
+
+/* Marcador vertical do item ativo no menu mobile */
+.mobileActive::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 50%;
+
+  width: 4px;
+  height: 24px;
+
+  background: var(--color-accent);
+
+  border-radius: 999px;
+
+  transform: translateY(-50%);
+}
+
+.mobileActions {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  margin-top: 6px;
+  padding-top: 8px;
+
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.mobileLogin,
+.mobileSignup {
+  width: 100%;
+  min-height: 46px;
+
+  border-radius: 12px;
+
+  font-family: var(--font-brand);
+  font-size: var(--font-md);
+}
+
+.mobileLogin {
+  color: var(--color-navy);
+
+  background: transparent;
+}
+
+.mobileSignup {
+  color: var(--color-white);
+  background: var(--color-navy);
+
+  font-family: var(--font-body);
+  font-weight: var(--font-semibold);
+}
+
+/* =========================================================
+   DESKTOP / TABLET INTERMEDIÁRIO
+========================================================= */
 
 @media (max-width: 1100px) {
   .header {
@@ -256,55 +301,76 @@
   }
 }
 
-@media (max-width: 900px) {
+/* =========================================================
+   MOBILE / TABLET
+========================================================= */
+
+@media (max-width: 1024px) {
   .header {
     position: sticky;
+
     top: 0;
     z-index: 200;
+
     height: 72px;
+
     padding: 0 16px;
   }
 
   .logo {
     width: auto;
     height: 36px;
+
     max-width: min(48vw, 180px);
+
     object-fit: contain;
+  }
+
+  .nav,
+  .actions {
+    display: none;
   }
 
   .menuButton {
     display: grid;
-    place-items: center;
-    flex: 0 0 44px;
-    border-radius: 11px;
-  }
 
-  .menuButton:hover,
-  .menuButton:focus-visible {
-    background: rgb(var(--color-ink-rgb) / 6%);
+    place-items: center;
   }
 
   .mobileMenu {
+    position: absolute;
+
     top: 72px;
+    left: 0;
+    right: 0;
+
+    z-index: 190;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+
     max-height: calc(100svh - 72px);
+
     padding: 14px 16px calc(18px + env(safe-area-inset-bottom));
+
     overflow-y: auto;
+
     overscroll-behavior: contain;
-  }
 
-  .mobileNav {
-    gap: 2px;
-  }
+    background: var(--color-paper);
 
-  .mobileLink {
-    min-height: 46px;
-    padding-inline: 14px;
-  }
+    border-top: 1px solid rgb(var(--color-ink-rgb) / 5%);
+    border-bottom: 1px solid var(--color-gray-200);
 
-  .mobileActions {
-    margin-top: 6px;
+    box-shadow: var(--shadow-sm);
   }
 }
+
+/* =========================================================
+   CELULARES PEQUENOS
+========================================================= */
 
 @media (max-width: 380px) {
   .header {
@@ -317,42 +383,5 @@
 
   .mobileMenu {
     padding-inline: 12px;
-  }
-}
-
-/* =========================================================
-   ADAPTAÇÃO RESPONSIVA V2 — HEADER
-========================================================= */
-
-@media (max-width: 1024px) {
-  .nav,
-  .actions {
-    display: none;
-  }
-
-  .menuButton {
-    display: grid;
-  }
-}
-
-@media (max-width: 900px) {
-  .mobileMenu {
-    border-top: 1px solid rgb(var(--color-ink-rgb) / 5%);
-  }
-
-  .mobileLink {
-    position: relative;
-  }
-
-  .mobileActive::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    width: 4px;
-    height: 24px;
-    border-radius: 999px;
-    background: var(--color-accent);
-    transform: translateY(-50%);
   }
 }
