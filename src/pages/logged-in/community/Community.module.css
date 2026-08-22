@@ -2945,3 +2945,211 @@
     scroll-behavior: auto;
   }
 }
+/* ==================================================
+   RESPONSIVE HARDENING — comunidade logada
+   ================================================== */
+.shell,
+.workspace,
+.topbar,
+.page,
+.pageGrid,
+.mainColumn,
+.rightRail,
+.featuredProject,
+.featureProjectCopy,
+.featureProjectVisual,
+.compactComposer,
+.feedList,
+.post,
+.repositoryCard,
+.createModal,
+.modalForm {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 820px) {
+  .workspace {
+    width: 100%;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 70;
+    width: 100%;
+    min-height: 64px;
+    background: rgb(var(--color-white-rgb) / 94%);
+    backdrop-filter: blur(12px);
+  }
+
+  .pageGrid {
+    width: 100%;
+  }
+
+  .rightRail {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    min-height: auto;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "menu search actions";
+    gap: 8px;
+  }
+
+  .topbarStart {
+    display: contents;
+  }
+
+  .mobileMenuButton {
+    grid-area: menu;
+  }
+
+  .search {
+    grid-area: search;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .topbarActions {
+    grid-area: actions;
+  }
+
+  .page {
+    padding: 18px 12px 40px;
+  }
+
+  .communityHeader {
+    gap: 0.75rem;
+  }
+
+  .featuredProject,
+  .compactComposer,
+  .post,
+  .rolePanel,
+  .personalizedPanel,
+  .eventPanel,
+  .mascotTip {
+    border-radius: 16px;
+  }
+
+  .featureProjectVisual {
+    overflow: hidden;
+  }
+
+  .opportunityRail {
+    width: calc(100% + 24px);
+    margin-inline: -12px;
+    padding-inline: 12px;
+  }
+
+  .feedToolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .feedTabs {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .feedTabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .feedTabs button {
+    flex: 0 0 auto;
+  }
+
+  .sortButton {
+    align-self: flex-end;
+  }
+
+  .postHeader,
+  .projectUpdateLayout,
+  .needPostBody,
+  .discussionBody,
+  .modulePostIntro,
+  .repositoryCard {
+    min-width: 0;
+  }
+
+  .postAuthor,
+  .needPostCopy,
+  .discussionBody > div,
+  .repositoryCard > * {
+    min-width: 0;
+  }
+
+  .postAuthor strong,
+  .postAuthor span,
+  .needPostCopy,
+  .discussionBody,
+  .repositoryCard {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 430px) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .topbarIconButton {
+    display: none;
+  }
+
+  .topbarCreateButton {
+    display: grid;
+  }
+
+  .profileArea {
+    display: none;
+  }
+
+  .communityHeader h1 {
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
+  }
+
+  .featuredProject {
+    padding: 16px 12px;
+  }
+
+  .featureProjectCopy h2 {
+    font-size: 1.45rem;
+  }
+
+  .featureProjectVisual {
+    min-height: 210px;
+  }
+
+  .opportunityRail {
+    grid-auto-columns: 88%;
+  }
+
+  .compactComposer {
+    padding: 12px;
+  }
+
+  .composerPrompt {
+    font-size: var(--font-sm);
+  }
+
+  .postEngagement > div {
+    padding-bottom: 4px;
+  }
+
+  .createModal {
+    width: 100%;
+    height: 100svh;
+    max-height: 100svh;
+  }
+}

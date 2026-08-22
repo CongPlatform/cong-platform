@@ -109,3 +109,47 @@
     padding: 0.52rem 0.72rem;
   }
 }
+
+/* ==================================================
+   RESPONSIVE HARDENING — seleção de função
+   ================================================== */
+.page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    min-width: 0;
+    padding-inline: 12px;
+    gap: 0.75rem;
+  }
+
+  .logo {
+    max-width: min(48vw, 170px);
+    height: auto;
+  }
+
+  .logoutButton {
+    flex: 0 0 auto;
+  }
+
+  .selectionStatus {
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .topbar {
+    padding-inline: 10px;
+  }
+
+  .logoutButton span {
+    display: none;
+  }
+}

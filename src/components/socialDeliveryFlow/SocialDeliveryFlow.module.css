@@ -606,3 +606,46 @@
     transform: none;
   }
 }
+/* ==================================================
+   RESPONSIVE HARDENING — fluxo social
+   ================================================== */
+.deliverySection,
+.sectionContainer,
+.deliveryFlow,
+.deliveryCard,
+.controlCard,
+.requestCard,
+.resultCard {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .deliverySection {
+    padding-inline: 12px;
+  }
+
+  .deliveryFlow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .deliveryCard,
+  .controlCard,
+  .requestCard,
+  .resultCard {
+    width: 100%;
+    transform: none;
+  }
+
+  .deliveryArrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+
+  .requestRows,
+  .resultList,
+  .controlList {
+    min-width: 0;
+  }
+}

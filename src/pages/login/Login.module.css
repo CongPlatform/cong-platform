@@ -799,51 +799,121 @@
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1199px) {
   .loginPage {
-    align-items: start;
-
-    padding-top: 5.5rem;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 
   .loginLayout {
-    width: min(100%, 500px);
+    width: min(100%, 900px);
 
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      minmax(270px, 340px)
+      minmax(340px, 430px);
 
-    gap: 2.2rem;
+    gap: clamp(2rem, 5vw, 4rem);
   }
 
   .mascotArea {
-    height: 250px;
+    width: 280px;
+    height: 280px;
   }
 
   .mascot {
-    width: 210px;
+    width: 225px;
   }
 
   .welcomeText h1 {
     font-size:
       clamp(
-        var(--font-4xl),
-        8vw,
+        var(--font-3xl),
+        4vw,
         var(--font-5xl)
       );
   }
 
   .card {
+    max-width: 430px;
+  }
+}
+
+@media (max-width: 900px) {
+  .loginPage {
+    min-height: 100dvh;
+
+    padding:
+      5.5rem
+      24px
+      3rem;
+
+    align-items: start;
+  }
+
+  .loginLayout {
+    width: min(100%, 560px);
+
+    grid-template-columns: 1fr;
+
+    gap: 2.5rem;
+  }
+
+  .welcome {
+    width: 100%;
+  }
+
+  .mascotArea {
+    width: 280px;
+    height: 240px;
+  }
+
+  .mascot {
+    width: 205px;
+  }
+
+  .welcomeText {
+    margin-top: 0.5rem;
+  }
+
+  .welcomeText h1 {
+    font-size:
+      clamp(
+        var(--font-3xl),
+        6vw,
+        var(--font-5xl)
+      );
+  }
+
+  .welcomeText p {
+    max-width: 390px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 500px;
+
     margin: 0 auto;
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 600px) {
   .loginPage {
+    width: 100%;
+    min-width: 0;
+
     padding:
       5rem
-      0.75rem
-      1.5rem;
+      16px
+      2rem;
 
-    background-size: 28px 28px;
+    overflow-x: hidden;
+  }
+
+  .loginLayout {
+    width: 100%;
+    min-width: 0;
+
+    gap: 2.25rem;
   }
 
   .backButton {
@@ -851,6 +921,9 @@
     left: 1rem;
 
     width: 42px;
+    height: 42px;
+
+    min-width: 42px;
     min-height: 42px;
 
     padding: 0;
@@ -861,15 +934,450 @@
   }
 
   .mascotArea {
-    height: 220px;
+    width: 100%;
+    height: 200px;
   }
 
   .mascot {
-    width: 185px;
+    width: 175px;
+    max-width: 75%;
+  }
+
+  .mascotGlow {
+    width: 180px;
+    height: 180px;
+
+    bottom: 5px;
+  }
+
+  .welcomeText {
+    width: 100%;
+    min-width: 0;
+
+    margin-top: 0.5rem;
   }
 
   .welcomeText h1 {
+    width: 100%;
+
+    margin-top: 0.5rem;
+
     font-size: var(--font-h2);
+    line-height: 1.15;
+
+    overflow-wrap: break-word;
+  }
+
+  .welcomeText p {
+    width: 100%;
+    max-width: 320px;
+
+    margin-top: 0.75rem;
+
+    font-size: var(--font-xs);
+  }
+
+  .card {
+    width: 100%;
+    min-width: 0;
+    max-width: 430px;
+
+    padding:
+      1.6rem
+      1.1rem
+      1.4rem;
+
+    border-radius: 17px;
+  }
+
+  .cardHeader {
+    margin-bottom: 1.5rem;
+  }
+
+  .cardHeader h2 {
+    font-size: var(--font-2xl);
+  }
+
+  .cardHeader p {
+    max-width: 300px;
+
+    font-size: var(--font-xs);
+  }
+
+  .inputGroup {
+    min-width: 0;
+    min-height: 54px;
+
+    padding:
+      0
+      0.65rem
+      0
+      0.55rem;
+
+    gap: 0.6rem;
+  }
+
+  .inputIcon {
+    width: 36px;
+    height: 36px;
+
+    min-width: 36px;
+  }
+
+  .inputGroup input {
+    width: 0;
+    min-width: 0;
+
+    flex: 1 1 auto;
+  }
+
+  .passwordToggle {
+    width: 34px;
+    height: 34px;
+
+    min-width: 34px;
+  }
+
+  .options {
+    width: 100%;
+    min-width: 0;
+
+    margin:
+      1rem
+      0
+      1.3rem;
+
+    gap: 0.75rem;
+
+    flex-wrap: wrap;
+  }
+
+  .loginButton {
+    min-height: 54px;
+  }
+
+  .socials {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 0.7rem;
+  }
+
+  .socialButton {
+    min-width: 0;
+
+    padding:
+      0
+      0.6rem;
+
+    white-space: nowrap;
+  }
+
+  .signup {
+    line-height: var(--line-normal);
+  }
+}
+
+
+@media (max-width: 390px) {
+  .loginPage {
+    padding:
+      4.7rem
+      12px
+      1.5rem;
+  }
+
+  .loginLayout {
+    gap: 2rem;
+  }
+
+  .mascotArea {
+    height: 180px;
+  }
+
+  .mascot {
+    width: 155px;
+  }
+
+  .mascotGlow {
+    width: 165px;
+    height: 165px;
+  }
+
+  .welcomeText h1 {
+    font-size: var(--font-xl);
+  }
+
+  .welcomeText p {
+    max-width: 285px;
+  }
+
+  .card {
+    padding:
+      1.45rem
+      0.9rem
+      1.25rem;
+  }
+
+  .cardHeader h2 {
+    font-size: var(--font-xl);
+  }
+
+  .inputGroup {
+    min-height: 52px;
+  }
+
+  .socialButton {
+    padding:
+      0
+      0.45rem;
+
+    gap: 0.45rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .loginPage {
+    padding:
+      4.5rem
+      10px
+      1.25rem;
+  }
+
+  .loginLayout {
+    gap: 1.75rem;
+  }
+
+  .mascotArea {
+    height: 165px;
+  }
+
+  .mascot {
+    width: 145px;
+  }
+
+  .mascotGlow {
+    width: 150px;
+    height: 150px;
+  }
+
+  .welcomeText h1 {
+    font-size: var(--font-xl);
+  }
+
+  .welcomeText p {
+    max-width: 270px;
+  }
+
+  .card {
+    padding:
+      1.3rem
+      0.8rem
+      1.1rem;
+
+    border-radius: 15px;
+  }
+
+  .cardHeader {
+    margin-bottom: 1.2rem;
+  }
+
+  .cardHeader h2 {
+    font-size: var(--font-lg);
+  }
+
+  .inputGroup {
+    min-height: 50px;
+
+    padding:
+      0
+      0.5rem;
+  }
+
+  .inputIcon {
+    width: 34px;
+    height: 34px;
+
+    min-width: 34px;
+  }
+
+  .passwordToggle {
+    width: 32px;
+    height: 32px;
+
+    min-width: 32px;
+  }
+
+  .socialButton {
+    min-height: 46px;
+
+    padding:
+      0
+      0.3rem;
+
+    gap: 0.35rem;
+
+    font-size: var(--font-xs);
+  }
+
+  .socialButton svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 340px) {
+  .loginPage {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .card {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .socials {
+    gap: 5px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .loginPage {
+    padding:
+      clamp(5rem, 6vh, 7rem)
+      40px
+      clamp(3rem, 5vh, 5rem);
+  }
+
+  .loginLayout {
+    width: min(100%, 1100px);
+
+    grid-template-columns:
+      minmax(380px, 460px)
+      minmax(400px, 460px);
+
+    gap: clamp(4rem, 7vw, 7rem);
+  }
+
+  .mascotArea {
+    width: 340px;
+    height: 340px;
+  }
+
+  .mascot {
+    width: 290px;
+  }
+
+  .card {
+    max-width: 460px;
+  }
+}
+
+@media (min-width: 2200px) {
+  .loginPage {
+    padding-left: 60px;
+    padding-right: 60px;
+  }
+
+  .loginLayout {
+    width: min(100%, 1250px);
+
+    grid-template-columns:
+      minmax(450px, 520px)
+      minmax(430px, 500px);
+
+    gap: 8rem;
+  }
+
+  .mascotArea {
+    width: 400px;
+    height: 400px;
+  }
+
+  .mascot {
+    width: 330px;
+  }
+
+  .card {
+    max-width: 500px;
+
+    padding: 2.75rem;
+  }
+}
+/* ==================================================
+   RESPONSIVE HARDENING — login
+   ================================================== */
+@media (max-width: 900px) {
+  .loginPage {
+    min-height: 100svh;
+    padding: 5rem 16px 2rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .loginLayout {
+    width: min(100%, 520px);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .welcome {
+    width: 100%;
+  }
+
+  .mascotArea {
+    width: min(100%, 260px);
+    height: 220px;
+    margin-inline: auto;
+  }
+
+  .mascot {
+    width: min(58vw, 205px);
+  }
+
+  .mascotGlow {
+    width: 180px;
+    height: 180px;
+  }
+
+  .welcomeText h1 {
+    font-size: clamp(2rem, 8vw, 2.8rem);
+  }
+
+  .card {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .loginPage {
+    padding: 4.75rem 12px 1.25rem;
+    place-items: start center;
+  }
+
+  .backButton {
+    top: 12px;
+    left: 12px;
+    min-height: 40px;
+  }
+
+  .mascotArea {
+    height: 170px;
+  }
+
+  .mascot {
+    width: min(50vw, 165px);
+  }
+
+  .mascotGlow {
+    width: 145px;
+    height: 145px;
+  }
+
+  .welcomeText {
+    margin-top: 0.35rem;
   }
 
   .welcomeText p {
@@ -877,43 +1385,34 @@
   }
 
   .card {
-    padding:
-      1.7rem
-      1.05rem
-      1.35rem;
-
+    padding: 1.35rem;
     border-radius: 17px;
+  }
+
+  .inputGroup {
+    min-height: 54px;
   }
 
   .options {
     align-items: flex-start;
-    flex-direction: column;
-
-    gap: 0.7rem;
+    gap: 0.75rem;
   }
 
   .socials {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .mascot {
-    animation: none;
+@media (max-width: 380px) {
+  .loginPage {
+    padding-inline: 10px;
   }
 
-  .backButton,
-  .inputGroup,
-  .passwordToggle,
-  .loginButton,
-  .socialButton {
-    transition: none;
+  .card {
+    padding-inline: 1rem;
   }
 
-  .backButton:hover,
-  .inputGroup:focus-within,
-  .loginButton:hover,
-  .socialButton:hover {
-    transform: none;
+  .options {
+    flex-direction: column;
   }
 }

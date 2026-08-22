@@ -11,10 +11,7 @@
   background-color: var(--color-paper);
 
   background-image:
-    linear-gradient(
-      rgb(var(--color-grid-rgb) / 0.045) 1px,
-      transparent 1px
-    ),
+    linear-gradient(rgb(var(--color-grid-rgb) / 0.045) 1px, transparent 1px),
     linear-gradient(
       90deg,
       rgb(var(--color-grid-rgb) / 0.045) 1px,
@@ -132,11 +129,7 @@
 
   min-height: 570px;
 
-  filter:
-    drop-shadow(
-      11px 13px 0
-      rgb(var(--color-black-rgb) / 0.05)
-    );
+  filter: drop-shadow(11px 13px 0 rgb(var(--color-black-rgb) / 0.05));
 
   transform: rotate(-0.8deg);
 }
@@ -156,14 +149,8 @@
       90deg,
       transparent 0,
       transparent 3.9rem,
-      rgb(
-        var(--color-results-paper-line-rgb) /
-        0.24
-      ) 3.9rem,
-      rgb(
-        var(--color-results-paper-line-rgb) /
-        0.24
-      ) 3.98rem,
+      rgb(var(--color-results-paper-line-rgb) / 0.24) 3.9rem,
+      rgb(var(--color-results-paper-line-rgb) / 0.24) 3.98rem,
       transparent 3.98rem
     ),
     repeating-linear-gradient(
@@ -230,16 +217,13 @@
   width: 105px;
   height: 38px;
 
-  background:
-    repeating-linear-gradient(
-      -35deg,
-      var(--color-accent-soft) 0 4px,
-      rgb(var(--color-white-rgb) / 0.55) 4px 8px
-    );
+  background: repeating-linear-gradient(
+    -35deg,
+    var(--color-accent-soft) 0 4px,
+    rgb(var(--color-white-rgb) / 0.55) 4px 8px
+  );
 
-  border:
-    1px solid
-    rgb(var(--color-black-rgb) / 0.05);
+  border: 1px solid rgb(var(--color-black-rgb) / 0.05);
 
   transform: rotate(-32deg);
 }
@@ -294,9 +278,7 @@
   border: 1px solid var(--color-gray-300);
   border-radius: 50%;
 
-  box-shadow:
-    inset 2px 1px 2px
-    rgb(var(--color-black-rgb) / 0.06);
+  box-shadow: inset 2px 1px 2px rgb(var(--color-black-rgb) / 0.06);
 }
 
 .paperHeader {
@@ -348,9 +330,7 @@
 
   gap: 1.2rem;
 
-  border-bottom:
-    1px solid
-    var(--color-gray-300);
+  border-bottom: 1px solid var(--color-gray-300);
 }
 
 .resultItem:last-child {
@@ -434,9 +414,7 @@
 
   gap: 0.85rem;
 
-  border-top:
-    1px dashed
-    var(--color-gray-300);
+  border-top: 1px dashed var(--color-gray-300);
 }
 
 .paperChart {
@@ -452,9 +430,7 @@
   border: 1px solid var(--color-accent);
   border-radius: 5px;
 
-  box-shadow:
-    4px 5px 0
-    rgb(var(--color-black-rgb) / 0.05);
+  box-shadow: 4px 5px 0 rgb(var(--color-black-rgb) / 0.05);
 
   transform: rotate(-3deg);
 }
@@ -496,21 +472,18 @@
   min-height: 570px;
   padding: 17px;
 
-  background:
-    linear-gradient(
-      145deg,
-      var(--color-results-clipboard-light),
-      var(--color-results-clipboard-dark)
-    );
+  background: linear-gradient(
+    145deg,
+    var(--color-results-clipboard-light),
+    var(--color-results-clipboard-dark)
+  );
 
   border: 2px solid var(--color-navy);
   border-radius: 28px;
 
   box-shadow:
-    10px 12px 0
-      rgb(var(--color-black-rgb) / 0.06),
-    0 20px 42px
-      rgb(var(--color-black-rgb) / 0.1);
+    10px 12px 0 rgb(var(--color-black-rgb) / 0.06),
+    0 20px 42px rgb(var(--color-black-rgb) / 0.1);
 }
 
 .clipboard::before {
@@ -521,9 +494,7 @@
 
   pointer-events: none;
 
-  border:
-    1px solid
-    rgb(var(--color-white-rgb) / 0.22);
+  border: 1px solid rgb(var(--color-white-rgb) / 0.22);
 
   border-radius: 22px;
 }
@@ -537,19 +508,16 @@
   width: 175px;
   height: 70px;
 
-  background:
-    linear-gradient(
-      180deg,
-      var(--color-navy-light),
-      var(--color-navy)
-    );
+  background: linear-gradient(
+    180deg,
+    var(--color-navy-light),
+    var(--color-navy)
+  );
 
   border: 3px solid var(--color-navy-dark);
   border-radius: 16px 16px 9px 9px;
 
-  box-shadow:
-    0 6px 0
-    rgb(var(--color-black-rgb) / 0.18);
+  box-shadow: 0 6px 0 rgb(var(--color-black-rgb) / 0.18);
 
   transform: translateX(-50%);
 }
@@ -599,8 +567,7 @@
 
   height: 5px;
 
-  background:
-    rgb(var(--color-white-rgb) / 0.15);
+  background: rgb(var(--color-white-rgb) / 0.15);
 
   border-radius: 999px;
 }
@@ -624,9 +591,7 @@
   border: 1px solid var(--color-gray-300);
   border-radius: 6px;
 
-  box-shadow:
-    inset 0 0 40px
-    rgb(var(--color-black-rgb) / 0.025);
+  box-shadow: inset 0 0 40px rgb(var(--color-black-rgb) / 0.025);
 
   clip-path: polygon(
     0 0,
@@ -708,9 +673,7 @@
 
   gap: 0.75rem;
 
-  border-bottom:
-    1px dashed
-    var(--color-gray-300);
+  border-bottom: 1px dashed var(--color-gray-300);
 }
 
 .conclusionItem:last-child {
@@ -770,19 +733,16 @@
 
   padding: 1.6rem 1.2rem 1.2rem;
 
-  background:
-    linear-gradient(
-      145deg,
-      var(--color-accent-pale),
-      var(--color-card-yellow)
-    );
+  background: linear-gradient(
+    145deg,
+    var(--color-accent-pale),
+    var(--color-card-yellow)
+  );
 
   border: 1px solid var(--color-accent-soft);
   border-radius: 4px;
 
-  box-shadow:
-    6px 7px 0
-    rgb(var(--color-black-rgb) / 0.06);
+  box-shadow: 6px 7px 0 rgb(var(--color-black-rgb) / 0.06);
 
   transform: rotate(1.5deg);
 }
@@ -795,16 +755,11 @@
   width: 72px;
   height: 24px;
 
-  background:
-    rgb(var(--color-results-tape-rgb) / 0.55);
+  background: rgb(var(--color-results-tape-rgb) / 0.55);
 
-  border:
-    1px solid
-    rgb(var(--color-black-rgb) / 0.05);
+  border: 1px solid rgb(var(--color-black-rgb) / 0.05);
 
-  transform:
-    translateX(-50%)
-    rotate(4deg);
+  transform: translateX(-50%) rotate(4deg);
 }
 
 .noteArrow {
@@ -893,9 +848,7 @@
 
   border: 1px solid var(--color-primary-light);
 
-  box-shadow:
-    4px 5px 0
-    rgb(var(--color-black-rgb) / 0.04);
+  box-shadow: 4px 5px 0 rgb(var(--color-black-rgb) / 0.04);
 
   transform: rotate(0.3deg);
 }
@@ -908,15 +861,9 @@
   width: 43px;
   height: 20px;
 
-  background:
-    rgb(
-      var(--color-results-strip-tape-rgb) /
-      0.35
-    );
+  background: rgb(var(--color-results-strip-tape-rgb) / 0.35);
 
-  border:
-    1px solid
-    rgb(var(--color-black-rgb) / 0.04);
+  border: 1px solid rgb(var(--color-black-rgb) / 0.04);
 }
 
 .stripTapeLeft {
@@ -941,9 +888,7 @@
 
   text-align: center;
 
-  border-right:
-    1px dashed
-    var(--color-navy-light);
+  border-right: 1px dashed var(--color-navy-light);
 }
 
 .practicalItem:last-child {
@@ -1030,7 +975,10 @@
   }
 
   .headerSparkle {
-    display: none;
+    top: -0.3rem;
+    right: 2%;
+
+    transform: rotate(12deg) scale(0.85);
   }
 
   .notebookPaper,
@@ -1044,37 +992,43 @@
 
   .paperContent {
     min-height: auto;
-    padding: 3rem 1.5rem 3rem 3.9rem;
+    padding: 3rem 1.5rem 2.4rem 3.9rem;
   }
 
   .resultItem {
-    grid-template-columns: 1fr;
+    min-height: auto;
 
-    text-align: center;
+    grid-template-columns: minmax(80px, 34%) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.9rem;
+
+    text-align: left;
+  }
+
+  .resultItem > strong {
+    min-height: 0;
+    font-size: var(--font-results-number-mobile, var(--font-2xl));
   }
 
   .resultItem p {
-    max-width: 380px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
   }
 
   .paperFooter {
-    grid-template-columns: 1fr;
-
-    text-align: center;
+    grid-template-columns: 46px minmax(0, 1fr);
+    align-items: center;
+    text-align: left;
   }
 
   .paperChart {
-    margin: 0 auto;
-  }
-
-  .paperArrow {
-    display: none;
+    width: 46px;
+    height: 46px;
+    margin: 0;
   }
 
   .clipboard {
     padding: 14px;
-
     border-radius: 25px;
   }
 
@@ -1120,14 +1074,13 @@
   .paperContent {
     padding-left: 1.25rem;
 
-    background-image:
-      repeating-linear-gradient(
-        0deg,
-        transparent 0,
-        transparent 31px,
-        rgb(var(--color-grid-rgb) / 0.08) 31px,
-        rgb(var(--color-grid-rgb) / 0.08) 32px
-      );
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 31px,
+      rgb(var(--color-grid-rgb) / 0.08) 31px,
+      rgb(var(--color-grid-rgb) / 0.08) 32px
+    );
   }
 
   .paperTape {
@@ -1138,8 +1091,17 @@
     left: 72%;
   }
 
+  .resultItem {
+    grid-template-columns: minmax(68px, 30%) minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
   .resultItem > strong {
-    font-size: var(--font-results-number-mobile);
+    font-size: var(--font-results-number-mobile, var(--font-xl));
+  }
+
+  .resultItem p {
+    font-size: var(--font-sm);
   }
 
   .clipboardClip {
@@ -1151,9 +1113,7 @@
   }
 
   .conclusionItem {
-    grid-template-columns:
-      42px
-      minmax(0, 1fr);
+    grid-template-columns: 42px minmax(0, 1fr);
   }
 
   .checkIcon {
@@ -1162,25 +1122,52 @@
   }
 
   .practicalStrip {
-    padding: 0.5rem 0.8rem;
-
-    grid-template-columns: 1fr;
-
-    gap: 0;
+    padding: 0.6rem 0.4rem;
+    gap: 0.25rem;
   }
 
   .practicalItem {
-    min-height: 85px;
-    padding: 0.8rem;
-
-    border-right: 0;
-    border-bottom:
-      1px dashed
-      var(--color-navy-light);
+    padding: 0 0.3rem;
   }
 
-  .practicalItem:last-child {
-    border-bottom: 0;
+  .practicalIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .practicalIcon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .practicalItem strong {
+    margin-top: 0.3rem;
+    font-size: var(--font-xs);
+    line-height: var(--line-snug);
+  }
+}
+
+@media (max-width: 360px) {
+  .practicalStrip {
+    padding: 0.5rem 0.3rem;
+  }
+
+  .practicalIcon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .practicalIcon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .practicalItem strong {
+    font-size: 0.68rem;
+  }
+
+  .resultItem {
+    grid-template-columns: minmax(60px, 32%) minmax(0, 1fr);
   }
 }
 
@@ -1189,5 +1176,571 @@
   .painsNote,
   .practicalStrip {
     transform: none;
+  }
+}
+/* ==================================================
+   RESPONSIVE REBUILD — resultados
+   ================================================== */
+@media (max-width: 760px) {
+  .resultsSection {
+    padding: 4.5rem 12px;
+  }
+
+  .sectionHeader {
+    margin-bottom: 3rem;
+  }
+
+  .researchLayout,
+  .notebookPaper,
+  .paperContent,
+  .clipboard,
+  .clipboardPaper,
+  .clipboardContent,
+  .resultsList,
+  .resultItem,
+  .paperFooter,
+  .practicalStrip {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .paperContent {
+    padding: 2.6rem 1.1rem 2.2rem;
+    overflow: visible;
+    clip-path: none;
+    border-radius: 10px;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 31px,
+      rgb(var(--color-grid-rgb) / 0.08) 31px,
+      rgb(var(--color-grid-rgb) / 0.08) 32px
+    );
+  }
+
+  .binderHoles {
+    display: none;
+  }
+
+  .resultsList {
+    gap: 0;
+  }
+
+  .resultItem {
+    display: grid;
+    grid-template-columns: clamp(72px, 24vw, 105px) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.85rem;
+    padding-block: 1rem;
+  }
+
+  .resultItem > strong {
+    width: 100%;
+    min-width: 0;
+    font-size: clamp(1.75rem, 8vw, 2.6rem);
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .resultItem p {
+    width: 100%;
+    min-width: 0;
+    font-size: var(--font-sm);
+    line-height: 1.42;
+    overflow-wrap: anywhere;
+  }
+
+  .paperFooter {
+    padding-top: 1rem;
+  }
+
+  .clipboard {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .clipboardPaper {
+    padding: 2.8rem 1rem 1.4rem;
+  }
+
+  .clipboardHeader h3 {
+    font-size: clamp(1.7rem, 7vw, 2.3rem);
+  }
+
+  .conclusionItem {
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .painsNote {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .practicalStrip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0.75rem 0.3rem;
+    transform: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .resultItem {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.4rem;
+    text-align: left;
+  }
+
+  .resultItem > strong {
+    width: auto;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .paperFooter {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .practicalStrip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .practicalItem {
+    min-height: 64px;
+    padding: 0.55rem 0.75rem;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.65rem;
+    text-align: left;
+    border-right: 0;
+    border-bottom: 1px dashed var(--color-navy-light);
+  }
+
+  .practicalItem:last-child {
+    border-bottom: 0;
+  }
+
+  .practicalItem strong {
+    margin: 0;
+  }
+}
+
+/* =========================================================
+   REFINAMENTO MOBILE V3 — FOLHA E PRANCHETA MAIS COMPACTAS
+========================================================= */
+@media (max-width: 760px) {
+  .notebookPaper {
+    width: 100%;
+  }
+
+  .paperContent {
+    padding: 2.35rem 1rem 1.6rem 2.8rem;
+    overflow: hidden;
+
+    background-image:
+      linear-gradient(
+        90deg,
+        transparent 0,
+        transparent 2.05rem,
+        rgb(var(--color-results-paper-line-rgb) / 0.2) 2.05rem,
+        rgb(var(--color-results-paper-line-rgb) / 0.2) 2.1rem,
+        transparent 2.1rem
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent 0,
+        transparent 31px,
+        rgb(var(--color-grid-rgb) / 0.08) 31px,
+        rgb(var(--color-grid-rgb) / 0.08) 32px
+      );
+  }
+
+  .binderHoles {
+    top: 2rem;
+    bottom: 1.5rem;
+    left: 0.55rem;
+
+    display: flex;
+  }
+
+  .binderHoles span {
+    width: 13px;
+    height: 13px;
+  }
+
+  .paperHeader h3 {
+    font-size: clamp(1.55rem, 6.7vw, 2.1rem);
+  }
+
+  .resultsList {
+    margin-top: 1.1rem;
+  }
+
+  .resultItem,
+  .resultItem:first-child,
+  .resultItem:last-child {
+    min-height: 0;
+    padding: 0.8rem 0;
+
+    grid-template-columns: clamp(78px, 24vw, 104px) minmax(0, 1fr);
+    gap: 0.7rem;
+
+    text-align: left;
+  }
+
+  .resultItem > strong {
+    width: 100%;
+    min-height: 58px;
+    justify-self: stretch;
+
+    font-size: clamp(1.55rem, 6.8vw, 2.15rem);
+    text-align: center;
+  }
+
+  .resultItem > strong::before {
+    inset: 5px 4px;
+  }
+
+  .resultItem > strong::after {
+    inset: 9px 1px 3px 8px;
+  }
+
+  .resultItem p {
+    font-size: clamp(0.72rem, 2.9vw, 0.86rem);
+    line-height: 1.38;
+  }
+
+  .paperFooter {
+    margin-top: 0.55rem;
+    padding-top: 0.75rem;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  .paperChart {
+    width: 42px;
+    height: 42px;
+  }
+
+  .paperFooter p {
+    font-size: 0.73rem;
+    line-height: 1.35;
+  }
+
+  .paperArrow {
+    display: none;
+  }
+
+  .clipboard {
+    min-height: 0;
+    padding: 9px;
+    border-radius: 22px;
+  }
+
+  .clipboardPaper {
+    min-height: 0;
+    padding: 2.5rem 0.9rem 1rem;
+  }
+
+  .clipboardClip {
+    top: -25px;
+    width: 132px;
+    height: 55px;
+  }
+
+  .clipboardClip::before {
+    top: -27px;
+    width: 45px;
+    height: 38px;
+  }
+
+  .clipboardClip::after {
+    top: -18px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .clipboardHeader h3 {
+    font-size: clamp(1.55rem, 6.5vw, 2rem);
+  }
+
+  .clipboardContent {
+    margin-top: 1rem;
+    gap: 0.8rem;
+  }
+
+  .conclusionItem {
+    min-height: 0;
+    padding: 0.65rem 0;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .checkIcon {
+    width: 31px;
+    height: 31px;
+  }
+
+  .conclusionItem p {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .painsNote {
+    padding: 1.15rem 0.9rem 0.9rem;
+  }
+
+  .painsNote ul {
+    margin-top: 0.9rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem 0.85rem;
+  }
+
+  .painsNote li {
+    font-size: 0.72rem;
+    line-height: 1.3;
+  }
+
+  .noteSparkle {
+    margin-top: 0.55rem;
+  }
+
+  .practicalStrip {
+    min-height: 78px;
+    margin-top: 1rem;
+    padding: 0.55rem 0.2rem;
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .practicalItem {
+    min-height: 0;
+    padding: 0.25rem 0.3rem;
+
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.15rem;
+
+    text-align: center;
+    border-bottom: 0;
+    border-right: 1px dashed var(--color-navy-light);
+  }
+
+  .practicalItem:last-child {
+    border-right: 0;
+  }
+
+  .practicalIcon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .practicalIcon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .practicalItem strong {
+    margin-top: 0.25rem;
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .paperContent {
+    padding-left: 2.45rem;
+  }
+
+  .binderHoles {
+    left: 0.45rem;
+  }
+
+  .binderHoles span {
+    width: 11px;
+    height: 11px;
+  }
+
+  .resultItem {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .resultItem > strong {
+    font-size: clamp(1.4rem, 6.7vw, 1.85rem);
+  }
+
+  .painsNote ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .practicalStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .practicalItem {
+    flex-direction: column;
+    border-bottom: 0;
+  }
+}
+
+/* =========================================================
+   REFINAMENTO MOBILE V4 — NÚMEROS LIVRES + PRANCHETA MAIS LEVE
+========================================================= */
+@media (max-width: 760px) {
+  .paperContent {
+    padding-left: 3rem;
+  }
+
+  .binderHoles {
+    left: 0.55rem;
+    gap: 0.58rem;
+  }
+
+  .binderHoles span {
+    width: 11px;
+    height: 11px;
+  }
+
+  .resultItem,
+  .resultItem:first-child,
+  .resultItem:last-child {
+    padding: 0.9rem 0;
+    grid-template-columns: clamp(92px, 25vw, 112px) minmax(0, 1fr);
+    gap: 0.8rem;
+  }
+
+  .resultItem > strong {
+    position: relative;
+    isolation: isolate;
+    z-index: 0;
+
+    min-height: 70px;
+    padding-inline: 0.25rem;
+
+    font-size: clamp(1.65rem, 6.9vw, 2.2rem);
+    line-height: 1;
+  }
+
+  /* Os dois traços continuam desenhados à mão, mas ficam atrás do número. */
+  .resultItem > strong::before,
+  .resultItem > strong::after {
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .resultItem > strong::before {
+    inset: 0 1px;
+    border-width: 2.5px;
+  }
+
+  .resultItem > strong::after {
+    inset: 5px -2px 3px 6px;
+    border-width: 2px;
+    opacity: 0.48;
+  }
+
+  .resultItem p {
+    font-size: clamp(0.74rem, 2.85vw, 0.86rem);
+    line-height: 1.42;
+  }
+
+  .clipboard {
+    padding: 7px;
+    border-radius: 20px;
+    box-shadow:
+      6px 8px 0 rgb(var(--color-black-rgb) / 0.055),
+      0 14px 30px rgb(var(--color-black-rgb) / 0.08);
+  }
+
+  .clipboard::before {
+    inset: 5px;
+    border-radius: 16px;
+  }
+
+  .clipboardPaper {
+    padding: 2.25rem 0.9rem 0.9rem;
+    border-radius: 5px;
+  }
+
+  .clipboardClip {
+    top: -22px;
+    width: 118px;
+    height: 48px;
+    border-width: 2px;
+    border-radius: 13px 13px 8px 8px;
+  }
+
+  .clipboardClip::before {
+    top: -23px;
+    width: 39px;
+    height: 33px;
+    border-width: 2px;
+  }
+
+  .clipboardClip::after {
+    top: -15px;
+    width: 12px;
+    height: 12px;
+    border-width: 2px;
+  }
+
+  .clipboardClip span {
+    right: 16px;
+    bottom: 9px;
+    left: 16px;
+    height: 4px;
+  }
+
+  .clipboardHeader h3 {
+    font-size: clamp(1.45rem, 6vw, 1.85rem);
+  }
+
+  .clipboardContent {
+    margin-top: 0.75rem;
+    gap: 0.65rem;
+  }
+
+  .conclusionItem {
+    padding: 0.52rem 0;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .checkIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .conclusionItem p {
+    font-size: 0.76rem;
+    line-height: 1.38;
+  }
+
+  .painsNote {
+    padding: 1rem 0.8rem 0.8rem;
+  }
+
+  .practicalStrip {
+    margin-top: 0.8rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .paperContent {
+    padding-left: 2.75rem;
+  }
+
+  .resultItem {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  .resultItem > strong {
+    font-size: clamp(1.5rem, 6.9vw, 1.9rem);
   }
 }

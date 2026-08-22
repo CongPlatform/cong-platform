@@ -1117,3 +1117,84 @@
     transition: none;
   }
 }
+
+/* ==================================================
+   RESPONSIVE HARDENING — minha conta
+   ================================================== */
+.page,
+.container,
+.profileCard,
+.profileHero,
+.heroIdentity,
+.profileContent,
+.infoGrid,
+.infoPanel,
+.editForm,
+.formGrid,
+.field,
+.formActions {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .page {
+    overflow-x: hidden;
+  }
+
+  .container {
+    width: 100%;
+  }
+
+  .topbar {
+    width: 100%;
+  }
+
+  .profileHero {
+    grid-template-columns: 82px minmax(0, 1fr);
+    padding: 20px 16px;
+  }
+
+  .avatar {
+    width: 82px;
+    height: 82px;
+  }
+
+  .heroIdentity h1,
+  .username,
+  .bio,
+  .emptyBio,
+  .detailRow,
+  .fieldHeading {
+    overflow-wrap: anywhere;
+  }
+
+  .profileContent,
+  .editForm {
+    padding: 18px 14px 20px;
+  }
+
+  .infoPanel {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .profileHero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .avatarButton {
+    justify-self: center;
+  }
+
+  .heroActions,
+  .formActions {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detailRow {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+}

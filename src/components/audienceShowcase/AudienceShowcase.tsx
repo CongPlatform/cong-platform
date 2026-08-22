@@ -333,46 +333,73 @@ export default function AudienceShowcase() {
           </p>
         </header>
 
-        <div
-          className={styles.audienceTabs}
-          role="tablist"
-          aria-label="Escolha seu perfil"
-        >
-          {audiences.map((audience) => {
-            const Icon = audience.icon;
-            const isSelected =
-              selectedAudienceId === audience.id;
+        <div className={styles.audienceTabsBlock}>
+          <div
+            className={styles.audienceTabs}
+            role="tablist"
+            aria-label="Escolha seu perfil"
+          >
+            {audiences.map((audience) => {
+              const Icon = audience.icon;
+              const isSelected =
+                selectedAudienceId === audience.id;
 
-            return (
-              <button
-                key={audience.id}
-                type="button"
-                role="tab"
-                id={`audience-tab-${audience.id}`}
-                aria-selected={isSelected}
-                aria-controls={`audience-panel-${audience.id}`}
-                className={[
-                  styles.audienceTab,
-                  isSelected
-                    ? styles.audienceTabActive
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() =>
-                  setSelectedAudienceId(audience.id)
-                }
-              >
-                <Icon
-                  size={21}
-                  strokeWidth={1.8}
-                  aria-hidden={true}
+              return (
+                <button
+                  key={audience.id}
+                  type="button"
+                  role="tab"
+                  id={`audience-tab-${audience.id}`}
+                  aria-selected={isSelected}
+                  aria-controls={`audience-panel-${audience.id}`}
+                  className={[
+                    styles.audienceTab,
+                    isSelected
+                      ? styles.audienceTabActive
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={(event) => {
+                    setSelectedAudienceId(audience.id);
+                    event.currentTarget.scrollIntoView({
+                      behavior: "smooth",
+                      block: "nearest",
+                      inline: "center",
+                    });
+                  }}
+                >
+                  <Icon
+                    size={21}
+                    strokeWidth={1.8}
+                    aria-hidden={true}
+                  />
+
+                  <span>{audience.tabLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className={styles.carouselMeta} aria-hidden={true}>
+            <span className={styles.carouselHint}>
+              <MousePointer2 size={16} strokeWidth={1.8} />
+              Arraste para ver mais
+            </span>
+
+            <span className={styles.carouselDots}>
+              {audiences.map((audience) => (
+                <i
+                  key={audience.id}
+                  className={
+                    selectedAudienceId === audience.id
+                      ? styles.carouselDotActive
+                      : ""
+                  }
                 />
-
-                <span>{audience.tabLabel}</span>
-              </button>
-            );
-          })}
+              ))}
+            </span>
+          </div>
         </div>
 
         <article
@@ -512,7 +539,62 @@ function PreviewBrowserBar({
 
 function OngPreview() {
   return (
-    <div className={styles.builderPreview}>
+    <>
+      <div className={styles.mobileOngPreview} aria-label="Prévia mobile do painel da organização">
+        <div className={styles.mobileOngHeader}>
+          <div>
+            <span>Minha organização</span>
+            <strong>Painel principal</strong>
+          </div>
+
+          <span className={styles.mobileOngStatus}>
+            <Check size={14} strokeWidth={2.2} />
+            Ativo
+          </span>
+        </div>
+
+        <div className={styles.mobileOngStats}>
+          <div>
+            <Users size={20} strokeWidth={1.7} />
+            <strong>342</strong>
+            <span>Pessoas atendidas</span>
+          </div>
+
+          <div>
+            <HandHeart size={20} strokeWidth={1.7} />
+            <strong>128</strong>
+            <span>Voluntários</span>
+          </div>
+        </div>
+
+        <div className={styles.mobileOngActivity}>
+          <div>
+            <FileText size={19} strokeWidth={1.7} />
+            <span>
+              <strong>Relatórios</strong>
+              Acompanhe os registros da organização
+            </span>
+          </div>
+
+          <div>
+            <Users size={19} strokeWidth={1.7} />
+            <span>
+              <strong>Voluntários</strong>
+              Consulte pessoas e atividades
+            </span>
+          </div>
+
+          <div>
+            <Box size={19} strokeWidth={1.7} />
+            <span>
+              <strong>Estoque</strong>
+              Veja recursos e movimentações
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.builderPreview}>
       <aside className={styles.builderSidebar}>
         <div className={styles.builderLogo}>
           <Blocks size={18} />
@@ -598,6 +680,7 @@ function OngPreview() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

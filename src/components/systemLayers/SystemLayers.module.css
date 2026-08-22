@@ -474,6 +474,17 @@
   }
 }
 
+@media (max-width: 1100px) {
+  .layersLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .layerNotes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
   .detailsSection {
     padding: 4.5rem 1rem;
@@ -485,23 +496,43 @@
     margin-bottom: 3.2rem;
   }
 
+  .layersBoard {
+    min-height: auto;
+
+    padding: 1.1rem;
+
+    transform: none;
+  }
+
+  .boardTapeLeft,
+  .boardTapeRight {
+    display: none;
+  }
+
+  .layersStack {
+    gap: 0.6rem;
+  }
+
   .layerRow {
+    min-height: auto;
+
+    padding: 0.65rem;
+
     grid-template-columns: 1fr;
 
-    gap: 0.75rem;
+    gap: 0.55rem;
   }
 
   .layerGreen,
   .layerBlue,
   .layerYellow,
   .layerPurple {
-    background:
-      rgb(var(--color-white-rgb) / 88%);
+    background: rgb(var(--color-white-rgb) / 88%);
   }
 
   .layerLabel {
     width: fit-content;
-    padding: 0.65rem 0.8rem;
+    padding: 0.5rem 0.7rem;
 
     border-radius: 9px;
   }
@@ -523,12 +554,33 @@
   }
 
   .layerItems {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 0.4rem;
+  }
+
+  .layerItem {
+    min-height: 42px;
+    padding: 0.36rem 0.3rem;
+
+    gap: 0.2rem;
+  }
+
+  .layerItem svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .layerItem span {
+    font-size: 0.72rem;
+
+    line-height: 1.15;
   }
 
   .layerNotes {
     grid-template-columns: 1fr;
+
+    padding: 1.1rem 1rem;
   }
 }
 
@@ -538,6 +590,66 @@
   }
 
   .layerItems {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .layerItem span {
+    font-size: 0.68rem;
+  }
+}
+/* ==================================================
+   RESPONSIVE HARDENING — camadas do sistema
+   ================================================== */
+.layersSection,
+.sectionContainer,
+.layersLayout,
+.layersBoard,
+.layersStack,
+.layerRow,
+.layerItems,
+.layerNotes,
+.layerNote {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .layersSection {
+    padding-inline: 12px;
+  }
+
+  .layersLayout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .layersBoard {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .layerRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  .layerItems {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .layerNotes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 430px) {
+  .layerItems {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .layerItem,
+  .layerNote {
+    width: 100%;
+    transform: none !important;
   }
 }

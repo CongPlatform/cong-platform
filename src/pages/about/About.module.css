@@ -221,8 +221,6 @@
   outline-offset: 4px;
 }
 
-/* HERO */
-
 .hero {
   position: relative;
   isolation: isolate;
@@ -1107,8 +1105,6 @@
   font-size: var(--font-2xl);
 }
 
-/* HISTÓRIA */
-
 .storySection {
   position: relative;
 
@@ -1597,8 +1593,6 @@
     infinite;
 }
 
-/* TRANSFORMAÇÃO */
-
 .transitionSection {
   position: relative;
 
@@ -1805,8 +1799,6 @@
   font-size: var(--font-md);
   line-height: var(--line-relaxed);
 }
-
-/* EQUIPE */
 
 .teamSection {
   position: relative;
@@ -2477,8 +2469,6 @@
   cursor: not-allowed;
 }
 
-/* FAZER SUA PARTE */
-
 .sharedPurpose {
   padding:
     clamp(6rem, 10vw, 9rem)
@@ -2934,8 +2924,6 @@
   line-height: var(--line-relaxed);
 }
 
-/* FINAL */
-
 .finalSection {
   padding:
     clamp(6rem, 10vw, 10rem)
@@ -3144,8 +3132,6 @@
 
   font-size: var(--font-h4);
 }
-
-/* ANIMAÇÕES */
 
 @keyframes heroContentEnter {
   from {
@@ -3550,10 +3536,7 @@
   }
 
   .hero {
-    padding:
-      4rem
-      0
-      5rem;
+    padding: 4rem 0 5rem;
   }
 
   .heroInner {
@@ -3569,32 +3552,80 @@
     order: 1;
   }
 
-  .heroVisualLeft {
+  .heroVisualLeft,
+  .heroVisualRight {
     order: 2;
 
     width: min(100%, 350px);
-    min-height: 700px;
+    min-height: auto;
 
     margin: 0 auto;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 1.1rem;
   }
 
   .heroVisualRight {
     order: 3;
+  }
 
-    width: min(100%, 350px);
-    min-height: 700px;
+  .noteConnector {
+    display: none;
+  }
 
-    margin: 0 auto;
+  .storyNote {
+    position: static;
+
+    transform: none !important;
+  }
+
+  .leftMainNote,
+  .leftMiddleNote,
+  .leftBottomNote,
+  .rightTopNote,
+  .rightMiddleNote,
+  .rightBottomNote {
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+
+    width: 100%;
+    min-height: auto;
+  }
+
+  .leftMainNote {
+    padding: 1.4rem 1.3rem 1.4rem 3.6rem;
+  }
+
+  .storyNoteCompact {
+    padding: 1.4rem 1.3rem 1.4rem 3.8rem;
+  }
+
+  .storyNoteWide {
+    padding: 1.6rem 1.1rem 1.1rem 3.6rem;
+  }
+
+  .storyNoteTopRight {
+    padding: 1.4rem 1.2rem 1.2rem 3.2rem;
+  }
+
+  .storyNoteRightMiddle {
+    padding: 1.7rem 1.1rem 1.2rem 3.8rem;
+  }
+
+  .storyNoteRightBottom {
+    padding: 1.6rem 1.2rem 1.2rem 3.8rem;
   }
 
   .heroContent h1 {
-    font-size:
-      var(--font-display-small);
+    font-size: var(--font-display-small);
   }
 
   .heroContent > p {
-    line-height:
-      var(--line-relaxed);
+    line-height: var(--line-relaxed);
   }
 
   .desktopBreak {
@@ -3637,20 +3668,11 @@
     width: 184px;
     min-height: 72px;
 
-    padding:
-      0.68rem
-      0.72rem;
+    padding: 0.68rem 0.72rem;
 
     gap: 0.58rem;
 
-    offset-path:
-      ellipse(
-        43%
-        31%
-        at
-        50%
-        40%
-      );
+    offset-path: ellipse(43% 31% at 50% 40%);
   }
 
   .contributionIcon {
@@ -3704,9 +3726,14 @@
 
 @media (max-width: 520px) {
   .sectionHeader h2,
-  .sharedPurposeText h2,
-  .finalCard h2 {
+  .sharedPurposeText h2 {
     font-size: var(--font-4xl);
+  }
+
+  .finalCard h2 {
+    font-size: var(--font-2xl);
+
+    line-height: var(--line-tight);
   }
 
   .heroContent h1 {
@@ -3716,60 +3743,22 @@
   .heroEyebrow {
     min-height: 36px;
 
-    font-size:
-      var(--font-label-small);
+    font-size: var(--font-label-small);
   }
 
   .heroVisualLeft,
   .heroVisualRight {
     width: min(100%, 340px);
-    min-height: 680px;
 
     margin-bottom: 0;
 
     transform: none;
   }
 
-  .leftMainNote {
-    left: 14px;
-
-    width: 290px;
-
-    padding-left: 3.8rem;
-  }
-
-  .leftMiddleNote {
-    right: 4px;
-
-    width: 245px;
-  }
-
-  .leftBottomNote,
-  .rightBottomNote {
-    bottom: -22px;
-    left: 5px;
-
-    width: calc(100% - 10px);
-  }
-
-  .rightTopNote {
-    left: 18px;
-
-    width: 290px;
-  }
-
-  .rightMiddleNote {
-    right: 0;
-
-    width: 310px;
-  }
-
   .storyPanel {
     min-height: auto;
 
-    padding:
-      2rem
-      1.2rem;
+    padding: 2rem 1.2rem;
   }
 
   .storyPanel h3 {
@@ -3785,10 +3774,7 @@
   }
 
   .memberContent {
-    padding:
-      1.7rem
-      1.05rem
-      1.2rem;
+    padding: 1.7rem 1.05rem 1.2rem;
   }
 
   .memberSocials {
@@ -3798,10 +3784,7 @@
   .memberSocials > span {
     width: 100%;
 
-    margin:
-      0.35rem
-      0
-      0;
+    margin: 0.35rem 0 0;
   }
 
   .contributionVisual {
@@ -3829,10 +3812,7 @@
     width: 100%;
     min-height: 390px;
 
-    padding:
-      0
-      0
-      5.5rem;
+    padding: 0;
 
     transform: none;
   }
@@ -3847,7 +3827,16 @@
   }
 
   .contributionMessage {
-    width: min(100%, 290px);
+    position: static;
+
+    left: auto;
+    bottom: auto;
+
+    width: 100%;
+
+    margin-top: 1rem;
+
+    transform: none;
   }
 
   .contributionTag {
@@ -3869,108 +3858,229 @@
   }
 
   .finalCard {
-    padding:
-      3rem
-      1.1rem;
+    padding: 3rem 1.1rem;
+  }
+
+  .finalIcon {
+    width: 54px;
+    height: 54px;
+  }
+
+  .finalIcon svg {
+    width: 24px;
+    height: 24px;
   }
 }
-
-@media (
-  prefers-reduced-motion:
-  reduce
-) {
+/* ==================================================
+   RESPONSIVE HARDENING — sobre
+   ================================================== */
+@media (max-width: 760px) {
+  .aboutPage,
+  .hero,
+  .heroInner,
   .heroContent,
   .heroVisualLeft,
   .heroVisualRight,
-  .projectPaper,
-  .ideaPaper,
-  .diaryPaperOne,
-  .diaryPaperTwo,
-  .congCard,
-  .heroMascot,
-  .heroSparkleOne,
-  .heroSparkleTwo,
-  .scrollIndicator,
+  .storyLayout,
+  .storyTimeline,
   .storyPanel,
-  .transformationArrow svg,
-  .contributionTag,
-  .bigCong,
-  .centerSparkleOne,
-  .centerSparkleTwo {
-    animation: none;
+  .transitionContent,
+  .transformation,
+  .teamGrid,
+  .memberCard,
+  .sharedPurposeInner,
+  .contributionVisual,
+  .finalCard {
+    min-width: 0;
+    max-width: 100%;
   }
 
-  .developmentTag {
-    offset-distance: 0%;
+  .hero {
+    padding: 3.25rem 12px 4rem;
+    overflow: hidden;
   }
 
-  .designTag {
-    offset-distance: 16.666%;
+  .heroInner {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "content"
+      "left"
+      "right";
+    gap: 1.5rem;
   }
 
-  .researchTag {
-    offset-distance: 33.333%;
+  .heroContent {
+    grid-area: content;
+    width: 100%;
+    text-align: center;
   }
 
-  .documentationTag {
-    offset-distance: 50%;
+  .heroContent h1 {
+    font-size: clamp(2.2rem, 10vw, 3.25rem);
+    line-height: 1.03;
   }
 
-  .communicationTag {
-    offset-distance: 66.666%;
-  }
-
-  .managementTag {
-    offset-distance: 83.333%;
-  }
-
-  .rotatingWords {
-    min-height: auto;
-  }
-
-  .rotatingWords i {
-    position: static;
-
+  .desktopBreak {
     display: none;
   }
 
-  .rotatingWords i:first-child {
-    display: inline;
-
-    opacity: 1;
+  .heroContent > p {
+    max-width: 40rem;
+    margin-inline: auto;
+    font-size: var(--font-sm);
   }
 
-  .reveal {
-    opacity: 1;
+  .heroActions {
+    justify-content: center;
+  }
 
+  .heroVisualLeft,
+  .heroVisualRight {
+    width: min(100%, 430px);
+    justify-self: center;
+  }
+
+  .heroVisualLeft {
+    grid-area: left;
+  }
+
+  .heroVisualRight {
+    grid-area: right;
+  }
+
+  .storySection,
+  .teamSection,
+  .sharedPurpose,
+  .finalSection {
+    padding-inline: 12px;
+  }
+
+  .storyLayout {
+    gap: 1rem;
+  }
+
+  .storyTimeline {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  .timelineButton {
+    width: 100%;
+    min-width: 0;
+    padding: 0.85rem 1rem;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .timelineText {
+    min-width: 0;
+  }
+
+  .storyPanel {
+    width: 100%;
+    padding: 1.25rem;
     transform: none;
+  }
 
-    transition: none;
+  .storyPanelTop {
+    align-items: flex-start;
+  }
+
+  .transitionContent {
+    width: 100%;
+  }
+
+  .transformation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.8rem;
+  }
+
+  .transformationArrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+
+  .teamGrid {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .memberCard,
+  .memberCard:hover,
+  .memberCard:nth-child(1),
+  .memberCard:nth-child(2),
+  .memberCard:nth-child(3) {
+    width: 100%;
+    transform: none;
+  }
+
+  .sharedPurposeInner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .sharedPurposeText {
+    text-align: center;
+  }
+
+  .contributionVisual {
+    width: min(100%, 520px);
+    margin-inline: auto;
+  }
+
+  .finalCard {
+    padding: 2.5rem 1.2rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .heroActions,
+  .finalActions {
+    width: 100%;
+    flex-direction: column;
   }
 
   .primaryButton,
   .secondaryButton,
-  .timelineButton,
-  .timelineMarker,
-  .memberCard,
-  .memberPhoto img,
-  .memberToggle,
-  .memberToggle svg,
-  .memberDetails,
-  .memberSocials a {
-    transition: none;
+  .finalActions a,
+  .finalActions button {
+    width: 100%;
   }
 
-  .primaryButton:hover,
-  .secondaryButton:hover,
-  .timelineButton:hover,
-  .timelineButtonActive,
-  .memberCard:hover,
-  .memberCard:nth-child(1):hover,
-  .memberCard:nth-child(2):hover,
-  .memberCard:nth-child(3):hover,
-  .memberToggle:hover,
-  .memberSocials a:hover {
-    transform: none;
+  .heroVisualLeft,
+  .heroVisualRight {
+    width: 100%;
+  }
+
+  .storyPanel {
+    padding: 1rem;
+  }
+
+  .storyPanelTop {
+    gap: 0.65rem;
+  }
+
+  .storyPanel h3 {
+    overflow-wrap: anywhere;
+  }
+
+  .memberCard {
+    border-radius: 18px;
+  }
+
+  .memberContent {
+    padding-inline: 1rem;
+  }
+
+  .contributionVisual {
+    min-height: 430px;
+    transform: scale(0.88);
+    transform-origin: top center;
+    margin-bottom: -45px;
   }
 }
