@@ -1,0 +1,31 @@
+{
+  "name": "cong-backend",
+  "version": "1.0.0",
+  "description": "Backend for the CONG Platform",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "pg": "^8.23.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^26.2.0",
+    "@types/pg": "^8.21.0",
+    "supabase": "^2.114.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}

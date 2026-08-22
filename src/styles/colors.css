@@ -1,0 +1,486 @@
+:root {
+  /* ==================================================
+     CORES BÁSICAS
+     ================================================== */
+
+  --color-transparent: transparent;
+
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-white-rgb: 255 255 255;
+  --color-black-rgb: 0 0 0;
+
+  /* ==================================================
+     AZUL PRINCIPAL
+     ================================================== */
+
+  --color-primary-50: #edf4ff;
+  --color-primary-100: #dceaff;
+  --color-primary-200: #b7cdf1;
+  --color-primary-300: #8fb5ee;
+  --color-primary-400: #5d9ce8;
+  --color-primary-500: #3477dc;
+  --color-primary-600: #1366c4;
+  --color-primary-700: #0d4a90;
+  --color-primary-800: #0b386c;
+  --color-primary-900: #07284f;
+  --color-primary-950: #041a35;
+
+  --color-primary-light: #5d9ce8;
+  --color-primary: #1366c4;
+  --color-primary-dark: #0d4a90;
+
+  --color-primary-light-rgb: 93 156 232;
+  --color-primary-rgb: 19 102 196;
+  --color-primary-dark-rgb: 13 74 144;
+
+  --color-blue-vivid: #075be8;
+  --color-blue-strong: #2864d7;
+  --color-blue-medium: #3567a5;
+  --color-blue-soft: #edf4ff;
+  --color-blue-pale: #f8fbff;
+  --color-blue-border: #aec8e7;
+
+  --color-blue-vivid-rgb: 7 91 232;
+  --color-blue-strong-rgb: 40 100 215;
+
+  /* ==================================================
+     VERDE SECUNDÁRIO
+     ================================================== */
+
+  --color-secondary-50: #edf8f1;
+  --color-secondary-100: #dcefcf;
+  --color-secondary-200: #b7dfaf;
+  --color-secondary-300: #9ccdb0;
+  --color-secondary-400: #4cbf85;
+  --color-secondary-500: #2d7156;
+  --color-secondary-600: #04523c;
+  --color-secondary-700: #033b2b;
+  --color-secondary-800: #022c21;
+  --color-secondary-900: #011f17;
+  --color-secondary-950: #01130e;
+
+  --color-secondary-light: #4cbf85;
+  --color-secondary: #04523c;
+  --color-secondary-dark: #033b2b;
+
+  --color-secondary-light-rgb: 76 191 133;
+  --color-secondary-rgb: 4 82 60;
+  --color-secondary-dark-rgb: 3 59 43;
+
+  --color-green-vivid: #58a61d;
+  --color-green-bright: #2fb55f;
+  --color-green-strong: #397956;
+  --color-green-medium: #4f861f;
+  --color-green-soft: #edf7df;
+  --color-green-pale: #f2faea;
+  --color-green-border: #b7dfaf;
+
+  --color-green-vivid-rgb: 88 166 29;
+  --color-green-bright-rgb: 47 181 95;
+
+  /* ==================================================
+     AMARELO DE DESTAQUE
+     ================================================== */
+
+  --color-accent-50: #fff8e6;
+  --color-accent-100: #fff2c5;
+  --color-accent-200: #ffe39a;
+  --color-accent-300: #ffd170;
+  --color-accent-400: #ffc639;
+  --color-accent-500: #fdb410;
+  --color-accent-600: #d99f19;
+  --color-accent-700: #b67f02;
+  --color-accent-800: #a86f00;
+  --color-accent-900: #6f4a00;
+  --color-accent-950: #402a00;
+
+  --color-accent-light: #ffc639;
+  --color-accent: #f7b534;
+  --color-accent-dark: #b67f02;
+
+  --color-accent-light-rgb: 255 198 57;
+  --color-accent-rgb: 247 181 52;
+  --color-accent-dark-rgb: 182 127 2;
+
+  --color-accent-soft: #ffe39a;
+  --color-accent-pale: #fff2c5;
+  --color-accent-muted: #ffd170;
+  --color-accent-note: #f8bd36;
+  --color-accent-shadow: #d4a323;
+
+  --color-yellow-soft: #fff8e6;
+  --color-yellow-pale: #fff6c9;
+  --color-yellow-border: #f4dfaa;
+  --color-yellow-strong: #f0a500;
+  --color-yellow-dark: #a86f00;
+
+  /* ==================================================
+     AZUL-MARINHO
+     ================================================== */
+
+  --color-navy-50: #f3f8ff;
+  --color-navy-100: #e7eff5;
+  --color-navy-200: #bfd3e8;
+  --color-navy-300: #8298a9;
+  --color-navy-400: #60758c;
+  --color-navy-500: #476b97;
+  --color-navy-600: #315b82;
+  --color-navy-700: #16345f;
+  --color-navy-800: #102d4b;
+  --color-navy-900: #091c30;
+  --color-navy-950: #051220;
+
+  --color-navy-light: #476b97;
+  --color-navy: #091c30;
+  --color-navy-dark: #051220;
+
+  --color-navy-light-rgb: 71 107 151;
+  --color-navy-rgb: 9 28 48;
+  --color-navy-dark-rgb: 5 18 32;
+
+  /* ==================================================
+     CINZAS E NEUTROS
+     ================================================== */
+
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
+  --color-gray-400: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #404040;
+  --color-gray-800: #262626;
+  --color-gray-900: #171717;
+  --color-gray-950: #0a0a0a;
+
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f0f3f7;
+  --color-slate-200: #e8edf3;
+  --color-slate-300: #cfd7e2;
+  --color-slate-400: #98a2b3;
+  --color-slate-500: #667085;
+  --color-slate-600: #536074;
+  --color-slate-700: #475467;
+  --color-slate-800: #344054;
+  --color-slate-900: #111820;
+
+  --color-gray-100-rgb: 245 245 245;
+  --color-gray-200-rgb: 229 229 229;
+  --color-gray-300-rgb: 212 212 212;
+  --color-gray-400-rgb: 163 163 163;
+  --color-gray-500-rgb: 115 115 115;
+  --color-gray-600-rgb: 82 82 82;
+  --color-gray-700-rgb: 64 64 64;
+  --color-gray-900-rgb: 23 23 23;
+
+  /* ==================================================
+     ROXO
+     ================================================== */
+
+  --color-purple-50: #faf7ff;
+  --color-purple-100: #f1e9ff;
+  --color-purple-200: #eadcff;
+  --color-purple-300: #dac4ee;
+  --color-purple-400: #9b5ad9;
+  --color-purple-500: #8255c7;
+  --color-purple-600: #7851b8;
+  --color-purple-700: #714b9c;
+  --color-purple-800: #5b3c80;
+  --color-purple-900: #432b60;
+
+  --color-purple: #8255c7;
+  --color-purple-light: #9b5ad9;
+  --color-purple-dark: #714b9c;
+  --color-purple-soft: #f1e9ff;
+  --color-purple-pale: #faf7ff;
+
+  --color-purple-rgb: 130 85 199;
+
+  /* ==================================================
+     VERMELHO E ERRO
+     ================================================== */
+
+  --color-red-50: #fff6f6;
+  --color-red-100: #fff1f2;
+  --color-red-200: #ffe1e4;
+  --color-red-300: #ffd8d8;
+  --color-red-400: #de5858;
+  --color-red-500: #d84b4b;
+  --color-red-600: #c63f48;
+  --color-red-700: #a9323b;
+  --color-red-800: #822831;
+  --color-red-900: #5d1b22;
+
+  --color-danger-light: #de5858;
+  --color-danger: #c63f48;
+  --color-danger-dark: #a9323b;
+  --color-danger-soft: #fff1f2;
+  --color-danger-pale: #fff6f6;
+
+  --color-danger-rgb: 198 63 72;
+
+  /* ==================================================
+     VERDE-AZULADO
+     ================================================== */
+
+  --color-teal-50: #eefdf9;
+  --color-teal-100: #e3f7f3;
+  --color-teal-200: #cbe9dc;
+  --color-teal-300: #9fcbb8;
+  --color-teal-400: #3fa68f;
+  --color-teal-500: #0f8a78;
+  --color-teal-600: #1d7a68;
+  --color-teal-700: #176252;
+  --color-teal-800: #124b40;
+  --color-teal-900: #0b342d;
+
+  --color-teal: #0f8a78;
+  --color-teal-light: #3fa68f;
+  --color-teal-dark: #1d7a68;
+  --color-teal-soft: #e3f7f3;
+
+  --color-teal-rgb: 15 138 120;
+
+  /* ==================================================
+     ROSA
+     ================================================== */
+
+  --color-pink-50: #fff7fa;
+  --color-pink-100: #ffe9f0;
+  --color-pink-200: #ffd5e2;
+  --color-pink-400: #d24f78;
+  --color-pink-500: #cf4e78;
+  --color-pink-600: #b83f68;
+
+  --color-pink: #cf4e78;
+  --color-pink-soft: #ffe9f0;
+
+  --color-pink-rgb: 207 78 120;
+
+  /* ==================================================
+     LARANJA
+     ================================================== */
+
+  --color-orange-50: #fff8f1;
+  --color-orange-100: #fff0e1;
+  --color-orange-300: #f4b47f;
+  --color-orange-500: #c26417;
+  --color-orange-600: #a45012;
+
+  --color-orange: #c26417;
+  --color-orange-soft: #fff0e1;
+
+  --color-orange-rgb: 194 100 23;
+
+  /* ==================================================
+     CORES SEMÂNTICAS
+     ================================================== */
+
+  --color-success: var(--color-secondary-light);
+  --color-success-strong: var(--color-secondary);
+  --color-success-soft: var(--color-green-pale);
+
+  --color-warning: var(--color-accent);
+  --color-warning-strong: var(--color-accent-dark);
+  --color-warning-soft: var(--color-accent-pale);
+
+  --color-error: var(--color-danger);
+  --color-error-strong: var(--color-danger-dark);
+  --color-error-soft: var(--color-danger-soft);
+
+  --color-info: var(--color-primary);
+  --color-info-strong: var(--color-primary-dark);
+  --color-info-soft: var(--color-primary-50);
+
+  /* ==================================================
+     SUPERFÍCIES
+     ================================================== */
+
+  --color-paper: #fffef9;
+  --color-paper-warm: #fffdf8;
+  --color-paper-soft: #fffdf6;
+
+  --color-page-background: #f3f1eb;
+  --color-page-background-soft: #f8f6ef;
+
+  --color-surface: var(--color-white);
+  --color-surface-soft: #fafafa;
+  --color-surface-muted: #f5f7fa;
+  --color-surface-raised: #fbfdff;
+  --color-surface-dark: var(--color-navy);
+
+  --color-overlay: rgb(var(--color-navy-rgb) / 72%);
+
+  --color-overlay-soft: rgb(var(--color-navy-rgb) / 48%);
+
+  /* ==================================================
+     TEXTOS
+     ================================================== */
+
+  --color-ink: #17191d;
+  --color-ink-strong: #111820;
+  --color-muted: #5f636b;
+  --color-text-subtle: #777b82;
+  --color-text-disabled: #98a2b3;
+  --color-text-inverse: var(--color-white);
+
+  --color-code-text: #17263d;
+  --color-code-background: #f3f8ff;
+
+  --color-ink-rgb: 23 25 29;
+  --color-grid-rgb: 31 34 38;
+
+  /* ==================================================
+     BORDAS E DIVISORES
+     ================================================== */
+
+  --color-border-light: #f0f3f7;
+  --color-border: #e5e9ef;
+  --color-border-medium: #d4dbe4;
+  --color-border-strong: #b7c2cf;
+  --color-divider: #e8edf3;
+
+  --color-focus: var(--color-primary);
+  --color-selection: var(--color-accent-soft);
+
+  /* ==================================================
+     CARTÕES E BLOCOS
+     ================================================== */
+
+  --color-card-yellow: #fff0ae;
+  --color-card-blue: #dcecff;
+  --color-card-purple: #eee0ff;
+  --color-card-green: #dff1d2;
+  --color-card-red: #ffe1e4;
+  --color-card-orange: #fff0e1;
+  --color-card-teal: #e3f7f3;
+
+  --color-block-yellow: #ffe58f;
+  --color-block-purple: #e9d8fd;
+  --color-block-green: #c6f6d5;
+  --color-block-blue: #dceaff;
+  --color-block-red: #ffd8d8;
+
+  /* ==================================================
+     CORES DE TECNOLOGIAS
+     ================================================== */
+
+  --color-tech-react: #149eca;
+  --color-tech-typescript: #3178c6;
+  --color-tech-node: #3c873a;
+  --color-tech-postgres: #336791;
+  --color-tech-git: #f05032;
+  --color-tech-github: #181717;
+
+  --color-tech-html: #e34f26;
+  --color-tech-css: #1572b6;
+  --color-tech-javascript: #d9a300;
+
+  /* ==================================================
+     DECORATIVOS
+     ================================================== */
+
+  --color-browser-dot: #d8d8d8;
+
+  --color-decoration-blue: var(--color-primary);
+  --color-decoration-green: var(--color-secondary-light);
+  --color-decoration-yellow: var(--color-accent);
+  --color-decoration-purple: var(--color-purple);
+
+  /* ==================================================
+     TRANSPARÊNCIAS 
+     ================================================== */
+
+  --color-white-95: rgb(var(--color-white-rgb) / 95%);
+
+  --color-white-90: rgb(var(--color-white-rgb) / 90%);
+
+  --color-white-80: rgb(var(--color-white-rgb) / 80%);
+
+  --color-white-60: rgb(var(--color-white-rgb) / 60%);
+
+  --color-black-80: rgb(var(--color-black-rgb) / 80%);
+
+  --color-black-60: rgb(var(--color-black-rgb) / 60%);
+
+  --color-black-40: rgb(var(--color-black-rgb) / 40%);
+
+  --color-black-20: rgb(var(--color-black-rgb) / 20%);
+
+  --color-black-10: rgb(var(--color-black-rgb) / 10%);
+
+  --color-black-05: rgb(var(--color-black-rgb) / 5%);
+
+  --color-ink-15: rgb(var(--color-ink-rgb) / 15%);
+
+  --color-ink-10: rgb(var(--color-ink-rgb) / 10%);
+
+  --color-ink-05: rgb(var(--color-ink-rgb) / 5%);
+
+  --color-primary-20: rgb(var(--color-primary-rgb) / 20%);
+
+  --color-primary-10: rgb(var(--color-primary-rgb) / 10%);
+
+  --color-accent-20: rgb(var(--color-accent-rgb) / 20%);
+
+  --color-accent-10: rgb(var(--color-accent-rgb) / 10%);
+
+  /* ==================================================
+     SOMBRAS BASEADAS NAS CORES GLOBAIS
+     ================================================== */
+
+  --shadow-xs: 0 2px 6px rgb(var(--color-black-rgb) / 4%);
+
+  --shadow-sm: 0 6px 18px rgb(var(--color-black-rgb) / 7%);
+
+  --shadow-md: 0 12px 30px rgb(var(--color-black-rgb) / 10%);
+
+  --shadow-lg: 0 20px 48px rgb(var(--color-black-rgb) / 14%);
+
+  --shadow-xl: 0 30px 80px rgb(var(--color-black-rgb) / 20%);
+
+  --shadow-primary: 0 14px 34px rgb(var(--color-primary-rgb) / 20%);
+
+  --shadow-accent: 0 14px 34px rgb(var(--color-accent-rgb) / 24%);
+
+  --shadow-focus: 0 0 0 4px rgb(var(--color-primary-rgb) / 18%);
+
+  --color-modal-overlay-glow-rgb: 20 33 51;
+  --color-modal-overlay-rgb: 8 16 29;
+
+  --color-paper-sheet: #f4efe2;
+  --color-paper-modal: #fffdf6;
+  --color-paper-ink: #12243d;
+  --color-paper-primary: #2f69c7;
+  --color-paper-primary-dark: #2456a4;
+  --color-paper-muted: #5c6979;
+  --color-paper-clip: #8a93a1;
+
+  --color-paper-rule-rgb: 73 129 213;
+  --color-paper-shadow-rgb: 32 46 64;
+  --color-paper-redline-rgb: 218 84 84;
+  --color-paper-ink-rgb: 18 36 61;
+  --color-paper-accent-rgb: 245 183 46;
+  --color-paper-primary-rgb: 47 105 199;
+  --color-paper-texture-rgb: 20 36 52;
+  --color-paper-hole-rgb: 48 57 68;
+  --color-paper-scratch-rgb: 61 70 82;
+  --color-paper-field-rule-rgb: 32 83 153;
+  --color-paper-gold-rgb: 229 164 23;
+
+  --color-results-paper-line-rgb: 245 120 120;
+
+  --color-results-clipboard-light: #b98b56;
+  --color-results-clipboard-dark: #9b6f40;
+
+  --color-results-tape-rgb: 210 176 124;
+  --color-results-strip-tape-rgb: 93 156 232;
+  --color-details-result-soft-rgb: 223 241 210;
+  --color-card-green-rgb: 223 241 210;
+  --color-card-blue-rgb: 220 236 255;
+  --color-card-yellow-rgb: 255 240 174;
+  --color-card-purple-rgb: 238 224 255;
+}

@@ -1,0 +1,246 @@
+.page {
+  min-height: 100svh;
+  background: var(--color-page-background);
+  color: var(--color-ink);
+}
+
+.topbar {
+  min-height: 76px;
+  padding: 0.9rem clamp(1rem, 4vw, 3.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  width: clamp(116px, 12vw, 166px);
+  height: auto;
+  display: block;
+}
+
+.backButton {
+  min-height: 42px;
+  padding: 0.62rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  color: var(--color-ink);
+  border: 2px solid rgb(var(--color-ink-rgb) / 70%);
+  border-radius: 999px;
+  background: var(--color-paper);
+  font-family: var(--font-body);
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease;
+}
+
+.backButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.backButton:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.backButton svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.content {
+  width: min(100% - 2rem, 680px);
+  margin: 2.5rem auto 0;
+  padding-bottom: 4rem;
+}
+
+.heading {
+  margin-bottom: 1.8rem;
+}
+
+.roleBadge {
+  width: fit-content;
+  margin-bottom: 0.8rem;
+  padding: 0.42rem 0.75rem;
+  display: block;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+}
+
+.heading h1 {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+}
+
+.heading p {
+  max-width: 560px;
+  margin: 0.8rem 0 0;
+  color: rgb(var(--color-ink-rgb) / 72%);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+.form {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  display: grid;
+  gap: 1.25rem;
+  border: 1px solid rgb(var(--color-ink-rgb) / 10%);
+  border-radius: 24px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-sm);
+}
+
+.field,
+.fieldRow {
+  min-width: 0;
+}
+
+.field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 1rem;
+}
+
+.field label {
+  font-family: var(--font-body);
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.8rem 0.9rem;
+  box-sizing: border-box;
+  color: var(--color-ink);
+  border: 1.5px solid rgb(var(--color-ink-rgb) / 20%);
+  border-radius: 14px;
+  outline: none;
+  background: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.field textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-rgb) / 12%);
+}
+
+.fieldHint {
+  color: rgb(var(--color-ink-rgb) / 58%);
+  font-family: var(--font-body);
+  font-size: var(--font-xs);
+}
+
+.error {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgb(190 35 35 / 10%);
+  color: rgb(150 25 25);
+  font-family: var(--font-body);
+  font-size: var(--font-sm);
+}
+
+.actions {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 46px;
+  padding: 0.72rem 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.primaryButton {
+  color: var(--color-white);
+  border: 0;
+  background: var(--color-primary-dark);
+}
+
+.secondaryButton {
+  color: var(--color-ink);
+  border: 1.5px solid rgb(var(--color-ink-rgb) / 22%);
+  background: transparent;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    min-height: 66px;
+    padding: 0.72rem 0.9rem;
+  }
+
+  .content {
+    margin-top: 1.5rem;
+  }
+
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+}

@@ -1,0 +1,543 @@
+.detailsSection {
+  position: relative;
+  isolation: isolate;
+
+  width: 100%;
+  padding: clamp(5rem, 8vw, 8rem) 1.5rem;
+
+  overflow: hidden;
+
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+
+  background-image:
+    linear-gradient(
+      rgb(var(--color-grid-rgb) / 4.5%) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgb(var(--color-grid-rgb) / 4.5%) 1px,
+      transparent 1px
+    );
+
+  background-size: 34px 34px;
+}
+
+.detailsSection *,
+.detailsSection *::before,
+.detailsSection *::after {
+  box-sizing: border-box;
+}
+
+.detailsSection::before {
+  content: "";
+
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+
+  opacity: 0.06;
+  pointer-events: none;
+
+  background-image: url("data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.15'/%3E%3C/svg%3E");
+}
+
+.sectionContainer {
+  width: min(100%, 1320px);
+  margin: 0 auto;
+}
+
+.sectionHeading {
+  position: relative;
+
+  max-width: 820px;
+  margin: 0 auto clamp(3.5rem, 6vw, 5.5rem);
+
+  text-align: center;
+}
+
+.sectionKicker {
+  display: inline-block;
+
+  margin-bottom: 0.85rem;
+
+  color: var(--color-primary);
+
+  font-family: var(--font-body);
+  font-size: var(--font-details-kicker);
+  font-weight: var(--font-extrabold);
+  letter-spacing: var(--tracking-details-kicker);
+  text-transform: uppercase;
+}
+
+.sectionHeading h2 {
+  position: relative;
+
+  display: inline-block;
+
+  margin: 0;
+
+  color: var(--color-navy);
+
+  font-family: var(--font-brand);
+  font-size: var(--font-details-title);
+  font-weight: var(--font-regular);
+  line-height: var(--line-details-title);
+}
+
+.sectionHeading h2::after {
+  content: "";
+
+  position: absolute;
+
+  right: 11%;
+  bottom: -0.22em;
+  left: 20%;
+
+  height: 3px;
+
+  background: var(--color-accent);
+
+  border-radius: 999px;
+
+  transform: rotate(-0.7deg);
+}
+
+.sectionHeading p {
+  max-width: 760px;
+
+  margin: 1.65rem auto 0;
+
+  color: var(--color-muted);
+
+  font-family: var(--font-body);
+  font-size: var(--font-details-description);
+  line-height: var(--line-details-description);
+}
+
+/* =====================================================
+   1. DO PRIMEIRO ACESSO À OPERAÇÃO
+===================================================== */
+
+/* =====================================================
+   2. O SISTEMA NASCE EM CAMADAS
+===================================================== */
+
+.layersSection {
+  padding-top: clamp(5rem, 7vw, 7rem);
+}
+
+.layersLayout {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(250px, 310px);
+
+  align-items: stretch;
+
+  gap: clamp(2rem, 4vw, 4rem);
+}
+
+.layersBoard {
+  position: relative;
+
+  min-height: 475px;
+  padding: clamp(1.4rem, 2.5vw, 2.2rem);
+
+  background:
+    rgb(var(--color-white-rgb) / 92%);
+
+  border:
+    1.5px solid
+    rgb(var(--color-ink-rgb) / 12%);
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 18px 34px
+      rgb(var(--color-ink-rgb) / 7%),
+    8px 10px 0
+      rgb(var(--color-ink-rgb) / 3%);
+
+  transform: rotate(-0.25deg);
+}
+
+.boardTapeLeft,
+.boardTapeRight {
+  position: absolute;
+  z-index: 5;
+
+  width: 64px;
+  height: 20px;
+
+  background:
+    rgb(var(--color-accent-rgb) / 30%);
+
+  border:
+    1px solid
+    rgb(var(--color-black-rgb) / 4%);
+}
+
+.boardTapeLeft {
+  left: 30px;
+  bottom: -10px;
+
+  transform: rotate(7deg);
+}
+
+.boardTapeRight {
+  top: -10px;
+  right: 44px;
+
+  transform: rotate(-6deg);
+}
+
+.layersStack {
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.72rem;
+}
+
+.layerRow {
+  min-height: 82px;
+  padding: 0.82rem;
+
+  display: grid;
+  grid-template-columns:
+    145px
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 1rem;
+
+  border:
+    1px solid
+    rgb(var(--color-ink-rgb) / 8%);
+
+  border-radius: 14px;
+}
+
+.layerGreen {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(var(--color-card-green-rgb) / 92%) 0 145px,
+      rgb(var(--color-white-rgb) / 82%) 145px 100%
+    );
+}
+
+.layerBlue {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(var(--color-card-blue-rgb) / 92%) 0 145px,
+      rgb(var(--color-white-rgb) / 82%) 145px 100%
+    );
+}
+
+.layerYellow {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(var(--color-card-yellow-rgb) / 92%) 0 145px,
+      rgb(var(--color-white-rgb) / 82%) 145px 100%
+    );
+}
+
+.layerPurple {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(var(--color-card-purple-rgb) / 92%) 0 145px,
+      rgb(var(--color-white-rgb) / 82%) 145px 100%
+    );
+}
+
+.layerLabel {
+  padding-left: 0.35rem;
+}
+
+.layerLabel span,
+.layerLabel strong {
+  display: block;
+}
+
+.layerLabel span {
+  margin-bottom: 0.15rem;
+
+  color: var(--color-text-subtle);
+
+  font-size: var(--font-details-layer-label);
+  font-weight: var(--font-extrabold);
+  letter-spacing: var(--tracking-details-layer-label);
+  text-transform: uppercase;
+}
+
+.layerLabel strong {
+  color: var(--color-navy);
+
+  font-family: var(--font-brand);
+  font-size: var(--font-details-layer-title);
+  font-weight: var(--font-regular);
+}
+
+.layerItems {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(85px, 1fr));
+
+  gap: 0.58rem;
+}
+
+.layerItem {
+  min-height: 54px;
+  padding: 0.48rem 0.45rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.32rem;
+
+  color: var(--color-navy);
+  background:
+    rgb(var(--color-white-rgb) / 86%);
+
+  border:
+    1px solid
+    rgb(var(--color-ink-rgb) / 7%);
+
+  border-radius: 10px;
+
+  text-align: center;
+}
+
+.layerItem span {
+  font-size: var(--font-details-layer-item);
+  line-height: var(--line-details-layer-item);
+}
+
+.layerNotes {
+  position: relative;
+
+  padding: 1.35rem 1.15rem;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  gap: 1rem;
+
+  background:
+    rgb(var(--color-white-rgb) / 82%);
+
+  border:
+    1.5px dashed
+    rgb(var(--color-ink-rgb) / 18%);
+
+  border-radius: 16px;
+}
+
+.notesClip {
+  position: absolute;
+
+  top: -18px;
+  right: 24px;
+
+  width: 18px;
+  height: 48px;
+
+  border:
+    2px solid
+    rgb(var(--color-ink-rgb) / 44%);
+
+  border-bottom: none;
+  border-radius: 9px 9px 0 0;
+
+  transform: rotate(11deg);
+}
+
+.notesClip::after {
+  content: "";
+
+  position: absolute;
+
+  top: 5px;
+  left: 4px;
+
+  width: 7px;
+  height: 34px;
+
+  border:
+    1.5px solid
+    rgb(var(--color-ink-rgb) / 30%);
+
+  border-bottom: none;
+  border-radius: 7px 7px 0 0;
+}
+
+.layerNote {
+  position: relative;
+
+  padding: 1rem 1rem 1rem 1.15rem;
+
+  border:
+    1px solid
+    rgb(var(--color-ink-rgb) / 8%);
+
+  border-radius: 12px;
+}
+
+.layerNote::before {
+  content: "";
+
+  position: absolute;
+
+  top: 1rem;
+  bottom: 1rem;
+  left: 0.58rem;
+
+  width: 3px;
+
+  border-radius: 999px;
+}
+
+.noteBlue {
+  background:
+    rgb(var(--color-card-blue-rgb) / 58%);
+}
+
+.noteBlue::before {
+  background: var(--color-primary-light);
+}
+
+.noteYellow {
+  background:
+    rgb(var(--color-card-yellow-rgb) / 58%);
+}
+
+.noteYellow::before {
+  background: var(--color-accent);
+}
+
+.noteGreen {
+  background:
+    rgb(var(--color-card-green-rgb) / 58%);
+}
+
+.noteGreen::before {
+  background: var(--color-secondary-light);
+}
+
+.layerNote strong {
+  display: block;
+
+  margin-bottom: 0.34rem;
+
+  color: var(--color-navy);
+
+  font-family: var(--font-brand);
+  font-size: var(--font-details-layer-note-title);
+  font-weight: var(--font-regular);
+}
+
+.layerNote p {
+  margin: 0;
+
+  color: var(--color-muted);
+
+  font-size: var(--font-details-layer-note-body);
+  line-height: var(--line-details-layer-note);
+}
+
+/* =====================================================
+   3. NA PRÁTICA: ENTREGA SOCIAL
+===================================================== */
+
+/* =====================================================
+   RESPONSIVIDADE
+===================================================== */
+
+@media (max-width: 1100px) {
+  .layersLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .layerNotes {
+    display: grid;
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .detailsSection {
+    padding: 4.5rem 1rem;
+
+    background-size: 28px 28px;
+  }
+
+  .sectionHeading {
+    margin-bottom: 3.2rem;
+  }
+
+  .layerRow {
+    grid-template-columns: 1fr;
+
+    gap: 0.75rem;
+  }
+
+  .layerGreen,
+  .layerBlue,
+  .layerYellow,
+  .layerPurple {
+    background:
+      rgb(var(--color-white-rgb) / 88%);
+  }
+
+  .layerLabel {
+    width: fit-content;
+    padding: 0.65rem 0.8rem;
+
+    border-radius: 9px;
+  }
+
+  .layerGreen .layerLabel {
+    background: var(--color-card-green);
+  }
+
+  .layerBlue .layerLabel {
+    background: var(--color-card-blue);
+  }
+
+  .layerYellow .layerLabel {
+    background: var(--color-card-yellow);
+  }
+
+  .layerPurple .layerLabel {
+    background: var(--color-card-purple);
+  }
+
+  .layerItems {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .layerNotes {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .sectionHeading h2 {
+    font-size: var(--font-details-title-mobile);
+  }
+
+  .layerItems {
+    grid-template-columns: 1fr;
+  }
+}

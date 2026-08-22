@@ -1,0 +1,483 @@
+.section {
+  --role-paper: var(--color-page-background);
+  --role-surface: var(--color-paper);
+  --role-ink: var(--color-ink);
+  --role-muted: var(--color-muted);
+  --role-primary: var(--color-primary);
+  --role-primary-soft: var(--color-primary-100);
+  --role-accent: var(--color-accent);
+  --role-line: rgb(var(--color-ink-rgb) / 16%);
+  --role-shadow: var(--shadow-md);
+
+  position: relative;
+  min-height: calc(172svh - var(--header-height, 88px));
+  color: var(--role-ink);
+  background: var(--role-paper);
+}
+
+.section *,
+.section *::before,
+.section *::after {
+  box-sizing: border-box;
+}
+
+.stickyStage {
+  position: sticky;
+  top: 0;
+  isolation: isolate;
+  width: 100%;
+  min-height: calc(100svh - var(--header-height, 88px));
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--role-paper);
+}
+
+.gridBackground {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background-image:
+    linear-gradient(var(--role-line) 1px, var(--color-transparent) 1px),
+    linear-gradient(90deg, var(--role-line) 1px, var(--color-transparent) 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(
+    to bottom,
+    var(--color-black),
+    rgb(var(--color-black-rgb) / 65%),
+    var(--color-transparent)
+  );
+}
+
+.gridBackground::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      rgb(var(--color-white-rgb) / 88%),
+      rgb(var(--color-white-rgb) / 45%) 40%,
+      var(--color-transparent) 72%
+    );
+}
+
+.introBlock {
+  position: absolute;
+  top: 27%;
+  left: 50%;
+  z-index: 3;
+  width: min(92vw, 860px);
+  text-align: center;
+  transform:
+    translateX(-50%)
+    translateY(calc(var(--role-scroll-progress) * -120px));
+  opacity: calc(1 - var(--role-scroll-progress) * 1.55);
+  transition: opacity 120ms linear;
+  pointer-events: none;
+}
+
+.typewriter,
+.prompt {
+  margin: 0;
+  color: var(--role-ink);
+  font-family: var(--font-mono);
+  font-size: clamp(var(--font-lg), 2.35vw, var(--font-4xl));
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-wide);
+  line-height: var(--line-compact);
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.12em;
+  height: 1em;
+  margin-left: 0.12em;
+  vertical-align: -0.08em;
+  background: var(--role-ink);
+  animation: cursorBlink 680ms steps(2, end) infinite;
+}
+
+.brandTitle {
+  margin: var(--gap-small, 0.5rem) 0 0;
+  color: var(--role-primary);
+  font-family: var(--font-brand);
+  font-size: var(--font-display-large);
+  font-weight: var(--font-extrabold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--line-none);
+}
+
+.mascot {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: -3%;
+  width: clamp(230px, 31vw, 480px);
+  max-height: 52%;
+  object-fit: contain;
+  object-position: center bottom;
+  transform:
+    translateX(-50%)
+    translateY(calc(var(--role-scroll-progress) * 38px))
+    scale(calc(1 - var(--role-scroll-progress) * 0.08));
+  transform-origin: center bottom;
+  filter: drop-shadow(var(--shadow-sm));
+  transition: filter 220ms ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.selectorContent {
+  position: absolute;
+  top: 23%;
+  left: 50%;
+  z-index: 4;
+  width: min(94vw, 1020px);
+  display: grid;
+  justify-items: center;
+  gap: 1.2rem;
+  opacity: 0;
+  transform: translate(-50%, 36px) scale(0.98);
+  transition:
+    opacity 360ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.selectorContentVisible {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  pointer-events: auto;
+}
+
+.promptRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.dropZone {
+  min-width: min(37vw, 360px);
+  min-height: 68px;
+  padding: 0.4rem 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  border-bottom: 4px solid var(--role-accent);
+  background: rgb(var(--color-white-rgb) / 46%);
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.dropZoneActive {
+  border-color: var(--role-primary);
+  background: rgb(var(--color-primary-rgb) / 10%);
+  box-shadow: 0 12px 26px rgb(var(--color-primary-rgb) / 14%);
+  transform: translateY(-4px) scale(1.02);
+}
+
+.dropZoneFilled {
+  justify-content: center;
+}
+
+.placeholder {
+  color: var(--role-muted);
+  font-family: var(--font-mono);
+  font-size: clamp(var(--font-lg), 2.35vw, var(--font-4xl));
+  font-style: italic;
+  font-weight: var(--font-light);
+  line-height: var(--line-compact);
+  white-space: nowrap;
+}
+
+.selectedRole {
+  max-width: 100%;
+  min-height: 48px;
+  padding: 0.55rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  color: var(--color-white);
+  background: var(--role-primary);
+  border: 2px solid var(--role-primary-dark, var(--color-primary-dark));
+  border-radius: 999px;
+  box-shadow: var(--shadow-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-lg);
+  font-weight: var(--font-semibold);
+  cursor: grab;
+  animation: selectedPop 360ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+.selectedRole:active {
+  cursor: grabbing;
+}
+
+.selectedRole svg {
+  width: 1.05em;
+  height: 1.05em;
+  flex: 0 0 auto;
+}
+
+.selectedRole svg:last-child {
+  opacity: 0.72;
+}
+
+.roleBank {
+  position: relative;
+  width: fit-content;
+  max-width: min(92vw, 820px);
+  min-height: 74px;
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 3px dashed var(--role-ink);
+  border-radius: 14px;
+  background: rgb(var(--color-white-rgb) / 72%);
+  box-shadow: var(--role-shadow);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.roleBankActive {
+  border-color: var(--role-primary);
+  background: var(--role-primary-soft);
+  transform: scale(1.015);
+}
+
+.roleOption {
+  --role-delay: calc(var(--role-index) * 80ms);
+
+  padding: 0.52rem 0.66rem;
+  color: var(--role-ink);
+  border: 2px solid var(--color-transparent);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--font-md);
+  font-weight: var(--font-medium);
+  line-height: var(--line-compact);
+  cursor: grab;
+  user-select: none;
+  animation: roleFloat 2.4s ease-in-out var(--role-delay) infinite;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.roleOption span {
+  color: var(--role-primary);
+  font-weight: var(--font-extrabold);
+}
+
+.roleOption:hover,
+.roleOption:focus-visible {
+  color: var(--role-primary-dark, var(--color-primary-dark));
+  background: var(--color-white);
+  border-color: var(--role-ink);
+  outline: none;
+  transform: translateY(-4px) rotate(-1deg);
+  animation-play-state: paused;
+}
+
+.roleOption:active {
+  cursor: grabbing;
+}
+
+.returnHint {
+  width: 100%;
+  color: var(--role-muted);
+  font-family: var(--font-body);
+  font-size: var(--font-xs);
+  text-align: center;
+}
+
+.interactionHint {
+  margin: 0;
+  color: var(--role-muted);
+  font-family: var(--font-body);
+  font-size: var(--font-sm);
+  line-height: var(--line-normal);
+  text-align: center;
+}
+
+.scrollHint {
+  position: absolute;
+  top: 58%;
+  right: clamp(1rem, 4vw, 4rem);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--role-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 360ms ease,
+    transform 360ms ease;
+  pointer-events: none;
+}
+
+.scrollHintVisible {
+  opacity: calc(1 - var(--role-scroll-progress) * 2.2);
+  transform: translateY(0);
+}
+
+.scrollHint svg {
+  width: 1.2rem;
+  animation: arrowBounce 1.5s ease-in-out infinite;
+}
+
+@keyframes cursorBlink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes roleFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes arrowBounce {
+  0%,
+  100% {
+    transform: translateY(-3px);
+  }
+
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@keyframes selectedPop {
+  from {
+    opacity: 0;
+    transform: scale(0.72) rotate(-3deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .section {
+    min-height: calc(160svh - var(--header-height, 88px));
+  }
+
+  .introBlock {
+    top: 22%;
+  }
+
+  .mascot {
+    bottom: -1%;
+    width: clamp(220px, 72vw, 390px);
+    max-height: 43%;
+  }
+
+  .selectorContent {
+    top: 17%;
+    gap: 0.9rem;
+  }
+
+  .promptRow {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .dropZone {
+    width: min(90vw, 500px);
+    min-width: 0;
+    min-height: 58px;
+    justify-content: center;
+  }
+
+  .roleBank {
+    max-width: 90vw;
+    min-height: 68px;
+    padding: 0.65rem;
+  }
+
+  .roleOption {
+    font-size: var(--font-sm);
+  }
+
+  .scrollHint {
+    top: auto;
+    right: auto;
+    bottom: 38%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .scrollHintVisible {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 440px) {
+  .selectorContent {
+    top: 13%;
+  }
+
+  .roleBank {
+    gap: 0.1rem;
+  }
+
+  .roleOption {
+    padding: 0.42rem 0.48rem;
+  }
+
+  .interactionHint {
+    max-width: 88vw;
+    font-size: var(--font-xs);
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .roleOption,
+  .selectedRole {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor,
+  .roleOption,
+  .scrollHint svg,
+  .selectedRole {
+    animation: none;
+  }
+
+  .introBlock,
+  .selectorContent,
+  .dropZone,
+  .roleBank,
+  .scrollHint {
+    transition: none;
+  }
+}

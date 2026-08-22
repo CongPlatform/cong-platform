@@ -1,0 +1,156 @@
+.header {
+  height: 88px;
+  padding: 0 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: var(--color-paper);
+
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+/* ========================
+   LOGO
+======================== */
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  width: auto;
+  height: 58px;
+}
+
+/* ========================
+   NAV
+======================== */
+
+.nav {
+  display: flex;
+
+  gap: 42px;
+}
+
+.link {
+  position: relative;
+
+  min-height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--color-navy);
+
+  font-family: var(--font-brand);
+  font-size: var(--font-md);
+
+  transition: transform 200ms ease;
+}
+
+.link span {
+  position: relative;
+  z-index: 2;
+}
+
+.link:hover {
+  transform: rotate(-1deg);
+}
+
+/* ========================
+   MARCADOR
+======================== */
+
+.marker {
+  position: absolute;
+
+  left: 50%;
+  bottom: -10px;
+
+  width: 110%;
+  height: 14px;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transform: translateX(-50%);
+
+  transition: opacity 200ms ease;
+}
+
+.marker path {
+  fill: none;
+
+  stroke: var(--color-accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+
+  opacity: 0.95;
+}
+
+.link:hover .marker,
+.active .marker {
+  opacity: 1;
+}
+
+/* ========================
+   ACTIONS
+======================== */
+
+.actions {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+}
+
+.login {
+  color: var(--color-navy);
+
+  font-family: var(--font-brand);
+  font-size: var(--font-md);
+}
+
+.signup {
+  height: 44px;
+  padding: 0 18px;
+
+  color: var(--color-white);
+  background: var(--color-navy);
+
+  border-radius: 12px;
+
+  box-shadow: var(--shadow-sm);
+
+  font-family: var(--font-body);
+  font-weight: var(--font-semibold);
+
+  transition: transform 200ms ease;
+}
+
+.signup:hover {
+  transform: translateY(-2px);
+}
+
+/* ========================
+   MOBILE
+======================== */
+
+@media (max-width: 900px) {
+  .nav {
+    display: none;
+  }
+
+  .header {
+    padding: 0 24px;
+  }
+
+  .logo {
+    height: 50px;
+  }
+}

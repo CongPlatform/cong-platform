@@ -1,0 +1,79 @@
+# ============================================
+# CONG — arquivos que não devem ir ao Git
+# ============================================
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+**/.env
+**/.env.*
+!**/.env.example
+
+# Builds / generated files
+dist/
+**/dist/
+build/
+**/build/
+dist-ssr/
+coverage/
+**/coverage/
+*.tsbuildinfo
+
+# Framework / tooling caches
+.next/
+.turbo/
+.cache/
+.eslintcache
+
+# Vercel local metadata
+.vercel/
+
+# Supabase local/link metadata
+**/supabase/.temp/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Operating system
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Private keys / certificates
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Repository backups
+*.bundle
+
+# Local API test files
+api-tests.http
+
+# Accidental command artifacts
+/cls
+/dir
+/git

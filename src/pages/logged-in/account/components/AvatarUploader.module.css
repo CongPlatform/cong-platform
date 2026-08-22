@@ -1,0 +1,415 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  background:
+    rgb(
+      var(--color-modal-overlay-rgb) /
+      58%
+    );
+
+  backdrop-filter: blur(8px);
+
+  animation:
+    avatarOverlayEnter
+    180ms ease both;
+}
+
+.modal {
+  width: min(
+    100%,
+    560px
+  );
+
+  max-height:
+    calc(100svh - 48px);
+
+  overflow-y: auto;
+
+  padding: 24px;
+
+  border: 1px solid
+    var(--color-border);
+
+  border-radius: 24px;
+
+  background:
+    var(--color-surface);
+
+  box-shadow:
+    var(--shadow-xl);
+
+  animation:
+    avatarModalEnter
+    260ms
+    cubic-bezier(
+      0.2,
+      0.8,
+      0.2,
+      1.08
+    )
+    both;
+}
+
+@keyframes avatarOverlayEnter {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes avatarModalEnter {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(10px)
+      scale(0.975);
+  }
+}
+
+/* ==================================================
+   CABEÇALHO
+   ================================================== */
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 22px;
+}
+
+.modalHeader h2 {
+  margin: 0;
+
+  color:
+    var(--color-ink-strong);
+
+  font-family:
+    var(--font-heading);
+
+  font-size:
+    var(--font-2xl);
+
+  font-weight:
+    var(--font-bold);
+
+  line-height:
+    var(--line-compact);
+}
+
+.closeButton {
+  flex: none;
+
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  border-radius: 11px;
+
+  color:
+    var(--color-muted);
+
+  background:
+    var(--color-surface-muted);
+
+  cursor: pointer;
+
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.closeButton:hover {
+  color:
+    var(--color-ink);
+
+  background:
+    var(--color-slate-200);
+
+  transform:
+    rotate(4deg);
+}
+
+.closeButton:focus-visible {
+  outline: none;
+
+  box-shadow:
+    var(--shadow-focus);
+}
+
+/* ==================================================
+   PRÉVIA
+   ================================================== */
+
+.previewArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 20px;
+}
+
+.avatarPreview {
+  width: 112px;
+  height: 112px;
+
+  overflow: hidden;
+
+  border: 4px solid
+    var(--color-white);
+
+  border-radius: 50%;
+
+  background:
+    var(--color-primary-50);
+
+  box-shadow:
+    0 0 0 1px
+      var(--color-border),
+    var(--shadow-md);
+}
+
+.avatarPreview img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  border-radius: inherit;
+
+  object-fit: cover;
+}
+
+.defaultAction {
+  min-height: 32px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  padding: 0 9px;
+
+  border: 0;
+  border-radius: 8px;
+
+  color:
+    var(--color-primary-dark);
+
+  background:
+    var(--color-transparent);
+
+  font: inherit;
+
+  font-size:
+    var(--font-xs);
+
+  font-weight:
+    var(--font-semibold);
+
+  cursor: pointer;
+
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+}
+
+.defaultAction:hover:not(:disabled) {
+  color:
+    var(--color-primary);
+
+  background:
+    var(--color-primary-50);
+}
+
+.defaultAction:disabled {
+  color:
+    var(--color-text-subtle);
+
+  cursor: default;
+}
+
+.defaultAction:focus-visible {
+  outline: none;
+
+  box-shadow:
+    var(--shadow-focus);
+}
+
+/* ==================================================
+   UPLOADER
+   ================================================== */
+
+.uploaderArea {
+  margin-top: 4px;
+}
+
+/* ==================================================
+   RODAPÉ
+   ================================================== */
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  margin-top: 20px;
+  padding-top: 18px;
+
+  border-top: 1px solid
+    var(--color-divider);
+}
+
+.cancelButton,
+.saveButton {
+  min-height: 40px;
+
+  padding: 0 16px;
+
+  border-radius: 10px;
+
+  font: inherit;
+
+  font-size:
+    var(--font-sm);
+
+  font-weight:
+    var(--font-semibold);
+
+  cursor: pointer;
+
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.cancelButton {
+  border: 1px solid
+    var(--color-border-medium);
+
+  color:
+    var(--color-slate-700);
+
+  background:
+    var(--color-surface);
+}
+
+.cancelButton:hover {
+  border-color:
+    var(--color-border-strong);
+
+  background:
+    var(--color-surface-muted);
+}
+
+.saveButton {
+  border: 1px solid
+    var(--color-primary);
+
+  color:
+    var(--color-text-inverse);
+
+  background:
+    var(--color-primary);
+}
+
+.saveButton:hover:not(:disabled) {
+  border-color:
+    var(--color-primary-dark);
+
+  background:
+    var(--color-primary-dark);
+
+  transform:
+    translateY(-1px);
+}
+
+.saveButton:disabled {
+  border-color:
+    var(--color-border);
+
+  color:
+    var(--color-text-disabled);
+
+  background:
+    var(--color-surface-muted);
+
+  cursor: default;
+}
+
+.cancelButton:focus-visible,
+.saveButton:focus-visible {
+  outline: none;
+
+  box-shadow:
+    var(--shadow-focus);
+}
+
+/* ==================================================
+   MOBILE
+   ================================================== */
+
+@media (max-width: 560px) {
+  .overlay {
+    align-items: end;
+
+    padding: 0;
+  }
+
+  .modal {
+    max-height: 92svh;
+
+    padding: 20px;
+
+    border-radius:
+      24px 24px 0 0;
+  }
+
+  .avatarPreview {
+    width: 96px;
+    height: 96px;
+  }
+
+  .modalFooter {
+    display: grid;
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+  .cancelButton,
+  .saveButton {
+    width: 100%;
+  }
+}
+
+@media (
+  prefers-reduced-motion:
+    reduce
+) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
+
+  .closeButton,
+  .defaultAction,
+  .cancelButton,
+  .saveButton {
+    transition: none;
+  }
+}

@@ -1,0 +1,198 @@
+/* =========================================
+   RESET
+========================================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* =========================================
+   ROOT
+========================================= */
+
+html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family: var(--font-body);
+
+    background: var(--color-white);
+    color: var(--color-gray-900);
+
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================================
+   APP
+========================================= */
+
+#root {
+    min-height: 100vh;
+}
+
+/* =========================================
+   TYPOGRAPHY
+========================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-brand);
+
+    color: var(--color-navy);
+
+    line-height: var(--line-tight);
+
+    font-weight: var(--font-bold);
+}
+
+h1 {
+    font-size: var(--font-h1);
+}
+
+h2 {
+    font-size: var(--font-h2);
+}
+
+h3 {
+    font-size: var(--font-h3);
+}
+
+p {
+    line-height: var(--line-normal);
+
+    color: var(--color-gray-700);
+}
+
+/* =========================================
+   LINKS
+========================================= */
+
+a {
+    color: inherit;
+
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+button {
+    font: inherit;
+
+    border: none;
+
+    cursor: pointer;
+
+    background: none;
+}
+
+/* =========================================
+   FORM ELEMENTS
+========================================= */
+
+input,
+textarea,
+select,
+button {
+    font-family: inherit;
+}
+
+input,
+textarea,
+select {
+    outline: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* =========================================
+   IMAGES
+========================================= */
+
+img,
+picture,
+svg {
+    display: block;
+
+    max-width: 100%;
+}
+
+/* =========================================
+   LISTS
+========================================= */
+
+ul,
+ol {
+    list-style: none;
+}
+
+/* =========================================
+   SELECTION
+========================================= */
+
+::selection {
+    background: var(--color-accent-light);
+
+    color: var(--color-navy);
+}
+
+/* =========================================
+   SCROLLBAR
+========================================= */
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-dark);
+}
+
+/* =========================================
+   UTILITIES
+========================================= */
+
+.container {
+    width: 100%;
+    max-width: 1280px;
+
+    margin: 0 auto;
+
+    padding: 0 24px;
+}
+
+.section {
+    padding: 96px 0;
+}

@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "backend/certs/supabase-ca.crt"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
