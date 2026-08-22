@@ -1,0 +1,72 @@
+name: 🧩 Propor novo módulo
+description: Proponha um módulo reutilizável para organizações que utilizam a CONG.
+title: "[Módulo]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A CONG é modular. Antes de implementar um módulo grande, abra uma proposta para discutir necessidade, reutilização, segurança e integração com a arquitetura existente.
+
+  - type: input
+    id: module-name
+    attributes:
+      label: Nome do módulo
+      placeholder: "Ex.: Gestão de voluntários"
+    validations:
+      required: true
+
+  - type: textarea
+    id: need
+    attributes:
+      label: Necessidade atendida
+      description: Que problema real de uma ONG ou projeto social este módulo resolve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: users
+    attributes:
+      label: Quem utilizaria
+      description: Quais perfis de usuário ou tipos de organização se beneficiariam?
+    validations:
+      required: true
+
+  - type: textarea
+    id: core-features
+    attributes:
+      label: Funcionalidades principais
+      description: Liste apenas o núcleo necessário do módulo.
+    validations:
+      required: true
+
+  - type: textarea
+    id: data
+    attributes:
+      label: Dados envolvidos
+      description: Indique se o módulo armazenará dados pessoais, sensíveis, documentos ou outros registros que exigem cuidados especiais.
+    validations:
+      required: true
+
+  - type: textarea
+    id: integration
+    attributes:
+      label: Integração com a CONG
+      description: Como o módulo se relacionaria com organizações, usuários, permissões ou outros módulos?
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Referências ou exemplos
+      description: Se houver, inclua exemplos de fluxos ou soluções semelhantes. Não envie conteúdo protegido sem autorização.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verificações
+      options:
+        - label: Verifiquei se já existe um módulo ou proposta semelhante.
+          required: true
+        - label: Estou propondo o módulo antes de iniciar uma alteração arquitetural grande.
+          required: true
+        - label: Li o CONTRIBUTING.md e o Código de Conduta.
+          required: true

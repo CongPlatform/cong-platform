@@ -1,0 +1,80 @@
+name: 🐛 Relatar bug
+description: Informe um comportamento incorreto ou inesperado na CONG.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por ajudar a melhorar a CONG. Antes de enviar, verifique se já existe uma issue semelhante.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição do problema
+      description: Explique de forma objetiva o que aconteceu.
+      placeholder: O que você estava tentando fazer e o que ocorreu?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      description: Informe os passos necessários para reproduzir o problema.
+      placeholder: |
+        1. Acesse...
+        2. Clique em...
+        3. Preencha...
+        4. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+      description: O que deveria ter acontecido?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área afetada
+      options:
+        - Frontend web
+        - Mobile
+        - Backend / API
+        - Banco de dados
+        - Autenticação / conta
+        - Perfis / organizações
+        - Comunidade
+        - Documentação
+        - Não sei informar
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Ambiente
+      description: Informe navegador, sistema operacional, dispositivo ou outras informações úteis.
+      placeholder: "Ex.: Chrome 151, Windows 11, desktop"
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidências adicionais
+      description: Se possível, anexe prints, vídeos curtos ou logs sem dados sensíveis.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verificações
+      options:
+        - label: Procurei por uma issue semelhante antes de abrir esta.
+          required: true
+        - label: Removi senhas, tokens, chaves, dados pessoais e outras informações sensíveis do conteúdo enviado.
+          required: true
+        - label: Li e concordo em seguir o Código de Conduta do projeto.
+          required: true
