@@ -29,9 +29,7 @@ export default function CollaborationFlow() {
             <Sparkles size={24} strokeWidth={1.7} />
           </span>
 
-          <h2 id="collaboration-title">
-            Como a colaboração acontece
-          </h2>
+          <h2 id="collaboration-title">Como a colaboração acontece</h2>
 
           <p>
             A ONG pode começar com autonomia, e a comunidade pode ajudar a
@@ -49,9 +47,7 @@ export default function CollaborationFlow() {
                   <Pin size={29} strokeWidth={1.7} />
                 </span>
 
-                <span className={styles.postLabel}>
-                  Necessidade da ONG
-                </span>
+                <span className={styles.postLabel}>Necessidade da ONG</span>
 
                 <strong>
                   Precisamos organizar
@@ -60,8 +56,8 @@ export default function CollaborationFlow() {
                 </strong>
 
                 <p>
-                  Queremos cadastrar pessoas, distribuir atividades e
-                  acompanhar a participação.
+                  Queremos cadastrar pessoas, distribuir atividades e acompanhar
+                  a participação.
                 </p>
 
                 <div className={styles.postTags}>

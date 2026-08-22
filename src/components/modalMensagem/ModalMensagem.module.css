@@ -1303,3 +1303,85 @@
     transition: none;
   }
 }
+/* ==================================================
+   RESPONSIVE HARDENING — modal de mensagem
+   ================================================== */
+.overlay,
+.paperFrame,
+.paper,
+.content,
+.dataWrapper,
+.dataGrid,
+.dataSection,
+.dataField,
+.footer {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  .overlay {
+    padding: 12px;
+  }
+
+  .paperFrame {
+    width: min(100%, 620px);
+    max-height: calc(100svh - 24px);
+  }
+
+  .paper {
+    max-height: calc(100svh - 24px);
+    overflow-y: auto;
+  }
+
+  .header,
+  .content,
+  .footer {
+    padding-inline: 1rem;
+  }
+
+  .dataGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dataValue,
+  .message {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 440px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .paperFrame,
+  .paper {
+    width: 100%;
+    max-height: 94svh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .backSheet,
+  .paperClip,
+  .holeRail {
+    display: none;
+  }
+
+  .titleArea {
+    min-width: 0;
+  }
+
+  .titleContent h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .footer {
+    flex-direction: column;
+  }
+
+  .okButton {
+    width: 100%;
+  }
+}

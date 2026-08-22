@@ -413,3 +413,56 @@
     transition: none;
   }
 }
+/* ==================================================
+   RESPONSIVE HARDENING — avatar uploader
+   ================================================== */
+.overlay,
+.modal,
+.modalHeader,
+.previewArea,
+.uploaderArea,
+.modalFooter {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 560px) {
+  .overlay {
+    padding: 12px;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: calc(100svh - 24px);
+    overflow-y: auto;
+    border-radius: 18px;
+  }
+
+  .modalHeader,
+  .previewArea,
+  .uploaderArea,
+  .modalFooter {
+    padding-inline: 1rem;
+  }
+
+  .modalFooter {
+    flex-direction: column-reverse;
+  }
+
+  .cancelButton,
+  .saveButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-height: 94svh;
+    border-radius: 20px 20px 0 0;
+  }
+}

@@ -481,3 +481,73 @@
     transition: none;
   }
 }
+
+/* ==================================================
+   RESPONSIVE HARDENING — seletor de atuação
+   ================================================== */
+.section,
+.stickyStage,
+.gridBackground,
+.introBlock,
+.selectorContent,
+.promptRow,
+.dropZone,
+.roleBank {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .section {
+    min-height: max(135svh, 780px);
+  }
+
+  .stickyStage {
+    overflow: hidden;
+  }
+
+  .introBlock,
+  .selectorContent {
+    width: 100%;
+    padding-inline: 12px;
+  }
+
+  .brandTitle,
+  .prompt {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .dropZone,
+  .roleBank {
+    width: min(100%, 520px);
+    max-width: 100%;
+  }
+
+  .roleBank {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .roleOption {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+  }
+}
+
+@media (max-width: 440px) {
+  .section {
+    min-height: max(145svh, 760px);
+  }
+
+  .roleBank {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .selectedRole {
+    width: 100%;
+    min-width: 0;
+  }
+}

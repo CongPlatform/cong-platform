@@ -11,10 +11,6 @@
   border-bottom: 1px solid var(--color-gray-200);
 }
 
-/* ========================
-   LOGO
-======================== */
-
 .logoContainer {
   display: flex;
   align-items: center;
@@ -22,12 +18,8 @@
 
 .logo {
   width: auto;
-  height: 58px;
+  height: 44px;
 }
-
-/* ========================
-   NAV
-======================== */
 
 .nav {
   display: flex;
@@ -61,10 +53,6 @@
   transform: rotate(-1deg);
 }
 
-/* ========================
-   MARCADOR
-======================== */
-
 .marker {
   position: absolute;
 
@@ -97,10 +85,6 @@
 .active .marker {
   opacity: 1;
 }
-
-/* ========================
-   ACTIONS
-======================== */
 
 .actions {
   display: flex;
@@ -137,20 +121,238 @@
   transform: translateY(-2px);
 }
 
-/* ========================
-   MOBILE
-======================== */
+.menuButton {
+  display: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-navy);
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.mobileMenu {
+  display: none;
+}
 
 @media (max-width: 900px) {
-  .nav {
-    display: none;
-  }
-
   .header {
+    position: relative;
+    height: 76px;
     padding: 0 24px;
   }
 
   .logo {
-    height: 50px;
+  height: 38px;
+}
+
+  .nav {
+    display: none;
+  }
+
+  .actions {
+    display: none;
+  }
+
+  .menuButton {
+    display: flex;
+  }
+
+  .mobileMenu {
+    position: absolute;
+    top: 76px;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    gap: 24px;
+    background: var(--color-paper);
+    border-bottom: 1px solid var(--color-gray-200);
+    box-shadow: var(--shadow-sm);
+    z-index: 100;
+  }
+
+  .mobileNav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mobileLink {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 12px;
+    color: var(--color-navy);
+    font-family: var(--font-brand);
+    font-size: var(--font-md);
+    border-radius: 10px;
+  }
+
+  .mobileLink:hover {
+    background: var(--color-gray-200);
+  }
+
+  .mobileActive {
+    background: var(--color-gray-200);
+  }
+
+  .mobileActions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-gray-200);
+  }
+
+  .mobileLogin,
+  .mobileSignup {
+    width: 100%;
+    min-height: 46px;
+    border-radius: 12px;
+    font-family: var(--font-brand);
+    font-size: var(--font-md);
+  }
+
+  .mobileLogin {
+    color: var(--color-navy);
+    background: transparent;
+  }
+
+  .mobileSignup {
+    color: var(--color-white);
+    background: var(--color-navy);
+    font-family: var(--font-body);
+    font-weight: var(--font-semibold);
+  }
+}
+/* =========================================
+   RESPONSIVE HARDENING
+========================================= */
+.header {
+  position: relative;
+  z-index: 120;
+  width: 100%;
+  max-width: 100%;
+}
+
+.logoContainer,
+.actions,
+.nav {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .header {
+    padding-inline: 28px;
+  }
+
+  .nav {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 900px) {
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    height: 72px;
+    padding: 0 16px;
+  }
+
+  .logo {
+    width: auto;
+    height: 36px;
+    max-width: min(48vw, 180px);
+    object-fit: contain;
+  }
+
+  .menuButton {
+    display: grid;
+    place-items: center;
+    flex: 0 0 44px;
+    border-radius: 11px;
+  }
+
+  .menuButton:hover,
+  .menuButton:focus-visible {
+    background: rgb(var(--color-ink-rgb) / 6%);
+  }
+
+  .mobileMenu {
+    top: 72px;
+    max-height: calc(100svh - 72px);
+    padding: 14px 16px calc(18px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mobileNav {
+    gap: 2px;
+  }
+
+  .mobileLink {
+    min-height: 46px;
+    padding-inline: 14px;
+  }
+
+  .mobileActions {
+    margin-top: 6px;
+  }
+}
+
+@media (max-width: 380px) {
+  .header {
+    padding-inline: 12px;
+  }
+
+  .logo {
+    height: 32px;
+  }
+
+  .mobileMenu {
+    padding-inline: 12px;
+  }
+}
+
+/* =========================================================
+   ADAPTAÇÃO RESPONSIVA V2 — HEADER
+========================================================= */
+
+@media (max-width: 1024px) {
+  .nav,
+  .actions {
+    display: none;
+  }
+
+  .menuButton {
+    display: grid;
+  }
+}
+
+@media (max-width: 900px) {
+  .mobileMenu {
+    border-top: 1px solid rgb(var(--color-ink-rgb) / 5%);
+  }
+
+  .mobileLink {
+    position: relative;
+  }
+
+  .mobileActive::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 4px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--color-accent);
+    transform: translateY(-50%);
   }
 }

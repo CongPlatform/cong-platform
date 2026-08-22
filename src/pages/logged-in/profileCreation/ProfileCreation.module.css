@@ -244,3 +244,54 @@
     width: 100%;
   }
 }
+
+/* ==================================================
+   RESPONSIVE HARDENING — criação de perfil
+   ================================================== */
+.page,
+.topbar,
+.content,
+.form,
+.field,
+.fieldRow,
+.actions {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding-inline: 12px;
+  }
+
+  .topbar {
+    gap: 0.75rem;
+  }
+
+  .logo {
+    max-width: min(46vw, 170px);
+    height: auto;
+  }
+
+  .content {
+    width: 100%;
+    padding: 1.25rem 0 2rem;
+  }
+
+  .heading h1 {
+    font-size: clamp(2rem, 9vw, 2.8rem);
+  }
+
+  .fieldRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+}

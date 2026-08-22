@@ -196,3 +196,75 @@ ol {
 .section {
     padding: 96px 0;
 }
+/* =========================================
+   RESPONSIVE FOUNDATION
+========================================= */
+html,
+body,
+#root {
+    width: 100%;
+    max-width: 100%;
+}
+
+html,
+body {
+    overflow-x: clip;
+}
+
+body {
+    min-width: 0;
+}
+
+main,
+section,
+article,
+aside,
+nav,
+header,
+footer,
+form,
+fieldset {
+    min-width: 0;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+    max-width: 100%;
+}
+
+textarea {
+    resize: vertical;
+}
+
+pre,
+code {
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    html {
+        font-size: 15px;
+    }
+
+    .container {
+        padding-inline: 16px;
+    }
+
+    .section {
+        padding-block: 64px;
+    }
+
+    button,
+    a {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+@media (max-width: 380px) {
+    .container {
+        padding-inline: 12px;
+    }
+}
