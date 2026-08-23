@@ -1,346 +1,459 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+
 import {
-  FiAlertTriangle,
-  FiArrowLeft,
-  FiArrowUpRight,
-  FiCheck,
-  FiClock,
-  FiLoader,
-  FiLogIn,
-  FiMail,
-} from "react-icons/fi";
+  ArrowRight,
+  Check,
+  CircleAlert,
+  LoaderCircle,
+  LogIn,
+  ShieldCheck,
+} from "lucide-react";
 
-import mascote from "../../assets/mascot/cong-default.webp";
+import type { EmailOtpType, Session } from "@supabase/supabase-js";
+
+import { useNavigate } from "react-router-dom";
+
+import { useAuth } from "../../contexts/auth-context";
+
+import { apiRequest } from "../../services/api";
+
 import { supabase } from "../../services/supabase";
-import styles from "../pending/Pending.module.css";
 
-type ConfirmationStatus =
-  | "loading"
-  | "success"
-  | "error";
+import logo from "../../assets/brand/logo-wordmark-dark.webp";
+import mascot from "../../assets/mascot/cong-happy.webp";
+
+import styles from "./AuthConfirm.module.css";
+
+type ConfirmationState = "checking" | "same-device" | "other-device" | "error";
+
+type VerificationStatus = "pending" | "confirmed" | "expired" | "unavailable";
+
+interface VerificationStatusResponse {
+  status: VerificationStatus;
+}
 
 export default function AuthConfirm() {
   const navigate = useNavigate();
 
-  const [status, setStatus] =
-    useState<ConfirmationStatus>("loading");
+  const { establishSession } = useAuth();
+
+  const [confirmationState, setConfirmationState] =
+    useState<ConfirmationState>("checking");
+
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     let active = true;
+    let redirectTimeout: number | undefined;
 
-    async function confirmEmail() {
-      const params = new URLSearchParams(
-        window.location.search,
-      );
+    async function getConfirmationSession(): Promise<Session | null> {
+      const searchParams = new URLSearchParams(window.location.search);
 
-      const tokenHash =
-        params.get("token_hash");
+      const tokenHash = searchParams.get("token_hash");
 
-      const errorDescription =
-        params.get("error_description");
+      const type = searchParams.get("type");
 
-      if (errorDescription) {
-        if (active) {
-          setStatus("error");
+      /*
+       * Fluxo principal.
+       *
+       * Nosso template de e-mail envia
+       * TokenHash diretamente para esta
+       * página.
+       */
+      if (tokenHash) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+
+          type: (type ?? "email") as EmailOtpType,
+        });
+
+        if (error) {
+          throw error;
         }
 
-        return;
+        if (data.session) {
+          return data.session;
+        }
+
+        const { data: sessionData } = await supabase.auth.getSession();
+
+        return sessionData.session;
       }
 
-      if (tokenHash) {
-        const { error } =
-          await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: "email",
-          });
+      /*
+       * Compatibilidade com links antigos
+       * que ainda utilizem ConfirmationURL.
+       */
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+
+      const hashError = hashParams.get("error_description");
+
+      if (hashError) {
+        throw new Error(hashError);
+      }
+
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        throw error;
+      }
+
+      return data.session;
+    }
+
+    async function checkOriginalDevice(): Promise<boolean> {
+      try {
+        const response = await apiRequest<VerificationStatusResponse>(
+          "/auth/email-verification/status",
+          {
+            method: "GET",
+            authenticated: false,
+            retryOnUnauthorized: false,
+          },
+        );
+
+        /*
+         * Só o navegador que iniciou
+         * o cadastro possui o cookie
+         * HttpOnly de acompanhamento.
+         */
+        return response.status === "confirmed";
+      } catch {
+        /*
+         * Em caso de dúvida, escolhemos
+         * o caminho conservador:
+         * não fazemos auto-login.
+         */
+        return false;
+      }
+    }
+
+    async function confirm() {
+      try {
+        const session = await getConfirmationSession();
 
         if (!active) {
           return;
         }
 
-        setStatus(
-          error ? "error" : "success",
+        if (!session) {
+          throw new Error("Confirmation session was not created");
+        }
+
+        const isOriginalDevice = await checkOriginalDevice();
+
+        if (!active) {
+          return;
+        }
+
+        /*
+         * MESMO NAVEGADOR
+         *
+         * Supabase confirmou a identidade
+         * e o navegador possui o fluxo
+         * original da CONG.
+         */
+        if (isOriginalDevice) {
+          setConfirmationState("same-device");
+
+          const result = await establishSession(
+            session.access_token,
+            session.refresh_token,
+            false,
+          );
+
+          if (!active) {
+            return;
+          }
+
+          sessionStorage.removeItem("cong:pending-verification-email");
+
+          redirectTimeout = window.setTimeout(() => {
+            navigate(result.destination, {
+              replace: true,
+            });
+          }, 1400);
+
+          return;
+        }
+
+        /*
+         * OUTRO DISPOSITIVO
+         *
+         * O e-mail foi confirmado, mas
+         * este navegador não iniciou
+         * aquele cadastro.
+         *
+         * Não transferimos a sessão para
+         * a CONG automaticamente.
+         */
+        setConfirmationState("other-device");
+
+        /*
+         * verifyOtp pode criar uma sessão
+         * local do cliente Supabase.
+         *
+         * Como decidimos não fazer
+         * auto-login cross-device, ela é
+         * encerrada somente neste
+         * dispositivo.
+         */
+        await supabase.auth.signOut({
+          scope: "local",
+        });
+      } catch (error) {
+        console.error("Erro ao confirmar e-mail:", error);
+
+        if (!active) {
+          return;
+        }
+
+        setErrorMessage(
+          "Este link não pôde ser confirmado. Ele pode ter expirado ou já ter sido utilizado.",
         );
 
-        return;
+        setConfirmationState("error");
       }
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!active) {
-        return;
-      }
-
-      setStatus(
-        session ? "success" : "success",
-      );
     }
 
-    void confirmEmail();
+    void confirm();
 
     return () => {
       active = false;
+
+      if (redirectTimeout) {
+        window.clearTimeout(redirectTimeout);
+      }
     };
-  }, []);
+  }, [establishSession, navigate]);
 
-  const handleBack = () => {
-    if ((window.history.state?.idx ?? 0) > 0) {
-      navigate(-1);
-      return;
-    }
+  const isChecking = confirmationState === "checking";
 
-    navigate("/login");
-  };
+  const isSameDevice = confirmationState === "same-device";
 
-  const isLoading = status === "loading";
-  const isSuccess = status === "success";
-  const isError = status === "error";
+  const isOtherDevice = confirmationState === "other-device";
+
+  const isError = confirmationState === "error";
 
   return (
-    <main className={styles.pendingPage}>
-      <header className={styles.topbar}>
+    <main className={styles.page}>
+      <header className={styles.header}>
         <button
           type="button"
-          className={styles.backButton}
-          onClick={handleBack}
+          className={styles.brand}
+          onClick={() => navigate("/")}
+          aria-label="Ir para o início da CONG"
         >
-          <FiArrowLeft aria-hidden="true" />
-          Voltar
+          <img src={logo} alt="CONG" />
         </button>
-
-        <Link
-          to="/login"
-          className={styles.dashboardLink}
-        >
-          <FiLogIn aria-hidden="true" />
-          Entrar
-        </Link>
       </header>
 
-      <section className={styles.hero}>
-        <div className={styles.copy}>
-          <div className={styles.metaRow}>
-            <span className={styles.status}>
-              {isLoading && (
-                <FiLoader aria-hidden="true" />
-              )}
+      <section className={styles.content}>
+        <div className={styles.paper}>
+          <span className={styles.topTape} aria-hidden="true" />
 
-              {isSuccess && (
-                <FiCheck aria-hidden="true" />
-              )}
+          <span className={styles.starOne} aria-hidden="true">
+            ✦
+          </span>
 
-              {isError && (
-                <FiAlertTriangle aria-hidden="true" />
-              )}
+          <span className={styles.starTwo} aria-hidden="true">
+            ✧
+          </span>
 
-              {isLoading &&
-                "Verificando e-mail"}
+          <div
+            className={`${styles.stateIcon} ${
+              isSameDevice || isOtherDevice
+                ? styles.stateIconSuccess
+                : isError
+                  ? styles.stateIconError
+                  : ""
+            }`}
+          >
+            {isChecking && (
+              <LoaderCircle className={styles.spinner} aria-hidden="true" />
+            )}
 
-              {isSuccess &&
-                "Verificação concluída"}
+            {(isSameDevice || isOtherDevice) && <Check aria-hidden="true" />}
 
-              {isError &&
-                "Falha na verificação"}
-            </span>
-
-            <span className={styles.issue}>
-              CONG / AUTH
-            </span>
+            {isError && <CircleAlert aria-hidden="true" />}
           </div>
 
-          <div className={styles.titleBlock}>
-            <span className={styles.kicker}>
-              {isLoading &&
-                "ESTAMOS VALIDANDO"}
+          <div className={styles.heading}>
+            <span className={styles.eyebrow}>
+              {isChecking && "SÓ UM INSTANTE"}
 
-              {isSuccess &&
-                "TUDO CERTO"}
+              {isSameDevice && "TUDO CERTO"}
 
-              {isError &&
-                "ALGO DEU ERRADO"}
+              {isOtherDevice && "PRONTO!"}
+
+              {isError && "NÃO CONSEGUIMOS CONFIRMAR"}
             </span>
 
             <h1>
-              {isLoading && (
+              {isChecking && (
                 <>
-                  CONFIRMANDO
-                  <span>E-MAIL</span>
+                  Confirmando seu <span>e-mail...</span>
                 </>
               )}
 
-              {isSuccess && (
+              {isSameDevice && (
                 <>
-                  E-MAIL
-                  <span>CONFIRMADO</span>
+                  E-mail <span>confirmado!</span>
+                </>
+              )}
+
+              {isOtherDevice && (
+                <>
+                  E-mail <span>confirmado!</span>
                 </>
               )}
 
               {isError && (
                 <>
-                  LINK
-                  <span>INVÁLIDO</span>
+                  Este link não <span>funcionou.</span>
                 </>
               )}
             </h1>
+
+            <p>
+              {isChecking &&
+                "Estamos verificando o link com segurança. Isso deve levar apenas alguns segundos."}
+
+              {isSameDevice &&
+                "Sua conta está confirmada. Estamos preparando seu acesso à CONG."}
+
+              {isOtherDevice &&
+                "Sua conta foi confirmada com sucesso. O dispositivo onde você iniciou o cadastro reconhecerá a confirmação automaticamente."}
+
+              {isError && errorMessage}
+            </p>
           </div>
 
-          <p className={styles.description}>
-            {isLoading &&
-              "A CONG está verificando seu endereço de e-mail. Isso deve levar apenas alguns segundos."}
-
-            {isSuccess &&
-              "Seu endereço de e-mail foi confirmado e sua conta está pronta. Agora você já pode entrar na CONG com seu e-mail e senha."}
-
-            {isError &&
-              "Não foi possível confirmar seu endereço de e-mail. O link pode ter expirado, já ter sido utilizado ou ser inválido."}
-          </p>
-
-          {!isLoading && (
-            <div className={styles.actions}>
-              {isSuccess ? (
-                <Link
-                  to="/login"
-                  className={styles.primaryButton}
-                >
-                  <FiLogIn aria-hidden="true" />
-                  Entrar na CONG
-                </Link>
-              ) : (
-                <Link
-                  to="/signup"
-                  className={styles.primaryButton}
-                >
-                  <FiMail aria-hidden="true" />
-                  Voltar ao cadastro
-                </Link>
-              )}
-
-              <Link
-                to="/"
-                className={styles.secondaryButton}
-              >
-                Ir para o início
-                <FiArrowUpRight aria-hidden="true" />
-              </Link>
+          {isChecking && (
+            <div
+              className={styles.progress}
+              aria-label="Verificando confirmação"
+            >
+              <span />
             </div>
           )}
 
-          <div className={styles.timeline}>
-            <div className={styles.timelineHeader}>
-              <span>
-                <FiClock aria-hidden="true" />
-
-                Verificação da conta
+          {isSameDevice && (
+            <div className={styles.successBox}>
+              <span className={styles.successCheck}>
+                <Check aria-hidden="true" />
               </span>
 
-              <strong>
-                {isLoading && "Verificando"}
-                {isSuccess && "Concluída"}
-                {isError && "Interrompida"}
-              </strong>
+              <div>
+                <strong>Conta liberada</strong>
+
+                <p>Entrando automaticamente...</p>
+              </div>
             </div>
+          )}
 
-            <div className={styles.track}>
-              <span />
+          {isOtherDevice && (
+            <>
+              <div className={styles.deviceBox}>
+                <ShieldCheck aria-hidden="true" />
+
+                <div>
+                  <strong>Confirmou em outro dispositivo?</strong>
+
+                  <p>
+                    Pode voltar para a tela onde criou sua conta. Ela atualizará
+                    sozinha e levará você ao login.
+                  </p>
+                </div>
+              </div>
+
+              <div className={styles.actions}>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={() =>
+                    navigate("/login", {
+                      replace: true,
+                      state: {
+                        emailConfirmed: true,
+                      },
+                    })
+                  }
+                >
+                  Entrar neste dispositivo
+                  <LogIn aria-hidden="true" />
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => navigate("/")}
+                >
+                  Ir para o início
+                </button>
+              </div>
+            </>
+          )}
+
+          {isError && (
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => navigate("/verifique-seu-email")}
+              >
+                Voltar para verificação
+                <ArrowRight aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => navigate("/login")}
+              >
+                Ir para o login
+              </button>
             </div>
+          )}
 
-            <div className={styles.steps}>
-              <span
-                className={
-                  styles.stepComplete
-                }
-              >
-                Conta criada
-              </span>
+          <div className={styles.security}>
+            <ShieldCheck aria-hidden="true" />
 
-              <span
-                className={
-                  isSuccess
-                    ? styles.stepComplete
-                    : styles.stepActive
-                }
-              >
-                E-mail confirmado
-              </span>
-
-              <span
-                className={
-                  isSuccess
-                    ? styles.stepActive
-                    : undefined
-                }
-              >
-                Entrar na CONG
-              </span>
-            </div>
+            <span>
+              Confirmação protegida pelo sistema de autenticação da CONG.
+            </span>
           </div>
         </div>
 
-        <aside
-          className={styles.visual}
-          aria-hidden="true"
-        >
-          <div className={styles.poster}>
-            <span className={styles.posterLabel}>
-              CONG
-            </span>
+        <aside className={styles.visual} aria-hidden="true">
+          <span className={styles.sun} />
 
-            <span className={styles.posterNumber}>
-              {isSuccess ? "OK" : "01"}
-            </span>
+          <div className={styles.note}>
+            <span>identidade</span>
 
-            <div className={styles.posterCenter}>
-              <span className={styles.ring} />
-              <span
-                className={
-                  styles.ringSecondary
-                }
-              />
-
-              <img
-                src={mascote}
-                alt=""
-                className={styles.mascot}
-              />
-            </div>
-
-            <span className={styles.posterCaption}>
-              CONSTRUIR · IMPACTAR · JUNTOS
-            </span>
+            <strong>confirmada ✓</strong>
           </div>
 
-          <div className={styles.tape}>
-            <span>
-              {isSuccess
-                ? "E-MAIL CONFIRMADO"
-                : "VERIFICANDO CONTA"}
-            </span>
+          <div className={styles.mascotArea}>
+            <span className={styles.halo} />
 
-            <span>
-              {isSuccess
-                ? "E-MAIL CONFIRMADO"
-                : "VERIFICANDO CONTA"}
-            </span>
+            <img src={mascot} alt="" />
 
-            <span>
-              {isSuccess
-                ? "E-MAIL CONFIRMADO"
-                : "VERIFICANDO CONTA"}
-            </span>
+            <span className={styles.shadow} />
+          </div>
+
+          <div className={styles.scribble}>
+            <span />
+            <span />
+            <span />
           </div>
         </aside>
       </section>
 
       <footer className={styles.footer}>
-        <span>© 2026 CONG Plataforma</span>
+        <span>© 2026 CONG</span>
 
-        <span>
-          Segurança e identidade fazem parte da
-          construção da comunidade.
-        </span>
+        <span>Identidade confirmada. Impacto pela frente.</span>
       </footer>
     </main>
   );

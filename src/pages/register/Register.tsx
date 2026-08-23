@@ -1,8 +1,4 @@
-import {
-  type ReactNode,
-  type SyntheticEvent,
-  useState,
-} from "react";
+import { type ReactNode, type SyntheticEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import {
@@ -19,11 +15,8 @@ import {
 } from "lucide-react";
 
 import { TransitionLink } from "../../components/pageTransitionProvider/TransitionLink";
-import ModalMensagem from "../../components/modalMensagem/ModalMensagem";
-import {
-  ApiError,
-  apiPost,
-} from "../../services/api";
+
+import { ApiError, apiPost } from "../../services/api";
 import mascote from "../../assets/mascot/cong-default.webp";
 import styles from "./Register.module.css";
 
@@ -51,10 +44,7 @@ const registerSchema = z
       .string()
       .trim()
       .min(2, "Informe seu nome completo.")
-      .max(
-        100,
-        "O nome deve ter no máximo 100 caracteres.",
-      ),
+      .max(100, "O nome deve ter no máximo 100 caracteres."),
 
     email: z
       .string()
@@ -64,18 +54,10 @@ const registerSchema = z
 
     password: z
       .string()
-      .min(
-        8,
-        "A senha deve ter pelo menos 8 caracteres.",
-      )
-      .max(
-        128,
-        "A senha deve ter no máximo 128 caracteres.",
-      ),
+      .min(8, "A senha deve ter pelo menos 8 caracteres.")
+      .max(128, "A senha deve ter no máximo 128 caracteres."),
 
-    confirmPassword: z
-      .string()
-      .min(1, "Confirme sua senha."),
+    confirmPassword: z.string().min(1, "Confirme sua senha."),
 
     termsAccepted: z.boolean(),
   })
@@ -92,8 +74,7 @@ const registerSchema = z
       context.addIssue({
         code: "custom",
         path: ["termsAccepted"],
-        message:
-          "Você precisa aceitar os termos e a política de privacidade.",
+        message: "Você precisa aceitar os termos e a política de privacidade.",
       });
     }
   });
@@ -106,9 +87,7 @@ const initialFormState: FormState = {
   termsAccepted: false,
 };
 
-function getZodErrors(
-  error: z.ZodError,
-): ErrorMap {
+function getZodErrors(error: z.ZodError): ErrorMap {
   const nextErrors: ErrorMap = {};
 
   error.issues.forEach((issue) => {
@@ -122,36 +101,21 @@ function getZodErrors(
   return nextErrors;
 }
 
-function FieldError({
-  id,
-  children,
-}: {
-  id: string;
-  children?: ReactNode;
-}) {
+function FieldError({ id, children }: { id: string; children?: ReactNode }) {
   if (!children) {
     return null;
   }
 
   return (
-    <p
-      id={id}
-      className={styles.fieldError}
-      role="alert"
-    >
+    <p id={id} className={styles.fieldError} role="alert">
       {children}
     </p>
   );
 }
 
-function getRegistrationErrorMessage(
-  error: unknown,
-): string {
+function getRegistrationErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) {
-    console.error(
-      "Unknown registration error:",
-      error,
-    );
+    console.error("Unknown registration error:", error);
 
     return "Não foi possível criar sua conta.";
   }
@@ -160,10 +124,7 @@ function getRegistrationErrorMessage(
     return "Não foi possível conectar ao servidor da CONG.";
   }
 
-  if (
-    error.status === 409 ||
-    error.code === "EMAIL_ALREADY_REGISTERED"
-  ) {
+  if (error.status === 409 || error.code === "EMAIL_ALREADY_REGISTERED") {
     return "Já existe uma conta usando este e-mail.";
   }
 
@@ -171,39 +132,23 @@ function getRegistrationErrorMessage(
     return "Revise os dados informados e tente novamente.";
   }
 
-  return error.message ||
-    "Não foi possível concluir o cadastro.";
+  return error.message || "Não foi possível concluir o cadastro.";
 }
 
 export default function Register() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] =
-    useState<FormState>(initialFormState);
+  const [formData, setFormData] = useState<FormState>(initialFormState);
 
-  const [errors, setErrors] =
-    useState<ErrorMap>({});
+  const [errors, setErrors] = useState<ErrorMap>({});
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [
-    submissionError,
-    setSubmissionError,
-  ] = useState("");
+  const [submissionError, setSubmissionError] = useState("");
 
-  const [
-    confirmationModalOpen,
-    setConfirmationModalOpen,
-  ] = useState(false);
-
-  const updateField = (
-    field: keyof FormState,
-    value: string | boolean,
-  ) => {
+  const updateField = (field: keyof FormState, value: string | boolean) => {
     setFormData((currentData) => ({
       ...currentData,
       [field]: value,
@@ -233,24 +178,17 @@ export default function Register() {
     },
     {
       label: "Até 128 caracteres",
-      valid:
-        formData.password.length > 0 &&
-        formData.password.length <= 128,
+      valid: formData.password.length > 0 && formData.password.length <= 128,
     },
   ];
 
-  const handleSubmit = async (
-    event: SyntheticEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const result =
-      registerSchema.safeParse(formData);
+    const result = registerSchema.safeParse(formData);
 
     if (!result.success) {
-      setErrors(
-        getZodErrors(result.error),
-      );
+      setErrors(getZodErrors(result.error));
 
       return;
     }
@@ -270,22 +208,22 @@ export default function Register() {
         false,
       );
 
-      setConfirmationModalOpen(true);
+      const email = result.data.email;
+
+      sessionStorage.setItem("cong:pending-verification-email", email);
+
+      navigate("/verifique-seu-email", {
+        replace: true,
+        state: {
+          email,
+          justRegistered: true,
+        },
+      });
     } catch (error) {
-      setSubmissionError(
-        getRegistrationErrorMessage(error),
-      );
+      setSubmissionError(getRegistrationErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const finishRegistration = () => {
-    setConfirmationModalOpen(false);
-
-    navigate("/login", {
-      replace: true,
-    });
   };
 
   return (
@@ -315,17 +253,13 @@ export default function Register() {
 
             <div>
               <strong>CONG</strong>
-              <small>
-                Tecnologia para impacto social
-              </small>
+              <small>Tecnologia para impacto social</small>
             </div>
           </div>
 
           <p>
             Já tem uma conta?
-            <TransitionLink to="/login">
-              Entrar
-            </TransitionLink>
+            <TransitionLink to="/login">Entrar</TransitionLink>
           </p>
         </header>
 
@@ -333,26 +267,19 @@ export default function Register() {
           <div className={styles.mascotStage}>
             <span aria-hidden="true" />
 
-            <img
-              src={mascote}
-              alt="Mascote da CONG"
-            />
+            <img src={mascote} alt="Mascote da CONG" />
           </div>
 
           <div className={styles.introCopy}>
-            <span className={styles.eyebrow}>
-              Faça parte da CONG
-            </span>
+            <span className={styles.eyebrow}>Faça parte da CONG</span>
 
             <h1>
-              Crie sua conta e comece sua{" "}
-              <span>jornada.</span>
+              Crie sua conta e comece sua <span>jornada.</span>
             </h1>
 
             <p>
-              Sua conta é o ponto de entrada para a
-              plataforma. Depois, você poderá participar da
-              comunidade, integrar organizações e acessar
+              Sua conta é o ponto de entrada para a plataforma. Depois, você
+              poderá participar da comunidade, integrar organizações e acessar
               diferentes experiências da CONG.
             </p>
 
@@ -378,16 +305,13 @@ export default function Register() {
         <section className={styles.formSurface}>
           <header className={styles.formHeader}>
             <div>
-              <span className={styles.formEyebrow}>
-                Cadastro
-              </span>
+              <span className={styles.formEyebrow}>Cadastro</span>
 
               <h2>Crie sua conta</h2>
 
               <p>
-                Informe apenas os dados necessários para
-                criar seu acesso à CONG. Outras informações
-                poderão ser adicionadas depois.
+                Informe apenas os dados necessários para criar seu acesso à
+                CONG. Outras informações poderão ser adicionadas depois.
               </p>
             </div>
 
@@ -397,42 +321,28 @@ export default function Register() {
             </span>
           </header>
 
-          <form
-            className={styles.form}
-            onSubmit={handleSubmit}
-            noValidate
-          >
+          <form className={styles.form} onSubmit={handleSubmit} noValidate>
             <div className={styles.stepContent}>
               <div className={styles.accountNote}>
                 <ShieldCheck aria-hidden="true" />
 
                 <div>
-                  <strong>
-                    Começamos somente com o essencial.
-                  </strong>
+                  <strong>Começamos somente com o essencial.</strong>
 
                   <p>
-                    Informações sobre organizações,
-                    interesses e participação serão
-                    configuradas posteriormente dentro da
-                    plataforma.
+                    Informações sobre organizações, interesses e participação
+                    serão configuradas posteriormente dentro da plataforma.
                   </p>
                 </div>
               </div>
 
               <div className={styles.accountGrid}>
-                <div
-                  className={`${styles.field} ${styles.fieldFull}`}
-                >
-                  <label htmlFor="register-name">
-                    Nome completo
-                  </label>
+                <div className={`${styles.field} ${styles.fieldFull}`}>
+                  <label htmlFor="register-name">Nome completo</label>
 
                   <div
                     className={`${styles.inputGroup} ${
-                      errors.name
-                        ? styles.inputError
-                        : ""
+                      errors.name ? styles.inputError : ""
                     }`}
                   >
                     <UserRound aria-hidden="true" />
@@ -443,14 +353,9 @@ export default function Register() {
                       value={formData.name}
                       placeholder="Seu nome completo"
                       autoComplete="name"
-                      aria-invalid={Boolean(
-                        errors.name,
-                      )}
+                      aria-invalid={Boolean(errors.name)}
                       onChange={(event) =>
-                        updateField(
-                          "name",
-                          event.target.value,
-                        )
+                        updateField("name", event.target.value)
                       }
                     />
                   </div>
@@ -460,18 +365,12 @@ export default function Register() {
                   </FieldError>
                 </div>
 
-                <div
-                  className={`${styles.field} ${styles.fieldFull}`}
-                >
-                  <label htmlFor="register-email">
-                    E-mail
-                  </label>
+                <div className={`${styles.field} ${styles.fieldFull}`}>
+                  <label htmlFor="register-email">E-mail</label>
 
                   <div
                     className={`${styles.inputGroup} ${
-                      errors.email
-                        ? styles.inputError
-                        : ""
+                      errors.email ? styles.inputError : ""
                     }`}
                   >
                     <Mail aria-hidden="true" />
@@ -482,14 +381,9 @@ export default function Register() {
                       value={formData.email}
                       placeholder="nome@exemplo.com"
                       autoComplete="email"
-                      aria-invalid={Boolean(
-                        errors.email,
-                      )}
+                      aria-invalid={Boolean(errors.email)}
                       onChange={(event) =>
-                        updateField(
-                          "email",
-                          event.target.value,
-                        )
+                        updateField("email", event.target.value)
                       }
                     />
                   </div>
@@ -500,54 +394,33 @@ export default function Register() {
                 </div>
 
                 <div className={styles.field}>
-                  <label htmlFor="register-password">
-                    Senha
-                  </label>
+                  <label htmlFor="register-password">Senha</label>
 
                   <div
                     className={`${styles.inputGroup} ${
-                      errors.password
-                        ? styles.inputError
-                        : ""
+                      errors.password ? styles.inputError : ""
                     }`}
                   >
                     <LockKeyhole aria-hidden="true" />
 
                     <input
                       id="register-password"
-                      type={
-                        showPassword
-                          ? "text"
-                          : "password"
-                      }
+                      type={showPassword ? "text" : "password"}
                       value={formData.password}
                       placeholder="Crie sua senha"
                       autoComplete="new-password"
-                      aria-invalid={Boolean(
-                        errors.password,
-                      )}
+                      aria-invalid={Boolean(errors.password)}
                       onChange={(event) =>
-                        updateField(
-                          "password",
-                          event.target.value,
-                        )
+                        updateField("password", event.target.value)
                       }
                     />
 
                     <button
                       type="button"
-                      className={
-                        styles.passwordToggle
-                      }
-                      onClick={() =>
-                        setShowPassword(
-                          (current) => !current,
-                        )
-                      }
+                      className={styles.passwordToggle}
+                      onClick={() => setShowPassword((current) => !current)}
                       aria-label={
-                        showPassword
-                          ? "Ocultar senhas"
-                          : "Mostrar senhas"
+                        showPassword ? "Ocultar senhas" : "Mostrar senhas"
                       }
                     >
                       {showPassword ? (
@@ -570,33 +443,20 @@ export default function Register() {
 
                   <div
                     className={`${styles.inputGroup} ${
-                      errors.confirmPassword
-                        ? styles.inputError
-                        : ""
+                      errors.confirmPassword ? styles.inputError : ""
                     }`}
                   >
                     <LockKeyhole aria-hidden="true" />
 
                     <input
                       id="register-confirm-password"
-                      type={
-                        showPassword
-                          ? "text"
-                          : "password"
-                      }
-                      value={
-                        formData.confirmPassword
-                      }
+                      type={showPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
                       placeholder="Digite novamente"
                       autoComplete="new-password"
-                      aria-invalid={Boolean(
-                        errors.confirmPassword,
-                      )}
+                      aria-invalid={Boolean(errors.confirmPassword)}
                       onChange={(event) =>
-                        updateField(
-                          "confirmPassword",
-                          event.target.value,
-                        )
+                        updateField("confirmPassword", event.target.value)
                       }
                     />
                   </div>
@@ -615,9 +475,7 @@ export default function Register() {
                   <span
                     key={check.label}
                     className={
-                      check.valid
-                        ? styles.passwordRuleValid
-                        : undefined
+                      check.valid ? styles.passwordRuleValid : undefined
                     }
                   >
                     <span>
@@ -631,21 +489,14 @@ export default function Register() {
 
               <label
                 className={`${styles.termsRow} ${
-                  errors.termsAccepted
-                    ? styles.termsError
-                    : ""
+                  errors.termsAccepted ? styles.termsError : ""
                 }`}
               >
                 <input
                   type="checkbox"
-                  checked={
-                    formData.termsAccepted
-                  }
+                  checked={formData.termsAccepted}
                   onChange={(event) =>
-                    updateField(
-                      "termsAccepted",
-                      event.target.checked,
-                    )
+                    updateField("termsAccepted", event.target.checked)
                   }
                 />
 
@@ -657,9 +508,7 @@ export default function Register() {
                   Li e aceito o{" "}
                   <TransitionLink
                     to="/documentacao#codigo-de-conduta"
-                    onClick={(event) =>
-                      event.stopPropagation()
-                    }
+                    onClick={(event) => event.stopPropagation()}
                   >
                     código de conduta
                   </TransitionLink>{" "}
@@ -683,10 +532,7 @@ export default function Register() {
             </div>
 
             <footer className={styles.formFooter}>
-              <TransitionLink
-                to="/login"
-                className={styles.loginLink}
-              >
+              <TransitionLink to="/login" className={styles.loginLink}>
                 Já tenho uma conta
               </TransitionLink>
 
@@ -696,9 +542,7 @@ export default function Register() {
                 disabled={isSubmitting}
                 aria-busy={isSubmitting}
               >
-                {isSubmitting
-                  ? "Criando sua conta..."
-                  : "Criar minha conta"}
+                {isSubmitting ? "Criando sua conta..." : "Criar minha conta"}
 
                 <BadgeCheck aria-hidden="true" />
               </button>
@@ -707,31 +551,6 @@ export default function Register() {
         </section>
       </div>
 
-      <ModalMensagem
-        aberto={confirmationModalOpen}
-        titulo="Conta criada"
-        mensagem={
-          <p>
-            Sua conta foi criada com sucesso.
-            Agora você poderá entrar na CONG usando seu
-            e-mail e senha.
-          </p>
-        }
-        dados={{
-          Conta: {
-            Nome: formData.name.trim(),
-            "E-mail": formData.email
-              .trim()
-              .toLowerCase(),
-            Senha:
-              "Não exibida por segurança",
-          },
-        }}
-        tamanho="grande"
-        textoBotaoOk="Ir para o login"
-        fecharAoClicarFora={false}
-        onFechar={finishRegistration}
-      />
     </main>
   );
 }

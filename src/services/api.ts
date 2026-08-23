@@ -174,7 +174,9 @@ export async function apiRequest<T>(
       `${API_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`,
       {
         ...requestOptions,
-        headers: requestHeaders,
+
+        headers: requestHeaders,  /* Necessário para o cookie HttpOnly de acompanhamento da confirmação. O projeto trabalha com /api no mesmo origin. */
+        credentials: "same-origin",
       },
     );
   } catch (error) {
