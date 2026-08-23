@@ -1,7 +1,22 @@
 import pool from "../config/database.js";
-import { createSupabaseAuthClient, supabaseAdmin } from "../config/supabase.js";
-import { AppError } from "../utils/app-error.js";
+
+import {
+  createSupabaseAuthClient,
+  supabaseAdmin,
+} from "../config/supabase.js";
+
 import { env } from "../config/env.js";
+
+import { AppError } from "../utils/app-error.js";
+
+import {
+  createVerificationToken,
+  storeEmailVerificationFlow,
+} from "./email-verification.service.js";
+
+/* ==================================================
+   TYPES
+================================================== */
 
 interface RegisterUserInput {
   name: string;
@@ -14,6 +29,15 @@ interface RegisteredUser {
   name: string;
 }
 
+interface RegistrationResult {
+  user: RegisteredUser;
+
+  verification: {
+    token: string;
+    expiresAt: Date;
+  };
+}
+
 interface LoginUserInput {
   email: string;
   password: string;
@@ -23,11 +47,18 @@ interface LoggedUser {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
+
   user: {
     id: string;
     name: string;
     email: string;
   };
+}
+
+interface CurrentUser {
+  id: string;
+  name: string;
+  email: string;
 }
 
 interface RefreshedSession {
@@ -36,22 +67,35 @@ interface RefreshedSession {
   expiresIn: number;
 }
 
+/* ==================================================
+   REGISTER
+================================================== */
+
 export async function registerUser(
   input: RegisterUserInput,
-): Promise<RegisteredUser> {
+): Promise<RegistrationResult> {
   const { name, email, password } = input;
 
-  const supabaseAuth = createSupabaseAuthClient();
+  const supabaseAuth =
+    createSupabaseAuthClient();
 
-  const { data, error } = await supabaseAuth.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${env.frontendUrl}/auth/confirm`,
-    },
-  });
+  const { data, error } =
+    await supabaseAuth.auth.signUp({
+      email,
+      password,
+
+      options: {
+        emailRedirectTo:
+          `${env.frontendUrl}/auth/confirm`,
+      },
+    });
 
   if (error || !data.user) {
+    console.error(
+      "Unable to create authentication account:",
+      error,
+    );
+
     throw new AppError(
       "Unable to create authentication account",
       500,
@@ -61,9 +105,24 @@ export async function registerUser(
 
   const authUser = data.user;
 
+  /*
+   * Token usado somente para acompanhar
+   * a confirmação em outro dispositivo.
+   *
+   * Ele não cria sessão e não substitui
+   * autenticação.
+   */
+  const verification =
+    createVerificationToken();
+
   try {
-    const result = await pool.query<RegisteredUser>(
-      `
+    /*
+     * Cria o registro correspondente
+     * ao usuário da CONG.
+     */
+    const result =
+      await pool.query<RegisteredUser>(
+        `
           insert into public.users (
             auth_user_id,
             name
@@ -73,24 +132,87 @@ export async function registerUser(
             id,
             name
         `,
-      [authUser.id, name],
-    );
+        [
+          authUser.id,
+          name,
+        ],
+      );
 
     const user = result.rows[0];
 
     if (!user) {
-      throw new Error("User profile was not created");
+      throw new Error(
+        "User profile was not created",
+      );
     }
 
-    return user;
-  } catch {
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
+    /*
+     * Registra o fluxo temporário usado
+     * pela página /verifique-seu-email
+     * para detectar confirmação cross-device.
+     *
+     * Apenas o HASH do token fica armazenado.
+     */
+    await storeEmailVerificationFlow(
       authUser.id,
+      verification.tokenHash,
+      verification.expiresAt,
     );
+
+    return {
+      user,
+
+      verification: {
+        token: verification.token,
+        expiresAt:
+          verification.expiresAt,
+      },
+    };
+  } catch (error) {
+    console.error(
+      "Unable to finish user registration:",
+      error,
+    );
+
+    /*
+     * Rollback local.
+     *
+     * Caso o perfil tenha sido criado antes
+     * da falha do fluxo de verificação,
+     * tentamos removê-lo.
+     */
+    try {
+      await pool.query(
+        `
+          delete from public.users
+          where auth_user_id = $1
+        `,
+        [authUser.id],
+      );
+    } catch (rollbackError) {
+      console.error(
+        "Failed to rollback local user profile:",
+        rollbackError,
+      );
+    }
+
+    /*
+     * Rollback da conta no Supabase Auth.
+     *
+     * Isso evita deixar uma conta de
+     * autenticação parcialmente cadastrada.
+     */
+    const {
+      error: deleteError,
+    } =
+      await supabaseAdmin.auth.admin.deleteUser(
+        authUser.id,
+      );
 
     if (deleteError) {
       console.error(
-        "Failed to rollback authentication user after profile creation failure",
+        "Failed to rollback authentication user after registration failure:",
+        deleteError,
       );
     }
 
@@ -102,20 +224,43 @@ export async function registerUser(
   }
 }
 
-export async function loginUser(input: LoginUserInput): Promise<LoggedUser> {
-  const supabaseAuth = createSupabaseAuthClient();
+/* ==================================================
+   LOGIN
+================================================== */
 
-  const { data, error } = await supabaseAuth.auth.signInWithPassword({
-    email: input.email,
-    password: input.password,
-  });
+export async function loginUser(
+  input: LoginUserInput,
+): Promise<LoggedUser> {
+  const supabaseAuth =
+    createSupabaseAuthClient();
+
+  const { data, error } =
+    await supabaseAuth.auth.signInWithPassword({
+      email: input.email,
+      password: input.password,
+    });
 
   if (error) {
-    if (error.code === "email_not_confirmed") {
-      throw new AppError("Email is not confirmed", 403, "EMAIL_NOT_CONFIRMED");
+    /*
+     * Usuário existe, mas ainda precisa
+     * confirmar o endereço de e-mail.
+     */
+    if (
+      error.code ===
+      "email_not_confirmed"
+    ) {
+      throw new AppError(
+        "Email is not confirmed",
+        403,
+        "EMAIL_NOT_CONFIRMED",
+      );
     }
 
-    throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
+    throw new AppError(
+      "Invalid email or password",
+      401,
+      "INVALID_CREDENTIALS",
+    );
   }
 
   if (!data.session) {
@@ -154,27 +299,37 @@ export async function loginUser(input: LoginUserInput): Promise<LoggedUser> {
   }
 
   if (!user.active) {
-    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+    throw new AppError(
+      "User account is inactive",
+      403,
+      "USER_INACTIVE",
+    );
   }
 
   return {
-    accessToken: data.session.access_token,
-    refreshToken: data.session.refresh_token,
-    expiresIn: data.session.expires_in,
+    accessToken:
+      data.session.access_token,
+
+    refreshToken:
+      data.session.refresh_token,
+
+    expiresIn:
+      data.session.expires_in,
 
     user: {
       id: user.id,
       name: user.name,
-      email: data.user.email ?? input.email,
+
+      email:
+        data.user.email ??
+        input.email,
     },
   };
 }
 
-interface CurrentUser {
-  id: string;
-  name: string;
-  email: string;
-}
+/* ==================================================
+   CURRENT USER
+================================================== */
 
 export async function getCurrentUser(
   authUserId: string,
@@ -208,7 +363,11 @@ export async function getCurrentUser(
   }
 
   if (!user.active) {
-    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+    throw new AppError(
+      "User account is inactive",
+      403,
+      "USER_INACTIVE",
+    );
   }
 
   return {
@@ -218,16 +377,26 @@ export async function getCurrentUser(
   };
 }
 
+/* ==================================================
+   REFRESH SESSION
+================================================== */
+
 export async function refreshUserSession(
   refreshToken: string,
 ): Promise<RefreshedSession> {
-  const supabaseAuth = createSupabaseAuthClient();
+  const supabaseAuth =
+    createSupabaseAuthClient();
 
-  const { data, error } = await supabaseAuth.auth.refreshSession({
-    refresh_token: refreshToken,
-  });
+  const { data, error } =
+    await supabaseAuth.auth.refreshSession({
+      refresh_token:
+        refreshToken,
+    });
 
-  if (error || !data.session) {
+  if (
+    error ||
+    !data.session
+  ) {
     throw new AppError(
       "Unable to refresh user session",
       401,
@@ -236,19 +405,29 @@ export async function refreshUserSession(
   }
 
   return {
-    accessToken: data.session.access_token,
+    accessToken:
+      data.session.access_token,
 
-    refreshToken: data.session.refresh_token,
+    refreshToken:
+      data.session.refresh_token,
 
-    expiresIn: data.session.expires_in,
+    expiresIn:
+      data.session.expires_in,
   };
 }
 
-export async function logoutUserSession(accessToken: string): Promise<void> {
-  const { error } = await supabaseAdmin.auth.admin.signOut(
-    accessToken,
-    "local",
-  );
+/* ==================================================
+   LOGOUT
+================================================== */
+
+export async function logoutUserSession(
+  accessToken: string,
+): Promise<void> {
+  const { error } =
+    await supabaseAdmin.auth.admin.signOut(
+      accessToken,
+      "local",
+    );
 
   if (error) {
     throw new AppError(
@@ -257,4 +436,49 @@ export async function logoutUserSession(accessToken: string): Promise<void> {
       "SESSION_LOGOUT_FAILED",
     );
   }
+}
+
+/* ==================================================
+   RESEND SIGNUP CONFIRMATION
+================================================== */
+
+export async function resendSignupConfirmation(
+  email: string,
+): Promise<void> {
+  const supabaseAuth =
+    createSupabaseAuthClient();
+
+  const { error } =
+    await supabaseAuth.auth.resend({
+      type: "signup",
+      email,
+
+      options: {
+        emailRedirectTo:
+          `${env.frontendUrl}/auth/confirm`,
+      },
+    });
+
+  if (!error) {
+    return;
+  }
+
+  if (error.status === 429) {
+    throw new AppError(
+      "Too many confirmation email requests",
+      429,
+      "CONFIRMATION_EMAIL_RATE_LIMIT",
+    );
+  }
+
+  console.error(
+    "Unable to resend signup confirmation:",
+    error,
+  );
+
+  throw new AppError(
+    "Unable to resend confirmation email",
+    500,
+    "CONFIRMATION_EMAIL_RESEND_FAILED",
+  );
 }

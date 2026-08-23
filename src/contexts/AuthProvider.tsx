@@ -31,6 +31,8 @@ import {
   type AuthUser,
   type CongProfile,
   type CongUserData,
+  type AuthenticationResult,
+  type PostAuthRoute,
 } from "./auth-context";
 
 import {
@@ -71,19 +73,10 @@ interface LegacySessionResponse {
   profiles: CongProfile[];
 }
 
-function toAuthSession(response: LoginResponse): AuthSession {
-  return {
-    token: response.accessToken,
-
-    user: {
-      id: response.user.id,
-      name: response.user.name,
-      email: response.user.email,
-    },
-
-    userData: null,
-    profiles: [],
-  };
+function getPostAuthDestination(
+  profiles: CollaborationProfile[],
+): PostAuthRoute {
+  return profiles.length === 0 ? "/app/escolher-funcao" : "/app/comunidade";
 }
 
 export default function AuthProvider({ children }: AuthProviderProps) {
@@ -122,6 +115,69 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     setAccountLoading(false);
     setProfilesLoading(false);
   }, []);
+
+  const establishSession = useCallback(
+    async (
+      accessToken: string,
+      refreshToken: string,
+      remember = false,
+    ): Promise<AuthenticationResult> => {
+      setError("");
+      setLoading(true);
+      setAccountLoading(true);
+      setCollaborationProfilesLoading(true);
+
+      storeAuthTokens(accessToken, refreshToken, remember);
+
+      try {
+        const response = await apiGet<MeResponse>("/auth/me");
+
+        const [currentAccount, currentCollaborationProfiles] =
+          await Promise.all([getMyAccount(), getMyCollaborationProfiles()]);
+
+        const authenticatedUser: AuthUser = {
+          id: response.user.id,
+          name: currentAccount.name,
+          email: currentAccount.email,
+        };
+
+        setUser(authenticatedUser);
+        setAccount(currentAccount);
+
+        setCollaborationProfiles(currentCollaborationProfiles);
+
+        /*
+         * Estrutura antiga mantida temporariamente
+         * enquanto a comunidade ainda depende dela.
+         */
+        setUserData(null);
+        setProfiles([]);
+        setProfilesLoading(false);
+
+        const session: AuthSession = {
+          token: accessToken,
+          user: authenticatedUser,
+          userData: null,
+          profiles: [],
+        };
+
+        return {
+          session,
+          destination: getPostAuthDestination(currentCollaborationProfiles),
+        };
+      } catch (authenticationError) {
+        clearStoredAuthToken();
+        clearSessionState();
+
+        throw authenticationError;
+      } finally {
+        setLoading(false);
+        setAccountLoading(false);
+        setCollaborationProfilesLoading(false);
+      }
+    },
+    [clearSessionState],
+  );
 
   const applySession = useCallback((session: Omit<AuthSession, "token">) => {
     setUser(session.user);
@@ -494,7 +550,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       email: string,
       password: string,
       remember: boolean,
-    ): Promise<AuthSession> => {
+    ): Promise<AuthenticationResult> => {
       setError("");
 
       const response = await apiPost<LoginResponse>(
@@ -506,15 +562,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         false,
       );
 
-      const session = toAuthSession(response);
-
-      storeAuthTokens(response.accessToken, response.refreshToken, remember);
-
-      applySession(session);
-
-      return session;
+      return establishSession(
+        response.accessToken,
+        response.refreshToken,
+        remember,
+      );
     },
-    [applySession],
+    [establishSession],
   );
 
   const signup = useCallback(async (): Promise<AuthSession> => {
@@ -629,6 +683,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     error,
 
     login,
+    establishSession,
     signup,
 
     refreshSession,

@@ -1,11 +1,13 @@
 import { Router } from "express";
 
 import {
+  emailVerificationStatus,
   login,
-  me,
   logout,
+  me,
   refresh,
   register,
+  resendConfirmation,
 } from "../controllers/auth.controller.js";
 
 import { authenticate } from "../middlewares/authenticate.js";
@@ -16,11 +18,28 @@ import {
   loginSchema,
   refreshSchema,
   registerSchema,
+  resendConfirmationSchema,
 } from "../validators/auth.validator.js";
 
 const authRouter = Router();
 
+/* ==================================================
+   REGISTER / VERIFICATION
+================================================== */
+
 authRouter.post("/register", validateBody(registerSchema), register);
+
+authRouter.post(
+  "/resend-confirmation",
+  validateBody(resendConfirmationSchema),
+  resendConfirmation,
+);
+
+authRouter.get("/email-verification/status", emailVerificationStatus);
+
+/* ==================================================
+   SESSION
+================================================== */
 
 authRouter.post("/login", validateBody(loginSchema), login);
 
