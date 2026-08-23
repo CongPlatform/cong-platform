@@ -79,6 +79,13 @@ export interface AuthSession {
   profiles: CongProfile[];
 }
 
+export type PostAuthRoute = "/app/escolher-funcao" | "/app/comunidade";
+
+export interface AuthenticationResult {
+  session: AuthSession;
+  destination: PostAuthRoute;
+}
+
 export interface AuthContextValue {
   user: AuthUser | null;
   account: UserAccount | null;
@@ -119,7 +126,13 @@ export interface AuthContextValue {
     email: string,
     password: string,
     remember: boolean,
-  ) => Promise<AuthSession>;
+  ) => Promise<AuthenticationResult>;
+
+  establishSession: (
+    accessToken: string,
+    refreshToken: string,
+    remember?: boolean,
+  ) => Promise<AuthenticationResult>;
 
   signup: (
     registrationData: unknown,

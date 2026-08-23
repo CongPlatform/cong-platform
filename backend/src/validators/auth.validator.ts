@@ -35,3 +35,10 @@ export const refreshSchema = z.object({
     .string()
     .min(1),
 });
+
+export const resendConfirmationSchema = z.object({
+  email: z
+    .email()
+    .trim()
+    .toLowerCase(),
+});

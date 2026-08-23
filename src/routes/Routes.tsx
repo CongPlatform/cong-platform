@@ -16,6 +16,7 @@ import Pending from "../pages/pending/Pending";
 import Register from "../pages/register/Register";
 import AuthConfirm from "../pages/auth-confirm/AuthConfirm";
 import Account from "../pages/logged-in/account/Account";
+import VerifyEmail from "../pages/verifyEmail/VerifyEmail";
 import ProfileCreation from "../pages/logged-in/profileCreation/ProfileCreation";
 
 export default function AppRoutes() {
@@ -41,10 +42,11 @@ export default function AppRoutes() {
 
           <Route path="/signup" element={<Register />} />
 
+          <Route path="/verifique-seu-email" element={<VerifyEmail />} />
+
           <Route path="/auth/confirm" element={<AuthConfirm />} />
           {/* Sistema logado */}
           <Route element={<ProtectedRoute />}>
-
             <Route path="/app/escolher-funcao" element={<RoleSelection />} />
 
             <Route path="/app/comunidade" element={<LoggedInCommunity />} />
