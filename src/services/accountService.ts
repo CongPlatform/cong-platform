@@ -1,20 +1,73 @@
-import { apiDelete, apiGet, apiPatch, apiUpload } from "./api";
+import {
+  apiDelete,
+  apiGet,
+  apiPatch,
+  apiUpload,
+} from "./api";
+
+import type {
+  CollaborationRole,
+} from "./collaborationProfileService";
+
+import type {
+  OnboardingRepresentation,
+} from "./onboardingService";
+
+export type OnboardingStep =
+  | "identity"
+  | "roles"
+  | "profiles"
+  | "completed";
 
 export interface UserAccount {
   id: string;
+
   name: string;
-  username: string | null;
-  bio: string | null;
-  avatarPath: string | null;
+
+  displayName:
+    | string
+    | null;
+
+  pronouns:
+    | string
+    | null;
+
+  username:
+    | string
+    | null;
+
+  bio:
+    | string
+    | null;
+
+  avatarPath:
+    | string
+    | null;
+
   email: string;
+
+  onboardingStep:
+    OnboardingStep;
+
+  onboardingRoles:
+    CollaborationRole[];
+
+  onboardingRepresentations:
+    OnboardingRepresentation[];
+
   createdAt: string;
+
   updatedAt: string;
 }
 
 export interface UpdateAccountInput {
   name?: string;
+
   username?: string;
-  bio?: string | null;
+
+  bio?:
+    | string
+    | null;
 }
 
 interface AccountResponse {
@@ -23,16 +76,23 @@ interface AccountResponse {
 
 interface UpdateAccountResponse {
   message: string;
+
   user: UserAccount;
 }
 
 interface AvatarResponse {
   message: string;
-  avatarPath: string | null;
+
+  avatarPath:
+    | string
+    | null;
 }
 
 export async function getMyAccount(): Promise<UserAccount> {
-  const response = await apiGet<AccountResponse>("/account/me");
+  const response =
+    await apiGet<AccountResponse>(
+      "/account/me",
+    );
 
   return response.user;
 }
@@ -40,7 +100,11 @@ export async function getMyAccount(): Promise<UserAccount> {
 export async function updateMyAccount(
   input: UpdateAccountInput,
 ): Promise<UserAccount> {
-  const response = await apiPatch<UpdateAccountResponse>("/account/me", input);
+  const response =
+    await apiPatch<UpdateAccountResponse>(
+      "/account/me",
+      input,
+    );
 
   return response.user;
 }
@@ -63,8 +127,10 @@ export async function uploadMyAvatar(
       file,
       {
         fieldName: "avatar",
+
         onProgress:
           options.onProgress,
+
         signal:
           options.signal,
       },
@@ -72,6 +138,23 @@ export async function uploadMyAvatar(
 
   return response.avatarPath;
 }
+
 export async function removeMyAvatar(): Promise<void> {
-  await apiDelete<AvatarResponse>("/account/me/avatar");
+  await apiDelete<AvatarResponse>(
+    "/account/me/avatar",
+  );
+}
+
+export interface UsernameAvailability {
+  username: string;
+
+  available: boolean;
+}
+
+export async function checkUsernameAvailability(
+  username: string,
+): Promise<UsernameAvailability> {
+  return apiGet<UsernameAvailability>(
+    `/account/me/username-availability?username=${encodeURIComponent(username)}`,
+  );
 }

@@ -33,34 +33,24 @@ export interface CongUserData {
   fullName: string;
   username: string;
   email: string;
-
   journeys: JourneyId[];
   defaultExperience: JourneyId | null;
-
   profileIds: string[];
   activeProfileId: string | null;
-
   activeRole: string | null;
-
   createdAt: string | null;
   updatedAt: string | null;
 }
 
 export interface CongProfile {
   id: string;
-
   ownerUid: string;
   type: ProfileType;
-
   displayName: string;
   username?: string;
-
   sourceJourney?: JourneyId;
-
   details: Record<string, unknown>;
-
   status: ProfileStatus;
-
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -79,7 +69,11 @@ export interface AuthSession {
   profiles: CongProfile[];
 }
 
-export type PostAuthRoute = "/app/escolher-funcao" | "/app/comunidade";
+export type PostAuthRoute =
+  | "/app/primeiro-acesso"
+  | "/app/escolher-funcao"
+  | "/app/completar-perfis"
+  | "/app/comunidade";
 
 export interface AuthenticationResult {
   session: AuthSession;
@@ -88,10 +82,13 @@ export interface AuthenticationResult {
 
 export interface AuthContextValue {
   user: AuthUser | null;
+
   account: UserAccount | null;
 
   collaborationProfiles: CollaborationProfile[];
+
   activeCollaborationProfile: CollaborationProfile | null;
+
   collaborationProfilesLoading: boolean;
 
   refreshCollaborationProfiles: () => Promise<void>;
@@ -113,11 +110,15 @@ export interface AuthContextValue {
   ) => Promise<CollaborationProfile>;
 
   userData: CongUserData | null;
+
   profiles: CongProfile[];
+
   activeProfile: CongProfile | null;
 
   loading: boolean;
+
   accountLoading: boolean;
+
   profilesLoading: boolean;
 
   error: string;
@@ -155,6 +156,7 @@ export interface AuthContextValue {
   ) => Promise<void>;
 
   removeAvatar: () => Promise<void>;
+
   switchProfile: (profileId: string) => Promise<void>;
 
   logout: () => Promise<void>;

@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-const usernameSchema = z
+export const usernameSchema = z
   .string()
   .trim()
   .min(3)
