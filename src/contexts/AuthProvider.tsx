@@ -73,12 +73,21 @@ interface LegacySessionResponse {
   profiles: CongProfile[];
 }
 
-function getPostAuthDestination(
-  profiles: CollaborationProfile[],
-): PostAuthRoute {
-  return profiles.length === 0 ? "/app/escolher-funcao" : "/app/comunidade";
-}
+function getPostAuthDestination(account: UserAccount): PostAuthRoute {
+  switch (account.onboardingStep) {
+    case "identity":
+      return "/app/primeiro-acesso";
 
+    case "roles":
+      return "/app/escolher-funcao";
+
+    case "profiles":
+      return "/app/completar-perfis";
+
+    case "completed":
+      return "/app/comunidade";
+  }
+}
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
@@ -137,7 +146,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
         const authenticatedUser: AuthUser = {
           id: response.user.id,
-          name: currentAccount.name,
+          name: currentAccount.displayName ?? currentAccount.name,
           email: currentAccount.email,
         };
 
@@ -163,7 +172,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
         return {
           session,
-          destination: getPostAuthDestination(currentCollaborationProfiles),
+          destination: getPostAuthDestination(currentAccount),
         };
       } catch (authenticationError) {
         clearStoredAuthToken();
@@ -209,7 +218,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
         return {
           ...currentUser,
-          name: currentAccount.name,
+          name: currentAccount.displayName ?? currentAccount.name,
           email: currentAccount.email,
         };
       });
@@ -350,7 +359,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
           return {
             ...currentUser,
-            name: updatedAccount.name,
+            name: updatedAccount.displayName ?? updatedAccount.name,
             email: updatedAccount.email,
           };
         });

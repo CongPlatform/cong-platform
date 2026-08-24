@@ -2,13 +2,23 @@ import pool from "../config/database.js";
 import { AppError } from "../utils/app-error.js";
 import { getAvatarPublicUrl } from "./avatar.service.js";
 
+import type { CollaborationRole } from "../validators/collaboration-profile.validator.js";
+import type { OnboardingRepresentation } from "../validators/onboarding.validator.js";
+
+export type OnboardingStep = "identity" | "roles" | "profiles" | "completed";
+
 interface Account {
   id: string;
   name: string;
+  displayName: string | null;
+  pronouns: string | null;
   username: string | null;
   bio: string | null;
   avatarPath: string | null;
   email: string;
+  onboardingStep: OnboardingStep;
+  onboardingRoles: CollaborationRole[];
+  onboardingRepresentations: OnboardingRepresentation[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,12 +32,35 @@ interface UpdateAccountInput {
 interface AccountRow {
   id: string;
   name: string;
+  displayName: string | null;
+  pronouns: string | null;
   username: string | null;
   bio: string | null;
   avatarPath: string | null;
   active: boolean;
+  onboardingStep: OnboardingStep;
+  onboardingRoles: CollaborationRole[];
+  onboardingRepresentations: OnboardingRepresentation[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+function toAccount(user: AccountRow, email: string): Account {
+  return {
+    id: user.id,
+    name: user.name,
+    displayName: user.displayName,
+    pronouns: user.pronouns,
+    username: user.username,
+    bio: user.bio,
+    avatarPath: getAvatarPublicUrl(user.avatarPath),
+    email,
+    onboardingStep: user.onboardingStep,
+    onboardingRoles: user.onboardingRoles,
+    onboardingRepresentations: user.onboardingRepresentations,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }
 
 export async function getAccount(
@@ -39,10 +72,15 @@ export async function getAccount(
       select
         id,
         name,
+        display_name as "displayName",
+        pronouns,
         username,
         bio,
         avatar_path as "avatarPath",
         active,
+        onboarding_step as "onboardingStep",
+        onboarding_roles as "onboardingRoles",
+        onboarding_representations as "onboardingRepresentations",
         created_at as "createdAt",
         updated_at as "updatedAt"
       from public.users
@@ -66,16 +104,7 @@ export async function getAccount(
     throw new AppError("User account is inactive", 403, "USER_INACTIVE");
   }
 
-  return {
-    id: user.id,
-    name: user.name,
-    username: user.username,
-    bio: user.bio,
-    avatarPath: getAvatarPublicUrl(user.avatarPath),
-    email,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
+  return toAccount(user, email);
 }
 
 export async function updateAccount(
@@ -114,10 +143,15 @@ export async function updateAccount(
         returning
           id,
           name,
+          display_name as "displayName",
+          pronouns,
           username,
           bio,
           avatar_path as "avatarPath",
           active,
+          onboarding_step as "onboardingStep",
+          onboarding_roles as "onboardingRoles",
+          onboarding_representations as "onboardingRepresentations",
           created_at as "createdAt",
           updated_at as "updatedAt"
       `,
@@ -138,16 +172,7 @@ export async function updateAccount(
       throw new AppError("User account is inactive", 403, "USER_INACTIVE");
     }
 
-    return {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      bio: user.bio,
-      avatarPath: getAvatarPublicUrl(user.avatarPath),
-      email,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return toAccount(user, email);
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
@@ -168,4 +193,33 @@ export async function updateAccount(
 
     throw error;
   }
+}
+
+export async function checkUsernameAvailability(
+  authUserId: string,
+  username: string,
+): Promise<{
+  username: string;
+  available: boolean;
+}> {
+  const normalizedUsername = username.trim().replace(/^@+/, "").toLowerCase();
+
+  const result = await pool.query<{ inUse: boolean }>(
+    `
+      select exists (
+        select 1
+        from public.users
+        where lower(username) = $1
+          and auth_user_id <> $2
+      ) as "inUse"
+    `,
+    [normalizedUsername, authUserId],
+  );
+
+  const inUse = result.rows[0]?.inUse ?? false;
+
+  return {
+    username: normalizedUsername,
+    available: !inUse,
+  };
 }

@@ -130,12 +130,11 @@ export default function Login() {
       const requestedRoute = routeState?.from;
 
       /*
-       * Primeiro acesso sempre vence.
-       * Se ainda não existe perfil,
-       * o usuário precisa concluir essa etapa.
+       * Enquanto o onboarding não terminou, o estado salvo no backend
+       * sempre vence qualquer rota antiga que o navegador tenha guardado.
        */
-      if (result.destination === "/app/escolher-funcao") {
-        navigate("/app/escolher-funcao", {
+      if (result.destination !== "/app/comunidade") {
+        navigate(result.destination, {
           replace: true,
         });
 
@@ -143,9 +142,8 @@ export default function Login() {
       }
 
       /*
-       * Se ele já possui perfil e veio
-       * de uma rota protegida, retorna
-       * para a rota originalmente solicitada.
+       * Com o onboarding concluído, uma rota protegida originalmente
+       * solicitada pode ser restaurada normalmente.
        */
       if (requestedRoute?.startsWith("/app/")) {
         navigate(requestedRoute, {

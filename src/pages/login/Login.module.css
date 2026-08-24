@@ -204,6 +204,7 @@
 .mascot {
   position: relative;
   z-index: 2;
+  margin: -1rem;
 
   width: clamp(220px, 22vw, 285px);
   max-width: 100%;

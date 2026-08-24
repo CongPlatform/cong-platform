@@ -1,12 +1,10 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "./api";
 
 export const collaborationRoles = [
-  "organization",
   "developer",
   "designer",
   "translator",
   "volunteer",
-  "supporter",
 ] as const;
 
 export type CollaborationRole = (typeof collaborationRoles)[number];
@@ -14,13 +12,6 @@ export type CollaborationRole = (typeof collaborationRoles)[number];
 /* ==================================================
    DADOS ESPECÍFICOS DOS PERFIS
    ================================================== */
-
-export interface OrganizationProfileData {
-  organizationName: string;
-  causeAreas: string[];
-  city?: string;
-  state?: string;
-}
 
 export interface DeveloperProfileData {
   technologies: string[];
@@ -44,19 +35,12 @@ export interface VolunteerProfileData {
   availability?: string;
 }
 
-export interface SupporterProfileData {
-  organizationName: string;
-  supportAreas: string[];
-  websiteUrl?: string;
-}
-
 export type CollaborationProfileData =
-  | OrganizationProfileData
+
   | DeveloperProfileData
   | DesignerProfileData
   | TranslatorProfileData
   | VolunteerProfileData
-  | SupporterProfileData;
 
 /* ==================================================
    PERFIL

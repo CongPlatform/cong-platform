@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
 
-import { getAccount, updateAccount } from "../services/account.service.js";
+import {
+  checkUsernameAvailability,
+  getAccount,
+  updateAccount,
+} from "../services/account.service.js";
 
 import {
   removeAccountAvatar,
@@ -35,6 +39,44 @@ export async function me(_req: Request, res: Response): Promise<void> {
 
       return;
     }
+
+    res.status(500).json({
+      error: "Internal server error",
+      code: "INTERNAL_SERVER_ERROR",
+    });
+  }
+}
+
+export async function usernameAvailability(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const authUser = res.locals.authUser;
+
+    const rawUsername =
+      typeof req.query.username === "string" ? req.query.username : "";
+
+    const username = rawUsername.trim().replace(/^@+/, "").toLowerCase();
+
+    if (
+      username.length < 3 ||
+      username.length > 30 ||
+      !/^[A-Za-z0-9._]+$/.test(username)
+    ) {
+      res.status(400).json({
+        error: "Invalid username",
+        code: "USERNAME_INVALID",
+      });
+
+      return;
+    }
+
+    const result = await checkUsernameAvailability(authUser.id, username);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Erro ao consultar disponibilidade de username:", error);
 
     res.status(500).json({
       error: "Internal server error",
