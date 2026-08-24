@@ -1,68 +1,121 @@
-.page {
-  --header-height: 0px;
+/* ==================================================
+   BASE
+   ================================================== */
 
-  position: relative;
+.page {
   min-height: 100svh;
-  overflow-x: clip;
-  background: var(--color-page-background);
+
+  overflow-x: hidden;
+
+  color: var(--color-ink);
+
+  font-family: var(--font-body);
+
+  background:
+    radial-gradient(
+      circle at 8% 15%,
+      rgb(var(--color-primary-rgb) / 7%),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 92% 85%,
+      rgb(var(--color-accent-rgb) / 9%),
+      transparent 30rem
+    ),
+    linear-gradient(
+      rgb(var(--color-primary-dark-rgb) / 3.5%) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgb(var(--color-primary-dark-rgb) / 3.5%) 1px,
+      transparent 1px
+    ),
+    var(--color-page-background);
+
+  background-size:
+    auto,
+    auto,
+    38px 38px,
+    38px 38px,
+    auto;
 }
 
+.loadingPage {
+  min-height: 100svh;
+
+  display: grid;
+  place-items: center;
+
+  background: var(--color-page-background);
+
+  color: var(--color-slate-600);
+}
+
+/* ==================================================
+   TOPBAR
+   ================================================== */
+
 .topbar {
-  position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
-  z-index: 30;
-  min-height: 76px;
-  padding: 0.9rem clamp(1rem, 4vw, 3.5rem);
+  min-height: 68px;
+
+  padding: 0.75rem clamp(1rem, 4vw, 3.5rem);
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  pointer-events: none;
+
+  gap: 1rem;
 }
 
 .logo {
-  width: clamp(116px, 12vw, 166px);
+  width: clamp(116px, 11vw, 162px);
+
   height: auto;
-  display: block;
-  filter: drop-shadow(0 5px 13px rgb(var(--color-white-rgb) / 80%));
-  pointer-events: auto;
 }
 
 .logoutButton {
   min-height: 42px;
-  padding: 0.62rem 0.9rem;
+
+  padding: 0.55rem 0.9rem;
+
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+
   gap: 0.45rem;
-  color: var(--color-ink);
-  border: 2px solid rgb(var(--color-ink-rgb) / 70%);
+
+  border: 1px solid rgb(var(--color-navy-rgb) / 13%);
+
   border-radius: 999px;
-  background: rgb(var(--color-paper-rgb) / 84%);
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(8px);
-  font-family: var(--font-body);
+
+  background: rgb(var(--color-white-rgb) / 78%);
+
+  color: var(--color-navy);
+
+  box-shadow: 0 5px 15px rgb(var(--color-navy-rgb) / 4%);
+
+  backdrop-filter: blur(12px);
+
+  font: inherit;
+
   font-size: var(--font-sm);
+
   font-weight: var(--font-semibold);
+
   cursor: pointer;
-  pointer-events: auto;
+
   transition:
-    transform 180ms ease,
-    background 180ms ease,
-    opacity 180ms ease;
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
-.logoutButton:hover:not(:disabled),
-.logoutButton:focus-visible:not(:disabled) {
-  background: var(--color-paper);
-  outline: none;
-  transform: translateY(-2px);
-}
+.logoutButton:hover:not(:disabled) {
+  transform: translateY(-1px);
 
-.logoutButton:disabled {
-  opacity: 0.5;
-  cursor: wait;
+  border-color: rgb(var(--color-primary-rgb) / 30%);
+
+  background: var(--color-white);
 }
 
 .logoutButton svg {
@@ -70,86 +123,1101 @@
   height: 1rem;
 }
 
-.selectionStatus {
-  position: fixed;
-  bottom: clamp(1rem, 4vw, 2.5rem);
-  left: 50%;
-  z-index: 40;
-  max-width: calc(100vw - 2rem);
-  padding: 0.75rem 1.05rem;
-  color: var(--color-white);
-  border-radius: 999px;
-  background: var(--color-primary-dark);
-  box-shadow: var(--shadow-lg);
-  font-family: var(--font-body);
-  font-size: var(--font-sm);
-  font-weight: var(--font-semibold);
+/* ==================================================
+   CONTEÚDO
+   ================================================== */
+
+.content {
+  width: min(1240px, calc(100% - 2rem));
+
+  margin: 0 auto;
+
+  padding: 0.25rem 0 3rem;
+}
+
+/* ==================================================
+   HERO
+   ================================================== */
+
+.hero {
+  max-width: 850px;
+
+  margin: 0 auto 1.15rem;
+
   text-align: center;
-  opacity: 0;
-  transform: translate(-50%, 18px) scale(0.96);
+}
+
+.stepBadge {
+  width: fit-content;
+
+  margin: 0 auto 0.42rem;
+
+  padding: 0.3rem 0.58rem;
+
+  border-radius: 999px;
+
+  background: var(--color-primary-100);
+
+  color: var(--color-primary-dark);
+
+  font-size: 0.68rem;
+
+  font-weight: var(--font-bold);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.35rem;
+
+  color: var(--color-primary-dark);
+
+  font-size: var(--font-xs);
+
+  font-weight: var(--font-bold);
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+}
+
+.eyebrow svg {
+  width: 0.92rem;
+  height: 0.92rem;
+}
+
+.hero h1 {
+  margin: 0.3rem auto 0;
+
+  color: var(--color-navy);
+
+  font-family: var(--font-brand);
+
+  font-size: clamp(2.75rem, 4.35vw, 4.25rem);
+
+  line-height: 0.98;
+
+  letter-spacing: -0.045em;
+}
+
+.hero h1 span {
+  position: relative;
+
+  display: inline-block;
+}
+
+.hero h1 span::after {
+  content: "";
+
+  position: absolute;
+
+  left: 2%;
+  right: -1%;
+  bottom: -0.06em;
+
+  height: 0.1em;
+
+  border-radius: 999px;
+
+  background: var(--color-accent);
+
+  transform: rotate(-1.2deg);
+
+  z-index: 0;
+}
+
+.heroText {
+  max-width: 660px;
+
+  margin: 0.7rem auto 0;
+
+  color: var(--color-slate-600);
+
+  font-size: 0.92rem;
+
+  line-height: 1.55;
+}
+
+/* ==================================================
+   AVISO
+   ================================================== */
+
+.notice {
+  width: fit-content;
+
+  max-width: 670px;
+
+  margin: 0.85rem auto 0;
+
+  padding: 0.68rem 0.9rem;
+
+  display: inline-grid;
+
+  grid-template-columns:
+    auto
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 0.6rem;
+
+  border: 1px solid rgb(var(--color-primary-rgb) / 14%);
+
+  border-radius: 14px;
+
+  background: rgb(var(--color-white-rgb) / 76%);
+
+  box-shadow: 0 8px 22px rgb(var(--color-navy-rgb) / 4%);
+
+  backdrop-filter: blur(12px);
+
+  text-align: left;
+}
+
+.noticeIcon {
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: var(--color-primary-50);
+
+  color: var(--color-primary-dark);
+}
+
+.noticeIcon svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.notice p {
+  margin: 0;
+
+  color: var(--color-slate-600);
+
+  font-size: 0.72rem;
+
+  line-height: 1.4;
+}
+
+.notice strong {
+  margin-right: 0.2rem;
+
+  color: var(--color-navy);
+}
+
+/* ==================================================
+   LAYOUT PRINCIPAL
+   ================================================== */
+
+.selectionLayout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.7fr)
+    minmax(310px, 0.9fr);
+
+  gap: 1.1rem;
+
+  align-items: stretch;
+}
+
+.optionsCard,
+.selectionCard {
+  border: 1px solid rgb(var(--color-navy-rgb) / 10%);
+
+  border-radius: 24px;
+
+  background: rgb(var(--color-white-rgb) / 88%);
+
+  box-shadow: 0 18px 48px rgb(var(--color-navy-rgb) / 6%);
+
+  backdrop-filter: blur(15px);
+}
+
+/* ==================================================
+   OPÇÕES
+   ================================================== */
+
+.optionsCard {
+  padding: 1.15rem;
+}
+
+.optionGroup + .optionGroup {
+  margin-top: 1.05rem;
+}
+
+.groupHeading {
+  margin: 0 0.25rem 0.48rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
+}
+
+.groupHeading span,
+.selectionEyebrow {
+  color: var(--color-primary-dark);
+
+  font-size: var(--font-xs);
+
+  font-weight: var(--font-bold);
+
+  letter-spacing: 0.075em;
+
+  text-transform: uppercase;
+}
+
+.groupHeading small {
+  color: var(--color-slate-400);
+
+  font-size: 0.67rem;
+}
+
+/* ==================================================
+   CARDS DE PARTICIPAÇÃO
+   ================================================== */
+
+.optionGrid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 0.72rem;
+}
+
+.optionCard {
+  min-height: 122px;
+
+  padding: 0.88rem 0.85rem 0.88rem 0.68rem;
+
+  display: grid;
+
+  grid-template-columns:
+    auto
+    auto
+    minmax(0, 1fr)
+    auto;
+
+  align-items: start;
+
+  gap: 0.6rem;
+
+  border: 1px solid var(--color-slate-200);
+
+  border-radius: 17px;
+
+  background: rgb(var(--color-white-rgb) / 85%);
+
+  color: var(--color-navy);
+
+  text-align: left;
+
+  font: inherit;
+
+  cursor: pointer;
+
   transition:
-    opacity 220ms ease,
-    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease,
+    opacity 150ms ease;
+}
+
+.optionCard:hover {
+  transform: translateY(-2px);
+
+  border-color: var(--color-primary-300);
+
+  box-shadow: 0 9px 22px rgb(var(--color-navy-rgb) / 6%);
+}
+
+.optionCardSelected {
+  border-color: var(--color-primary);
+
+  background: linear-gradient(
+    135deg,
+    rgb(var(--color-primary-rgb) / 9%),
+    rgb(var(--color-primary-rgb) / 3%)
+  );
+
+  box-shadow: 0 0 0 2px rgb(var(--color-primary-rgb) / 5%);
+}
+
+.optionCardDragging {
+  opacity: 0.5;
+
+  transform: scale(0.985);
+}
+
+.dragHandle {
+  width: 0.88rem;
+  height: 0.88rem;
+
+  margin-top: 0.18rem;
+
+  color: var(--color-slate-300);
+
+  cursor: grab;
+}
+
+.optionIcon {
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 11px;
+
+  background: var(--color-primary-50);
+
+  color: var(--color-primary-dark);
+}
+
+.optionIcon svg {
+  width: 1.08rem;
+  height: 1.08rem;
+}
+
+.optionCopy {
+  min-width: 0;
+
+  display: grid;
+
+  gap: 0.28rem;
+}
+
+.optionCopy strong {
+  color: var(--color-navy);
+
+  font-size: 0.88rem;
+
+  line-height: 1.25;
+}
+
+.optionCopy small {
+  color: var(--color-slate-500);
+
+  font-size: 0.72rem;
+
+  line-height: 1.42;
+}
+
+.checkCircle {
+  width: 21px;
+  height: 21px;
+
+  display: grid;
+  place-items: center;
+
+  flex-shrink: 0;
+
+  border: 1px solid var(--color-slate-300);
+
+  border-radius: 999px;
+
+  color: var(--color-white);
+}
+
+.checkCircleSelected {
+  border-color: var(--color-primary);
+
+  background: var(--color-primary);
+}
+
+.checkCircleSelected svg {
+  width: 0.74rem;
+  height: 0.74rem;
+
+  stroke-width: 3;
+}
+
+/* ==================================================
+   PAINEL DA SELEÇÃO
+   ================================================== */
+
+.selectionCard {
+  min-height: 100%;
+
+  padding: 1.15rem;
+
+  display: flex;
+  flex-direction: column;
+
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.selectionCardDrop {
+  border-color: var(--color-primary);
+
+  background: var(--color-primary-50);
+
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-rgb) / 6%);
+}
+
+.selectionHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 1rem;
+}
+
+.selectionHeading > div {
+  display: grid;
+
+  gap: 0.22rem;
+}
+
+.selectionHeading strong {
+  color: var(--color-navy);
+
+  font-size: 0.9rem;
+}
+
+.clearButton {
+  border: 0;
+
+  display: inline-flex;
+  align-items: center;
+
+  gap: 0.3rem;
+
+  background: transparent;
+
+  color: var(--color-slate-500);
+
+  font: inherit;
+
+  font-size: 0.67rem;
+
+  font-weight: var(--font-semibold);
+
+  cursor: pointer;
+}
+
+.clearButton:hover {
+  color: var(--color-navy);
+}
+
+.clearButton svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+/* ==================================================
+   SELEÇÃO VAZIA
+   ================================================== */
+
+.emptySelection {
+  min-height: 200px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.42rem;
+
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 44px;
+  height: 44px;
+
+  display: grid;
+  place-items: center;
+
+  margin-bottom: 0.2rem;
+
+  border-radius: 14px;
+
+  background: var(--color-primary-50);
+
+  color: var(--color-primary-dark);
+}
+
+.emptyIcon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.emptySelection strong {
+  color: var(--color-navy);
+
+  font-size: 0.84rem;
+}
+
+.emptySelection > span {
+  max-width: 195px;
+
+  color: var(--color-slate-500);
+
+  font-size: 0.69rem;
+
+  line-height: 1.42;
+}
+
+/* ==================================================
+   ITENS SELECIONADOS
+   ================================================== */
+
+.selectedList {
+  margin-top: 0.95rem;
+
+  display: grid;
+
+  gap: 0.5rem;
+}
+
+.selectedItem {
+  min-height: 47px;
+
+  padding: 0.42rem 0.48rem;
+
+  display: grid;
+
+  grid-template-columns:
+    auto
+    auto
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 0.42rem;
+
+  border: 1px solid var(--color-primary-200);
+
+  border-radius: 11px;
+
+  background: var(--color-primary-50);
+
+  color: var(--color-primary-dark);
+}
+
+.selectedOrder {
+  width: 25px;
+  height: 25px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 999px;
+
+  background: var(--color-white);
+
+  color: var(--color-primary-dark);
+
+  font-size: 0.65rem;
+
+  font-weight: var(--font-bold);
+}
+
+.selectedIcon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.selectedItem strong {
+  overflow: hidden;
+
+  font-size: 0.75rem;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.removeButton {
+  width: 27px;
+  height: 27px;
+
+  border: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: var(--color-slate-500);
+
+  cursor: pointer;
+}
+
+.removeButton:hover {
+  background: rgb(var(--color-navy-rgb) / 5%);
+}
+
+.removeButton svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.selectionSpacer {
+  flex: 1;
+
+  min-height: 1rem;
+}
+
+/* ==================================================
+   MASCOTE
+   ================================================== */
+
+.mascotNote {
+  position: relative;
+
+  min-height: 92px;
+
+  margin-top: 0.6rem;
+
+  padding: 0.75rem 0.7rem 0.75rem 82px;
+
+  display: flex;
+  align-items: center;
+
+  border: 1px solid rgb(var(--color-primary-rgb) / 12%);
+
+  border-radius: 15px;
+
+  background: linear-gradient(
+    135deg,
+    rgb(var(--color-primary-rgb) / 5%),
+    rgb(var(--color-accent-rgb) / 5%)
+  );
+
+  overflow: hidden;
+}
+
+.mascotNote img {
+  position: absolute;
+
+  left: -8px;
+  bottom: -9px;
+
+  width: 96px;
+  height: 96px;
+
+  object-fit: contain;
+
   pointer-events: none;
+
+  user-select: none;
 }
 
-.selectionStatusVisible {
-  opacity: 1;
-  transform: translate(-50%, 0) scale(1);
+.mascotNote p {
+  margin: 0;
+
+  color: var(--color-slate-600);
+
+  font-size: 0.66rem;
+
+  line-height: 1.42;
 }
 
-@media (max-width: 640px) {
-  .topbar {
-    min-height: 66px;
-    padding: 0.72rem 0.9rem;
+.mascotNote strong {
+  display: block;
+
+  margin-bottom: 0.16rem;
+
+  color: var(--color-navy);
+
+  font-size: 0.72rem;
+}
+
+/* ==================================================
+   ERRO
+   ================================================== */
+
+.error {
+  margin-top: 0.72rem;
+
+  padding: 0.72rem 0.78rem;
+
+  border: 1px solid var(--color-red-200);
+
+  border-radius: 11px;
+
+  background: var(--color-danger-soft);
+
+  color: var(--color-danger-dark);
+
+  font-size: 0.7rem;
+
+  line-height: 1.4;
+}
+
+/* ==================================================
+   BOTÃO PRINCIPAL
+   ================================================== */
+
+.confirmButton {
+  width: 100%;
+
+  min-height: 50px;
+
+  margin-top: 0.75rem;
+
+  padding: 0 1rem;
+
+  border: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.48rem;
+
+  border-radius: 13px;
+
+  background: var(--color-primary);
+
+  color: var(--color-white);
+
+  box-shadow: 0 9px 20px rgb(var(--color-primary-rgb) / 17%);
+
+  font: inherit;
+
+  font-size: var(--font-sm);
+
+  font-weight: var(--font-bold);
+
+  cursor: pointer;
+
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    opacity 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.confirmButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  background: var(--color-primary-dark);
+
+  box-shadow: 0 11px 24px rgb(var(--color-primary-rgb) / 19%);
+}
+
+.confirmButton:disabled,
+.logoutButton:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+}
+
+.confirmButton svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ==================================================
+   DESKTOP MENOR
+   ================================================== */
+
+@media (max-width: 1080px) {
+  .content {
+    width: min(980px, calc(100% - 1.5rem));
   }
 
-  .logoutButton {
-    min-height: 38px;
-    padding: 0.52rem 0.72rem;
+  .selectionLayout {
+    grid-template-columns:
+      minmax(0, 1.55fr)
+      minmax(290px, 0.85fr);
+
+    gap: 0.9rem;
+  }
+
+  .optionCard {
+    min-height: 115px;
   }
 }
 
 /* ==================================================
-   RESPONSIVE HARDENING — seleção de função
+   TABLET
    ================================================== */
-.page {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+
+@media (max-width: 900px) {
+  .content {
+    width: min(760px, calc(100% - 1.5rem));
+  }
+
+  .hero h1 {
+    font-size: clamp(2.7rem, 7vw, 3.8rem);
+  }
+
+  .selectionLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .selectionCard {
+    min-height: auto;
+  }
+
+  .selectedList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .selectionSpacer {
+    display: none;
+  }
+
+  .mascotNote {
+    margin-top: 0.8rem;
+  }
 }
 
-@media (max-width: 640px) {
+/* ==================================================
+   MOBILE
+   ================================================== */
+
+@media (max-width: 580px) {
+  .page {
+    background:
+      radial-gradient(
+        circle at 8% 10%,
+        rgb(var(--color-primary-rgb) / 7%),
+        transparent 20rem
+      ),
+      linear-gradient(
+        rgb(var(--color-primary-dark-rgb) / 3%) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgb(var(--color-primary-dark-rgb) / 3%) 1px,
+        transparent 1px
+      ),
+      var(--color-page-background);
+
+    background-size:
+      auto,
+      30px 30px,
+      30px 30px,
+      auto;
+  }
+
   .topbar {
-    min-width: 0;
-    padding-inline: 12px;
-    gap: 0.75rem;
+    min-height: 62px;
+
+    padding: 0.65rem 0.8rem;
   }
 
   .logo {
-    max-width: min(48vw, 170px);
-    height: auto;
+    width: 120px;
   }
 
   .logoutButton {
-    flex: 0 0 auto;
-  }
+    width: 42px;
+    min-width: 42px;
 
-  .selectionStatus {
-    right: 12px;
-    bottom: max(12px, env(safe-area-inset-bottom));
-    left: 12px;
-    width: auto;
-    max-width: none;
-  }
-}
+    padding: 0;
 
-@media (max-width: 390px) {
-  .topbar {
-    padding-inline: 10px;
+    justify-content: center;
   }
 
   .logoutButton span {
     display: none;
+  }
+
+  .content {
+    width: calc(100% - 1rem);
+
+    padding: 0.15rem 0 2rem;
+  }
+
+  .hero {
+    margin-bottom: 0.85rem;
+  }
+
+  .stepBadge {
+    margin-bottom: 0.32rem;
+  }
+
+  .eyebrow {
+    font-size: 0.66rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.4rem, 10.5vw, 3.15rem);
+
+    line-height: 0.97;
+  }
+
+  .heroText {
+    max-width: 100%;
+
+    margin-top: 0.55rem;
+
+    font-size: 0.81rem;
+
+    line-height: 1.45;
+  }
+
+  .notice {
+    width: 100%;
+
+    margin-top: 0.7rem;
+
+    padding: 0.62rem 0.7rem;
+
+    border-radius: 12px;
+  }
+
+  .notice p {
+    font-size: 0.68rem;
+  }
+
+  .selectionLayout {
+    gap: 0.75rem;
+  }
+
+  .optionsCard,
+  .selectionCard {
+    border-radius: 19px;
+  }
+
+  .optionsCard {
+    padding: 0.78rem;
+  }
+
+  .optionGrid {
+    grid-template-columns: 1fr;
+
+    gap: 0.48rem;
+  }
+
+  .groupHeading {
+    margin-bottom: 0.4rem;
+  }
+
+  .groupHeading small {
+    display: none;
+  }
+
+  .optionGroup + .optionGroup {
+    margin-top: 0.88rem;
+  }
+
+  .optionCard {
+    min-height: 78px;
+
+    padding: 0.58rem 0.62rem;
+
+    grid-template-columns:
+      auto
+      minmax(0, 1fr)
+      auto;
+
+    align-items: center;
+
+    gap: 0.55rem;
+
+    border-radius: 13px;
+  }
+
+  .dragHandle {
+    display: none;
+  }
+
+  .optionIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .optionCopy strong {
+    font-size: 0.8rem;
+  }
+
+  .optionCopy small {
+    font-size: 0.65rem;
+  }
+
+  .selectionCard {
+    padding: 0.78rem;
+  }
+
+  .selectedList {
+    grid-template-columns: 1fr;
+
+    gap: 0.42rem;
+  }
+
+  .emptySelection {
+    min-height: 110px;
+  }
+
+  .mascotNote {
+    min-height: 78px;
+
+    padding-left: 72px;
+  }
+
+  .mascotNote img {
+    width: 84px;
+    height: 84px;
+  }
+
+  .confirmButton {
+    min-height: 47px;
+  }
+}
+
+/* ==================================================
+   MOBILE PEQUENO
+   ================================================== */
+
+@media (max-width: 390px) {
+  .content {
+    width: calc(100% - 0.75rem);
+  }
+
+  .hero h1 {
+    font-size: clamp(2.2rem, 10.8vw, 2.8rem);
+  }
+
+  .optionsCard,
+  .selectionCard {
+    padding: 0.68rem;
+  }
+
+  .optionCard {
+    min-height: 74px;
+  }
+
+  .optionCopy strong {
+    font-size: 0.77rem;
+  }
+
+  .optionCopy small {
+    font-size: 0.62rem;
+  }
+}
+
+/* ==================================================
+   ACESSIBILIDADE
+   ================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .optionCard,
+  .confirmButton,
+  .logoutButton,
+  .selectionCard {
+    transition: none;
   }
 }

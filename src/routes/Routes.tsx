@@ -17,7 +17,8 @@ import Register from "../pages/register/Register";
 import AuthConfirm from "../pages/auth-confirm/AuthConfirm";
 import Account from "../pages/logged-in/account/Account";
 import VerifyEmail from "../pages/verifyEmail/VerifyEmail";
-import ProfileCreation from "../pages/logged-in/profileCreation/ProfileCreation";
+import FirstAccess from "../pages/logged-in/firstAccess/FirstAccess";
+import CompleteProfiles from "../pages/logged-in/completeProfiles/CompleteProfiles";
 
 export default function AppRoutes() {
   return (
@@ -45,11 +46,19 @@ export default function AppRoutes() {
           <Route path="/verifique-seu-email" element={<VerifyEmail />} />
 
           <Route path="/auth/confirm" element={<AuthConfirm />} />
+
           {/* Sistema logado */}
           <Route element={<ProtectedRoute />}>
+            <Route path="/app/primeiro-acesso" element={<FirstAccess />} />
+
             <Route path="/app/escolher-funcao" element={<RoleSelection />} />
 
             <Route path="/app/comunidade" element={<LoggedInCommunity />} />
+
+            <Route
+              path="/app/completar-perfis"
+              element={<CompleteProfiles />}
+            />
 
             <Route path="/app/minha-conta" element={<Account />} />
 
@@ -58,16 +67,6 @@ export default function AppRoutes() {
             <Route
               path="/selecionar-perfil"
               element={<Navigate to="/app/escolher-funcao" replace />}
-            />
-
-            <Route
-              path="/app/criar-perfil"
-              element={<Navigate to="/app/escolher-funcao" replace />}
-            />
-
-            <Route
-              path="/app/criar-perfil/:role"
-              element={<ProfileCreation />}
             />
 
             <Route
