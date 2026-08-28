@@ -34,16 +34,13 @@ interface CollaborationProfileRow {
 
 interface ProfileRoleRow {
   role: CollaborationRole;
-  isActive: boolean;
 }
 
 /* ==================================================
    HELPERS
    ================================================== */
 
-function requireActiveUser(
-  user: UserRow | undefined,
-): UserRow {
+function requireActiveUser(user: UserRow | undefined): UserRow {
   if (!user) {
     throw new AppError(
       "User account was not found",
@@ -53,11 +50,7 @@ function requireActiveUser(
   }
 
   if (!user.active) {
-    throw new AppError(
-      "User account is inactive",
-      403,
-      "USER_INACTIVE",
-    );
+    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
   }
 
   return user;
@@ -77,9 +70,7 @@ function requireProfile(
   return profile;
 }
 
-async function getUserByAuthId(
-  authUserId: string,
-): Promise<UserRow> {
+async function getUserByAuthId(authUserId: string): Promise<UserRow> {
   const result = await pool.query<UserRow>(
     `
       select
@@ -92,9 +83,7 @@ async function getUserByAuthId(
     [authUserId],
   );
 
-  return requireActiveUser(
-    result.rows[0],
-  );
+  return requireActiveUser(result.rows[0]);
 }
 
 async function getUserByAuthIdForUpdate(
@@ -114,9 +103,7 @@ async function getUserByAuthIdForUpdate(
     [authUserId],
   );
 
-  return requireActiveUser(
-    result.rows[0],
-  );
+  return requireActiveUser(result.rows[0]);
 }
 
 /* ==================================================
@@ -126,12 +113,10 @@ async function getUserByAuthIdForUpdate(
 export async function getCollaborationProfiles(
   authUserId: string,
 ): Promise<CollaborationProfile[]> {
-  const user =
-    await getUserByAuthId(authUserId);
+  const user = await getUserByAuthId(authUserId);
 
-  const result =
-    await pool.query<CollaborationProfileRow>(
-      `
+  const result = await pool.query<CollaborationProfileRow>(
+    `
         select
           id,
           role,
@@ -143,8 +128,8 @@ export async function getCollaborationProfiles(
         where user_id = $1
         order by created_at asc
       `,
-      [user.id],
-    );
+    [user.id],
+  );
 
   return result.rows;
 }
@@ -158,28 +143,27 @@ export async function createCollaborationProfile(
   role: CollaborationRole,
   profileData: unknown,
 ): Promise<CollaborationProfile> {
-  const validatedProfileData =
-    parseCollaborationProfileData(
-      role,
-      profileData,
-    );
+  /*
+   * Os dados são validados de acordo com a role
+   * antes de qualquer alteração no banco.
+   */
+  const validatedProfileData = parseCollaborationProfileData(role, profileData);
 
-  const client =
-    await pool.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("begin");
 
-    const user =
-      await getUserByAuthIdForUpdate(
-        client,
-        authUserId,
-      );
+    const user = await getUserByAuthIdForUpdate(client, authUserId);
 
     /*
-     * O novo perfil passa a ser o perfil ativo.
-     * Portanto, desativamos o perfil atual antes
-     * de criar o novo.
+     * Por enquanto, mantemos a regra existente:
+     * somente um perfil de colaboração fica ativo
+     * por vez.
+     *
+     * Quando o conceito definitivo de perfil ativo
+     * da CONG for fechado, essa regra poderá ser
+     * revista separadamente.
      */
     await client.query(
       `
@@ -193,9 +177,8 @@ export async function createCollaborationProfile(
       [user.id],
     );
 
-    const result =
-      await client.query<CollaborationProfileRow>(
-        `
+    const result = await client.query<CollaborationProfileRow>(
+      `
           insert into public.collaboration_profiles (
             user_id,
             role,
@@ -212,17 +195,10 @@ export async function createCollaborationProfile(
             created_at as "createdAt",
             updated_at as "updatedAt"
         `,
-        [
-          user.id,
-          role,
-          validatedProfileData,
-        ],
-      );
+      [user.id, role, validatedProfileData],
+    );
 
-    const profile =
-      requireProfile(
-        result.rows[0],
-      );
+    const profile = requireProfile(result.rows[0]);
 
     await client.query("commit");
 
@@ -230,6 +206,10 @@ export async function createCollaborationProfile(
   } catch (error) {
     await client.query("rollback");
 
+    /*
+     * O banco impede que o mesmo usuário tenha
+     * dois perfis da mesma role.
+     */
     if (
       typeof error === "object" &&
       error !== null &&
@@ -258,43 +238,33 @@ export async function updateCollaborationProfile(
   profileId: string,
   profileData: unknown,
 ): Promise<CollaborationProfile> {
-  const client =
-    await pool.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("begin");
 
-    const user =
-      await getUserByAuthIdForUpdate(
-        client,
-        authUserId,
-      );
+    const user = await getUserByAuthIdForUpdate(client, authUserId);
 
     /*
-     * A role é obtida do próprio banco.
-     * O frontend não decide contra qual schema
-     * o perfil será validado.
+     * Buscamos a role diretamente do banco.
+     *
+     * Assim, o frontend não escolhe qual schema
+     * será utilizado para validar o perfil.
      */
-    const existingResult =
-      await client.query<ProfileRoleRow>(
-        `
+    const existingResult = await client.query<ProfileRoleRow>(
+      `
           select
-            role,
-            is_active as "isActive"
+            role
           from public.collaboration_profiles
           where id = $1
             and user_id = $2
           limit 1
           for update
         `,
-        [
-          profileId,
-          user.id,
-        ],
-      );
+      [profileId, user.id],
+    );
 
-    const existingProfile =
-      existingResult.rows[0];
+    const existingProfile = existingResult.rows[0];
 
     if (!existingProfile) {
       throw new AppError(
@@ -304,15 +274,13 @@ export async function updateCollaborationProfile(
       );
     }
 
-    const validatedProfileData =
-      parseCollaborationProfileData(
-        existingProfile.role,
-        profileData,
-      );
+    const validatedProfileData = parseCollaborationProfileData(
+      existingProfile.role,
+      profileData,
+    );
 
-    const result =
-      await client.query<CollaborationProfileRow>(
-        `
+    const result = await client.query<CollaborationProfileRow>(
+      `
           update public.collaboration_profiles
           set
             profile_data = $1,
@@ -328,17 +296,10 @@ export async function updateCollaborationProfile(
             created_at as "createdAt",
             updated_at as "updatedAt"
         `,
-        [
-          validatedProfileData,
-          profileId,
-          user.id,
-        ],
-      );
+      [validatedProfileData, profileId, user.id],
+    );
 
-    const profile =
-      requireProfile(
-        result.rows[0],
-      );
+    const profile = requireProfile(result.rows[0]);
 
     await client.query("commit");
 
@@ -360,24 +321,18 @@ export async function deleteCollaborationProfile(
   authUserId: string,
   profileId: string,
 ): Promise<void> {
-  const client =
-    await pool.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("begin");
 
-    const user =
-      await getUserByAuthIdForUpdate(
-        client,
-        authUserId,
-      );
+    const user = await getUserByAuthIdForUpdate(client, authUserId);
 
-    const result =
-      await client.query<{
-        id: string;
-        isActive: boolean;
-      }>(
-        `
+    const result = await client.query<{
+      id: string;
+      isActive: boolean;
+    }>(
+      `
           delete from public.collaboration_profiles
           where id = $1
             and user_id = $2
@@ -386,14 +341,10 @@ export async function deleteCollaborationProfile(
             id,
             is_active as "isActive"
         `,
-        [
-          profileId,
-          user.id,
-        ],
-      );
+      [profileId, user.id],
+    );
 
-    const deletedProfile =
-      result.rows[0];
+    const deletedProfile = result.rows[0];
 
     if (!deletedProfile) {
       throw new AppError(
@@ -404,12 +355,12 @@ export async function deleteCollaborationProfile(
     }
 
     /*
-     * Caso o perfil removido fosse o ativo,
+     * Se o perfil removido era o ativo,
      * o perfil restante mais antigo passa
-     * automaticamente a ser o novo ativo.
+     * a ser o ativo.
      *
-     * Se não existir outro perfil, o usuário
-     * simplesmente fica sem perfil ativo.
+     * Caso não exista outro perfil, nenhuma
+     * alteração adicional é necessária.
      */
     if (deletedProfile.isActive) {
       await client.query(
@@ -453,37 +404,29 @@ export async function activateCollaborationProfile(
   authUserId: string,
   profileId: string,
 ): Promise<CollaborationProfile> {
-  const client =
-    await pool.connect();
+  const client = await pool.connect();
 
   try {
     await client.query("begin");
 
-    const user =
-      await getUserByAuthIdForUpdate(
-        client,
-        authUserId,
-      );
+    const user = await getUserByAuthIdForUpdate(client, authUserId);
 
     /*
      * Primeiro garantimos que o perfil existe
-     * e realmente pertence ao usuário autenticado.
+     * e pertence ao usuário autenticado.
      */
-    const ownershipResult =
-      await client.query(
-        `
-          select id
+    const ownershipResult = await client.query<{ id: string }>(
+      `
+          select
+            id
           from public.collaboration_profiles
           where id = $1
             and user_id = $2
           limit 1
           for update
         `,
-        [
-          profileId,
-          user.id,
-        ],
-      );
+      [profileId, user.id],
+    );
 
     if (!ownershipResult.rows[0]) {
       throw new AppError(
@@ -494,7 +437,7 @@ export async function activateCollaborationProfile(
     }
 
     /*
-     * Desativa qualquer perfil atualmente ativo.
+     * Desativamos o perfil atualmente ativo.
      */
     await client.query(
       `
@@ -509,11 +452,11 @@ export async function activateCollaborationProfile(
     );
 
     /*
-     * Ativa exclusivamente o perfil escolhido.
+     * Em seguida, ativamos exclusivamente
+     * o perfil escolhido.
      */
-    const result =
-      await client.query<CollaborationProfileRow>(
-        `
+    const result = await client.query<CollaborationProfileRow>(
+      `
           update public.collaboration_profiles
           set
             is_active = true,
@@ -529,16 +472,10 @@ export async function activateCollaborationProfile(
             created_at as "createdAt",
             updated_at as "updatedAt"
         `,
-        [
-          profileId,
-          user.id,
-        ],
-      );
+      [profileId, user.id],
+    );
 
-    const profile =
-      requireProfile(
-        result.rows[0],
-      );
+    const profile = requireProfile(result.rows[0]);
 
     await client.query("commit");
 

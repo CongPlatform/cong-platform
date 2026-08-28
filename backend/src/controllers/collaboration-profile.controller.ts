@@ -1,7 +1,4 @@
-import type {
-  Request,
-  Response,
-} from "express";
+import type { Request, Response } from "express";
 
 import * as z from "zod";
 
@@ -13,20 +10,32 @@ import {
   updateCollaborationProfile,
 } from "../services/collaboration-profile.service.js";
 
-import type {
-  CollaborationRole,
-} from "../validators/collaboration-profile.validator.js";
+import type { CollaborationRole } from "../validators/collaboration-profile.validator.js";
 
 import { AppError } from "../utils/app-error.js";
+
+/* ==================================================
+   TIPOS DAS REQUISIÇÕES
+   ================================================== */
+
+type CreateCollaborationProfileBody = {
+  role: CollaborationRole;
+  profileData: unknown;
+};
+
+type UpdateCollaborationProfileBody = {
+  profileData: unknown;
+};
+
+type ActivateCollaborationProfileBody = {
+  profileId: string;
+};
 
 /* ==================================================
    HELPERS
    ================================================== */
 
-function sendControllerError(
-  res: Response,
-  error: unknown,
-): void {
+function sendControllerError(res: Response, error: unknown): void {
   if (error instanceof AppError) {
     res.status(error.statusCode).json({
       error: error.message,
@@ -38,20 +47,17 @@ function sendControllerError(
 
   if (error instanceof z.ZodError) {
     res.status(400).json({
-      error:
-        "Invalid collaboration profile data",
-      code:
-        "INVALID_COLLABORATION_PROFILE_DATA",
+      error: "Invalid collaboration profile data",
+
+      code: "INVALID_COLLABORATION_PROFILE_DATA",
+
       issues: error.issues,
     });
 
     return;
   }
 
-  console.error(
-    "Collaboration profile controller error:",
-    error,
-  );
+  console.error("Collaboration profile controller error:", error);
 
   res.status(500).json({
     error: "Internal server error",
@@ -59,12 +65,8 @@ function sendControllerError(
   });
 }
 
-function getProfileId(
-  req: Request,
-): string {
-  const result = z
-    .uuid()
-    .safeParse(req.params.profileId);
+function getProfileId(req: Request): string {
+  const result = z.uuid().safeParse(req.params.profileId);
 
   if (!result.success) {
     throw new AppError(
@@ -86,22 +88,15 @@ export async function listMyCollaborationProfiles(
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const profiles =
-      await getCollaborationProfiles(
-        authUser.id,
-      );
+    const profiles = await getCollaborationProfiles(authUser.id);
 
     res.status(200).json({
       profiles,
     });
   } catch (error) {
-    sendControllerError(
-      res,
-      error,
-    );
+    sendControllerError(res, error);
   }
 }
 
@@ -110,28 +105,23 @@ export async function listMyCollaborationProfiles(
    ================================================== */
 
 export async function createMyCollaborationProfile(
-  req: Request,
+  req: Request<Record<string, never>, unknown, CreateCollaborationProfileBody>,
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const profile =
-      await createCollaborationProfile(
-        authUser.id,
-        req.body.role as CollaborationRole,
-        req.body.profileData,
-      );
+    const profile = await createCollaborationProfile(
+      authUser.id,
+      req.body.role,
+      req.body.profileData,
+    );
 
     res.status(201).json({
       profile,
     });
   } catch (error) {
-    sendControllerError(
-      res,
-      error,
-    );
+    sendControllerError(res, error);
   }
 }
 
@@ -140,31 +130,25 @@ export async function createMyCollaborationProfile(
    ================================================== */
 
 export async function updateMyCollaborationProfile(
-  req: Request,
+  req: Request<{ profileId: string }, unknown, UpdateCollaborationProfileBody>,
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const profileId =
-      getProfileId(req);
+    const profileId = getProfileId(req);
 
-    const profile =
-      await updateCollaborationProfile(
-        authUser.id,
-        profileId,
-        req.body.profileData,
-      );
+    const profile = await updateCollaborationProfile(
+      authUser.id,
+      profileId,
+      req.body.profileData,
+    );
 
     res.status(200).json({
       profile,
     });
   } catch (error) {
-    sendControllerError(
-      res,
-      error,
-    );
+    sendControllerError(res, error);
   }
 }
 
@@ -173,27 +157,21 @@ export async function updateMyCollaborationProfile(
    ================================================== */
 
 export async function deleteMyCollaborationProfile(
-  req: Request,
+  req: Request<{
+    profileId: string;
+  }>,
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const profileId =
-      getProfileId(req);
+    const profileId = getProfileId(req);
 
-    await deleteCollaborationProfile(
-      authUser.id,
-      profileId,
-    );
+    await deleteCollaborationProfile(authUser.id, profileId);
 
     res.status(204).end();
   } catch (error) {
-    sendControllerError(
-      res,
-      error,
-    );
+    sendControllerError(res, error);
   }
 }
 
@@ -202,26 +180,25 @@ export async function deleteMyCollaborationProfile(
    ================================================== */
 
 export async function activateMyCollaborationProfile(
-  req: Request,
+  req: Request<
+    Record<string, never>,
+    unknown,
+    ActivateCollaborationProfileBody
+  >,
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const profile =
-      await activateCollaborationProfile(
-        authUser.id,
-        req.body.profileId,
-      );
+    const profile = await activateCollaborationProfile(
+      authUser.id,
+      req.body.profileId,
+    );
 
     res.status(200).json({
       profile,
     });
   } catch (error) {
-    sendControllerError(
-      res,
-      error,
-    );
+    sendControllerError(res, error);
   }
 }

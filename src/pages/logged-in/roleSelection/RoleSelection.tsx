@@ -1,4 +1,4 @@
-import { type DragEvent, useMemo, useState } from "react";
+﻿import { type DragEvent, useMemo, useState } from "react";
 
 import {
   ArrowRight,
@@ -81,8 +81,8 @@ const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
   },
   {
     id: "translator",
-    label: "Tradutor",
-    shortLabel: "Tradutor",
+    label: "Tradução e acessibilidade",
+    shortLabel: "Tradução",
     description: "Amplie o acesso traduzindo conteúdos e recursos.",
     icon: Languages,
   },
