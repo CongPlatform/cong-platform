@@ -22,10 +22,7 @@ const collaborationProfileRouter = Router();
    READ
    ================================================== */
 
-collaborationProfileRouter.get(
-  "/",
-  listMyCollaborationProfiles,
-);
+collaborationProfileRouter.get("/", listMyCollaborationProfiles);
 
 /* ==================================================
    CREATE
@@ -61,9 +58,6 @@ collaborationProfileRouter.patch(
    DELETE
    ================================================== */
 
-collaborationProfileRouter.delete(
-  "/:profileId",
-  deleteMyCollaborationProfile,
-);
+collaborationProfileRouter.delete("/:profileId", deleteMyCollaborationProfile);
 
 export default collaborationProfileRouter;

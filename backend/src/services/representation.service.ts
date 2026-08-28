@@ -45,6 +45,24 @@ export interface OrganizationSearchResult {
     | string
     | null;
 
+  legalName:
+    | string
+    | null;
+
+  cnpj:
+    | string
+    | null;
+
+  description:
+    | string
+    | null;
+
+  areas: string[];
+
+  initiativeKind:
+    | string
+    | null;
+
   membershipStatus:
     | "pending"
     | "active"
@@ -278,6 +296,16 @@ export async function searchOrganizations(
             as city,
           o.address ->> 'state'
             as state,
+          o.legal_name
+            as "legalName",
+          o.cnpj,
+          o.description,
+          coalesce(
+            o.settings -> 'areas',
+            '[]'::jsonb
+          ) as areas,
+          o.settings ->> 'initiativeKind'
+            as "initiativeKind",
           ou.status
             as "membershipStatus"
         from public.organizations o
@@ -340,6 +368,45 @@ export async function createRepresentation(
       input.organizationType,
     );
 
+    if (input.cnpj) {
+      const duplicateCnpjResult =
+        await client.query<{
+          id: string;
+          name: string;
+        }>(
+          `
+            select
+              id,
+              name
+            from public.organizations
+            where regexp_replace(
+              coalesce(cnpj, ''),
+              '[^0-9]',
+              '',
+              'g'
+            ) = regexp_replace(
+              $1,
+              '[^0-9]',
+              '',
+              'g'
+            )
+            limit 1
+          `,
+          [input.cnpj],
+        );
+
+      const duplicate =
+        duplicateCnpjResult.rows[0];
+
+      if (duplicate) {
+        throw new AppError(
+          `Este CNPJ já está cadastrado como "${duplicate.name}". Procure a instituição existente e solicite o vínculo.`,
+          409,
+          "ORGANIZATION_CNPJ_ALREADY_EXISTS",
+        );
+      }
+    }
+
     const adminRole =
       await getSystemRole(
         client,
@@ -357,6 +424,7 @@ export async function createRepresentation(
             phone,
             description,
             address,
+            settings,
             organization_type
           )
           values (
@@ -367,7 +435,8 @@ export async function createRepresentation(
             $5,
             $6,
             $7::jsonb,
-            $8
+            $8::jsonb,
+            $9
           )
           returning
             id,
@@ -385,19 +454,19 @@ export async function createRepresentation(
           input.description ?? null,
 
           JSON.stringify({
-            ...(input.city
-              ? {
-                  city:
-                    input.city,
-                }
-              : {}),
+            cep: input.cep,
+            street: input.street,
+            district: input.district,
+            number: input.number,
+            complement: input.complement,
+            city: input.city,
+            state: input.state,
+          }),
 
-            ...(input.state
-              ? {
-                  state:
-                    input.state,
-                }
-              : {}),
+          JSON.stringify({
+            initiativeKind: input.initiativeKind,
+            areas: input.areas,
+            supportTypes: input.supportTypes,
           }),
 
           input.organizationType,
@@ -678,4 +747,119 @@ export async function requestRepresentation(
   } finally {
     client.release();
   }
+}
+
+/* ==================================================
+   CANCELAR SOLICITAÇÃO DE VÍNCULO PENDENTE
+   ================================================== */
+export async function cancelRepresentationRequest(
+  authUserId: string,
+  representationId: string,
+): Promise<void> {
+  const user =
+    await getUser(authUserId);
+
+  const currentResult =
+    await pool.query<{
+      id: string;
+      status: "pending" | "active" | "suspended";
+    }>(
+      `
+        select
+          id,
+          status
+        from public.organization_users
+        where id = $1
+          and user_id = $2
+        limit 1
+      `,
+      [representationId, user.id],
+    );
+
+  const current =
+    currentResult.rows[0];
+
+  if (!current) {
+    throw new AppError(
+      "Solicitação de vínculo não encontrada",
+      404,
+      "REPRESENTATION_REQUEST_NOT_FOUND",
+    );
+  }
+
+  if (current.status !== "pending") {
+    throw new AppError(
+      "Somente solicitações ainda pendentes podem ser canceladas",
+      409,
+      "REPRESENTATION_REQUEST_NOT_PENDING",
+    );
+  }
+
+  const deleteResult =
+    await pool.query(
+      `
+        delete from public.organization_users
+        where id = $1
+          and user_id = $2
+          and status = 'pending'
+      `,
+      [representationId, user.id],
+    );
+
+  if (deleteResult.rowCount === 0) {
+    throw new AppError(
+      "A solicitação mudou de estado e não pode mais ser cancelada",
+      409,
+      "REPRESENTATION_REQUEST_CHANGED",
+    );
+  }
+}
+
+
+/* ==================================================
+   CHECAGEM DE CNPJ PARA FEEDBACK EM TEMPO REAL
+   ================================================== */
+export async function checkRepresentationCnpjAvailability(
+  cnpj: string,
+): Promise<{
+  available: boolean;
+  organization: {
+    id: string;
+    name: string;
+    organizationType: "ngo" | "company";
+  } | null;
+}> {
+  const result = await pool.query<{
+    id: string;
+    name: string;
+    organizationType: "ngo" | "company";
+  }>(
+    `
+      select
+        id,
+        name,
+        organization_type as "organizationType"
+      from public.organizations
+      where regexp_replace(
+        coalesce(cnpj, ''),
+        '[^0-9]',
+        '',
+        'g'
+      ) = regexp_replace(
+        $1,
+        '[^0-9]',
+        '',
+        'g'
+      )
+      limit 1
+    `,
+    [cnpj],
+  );
+
+  const organization = result.rows[0] ?? null;
+
+  return {
+    available: organization === null,
+    organization,
+  };
 }

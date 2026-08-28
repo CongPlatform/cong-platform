@@ -6,6 +6,8 @@ import type {
 import * as z from "zod";
 
 import {
+  cancelRepresentationRequest,
+  checkRepresentationCnpjAvailability,
   createRepresentation,
   getMyRepresentations,
   requestRepresentation,
@@ -175,5 +177,65 @@ export async function requestMyRepresentation(
       error,
       res,
     );
+  }
+}
+
+export async function cancelMyRepresentationRequest(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const authUser =
+      res.locals.authUser;
+
+    const representationId =
+      req.params.representationId;
+
+    if (
+      typeof representationId !==
+        "string" ||
+      representationId.length === 0
+    ) {
+      throw new AppError(
+        "Invalid representation identifier",
+        400,
+        "INVALID_REPRESENTATION_ID",
+      );
+    }
+
+    await cancelRepresentationRequest(
+      authUser.id,
+      representationId,
+    );
+
+    res.status(204).send();
+  } catch (error) {
+    handleError(
+      error,
+      res,
+    );
+  }
+}
+
+
+export async function checkMyRepresentationCnpj(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const cnpj = req.query.cnpj;
+
+    if (typeof cnpj !== "string" || cnpj.trim().length === 0) {
+      throw new AppError(
+        "CNPJ is required",
+        400,
+        "CNPJ_REQUIRED",
+      );
+    }
+
+    const result = await checkRepresentationCnpjAvailability(cnpj);
+    res.status(200).json(result);
+  } catch (error) {
+    handleError(error, res);
   }
 }

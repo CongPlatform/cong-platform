@@ -3,6 +3,8 @@ import {
 } from "express";
 
 import {
+  cancelMyRepresentationRequest,
+  checkMyRepresentationCnpj,
   createMyRepresentation,
   listMyRepresentations,
   requestMyRepresentation,
@@ -27,6 +29,11 @@ representationRouter.get(
 );
 
 representationRouter.get(
+  "/check-cnpj",
+  checkMyRepresentationCnpj,
+);
+
+representationRouter.get(
   "/search",
   searchRepresentationOrganizations,
 );
@@ -45,6 +52,11 @@ representationRouter.post(
     requestRepresentationSchema,
   ),
   requestMyRepresentation,
+);
+
+representationRouter.delete(
+  "/request/:representationId",
+  cancelMyRepresentationRequest,
 );
 
 export default representationRouter;
