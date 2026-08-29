@@ -14,11 +14,7 @@ import type {
 export type JourneyId = "skills" | "donations" | "volunteering" | "ngo";
 
 export type ProfileType =
-  | "personal"
-  | "contributor"
-  | "donor"
-  | "volunteer"
-  | "organization";
+  "personal" | "contributor" | "donor" | "volunteer" | "organization";
 
 export type ProfileStatus = "active" | "inactive" | "pending";
 

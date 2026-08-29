@@ -19,6 +19,7 @@ import Account from "../pages/logged-in/account/Account";
 import VerifyEmail from "../pages/verifyEmail/VerifyEmail";
 import FirstAccess from "../pages/logged-in/firstAccess/FirstAccess";
 import CompleteProfiles from "../pages/logged-in/completeProfiles/CompleteProfiles";
+import OAuthCallback from "../pages/oauth-callback/OAuthCallback";
 
 export default function AppRoutes() {
   return (
@@ -46,6 +47,8 @@ export default function AppRoutes() {
           <Route path="/verifique-seu-email" element={<VerifyEmail />} />
 
           <Route path="/auth/confirm" element={<AuthConfirm />} />
+
+          <Route path="/auth/oauth/callback" element={<OAuthCallback />} />
 
           {/* Sistema logado */}
           <Route element={<ProtectedRoute />}>

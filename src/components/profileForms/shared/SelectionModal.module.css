@@ -39,7 +39,7 @@
   margin: 5px 0 0;
   color: #687382;
   line-height: 1.45;
-  font-size: .88rem;
+  font-size: 0.88rem;
 }
 
 .closeButton {
@@ -55,7 +55,10 @@
   cursor: pointer;
 }
 
-.closeButton svg { width: 18px; height: 18px; }
+.closeButton svg {
+  width: 18px;
+  height: 18px;
+}
 
 .searchBox {
   margin: 0 22px;
@@ -74,7 +77,10 @@
   box-shadow: 0 0 0 3px rgb(45 102 195 / 12%);
 }
 
-.searchBox svg { width: 18px; color: #708096; }
+.searchBox svg {
+  width: 18px;
+  color: #708096;
+}
 .searchBox input,
 .customRow input {
   width: 100%;
@@ -92,7 +98,7 @@
   gap: 12px;
   padding: 9px 24px 7px;
   color: #7b8490;
-  font-size: .76rem;
+  font-size: 0.76rem;
 }
 
 .optionList {
@@ -119,8 +125,14 @@
   cursor: pointer;
 }
 
-.option:hover { border-color: #a9bedf; background: #f9fbff; }
-.optionSelected { border-color: #78a0dc; background: #f3f7ff; }
+.option:hover {
+  border-color: #a9bedf;
+  background: #f9fbff;
+}
+.optionSelected {
+  border-color: #78a0dc;
+  background: #f3f7ff;
+}
 
 .optionCopy {
   min-width: 0;
@@ -129,11 +141,21 @@
   gap: 10px;
 }
 
-.optionCopy > span:nth-child(2) { min-width: 0; }
+.optionCopy > span:nth-child(2) {
+  min-width: 0;
+}
 .option strong,
-.option small { display: block; }
-.option strong { font-size: .9rem; }
-.option small { margin-top: 2px; color: #76808c; font-size: .76rem; }
+.option small {
+  display: block;
+}
+.option strong {
+  font-size: 0.9rem;
+}
+.option small {
+  margin-top: 2px;
+  color: #76808c;
+  font-size: 0.76rem;
+}
 
 .codeBadge {
   width: 34px;
@@ -144,7 +166,7 @@
   border-radius: 9px;
   background: #edf3fb;
   color: #285fa8;
-  font-size: .72rem;
+  font-size: 0.72rem;
   font-weight: 850;
 }
 
@@ -158,11 +180,14 @@
   border-radius: 999px;
   color: #7a5b20;
   background: #fffaf0;
-  font-size: .68rem;
+  font-size: 0.68rem;
   font-weight: 800;
   white-space: nowrap;
 }
-.featuredBadge svg { width: 12px; height: 12px; }
+.featuredBadge svg {
+  width: 12px;
+  height: 12px;
+}
 
 .check {
   width: 23px;
@@ -174,10 +199,20 @@
   border-radius: 999px;
   background: #fff;
 }
-.optionSelected .check { border-color: #2e68c6; background: #2e68c6; color: #fff; }
-.check svg { width: 13px; height: 13px; }
+.optionSelected .check {
+  border-color: #2e68c6;
+  background: #2e68c6;
+  color: #fff;
+}
+.check svg {
+  width: 13px;
+  height: 13px;
+}
 
-.customArea { padding: 11px 22px; border-top: 1px solid #eceff3; }
+.customArea {
+  padding: 11px 22px;
+  border-top: 1px solid #eceff3;
+}
 .customTrigger {
   display: inline-flex;
   align-items: center;
@@ -188,8 +223,14 @@
   font-weight: 750;
   cursor: pointer;
 }
-.customTrigger svg { width: 16px; }
-.customRow { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.customTrigger svg {
+  width: 16px;
+}
+.customRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
 .customRow input {
   min-height: 42px;
   padding: 0 12px;
@@ -209,17 +250,48 @@
   cursor: pointer;
 }
 
-.error { margin: 0; padding: 0 22px 8px; color: #a53b35; font-size: .82rem; }
-.empty { margin: 24px 0; color: #808894; text-align: center; }
-.footer { display: flex; justify-content: flex-end; padding: 13px 22px 18px; border-top: 1px solid #eceff3; }
+.error {
+  margin: 0;
+  padding: 0 22px 8px;
+  color: #a53b35;
+  font-size: 0.82rem;
+}
+.empty {
+  margin: 24px 0;
+  color: #808894;
+  text-align: center;
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 13px 22px 18px;
+  border-top: 1px solid #eceff3;
+}
 
 @media (max-width: 640px) {
-  .backdrop { align-items: end; padding: 0; }
-  .dialog { width: 100%; max-height: 88vh; border-radius: 22px 22px 0 0; }
-  .header { padding: 18px 16px 13px; }
-  .searchBox { margin: 0 16px; }
-  .optionList { padding-inline: 10px; }
+  .backdrop {
+    align-items: end;
+    padding: 0;
+  }
+  .dialog {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 22px 22px 0 0;
+  }
+  .header {
+    padding: 18px 16px 13px;
+  }
+  .searchBox {
+    margin: 0 16px;
+  }
+  .optionList {
+    padding-inline: 10px;
+  }
   .customArea,
-  .footer { padding-inline: 16px; }
-  .featuredBadge { display: none; }
+  .footer {
+    padding-inline: 16px;
+  }
+  .featuredBadge {
+    display: none;
+  }
 }

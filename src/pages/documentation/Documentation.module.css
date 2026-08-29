@@ -128,11 +128,7 @@
     ),
     radial-gradient(
       circle at 75% 42%,
-      color-mix(
-        in srgb,
-        var(--color-card-blue) 40%,
-        var(--color-transparent)
-      ),
+      color-mix(in srgb, var(--color-card-blue) 40%, var(--color-transparent)),
       var(--color-transparent) 32%
     );
 }
@@ -299,12 +295,11 @@
   left: 50%;
   width: 98px;
   height: 34px;
-  background:
-    repeating-linear-gradient(
-      -35deg,
-      var(--color-accent-500) 0 6px,
-      rgb(var(--color-white-rgb) / 92%) 6px 12px
-    );
+  background: repeating-linear-gradient(
+    -35deg,
+    var(--color-accent-500) 0 6px,
+    rgb(var(--color-white-rgb) / 92%) 6px 12px
+  );
   border: 1px solid rgb(var(--color-navy-rgb) / 4%);
   transform: translateX(-50%) rotate(-4deg);
 }
@@ -315,8 +310,7 @@
   bottom: 22px;
   left: 12px;
   width: 16px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       circle at 8px 8px,
       var(--color-page-background) 0 4.7px,
       rgb(var(--color-navy-rgb) / 13%) 5px 5.8px,
@@ -1035,12 +1029,11 @@
   bottom: 32px;
   left: 25px;
   width: 2px;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      rgb(var(--color-navy-rgb) / 20%) 0 7px,
-      var(--color-transparent) 7px 14px
-    );
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(var(--color-navy-rgb) / 20%) 0 7px,
+    var(--color-transparent) 7px 14px
+  );
 }
 
 .roadmap article {
@@ -1458,16 +1451,11 @@
   padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 6vw, 5rem);
   overflow: hidden;
   text-align: center;
-  background:
-    linear-gradient(
-      135deg,
-      rgb(var(--color-white-rgb) / 98%),
-      color-mix(
-        in srgb,
-        var(--color-accent-50) 94%,
-        var(--color-transparent)
-      )
-    );
+  background: linear-gradient(
+    135deg,
+    rgb(var(--color-white-rgb) / 98%),
+    color-mix(in srgb, var(--color-accent-50) 94%, var(--color-transparent))
+  );
   border: 1.5px solid rgb(var(--color-navy-rgb) / 14%);
   border-radius: 22px;
   box-shadow:
@@ -1530,7 +1518,7 @@
   top: -12px;
 }
 
- /* RESPONSIVIDADE */
+/* RESPONSIVIDADE */
 
 @media (max-width: 1080px) {
   .heroInner {

@@ -19,8 +19,7 @@ const researchResults = [
   },
   {
     value: "83,3%",
-    description:
-      "consideram que usar vários aplicativos dificulta o trabalho.",
+    description: "consideram que usar vários aplicativos dificulta o trabalho.",
     tone: "blue",
   },
   {
@@ -33,8 +32,7 @@ const researchResults = [
 
 const conclusions = [
   <>
-    A organização influencia diretamente o{" "}
-    <strong>sucesso das ações.</strong>
+    A organização influencia diretamente o <strong>sucesso das ações.</strong>
   </>,
   <>
     Usar várias ferramentas aumenta o{" "}
@@ -83,13 +81,11 @@ export default function ResearchResults() {
             <Sparkles size={24} strokeWidth={1.7} />
           </span>
 
-          <h2 id="research-results-title">
-            Por que a CONG é necessária?
-          </h2>
+          <h2 id="research-results-title">Por que a CONG é necessária?</h2>
 
           <p>
-            Nossa pesquisa mostrou que organização, centralização e
-            facilidade de uso não são apenas diferenciais: são{" "}
+            Nossa pesquisa mostrou que organização, centralização e facilidade
+            de uso não são apenas diferenciais: são{" "}
             <strong>necessidades reais</strong> para quem participa de ações
             sociais.
           </p>
@@ -139,9 +135,9 @@ export default function ResearchResults() {
                 </span>
 
                 <p>
-                  <strong>42 respostas</strong> ajudaram a revelar uma
-                  percepção clara sobre organização, comunicação e
-                  centralização nas ações sociais.
+                  <strong>42 respostas</strong> ajudaram a revelar uma percepção
+                  clara sobre organização, comunicação e centralização nas ações
+                  sociais.
                 </p>
 
                 <span className={styles.paperArrow} aria-hidden={true}>
@@ -165,14 +161,8 @@ export default function ResearchResults() {
               <div className={styles.clipboardContent}>
                 <div className={styles.conclusions}>
                   {conclusions.map((conclusion, index) => (
-                    <div
-                      className={styles.conclusionItem}
-                      key={index}
-                    >
-                      <span
-                        className={styles.checkIcon}
-                        aria-hidden={true}
-                      >
+                    <div className={styles.conclusionItem} key={index}>
+                      <span className={styles.checkIcon} aria-hidden={true}>
                         <Check size={22} strokeWidth={2.2} />
                       </span>
 
@@ -223,10 +213,7 @@ export default function ResearchResults() {
                             : styles.practicalYellow
                       }`}
                     >
-                      <span
-                        className={styles.practicalIcon}
-                        aria-hidden={true}
-                      >
+                      <span className={styles.practicalIcon} aria-hidden={true}>
                         <Icon size={29} strokeWidth={1.7} />
                       </span>
 
@@ -236,10 +223,7 @@ export default function ResearchResults() {
                 })}
               </div>
 
-              <span
-                className={styles.clipboardDecoration}
-                aria-hidden={true}
-              >
+              <span className={styles.clipboardDecoration} aria-hidden={true}>
                 <HeartHandshake size={24} strokeWidth={1.6} />
               </span>
             </div>

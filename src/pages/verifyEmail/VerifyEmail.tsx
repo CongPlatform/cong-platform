@@ -1,12 +1,6 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
-import {
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   ArrowLeft,
@@ -22,22 +16,14 @@ import {
 
 import { TransitionLink } from "../../components/pageTransitionProvider/TransitionLink";
 
-import {
-  ApiError,
-  apiPost,
-  apiRequest,
-} from "../../services/api";
+import { ApiError, apiPost, apiRequest } from "../../services/api";
 
 import logo from "../../assets/brand/logo-wordmark-dark.webp";
 import mascot from "../../assets/mascot/cong-happy.webp";
 
 import styles from "./VerifyEmail.module.css";
 
-type VerificationStatus =
-  | "pending"
-  | "confirmed"
-  | "expired"
-  | "unavailable";
+type VerificationStatus = "pending" | "confirmed" | "expired" | "unavailable";
 
 interface VerificationStatusResponse {
   status: VerificationStatus;
@@ -52,21 +38,14 @@ interface LocationState {
   justRegistered?: boolean;
 }
 
-const PENDING_EMAIL_KEY =
-  "cong:pending-verification-email";
+const PENDING_EMAIL_KEY = "cong:pending-verification-email";
 
-function getResendErrorMessage(
-  error: unknown,
-): string {
+function getResendErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) {
     return "Não foi possível reenviar o e-mail agora.";
   }
 
-  if (
-    error.status === 429 ||
-    error.code ===
-      "CONFIRMATION_EMAIL_RATE_LIMIT"
-  ) {
+  if (error.status === 429 || error.code === "CONFIRMATION_EMAIL_RATE_LIMIT") {
     return "Aguarde um pouco antes de solicitar outro e-mail.";
   }
 
@@ -81,41 +60,26 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const locationState =
-    location.state as LocationState | null;
+  const locationState = location.state as LocationState | null;
 
   const [email] = useState(() => {
     return (
-      locationState?.email ??
-      sessionStorage.getItem(
-        PENDING_EMAIL_KEY,
-      ) ??
-      ""
+      locationState?.email ?? sessionStorage.getItem(PENDING_EMAIL_KEY) ?? ""
     );
   });
 
-  const [
-    verificationStatus,
-    setVerificationStatus,
-  ] = useState<VerificationStatus>(
-    "pending",
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus>("pending");
+
+  const [cooldown, setCooldown] = useState(
+    locationState?.justRegistered ? 60 : 0,
   );
 
-  const [cooldown, setCooldown] =
-    useState(
-      locationState?.justRegistered
-        ? 60
-        : 0,
-    );
+  const [isResending, setIsResending] = useState(false);
 
-  const [isResending, setIsResending] =
-    useState(false);
+  const [resendMessage, setResendMessage] = useState("");
 
-  const [resendMessage, setResendMessage] =
-    useState("");
-
-  const [resendError, setResendError] =
-    useState("");
+  const [resendError, setResendError] = useState("");
 
   /*
    * Polling silencioso.
@@ -127,77 +91,57 @@ export default function VerifyEmail() {
    */
   useEffect(() => {
     let active = true;
-    let timeoutId:
-      | number
-      | undefined;
+    let timeoutId: number | undefined;
 
     async function checkStatus() {
       try {
-        const response =
-          await apiRequest<VerificationStatusResponse>(
-            "/auth/email-verification/status",
-            {
-              method: "GET",
-              authenticated: false,
-              retryOnUnauthorized: false,
-            },
-          );
+        const response = await apiRequest<VerificationStatusResponse>(
+          "/auth/email-verification/status",
+          {
+            method: "GET",
+            authenticated: false,
+            retryOnUnauthorized: false,
+          },
+        );
 
         if (!active) {
           return;
         }
 
-        setVerificationStatus(
-          response.status,
-        );
+        setVerificationStatus(response.status);
 
-        if (
-          response.status ===
-          "confirmed"
-        ) {
-          sessionStorage.removeItem(
-            PENDING_EMAIL_KEY,
-          );
+        if (response.status === "confirmed") {
+          sessionStorage.removeItem(PENDING_EMAIL_KEY);
 
           /*
            * Deixamos o usuário enxergar
            * o estado de sucesso antes de
            * seguir para o login.
            */
-          timeoutId =
-            window.setTimeout(() => {
-              navigate("/login", {
-                replace: true,
+          timeoutId = window.setTimeout(() => {
+            navigate("/login", {
+              replace: true,
 
-                state: {
-                  email,
-                  emailConfirmed: true,
-                },
-              });
-            }, 1500);
+              state: {
+                email,
+                emailConfirmed: true,
+              },
+            });
+          }, 1500);
 
           return;
         }
 
         if (
-          response.status ===
-            "expired" ||
-          response.status ===
-            "unavailable"
+          response.status === "expired" ||
+          response.status === "unavailable"
         ) {
           return;
         }
 
-        timeoutId =
-          window.setTimeout(
-            checkStatus,
-            5000,
-          );
+        timeoutId = window.setTimeout(checkStatus, 5000);
       } catch (error) {
-        console.error(
-          "Falha ao acompanhar confirmação:",
-          error,
-        );
+        console.error("Falha ao acompanhar confirmação:", error);
 
         if (!active) {
           return;
@@ -207,33 +151,20 @@ export default function VerifyEmail() {
          * Uma falha de rede momentânea
          * não deve quebrar a experiência.
          */
-        timeoutId =
-          window.setTimeout(
-            checkStatus,
-            5000,
-          );
+        timeoutId = window.setTimeout(checkStatus, 5000);
       }
     }
 
-    timeoutId =
-      window.setTimeout(
-        checkStatus,
-        800,
-      );
+    timeoutId = window.setTimeout(checkStatus, 800);
 
     return () => {
       active = false;
 
       if (timeoutId) {
-        window.clearTimeout(
-          timeoutId,
-        );
+        window.clearTimeout(timeoutId);
       }
     };
-  }, [
-    email,
-    navigate,
-  ]);
+  }, [email, navigate]);
 
   /*
    * Contagem para evitar que o botão
@@ -245,34 +176,25 @@ export default function VerifyEmail() {
       return;
     }
 
-    const interval =
-      window.setInterval(() => {
-        setCooldown((current) => {
-          if (current <= 1) {
-            window.clearInterval(
-              interval,
-            );
+    const interval = window.setInterval(() => {
+      setCooldown((current) => {
+        if (current <= 1) {
+          window.clearInterval(interval);
 
-            return 0;
-          }
+          return 0;
+        }
 
-          return current - 1;
-        });
-      }, 1000);
+        return current - 1;
+      });
+    }, 1000);
 
     return () => {
-      window.clearInterval(
-        interval,
-      );
+      window.clearInterval(interval);
     };
   }, [cooldown]);
 
   async function handleResend() {
-    if (
-      !email ||
-      isResending ||
-      cooldown > 0
-    ) {
+    if (!email || isResending || cooldown > 0) {
       return;
     }
 
@@ -289,17 +211,11 @@ export default function VerifyEmail() {
         false,
       );
 
-      setResendMessage(
-        "Pronto! Enviamos um novo link para seu e-mail.",
-      );
+      setResendMessage("Pronto! Enviamos um novo link para seu e-mail.");
 
       setCooldown(60);
     } catch (error) {
-      setResendError(
-        getResendErrorMessage(
-          error,
-        ),
-      );
+      setResendError(getResendErrorMessage(error));
     } finally {
       setIsResending(false);
     }
@@ -309,33 +225,21 @@ export default function VerifyEmail() {
     navigate("/signup");
   }
 
-  const isConfirmed =
-    verificationStatus ===
-    "confirmed";
+  const isConfirmed = verificationStatus === "confirmed";
 
-  const isExpired =
-    verificationStatus ===
-    "expired";
+  const isExpired = verificationStatus === "expired";
 
-  const isUnavailable =
-    verificationStatus ===
-    "unavailable";
+  const isUnavailable = verificationStatus === "unavailable";
 
   return (
-    <main
-      className={
-        styles.verificationPage
-      }
-    >
+    <main className={styles.verificationPage}>
       <header className={styles.header}>
         <button
           type="button"
           className={styles.backButton}
           onClick={handleBack}
         >
-          <ArrowLeft
-            aria-hidden="true"
-          />
+          <ArrowLeft aria-hidden="true" />
 
           <span>Voltar</span>
         </button>
@@ -345,131 +249,60 @@ export default function VerifyEmail() {
           className={styles.brand}
           aria-label="CONG — Página inicial"
         >
-          <img
-            src={logo}
-            alt="CONG"
-          />
+          <img src={logo} alt="CONG" />
         </TransitionLink>
 
-        <TransitionLink
-          to="/login"
-          className={styles.loginLink}
-        >
+        <TransitionLink to="/login" className={styles.loginLink}>
           <span>Entrar</span>
 
-          <LogIn
-            aria-hidden="true"
-          />
+          <LogIn aria-hidden="true" />
         </TransitionLink>
       </header>
 
-      <section
-        className={styles.content}
-      >
-        <div
-          className={styles.cardWrapper}
-        >
-          <span
-            className={styles.tape}
-            aria-hidden="true"
-          />
+      <section className={styles.content}>
+        <div className={styles.cardWrapper}>
+          <span className={styles.tape} aria-hidden="true" />
 
           <article
             className={`${styles.card} ${
-              isConfirmed
-                ? styles.cardConfirmed
-                : ""
+              isConfirmed ? styles.cardConfirmed : ""
             }`}
           >
-            <div
-              className={
-                styles.cardDecoration
-              }
-              aria-hidden="true"
-            >
+            <div className={styles.cardDecoration} aria-hidden="true">
               ✦
             </div>
 
-            <div
-              className={
-                styles.stepLabel
-              }
-            >
+            <div className={styles.stepLabel}>
               <span>02</span>
 
-              <p>
-                CONFIRMAÇÃO DE E-MAIL
-              </p>
+              <p>CONFIRMAÇÃO DE E-MAIL</p>
             </div>
 
-            <div
-              className={
-                styles.mailIllustration
-              }
-              aria-hidden="true"
-            >
-              <div
-                className={
-                  styles.mailCircle
-                }
-              >
-                {isConfirmed ? (
-                  <Check />
-                ) : (
-                  <Mail />
-                )}
+            <div className={styles.mailIllustration} aria-hidden="true">
+              <div className={styles.mailCircle}>
+                {isConfirmed ? <Check /> : <Mail />}
               </div>
 
-              <span
-                className={
-                  styles.mailOrbit
-                }
-              />
+              <span className={styles.mailOrbit} />
 
-              <span
-                className={
-                  styles.mailSparkOne
-                }
-              >
-                ✦
-              </span>
+              <span className={styles.mailSparkOne}>✦</span>
 
-              <span
-                className={
-                  styles.mailSparkTwo
-                }
-              >
-                ✧
-              </span>
+              <span className={styles.mailSparkTwo}>✧</span>
             </div>
 
-            <div
-              className={
-                styles.heading
-              }
-            >
-              <span
-                className={
-                  styles.eyebrow
-                }
-              >
-                {isConfirmed
-                  ? "TUDO CERTO"
-                  : "FALTA SÓ UM PASSO"}
+            <div className={styles.heading}>
+              <span className={styles.eyebrow}>
+                {isConfirmed ? "TUDO CERTO" : "FALTA SÓ UM PASSO"}
               </span>
 
               <h1>
                 {isConfirmed ? (
                   <>
-                    E-mail{" "}
-                    <span>
-                      confirmado!
-                    </span>
+                    E-mail <span>confirmado!</span>
                   </>
                 ) : (
                   <>
-                    Olhe seu{" "}
-                    <span>e-mail.</span>
+                    Olhe seu <span>e-mail.</span>
                   </>
                 )}
               </h1>
@@ -477,212 +310,111 @@ export default function VerifyEmail() {
               <p>
                 {isConfirmed ? (
                   <>
-                    Seu endereço foi
-                    confirmado com
-                    sucesso. Estamos
-                    preparando o próximo
-                    passo.
+                    Seu endereço foi confirmado com sucesso. Estamos preparando
+                    o próximo passo.
                   </>
                 ) : (
                   <>
-                    Enviamos um link de
-                    confirmação para o
-                    endereço abaixo.
-                    Abra a mensagem e
-                    confirme que o e-mail
-                    é seu.
+                    Enviamos um link de confirmação para o endereço abaixo. Abra
+                    a mensagem e confirme que o e-mail é seu.
                   </>
                 )}
               </p>
             </div>
 
             {!isConfirmed && (
-              <div
-                className={
-                  styles.emailCard
-                }
-              >
-                <span
-                  className={
-                    styles.emailIcon
-                  }
-                >
-                  <Mail
-                    aria-hidden="true"
-                  />
+              <div className={styles.emailCard}>
+                <span className={styles.emailIcon}>
+                  <Mail aria-hidden="true" />
                 </span>
 
                 <div>
-                  <small>
-                    Link enviado para
-                  </small>
+                  <small>Link enviado para</small>
 
-                  <strong>
-                    {email ||
-                      "seu e-mail de cadastro"}
-                  </strong>
+                  <strong>{email || "seu e-mail de cadastro"}</strong>
                 </div>
               </div>
             )}
 
-            <div
-              className={
-                styles.statusArea
-              }
-              aria-live="polite"
-            >
+            <div className={styles.statusArea} aria-live="polite">
               {isConfirmed ? (
-                <div
-                  className={
-                    styles.successStatus
-                  }
-                >
+                <div className={styles.successStatus}>
                   <span>
-                    <Check
-                      aria-hidden="true"
-                    />
+                    <Check aria-hidden="true" />
                   </span>
 
                   <div>
-                    <strong>
-                      E-mail confirmado
-                    </strong>
+                    <strong>E-mail confirmado</strong>
 
-                    <p>
-                      Redirecionando para
-                      a CONG...
-                    </p>
+                    <p>Redirecionando para a CONG...</p>
                   </div>
                 </div>
               ) : isExpired ? (
-                <div
-                  className={
-                    styles.warningStatus
-                  }
-                >
-                  <CircleAlert
-                    aria-hidden="true"
-                  />
+                <div className={styles.warningStatus}>
+                  <CircleAlert aria-hidden="true" />
 
                   <div>
-                    <strong>
-                      O acompanhamento
-                      expirou
-                    </strong>
+                    <strong>O acompanhamento expirou</strong>
 
                     <p>
-                      Por segurança, este
-                      acompanhamento
-                      automático não está
+                      Por segurança, este acompanhamento automático não está
                       mais ativo.
                     </p>
                   </div>
                 </div>
               ) : isUnavailable ? (
-                <div
-                  className={
-                    styles.warningStatus
-                  }
-                >
-                  <CircleAlert
-                    aria-hidden="true"
-                  />
+                <div className={styles.warningStatus}>
+                  <CircleAlert aria-hidden="true" />
 
                   <div>
-                    <strong>
-                      Acompanhamento
-                      indisponível
-                    </strong>
+                    <strong>Acompanhamento indisponível</strong>
 
                     <p>
-                      Você ainda pode
-                      confirmar pelo
-                      e-mail e entrar
+                      Você ainda pode confirmar pelo e-mail e entrar
                       normalmente.
                     </p>
                   </div>
                 </div>
               ) : (
-                <div
-                  className={
-                    styles.waitingStatus
-                  }
-                >
-                  <span
-                    className={
-                      styles.pulse
-                    }
-                    aria-hidden="true"
-                  />
+                <div className={styles.waitingStatus}>
+                  <span className={styles.pulse} aria-hidden="true" />
 
                   <div>
-                    <strong>
-                      Aguardando sua
-                      confirmação
-                    </strong>
+                    <strong>Aguardando sua confirmação</strong>
 
                     <p>
-                      Esta página atualiza
-                      sozinha. Pode
-                      confirmar até pelo
+                      Esta página atualiza sozinha. Pode confirmar até pelo
                       celular.
                     </p>
                   </div>
 
-                  <Clock3
-                    aria-hidden="true"
-                  />
+                  <Clock3 aria-hidden="true" />
                 </div>
               )}
             </div>
 
             {!isConfirmed && (
               <>
-                <div
-                  className={
-                    styles.divider
-                  }
-                  aria-hidden="true"
-                >
+                <div className={styles.divider} aria-hidden="true">
                   <span />
                   <Sparkles />
                   <span />
                 </div>
 
-                <div
-                  className={
-                    styles.resendArea
-                  }
-                >
+                <div className={styles.resendArea}>
                   <div>
-                    <strong>
-                      Não recebeu?
-                    </strong>
+                    <strong>Não recebeu?</strong>
 
-                    <p>
-                      Confira também sua
-                      pasta de spam ou
-                      lixo eletrônico.
-                    </p>
+                    <p>Confira também sua pasta de spam ou lixo eletrônico.</p>
                   </div>
 
                   <button
                     type="button"
-                    className={
-                      styles.resendButton
-                    }
-                    disabled={
-                      !email ||
-                      isResending ||
-                      cooldown > 0
-                    }
-                    onClick={
-                      handleResend
-                    }
+                    className={styles.resendButton}
+                    disabled={!email || isResending || cooldown > 0}
+                    onClick={handleResend}
                   >
-                    <RefreshCw
-                      aria-hidden="true"
-                    />
+                    <RefreshCw aria-hidden="true" />
 
                     {isResending
                       ? "Reenviando..."
@@ -693,30 +425,16 @@ export default function VerifyEmail() {
                 </div>
 
                 {resendMessage && (
-                  <p
-                    className={
-                      styles.resendSuccess
-                    }
-                    role="status"
-                  >
-                    <Check
-                      aria-hidden="true"
-                    />
+                  <p className={styles.resendSuccess} role="status">
+                    <Check aria-hidden="true" />
 
                     {resendMessage}
                   </p>
                 )}
 
                 {resendError && (
-                  <p
-                    className={
-                      styles.resendError
-                    }
-                    role="alert"
-                  >
-                    <CircleAlert
-                      aria-hidden="true"
-                    />
+                  <p className={styles.resendError} role="alert">
+                    <CircleAlert aria-hidden="true" />
 
                     {resendError}
                   </p>
@@ -724,38 +442,20 @@ export default function VerifyEmail() {
               </>
             )}
 
-            <div
-              className={
-                styles.securityNote
-              }
-            >
-              <ShieldCheck
-                aria-hidden="true"
-              />
+            <div className={styles.securityNote}>
+              <ShieldCheck aria-hidden="true" />
 
               <p>
-                <strong>
-                  Pode confirmar em outro
-                  dispositivo.
-                </strong>{" "}
-                Se fizer isso, esta tela
-                reconhecerá a confirmação
-                automaticamente e levará
-                você ao login.
+                <strong>Pode confirmar em outro dispositivo.</strong> Se fizer
+                isso, esta tela reconhecerá a confirmação automaticamente e
+                levará você ao login.
               </p>
             </div>
 
             {!isConfirmed && (
-              <p
-                className={
-                  styles.wrongEmail
-                }
-              >
+              <p className={styles.wrongEmail}>
                 Digitou o e-mail errado?{" "}
-                <button
-                  type="button"
-                  onClick={handleBack}
-                >
+                <button type="button" onClick={handleBack}>
                   Voltar ao cadastro
                 </button>
               </p>
@@ -763,88 +463,33 @@ export default function VerifyEmail() {
           </article>
         </div>
 
-        <aside
-          className={styles.visual}
-          aria-hidden="true"
-        >
-          <div
-            className={
-              styles.visualBackdrop
-            }
-          />
+        <aside className={styles.visual} aria-hidden="true">
+          <div className={styles.visualBackdrop} />
 
-          <span
-            className={
-              styles.visualStarOne
-            }
-          >
-            ✦
-          </span>
+          <span className={styles.visualStarOne}>✦</span>
 
-          <span
-            className={
-              styles.visualStarTwo
-            }
-          >
-            ✦
-          </span>
+          <span className={styles.visualStarTwo}>✦</span>
 
-          <div
-            className={
-              styles.notePaper
-            }
-          >
+          <div className={styles.notePaper}>
             <span>quase lá!</span>
 
-            <strong>
-              1 clique
-            </strong>
+            <strong>1 clique</strong>
 
-            <p>
-              separa sua conta da
-              comunidade CONG.
-            </p>
+            <p>separa sua conta da comunidade CONG.</p>
           </div>
 
-          <div
-            className={
-              styles.mascotStage
-            }
-          >
-            <div
-              className={
-                styles.mascotHalo
-              }
-            />
+          <div className={styles.mascotStage}>
+            <div className={styles.mascotHalo} />
 
-            <img
-              src={mascot}
-              alt=""
-            />
+            <img src={mascot} alt="" />
 
-            <span
-              className={
-                styles.mascotShadow
-              }
-            />
+            <span className={styles.mascotShadow} />
           </div>
 
-          <div
-            className={
-              styles.envelope
-            }
-          >
-            <div
-              className={
-                styles.envelopeFront
-              }
-            />
+          <div className={styles.envelope}>
+            <div className={styles.envelopeFront} />
 
-            <div
-              className={
-                styles.envelopeFlap
-              }
-            />
+            <div className={styles.envelopeFlap} />
 
             <span>
               <Mail />
@@ -855,14 +500,9 @@ export default function VerifyEmail() {
       </section>
 
       <footer className={styles.footer}>
-        <span>
-          © 2026 CONG
-        </span>
+        <span>© 2026 CONG</span>
 
-        <span>
-          Uma conta. Várias formas de
-          gerar impacto.
-        </span>
+        <span>Uma conta. Várias formas de gerar impacto.</span>
       </footer>
     </main>
   );

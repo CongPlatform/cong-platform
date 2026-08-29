@@ -1,23 +1,39 @@
 import * as z from "zod";
 
-export const organizationTypeSchema = z.enum([
-  "ngo",
-  "company",
-]);
+export const organizationTypeSchema = z.enum(["ngo", "company"]);
 
-export type OrganizationType =
-  z.infer<typeof organizationTypeSchema>;
+export type OrganizationType = z.infer<typeof organizationTypeSchema>;
 
-const initiativeKindSchema = z.enum([
-  "formal",
-  "independent",
-  "punctual",
-]);
+const initiativeKindSchema = z.enum(["formal", "independent", "punctual"]);
 
 const stateSchema = z.enum([
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
-  "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
-  "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
 ]);
 
 function onlyDigits(value: string): string {
@@ -29,9 +45,10 @@ function isValidCnpj(value: string): boolean {
   if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
 
   const digit = (length: 12 | 13) => {
-    const weights = length === 12
-      ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-      : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const weights =
+      length === 12
+        ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+        : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
 
     const sum = weights.reduce(
       (total, weight, index) => total + Number(cnpj[index]) * weight,
@@ -50,9 +67,7 @@ const optionalText = (max: number) =>
     .trim()
     .max(max)
     .optional()
-    .transform((value) =>
-      value && value.length > 0 ? value : undefined,
-    );
+    .transform((value) => (value && value.length > 0 ? value : undefined));
 
 const requiredText = (min: number, max: number) =>
   z.string().trim().min(min).max(max);
@@ -94,9 +109,13 @@ export const createRepresentationSchema = z
     supportTypes: z.array(z.string().trim().min(2).max(80)).max(8),
   })
   .superRefine((input, ctx) => {
-    const formal = input.organizationType === "company" || input.initiativeKind === "formal";
+    const formal =
+      input.organizationType === "company" || input.initiativeKind === "formal";
 
-    if (input.organizationType === "company" && input.initiativeKind !== "formal") {
+    if (
+      input.organizationType === "company" &&
+      input.initiativeKind !== "formal"
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["initiativeKind"],
@@ -144,7 +163,10 @@ export const createRepresentationSchema = z
       });
     }
 
-    if (input.organizationType === "company" && input.supportTypes.length === 0) {
+    if (
+      input.organizationType === "company" &&
+      input.supportTypes.length === 0
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["supportTypes"],
@@ -153,12 +175,12 @@ export const createRepresentationSchema = z
     }
   });
 
-export type CreateRepresentationInput =
-  z.infer<typeof createRepresentationSchema>;
+export type CreateRepresentationInput = z.infer<
+  typeof createRepresentationSchema
+>;
 
-export const requestRepresentationSchema =
-  z
-    .object({
-      organizationId: z.uuid(),
-    })
-    .strict();
+export const requestRepresentationSchema = z
+  .object({
+    organizationId: z.uuid(),
+  })
+  .strict();

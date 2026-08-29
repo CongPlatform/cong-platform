@@ -16,27 +16,27 @@ A CONG deve ser um espaço onde estudantes, desenvolvedores, designers, voluntá
 
 São exemplos de comportamentos esperados:
 
-* Tratar outras pessoas com respeito
-* Ser paciente com iniciantes
-* Fazer críticas de forma construtiva
-* Explicar decisões técnicas com clareza
-* Aceitar opiniões diferentes
-* Colaborar para melhorar o projeto
-* Manter discussões focadas no projeto
-* Reconhecer contribuições de outras pessoas
+- Tratar outras pessoas com respeito
+- Ser paciente com iniciantes
+- Fazer críticas de forma construtiva
+- Explicar decisões técnicas com clareza
+- Aceitar opiniões diferentes
+- Colaborar para melhorar o projeto
+- Manter discussões focadas no projeto
+- Reconhecer contribuições de outras pessoas
 
 ## Comportamentos não aceitos
 
 Não serão aceitos:
 
-* Ataques pessoais
-* Ofensas, humilhações ou provocações
-* Comentários preconceituosos ou discriminatórios
-* Assédio de qualquer tipo
-* Exposição indevida de dados pessoais
-* Desrespeito a ONGs, beneficiários, voluntários ou colaboradores
-* Uso do projeto para fins maliciosos
-* Discussões agressivas ou fora do propósito do projeto
+- Ataques pessoais
+- Ofensas, humilhações ou provocações
+- Comentários preconceituosos ou discriminatórios
+- Assédio de qualquer tipo
+- Exposição indevida de dados pessoais
+- Desrespeito a ONGs, beneficiários, voluntários ou colaboradores
+- Uso do projeto para fins maliciosos
+- Discussões agressivas ou fora do propósito do projeto
 
 ## Responsabilidade dos colaboradores
 
@@ -74,27 +74,27 @@ CONG should be a space where students, developers, designers, volunteers, NGOs, 
 
 Examples of expected behavior include:
 
-* Treating others with respect
-* Being patient with beginners
-* Giving constructive feedback
-* Explaining technical decisions clearly
-* Accepting different opinions
-* Collaborating to improve the project
-* Keeping discussions focused on the project
-* Recognizing other people’s contributions
+- Treating others with respect
+- Being patient with beginners
+- Giving constructive feedback
+- Explaining technical decisions clearly
+- Accepting different opinions
+- Collaborating to improve the project
+- Keeping discussions focused on the project
+- Recognizing other people’s contributions
 
 ## Unacceptable behavior
 
 The following behaviors are not accepted:
 
-* Personal attacks
-* Insults, humiliation, or provocation
-* Prejudiced or discriminatory comments
-* Harassment of any kind
-* Improper exposure of personal data
-* Disrespect toward NGOs, beneficiaries, volunteers, or contributors
-* Use of the project for malicious purposes
-* Aggressive discussions or discussions unrelated to the project’s purpose
+- Personal attacks
+- Insults, humiliation, or provocation
+- Prejudiced or discriminatory comments
+- Harassment of any kind
+- Improper exposure of personal data
+- Disrespect toward NGOs, beneficiaries, volunteers, or contributors
+- Use of the project for malicious purposes
+- Aggressive discussions or discussions unrelated to the project’s purpose
 
 ## Contributor responsibility
 

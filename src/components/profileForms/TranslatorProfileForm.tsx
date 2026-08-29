@@ -41,7 +41,10 @@ const ACCESSIBILITY_ICONS = {
 } as const;
 
 function languageCode(language: string): string {
-  return LANGUAGE_OPTIONS.find((option) => option.value === language)?.code ?? language.slice(0, 2).toUpperCase();
+  return (
+    LANGUAGE_OPTIONS.find((option) => option.value === language)?.code ??
+    language.slice(0, 2).toUpperCase()
+  );
 }
 
 export default function TranslatorProfileForm(props: Props) {
@@ -51,7 +54,10 @@ export default function TranslatorProfileForm(props: Props) {
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (props.languages.length === 0 && props.accessibilitySkills.length === 0) {
+    if (
+      props.languages.length === 0 &&
+      props.accessibilitySkills.length === 0
+    ) {
       setError("Escolha ao menos um idioma ou recurso de acessibilidade.");
       return;
     }
@@ -97,7 +103,9 @@ export default function TranslatorProfileForm(props: Props) {
                   aria-pressed={selected}
                   onClick={() => toggleSkill(option.label)}
                 >
-                  <span className={styles.monoIcon}><Icon aria-hidden="true" /></span>
+                  <span className={styles.monoIcon}>
+                    <Icon aria-hidden="true" />
+                  </span>
                   <span>{option.label}</span>
                 </button>
               );
@@ -114,7 +122,9 @@ export default function TranslatorProfileForm(props: Props) {
             <div className={styles.languageList}>
               {props.languages.map((language) => (
                 <div className={styles.languageItem} key={language}>
-                  <span className={styles.languageCode}>{languageCode(language)}</span>
+                  <span className={styles.languageCode}>
+                    {languageCode(language)}
+                  </span>
                   <span className={styles.languageName}>{language}</span>
                   <button
                     type="button"
@@ -132,18 +142,36 @@ export default function TranslatorProfileForm(props: Props) {
             </div>
           )}
 
-          <button type="button" className={styles.addButton} onClick={() => setLanguagesOpen(true)}>
+          <button
+            type="button"
+            className={styles.addButton}
+            onClick={() => setLanguagesOpen(true)}
+          >
             <Plus aria-hidden="true" />
             Adicionar idiomas
           </button>
         </section>
 
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
 
         <footer className={styles.footer}>
-          <button className={styles.submitButton} type="submit" disabled={props.saving}>
-            {props.saving && <LoaderCircle className={styles.spinner} aria-hidden="true" />}
-            {props.saving ? "Salvando..." : props.completed ? "Salvar alterações" : "Salvar e continuar"}
+          <button
+            className={styles.submitButton}
+            type="submit"
+            disabled={props.saving}
+          >
+            {props.saving && (
+              <LoaderCircle className={styles.spinner} aria-hidden="true" />
+            )}
+            {props.saving
+              ? "Salvando..."
+              : props.completed
+                ? "Salvar alterações"
+                : "Salvar e continuar"}
           </button>
         </footer>
       </form>

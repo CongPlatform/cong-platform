@@ -8,19 +8,12 @@ import {
 
 import { createPortal } from "react-dom";
 
-import {
-  FiCheck,
-  FiFileText,
-  FiX,
-} from "react-icons/fi";
+import { FiCheck, FiFileText, FiX } from "react-icons/fi";
 
 import styles from "./ModalMensagem.module.css";
 
 export type TamanhoModalMensagem =
-  | "pequeno"
-  | "medio"
-  | "grande"
-  | "automatico";
+  "pequeno" | "medio" | "grande" | "automatico";
 
 export interface ModalMensagemProps {
   aberto: boolean;
@@ -47,21 +40,15 @@ interface ListaDadosProps {
 
 const TOTAL_FUROS = 6;
 
-function formatarRotulo(
-  chave: string,
-): string {
+function formatarRotulo(chave: string): string {
   return chave
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/[_-]+/g, " ")
     .trim()
-    .replace(/\b\w/g, (letra) =>
-      letra.toUpperCase(),
-    );
+    .replace(/\b\w/g, (letra) => letra.toUpperCase());
 }
 
-function ehObjetoSimples(
-  valor: unknown,
-): valor is Record<string, unknown> {
+function ehObjetoSimples(valor: unknown): valor is Record<string, unknown> {
   return (
     typeof valor === "object" &&
     valor !== null &&
@@ -70,21 +57,9 @@ function ehObjetoSimples(
   );
 }
 
-function ValorFormatado({
-  valor,
-}: {
-  valor: unknown;
-}) {
-  if (
-    valor === null ||
-    valor === undefined ||
-    valor === ""
-  ) {
-    return (
-      <span className={styles.emptyValue}>
-        Não informado
-      </span>
-    );
+function ValorFormatado({ valor }: { valor: unknown }) {
+  if (valor === null || valor === undefined || valor === "") {
+    return <span className={styles.emptyValue}>Não informado</span>;
   }
 
   if (typeof valor === "boolean") {
@@ -92,37 +67,22 @@ function ValorFormatado({
   }
 
   if (valor instanceof Date) {
-    return (
-      <>
-        {valor.toLocaleString("pt-BR")}
-      </>
-    );
+    return <>{valor.toLocaleString("pt-BR")}</>;
   }
 
   if (Array.isArray(valor)) {
     if (valor.length === 0) {
-      return (
-        <span className={styles.emptyValue}>
-          Nenhum item
-        </span>
-      );
+      return <span className={styles.emptyValue}>Nenhum item</span>;
     }
 
-    const listaSimples = valor.every(
-      (item) => !ehObjetoSimples(item),
-    );
+    const listaSimples = valor.every((item) => !ehObjetoSimples(item));
 
     if (listaSimples) {
       return (
         <div className={styles.tagList}>
           {valor.map((item, index) => (
-            <span
-              key={`${String(item)}-${index}`}
-              className={styles.tag}
-            >
-              {item === null ||
-              item === undefined ||
-              item === ""
+            <span key={`${String(item)}-${index}`} className={styles.tag}>
+              {item === null || item === undefined || item === ""
                 ? "Não informado"
                 : String(item)}
             </span>
@@ -134,16 +94,9 @@ function ValorFormatado({
     return (
       <div className={styles.arrayList}>
         {valor.map((item, index) => (
-          <div
-            key={`item-${index}`}
-            className={styles.arrayItem}
-          >
+          <div key={`item-${index}`} className={styles.arrayItem}>
             {ehObjetoSimples(item) ? (
-              <ListaDados
-                dados={item}
-                nivel={1}
-                caminho={`item-${index}`}
-              />
+              <ListaDados dados={item} nivel={1} caminho={`item-${index}`} />
             ) : (
               <ValorFormatado valor={item} />
             )}
@@ -156,61 +109,32 @@ function ValorFormatado({
   return <>{String(valor)}</>;
 }
 
-function ListaDados({
-  dados,
-  nivel = 0,
-  caminho = "dados",
-}: ListaDadosProps) {
+function ListaDados({ dados, nivel = 0, caminho = "dados" }: ListaDadosProps) {
   return (
-    <div
-      className={styles.dataGrid}
-      data-level={nivel}
-    >
-      {Object.entries(dados).map(
-        ([chave, valor]) => {
-          const id = `${caminho}-${chave}`;
+    <div className={styles.dataGrid} data-level={nivel}>
+      {Object.entries(dados).map(([chave, valor]) => {
+        const id = `${caminho}-${chave}`;
 
-          if (ehObjetoSimples(valor)) {
-            return (
-              <section
-                key={id}
-                className={styles.dataSection}
-              >
-                <h3>
-                  {formatarRotulo(chave)}
-                </h3>
-
-                <ListaDados
-                  dados={valor}
-                  nivel={nivel + 1}
-                  caminho={id}
-                />
-              </section>
-            );
-          }
-
+        if (ehObjetoSimples(valor)) {
           return (
-            <div
-              key={id}
-              className={styles.dataField}
-            >
-              <span
-                className={styles.dataLabel}
-              >
-                {formatarRotulo(chave)}
-              </span>
+            <section key={id} className={styles.dataSection}>
+              <h3>{formatarRotulo(chave)}</h3>
 
-              <div
-                className={styles.dataValue}
-              >
-                <ValorFormatado
-                  valor={valor}
-                />
-              </div>
-            </div>
+              <ListaDados dados={valor} nivel={nivel + 1} caminho={id} />
+            </section>
           );
-        },
-      )}
+        }
+
+        return (
+          <div key={id} className={styles.dataField}>
+            <span className={styles.dataLabel}>{formatarRotulo(chave)}</span>
+
+            <div className={styles.dataValue}>
+              <ValorFormatado valor={valor} />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -230,73 +154,48 @@ export default function ModalMensagem({
   const titleId = useId();
   const descriptionId = useId();
 
-  const closeButtonRef =
-    useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!aberto) {
       return;
     }
 
-    const elementoAnterior =
-      document.activeElement as
-        | HTMLElement
-        | null;
+    const elementoAnterior = document.activeElement as HTMLElement | null;
 
-    const overflowAnterior =
-      document.body.style.overflow;
+    const overflowAnterior = document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
 
-    const focusFrame =
-      window.requestAnimationFrame(() => {
-        closeButtonRef.current?.focus();
-      });
+    const focusFrame = window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
 
-    const handleKeyDown = (
-      event: KeyboardEvent,
-    ) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onFechar();
       }
     };
 
-    window.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.cancelAnimationFrame(
-        focusFrame,
-      );
+      window.cancelAnimationFrame(focusFrame);
 
-      document.body.style.overflow =
-        overflowAnterior;
+      document.body.style.overflow = overflowAnterior;
 
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
+      window.removeEventListener("keydown", handleKeyDown);
 
       elementoAnterior?.focus();
     };
   }, [aberto, onFechar]);
 
-  if (
-    !aberto ||
-    typeof document === "undefined"
-  ) {
+  if (!aberto || typeof document === "undefined") {
     return null;
   }
 
-  const handleOverlayClick = (
-    event: MouseEvent<HTMLDivElement>,
-  ) => {
-    if (
-      fecharAoClicarFora &&
-      event.target === event.currentTarget
-    ) {
+  const handleOverlayClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (fecharAoClicarFora && event.target === event.currentTarget) {
       onFechar();
     }
   };
@@ -307,34 +206,16 @@ export default function ModalMensagem({
   };
 
   return createPortal(
-    <div
-      className={styles.overlay}
-      onMouseDown={handleOverlayClick}
-    >
-      <div
-        className={styles.paperFrame}
-        data-size={tamanho}
-      >
-        <div
-          className={styles.backSheet}
-          aria-hidden="true"
-        />
+    <div className={styles.overlay} onMouseDown={handleOverlayClick}>
+      <div className={styles.paperFrame} data-size={tamanho}>
+        <div className={styles.backSheet} aria-hidden="true" />
 
-        <div
-          className={styles.paperClip}
-          aria-hidden="true"
-        >
-          <span
-            className={styles.clipOuter}
-          />
+        <div className={styles.paperClip} aria-hidden="true">
+          <span className={styles.clipOuter} />
 
-          <span
-            className={styles.clipInner}
-          />
+          <span className={styles.clipInner} />
 
-          <span
-            className={styles.clipHighlight}
-          />
+          <span className={styles.clipHighlight} />
         </div>
 
         <section
@@ -344,50 +225,26 @@ export default function ModalMensagem({
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
         >
-          <div
-            className={styles.paperTexture}
-            aria-hidden="true"
-          />
+          <div className={styles.paperTexture} aria-hidden="true" />
 
-          <div
-            className={styles.holeRail}
-            aria-hidden="true"
-          >
+          <div className={styles.holeRail} aria-hidden="true">
             {Array.from({
               length: TOTAL_FUROS,
             }).map((_, index) => (
-              <span
-                key={`hole-${index}`}
-                className={styles.hole}
-              />
+              <span key={`hole-${index}`} className={styles.hole} />
             ))}
           </div>
 
           <header className={styles.header}>
             <div className={styles.titleArea}>
-              <span
-                className={
-                  styles.documentIcon
-                }
-                aria-hidden="true"
-              >
+              <span className={styles.documentIcon} aria-hidden="true">
                 <FiFileText />
               </span>
 
-              <div
-                className={
-                  styles.titleContent
-                }
-              >
-                <span
-                  className={styles.eyebrow}
-                >
-                  CONG · MENSAGEM
-                </span>
+              <div className={styles.titleContent}>
+                <span className={styles.eyebrow}>CONG · MENSAGEM</span>
 
-                <h2 id={titleId}>
-                  {titulo}
-                </h2>
+                <h2 id={titleId}>{titulo}</h2>
               </div>
             </div>
 
@@ -402,37 +259,19 @@ export default function ModalMensagem({
             </button>
           </header>
 
-          <div
-            id={descriptionId}
-            className={styles.content}
-          >
-            {mensagem && (
-              <div className={styles.message}>
-                {mensagem}
+          <div id={descriptionId} className={styles.content}>
+            {mensagem && <div className={styles.message}>{mensagem}</div>}
+
+            {dados && Object.keys(dados).length > 0 && (
+              <div className={styles.dataWrapper}>
+                <ListaDados dados={dados} />
               </div>
             )}
-
-            {dados &&
-              Object.keys(dados).length >
-                0 && (
-                <div
-                  className={
-                    styles.dataWrapper
-                  }
-                >
-                  <ListaDados
-                    dados={dados}
-                  />
-                </div>
-              )}
           </div>
 
           <footer className={styles.footer}>
-            <span
-              className={styles.footerNote}
-            >
-              Confira as informações antes de
-              continuar.
+            <span className={styles.footerNote}>
+              Confira as informações antes de continuar.
             </span>
 
             {mostrarBotaoOk && (

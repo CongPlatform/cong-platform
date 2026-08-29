@@ -90,8 +90,7 @@ function shouldUsePageTransition(
    * precisam ser imediatas para não mostrar a nova página duas vezes.
    */
   return (
-    !isInternalRoute(currentPathname) &&
-    !isInternalRoute(destinationPathname)
+    !isInternalRoute(currentPathname) && !isInternalRoute(destinationPathname)
   );
 }
 
@@ -274,10 +273,7 @@ export function PageTransitionProvider({
 
   const navigateWithTransition = useCallback(
     async (destination: TransitionDestination, options?: NavigateOptions) => {
-      if (
-        isCurrentDestination(destination, routeKey) &&
-        !options?.replace
-      ) {
+      if (isCurrentDestination(destination, routeKey) && !options?.replace) {
         return;
       }
 

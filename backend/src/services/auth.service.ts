@@ -1,11 +1,10 @@
 import pool from "../config/database.js";
 
-import {
-  createSupabaseAuthClient,
-  supabaseAdmin,
-} from "../config/supabase.js";
+import { createSupabaseAuthClient, supabaseAdmin } from "../config/supabase.js";
 
 import { env } from "../config/env.js";
+
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 import { AppError } from "../utils/app-error.js";
 
@@ -61,6 +60,142 @@ interface CurrentUser {
   email: string;
 }
 
+function getOAuthUserName(authUser: SupabaseUser): string {
+  const metadata = authUser.user_metadata ?? {};
+
+  const possibleNames = [
+    metadata.full_name,
+    metadata.name,
+    metadata.user_name,
+    metadata.preferred_username,
+  ];
+
+  const metadataName = possibleNames.find(
+    (value): value is string =>
+      typeof value === "string" && value.trim().length > 0,
+  );
+
+  if (metadataName) {
+    return metadataName.trim();
+  }
+
+  if (authUser.email) {
+    const emailName = authUser.email.split("@")[0];
+
+    if (emailName) {
+      return emailName;
+    }
+  }
+  return "Usuário CONG";
+}
+
+export async function completeOAuthUser(
+  authUser: SupabaseUser,
+): Promise<CurrentUser> {
+  if (!authUser.email) {
+    throw new AppError(
+      "Authenticated user email was not found",
+      400,
+      "OAUTH_EMAIL_NOT_FOUND",
+    );
+  }
+
+  const existingResult = await pool.query<{
+    id: string;
+    name: string;
+    active: boolean;
+  }>(
+    `
+      select
+        id,
+        name,
+        active
+      from public.users
+      where auth_user_id = $1
+      limit 1
+    `,
+    [authUser.id],
+  );
+
+  const existingUser = existingResult.rows[0];
+
+  if (existingUser) {
+    if (!existingUser.active) {
+      throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+    }
+
+    return {
+      id: existingUser.id,
+      name: existingUser.name,
+      email: authUser.email,
+    };
+  }
+
+  const name = getOAuthUserName(authUser);
+
+  const insertResult = await pool.query<{
+    id: string;
+    name: string;
+    active: boolean;
+  }>(
+    `
+      insert into public.users (
+        auth_user_id,
+        name
+      )
+      values ($1, $2)
+      on conflict (auth_user_id)
+      do nothing
+      returning
+        id,
+        name,
+        active
+    `,
+    [authUser.id, name],
+  );
+
+  let createdUser = insertResult.rows[0];
+
+  if (!createdUser) {
+    const result = await pool.query<{
+      id: string;
+      name: string;
+      active: boolean;
+    }>(
+      `
+        select
+          id,
+          name,
+          active
+        from public.users
+        where auth_user_id = $1
+        limit 1
+      `,
+      [authUser.id],
+    );
+
+    createdUser = result.rows[0];
+  }
+
+  if (!createdUser) {
+    throw new AppError(
+      "Unable to create user profile",
+      500,
+      "USER_PROFILE_CREATION_FAILED",
+    );
+  }
+
+  if (!createdUser.active) {
+    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+  }
+
+  return {
+    id: createdUser.id,
+    name: createdUser.name,
+    email: authUser.email,
+  };
+}
+
 interface RefreshedSession {
   accessToken: string;
   refreshToken: string;
@@ -76,25 +211,19 @@ export async function registerUser(
 ): Promise<RegistrationResult> {
   const { name, email, password } = input;
 
-  const supabaseAuth =
-    createSupabaseAuthClient();
+  const supabaseAuth = createSupabaseAuthClient();
 
-  const { data, error } =
-    await supabaseAuth.auth.signUp({
-      email,
-      password,
+  const { data, error } = await supabaseAuth.auth.signUp({
+    email,
+    password,
 
-      options: {
-        emailRedirectTo:
-          `${env.frontendUrl}/auth/confirm`,
-      },
-    });
+    options: {
+      emailRedirectTo: `${env.frontendUrl}/auth/confirm`,
+    },
+  });
 
   if (error || !data.user) {
-    console.error(
-      "Unable to create authentication account:",
-      error,
-    );
+    console.error("Unable to create authentication account:", error);
 
     throw new AppError(
       "Unable to create authentication account",
@@ -112,17 +241,15 @@ export async function registerUser(
    * Ele não cria sessão e não substitui
    * autenticação.
    */
-  const verification =
-    createVerificationToken();
+  const verification = createVerificationToken();
 
   try {
     /*
      * Cria o registro correspondente
      * ao usuário da CONG.
      */
-    const result =
-      await pool.query<RegisteredUser>(
-        `
+    const result = await pool.query<RegisteredUser>(
+      `
           insert into public.users (
             auth_user_id,
             name
@@ -132,18 +259,13 @@ export async function registerUser(
             id,
             name
         `,
-        [
-          authUser.id,
-          name,
-        ],
-      );
+      [authUser.id, name],
+    );
 
     const user = result.rows[0];
 
     if (!user) {
-      throw new Error(
-        "User profile was not created",
-      );
+      throw new Error("User profile was not created");
     }
 
     /*
@@ -164,15 +286,11 @@ export async function registerUser(
 
       verification: {
         token: verification.token,
-        expiresAt:
-          verification.expiresAt,
+        expiresAt: verification.expiresAt,
       },
     };
   } catch (error) {
-    console.error(
-      "Unable to finish user registration:",
-      error,
-    );
+    console.error("Unable to finish user registration:", error);
 
     /*
      * Rollback local.
@@ -190,10 +308,7 @@ export async function registerUser(
         [authUser.id],
       );
     } catch (rollbackError) {
-      console.error(
-        "Failed to rollback local user profile:",
-        rollbackError,
-      );
+      console.error("Failed to rollback local user profile:", rollbackError);
     }
 
     /*
@@ -202,12 +317,9 @@ export async function registerUser(
      * Isso evita deixar uma conta de
      * autenticação parcialmente cadastrada.
      */
-    const {
-      error: deleteError,
-    } =
-      await supabaseAdmin.auth.admin.deleteUser(
-        authUser.id,
-      );
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
+      authUser.id,
+    );
 
     if (deleteError) {
       console.error(
@@ -228,39 +340,24 @@ export async function registerUser(
    LOGIN
 ================================================== */
 
-export async function loginUser(
-  input: LoginUserInput,
-): Promise<LoggedUser> {
-  const supabaseAuth =
-    createSupabaseAuthClient();
+export async function loginUser(input: LoginUserInput): Promise<LoggedUser> {
+  const supabaseAuth = createSupabaseAuthClient();
 
-  const { data, error } =
-    await supabaseAuth.auth.signInWithPassword({
-      email: input.email,
-      password: input.password,
-    });
+  const { data, error } = await supabaseAuth.auth.signInWithPassword({
+    email: input.email,
+    password: input.password,
+  });
 
   if (error) {
     /*
      * Usuário existe, mas ainda precisa
      * confirmar o endereço de e-mail.
      */
-    if (
-      error.code ===
-      "email_not_confirmed"
-    ) {
-      throw new AppError(
-        "Email is not confirmed",
-        403,
-        "EMAIL_NOT_CONFIRMED",
-      );
+    if (error.code === "email_not_confirmed") {
+      throw new AppError("Email is not confirmed", 403, "EMAIL_NOT_CONFIRMED");
     }
 
-    throw new AppError(
-      "Invalid email or password",
-      401,
-      "INVALID_CREDENTIALS",
-    );
+    throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
   }
 
   if (!data.session) {
@@ -299,30 +396,21 @@ export async function loginUser(
   }
 
   if (!user.active) {
-    throw new AppError(
-      "User account is inactive",
-      403,
-      "USER_INACTIVE",
-    );
+    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
   }
 
   return {
-    accessToken:
-      data.session.access_token,
+    accessToken: data.session.access_token,
 
-    refreshToken:
-      data.session.refresh_token,
+    refreshToken: data.session.refresh_token,
 
-    expiresIn:
-      data.session.expires_in,
+    expiresIn: data.session.expires_in,
 
     user: {
       id: user.id,
       name: user.name,
 
-      email:
-        data.user.email ??
-        input.email,
+      email: data.user.email ?? input.email,
     },
   };
 }
@@ -363,11 +451,7 @@ export async function getCurrentUser(
   }
 
   if (!user.active) {
-    throw new AppError(
-      "User account is inactive",
-      403,
-      "USER_INACTIVE",
-    );
+    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
   }
 
   return {
@@ -384,19 +468,13 @@ export async function getCurrentUser(
 export async function refreshUserSession(
   refreshToken: string,
 ): Promise<RefreshedSession> {
-  const supabaseAuth =
-    createSupabaseAuthClient();
+  const supabaseAuth = createSupabaseAuthClient();
 
-  const { data, error } =
-    await supabaseAuth.auth.refreshSession({
-      refresh_token:
-        refreshToken,
-    });
+  const { data, error } = await supabaseAuth.auth.refreshSession({
+    refresh_token: refreshToken,
+  });
 
-  if (
-    error ||
-    !data.session
-  ) {
+  if (error || !data.session) {
     throw new AppError(
       "Unable to refresh user session",
       401,
@@ -405,14 +483,11 @@ export async function refreshUserSession(
   }
 
   return {
-    accessToken:
-      data.session.access_token,
+    accessToken: data.session.access_token,
 
-    refreshToken:
-      data.session.refresh_token,
+    refreshToken: data.session.refresh_token,
 
-    expiresIn:
-      data.session.expires_in,
+    expiresIn: data.session.expires_in,
   };
 }
 
@@ -420,14 +495,11 @@ export async function refreshUserSession(
    LOGOUT
 ================================================== */
 
-export async function logoutUserSession(
-  accessToken: string,
-): Promise<void> {
-  const { error } =
-    await supabaseAdmin.auth.admin.signOut(
-      accessToken,
-      "local",
-    );
+export async function logoutUserSession(accessToken: string): Promise<void> {
+  const { error } = await supabaseAdmin.auth.admin.signOut(
+    accessToken,
+    "local",
+  );
 
   if (error) {
     throw new AppError(
@@ -442,22 +514,17 @@ export async function logoutUserSession(
    RESEND SIGNUP CONFIRMATION
 ================================================== */
 
-export async function resendSignupConfirmation(
-  email: string,
-): Promise<void> {
-  const supabaseAuth =
-    createSupabaseAuthClient();
+export async function resendSignupConfirmation(email: string): Promise<void> {
+  const supabaseAuth = createSupabaseAuthClient();
 
-  const { error } =
-    await supabaseAuth.auth.resend({
-      type: "signup",
-      email,
+  const { error } = await supabaseAuth.auth.resend({
+    type: "signup",
+    email,
 
-      options: {
-        emailRedirectTo:
-          `${env.frontendUrl}/auth/confirm`,
-      },
-    });
+    options: {
+      emailRedirectTo: `${env.frontendUrl}/auth/confirm`,
+    },
+  });
 
   if (!error) {
     return;
@@ -471,10 +538,7 @@ export async function resendSignupConfirmation(
     );
   }
 
-  console.error(
-    "Unable to resend signup confirmation:",
-    error,
-  );
+  console.error("Unable to resend signup confirmation:", error);
 
   throw new AppError(
     "Unable to resend confirmation email",

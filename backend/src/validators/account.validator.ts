@@ -13,12 +13,7 @@ export const usernameSchema = z
 
 export const updateAccountSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(2)
-      .max(100)
-      .optional(),
+    name: z.string().trim().min(2).max(100).optional(),
 
     username: usernameSchema.optional(),
 

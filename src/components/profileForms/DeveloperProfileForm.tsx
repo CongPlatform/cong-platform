@@ -5,7 +5,8 @@ import { TECHNOLOGY_OPTIONS } from "../../data/profileCatalog";
 import SelectionModal from "./shared/SelectionModal";
 import styles from "./ProfileForm.module.css";
 
-export type DeveloperExperienceLevel = "" | "beginner" | "intermediate" | "advanced";
+export type DeveloperExperienceLevel =
+  "" | "beginner" | "intermediate" | "advanced";
 
 export type DeveloperProfileFormData = {
   technologies: string[];
@@ -45,19 +46,22 @@ const EXPERIENCE_OPTIONS = [
   {
     value: "beginner",
     label: "Iniciante",
-    description: "Você está aprendendo a base e quer contribuir com orientação.",
+    description:
+      "Você está aprendendo a base e quer contribuir com orientação.",
     strength: 1,
   },
   {
     value: "intermediate",
     label: "Intermediário",
-    description: "Já desenvolve com autonomia e consegue assumir tarefas com algum apoio.",
+    description:
+      "Já desenvolve com autonomia e consegue assumir tarefas com algum apoio.",
     strength: 2,
   },
   {
     value: "advanced",
     label: "Avançado",
-    description: "Consegue liderar soluções e apoiar decisões técnicas mais complexas.",
+    description:
+      "Consegue liderar soluções e apoiar decisões técnicas mais complexas.",
     strength: 3,
   },
 ] as const;
@@ -67,7 +71,9 @@ export default function DeveloperProfileForm(props: Props) {
   const [error, setError] = useState("");
 
   const activeExperience =
-    EXPERIENCE_OPTIONS.find((option) => option.value === props.experienceLevel) ?? null;
+    EXPERIENCE_OPTIONS.find(
+      (option) => option.value === props.experienceLevel,
+    ) ?? null;
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -106,11 +112,16 @@ export default function DeveloperProfileForm(props: Props) {
 
         <section className={styles.section}>
           <div className={styles.compactHeading}>
-            <h3>Tecnologias <span aria-hidden="true">*</span></h3>
+            <h3>
+              Tecnologias <span aria-hidden="true">*</span>
+            </h3>
           </div>
 
           {props.technologies.length > 0 && (
-            <div className={styles.selectedList} aria-label="Tecnologias selecionadas">
+            <div
+              className={styles.selectedList}
+              aria-label="Tecnologias selecionadas"
+            >
               {props.technologies.map((technology) => (
                 <span key={technology} className={styles.chip}>
                   <span>{technology}</span>
@@ -118,7 +129,9 @@ export default function DeveloperProfileForm(props: Props) {
                     type="button"
                     onClick={() =>
                       props.onTechnologiesChange(
-                        props.technologies.filter((item) => item !== technology),
+                        props.technologies.filter(
+                          (item) => item !== technology,
+                        ),
                       )
                     }
                     aria-label={`Remover ${technology}`}
@@ -130,20 +143,30 @@ export default function DeveloperProfileForm(props: Props) {
             </div>
           )}
 
-          <button type="button" className={styles.addButton} onClick={() => setModalOpen(true)}>
+          <button
+            type="button"
+            className={styles.addButton}
+            onClick={() => setModalOpen(true)}
+          >
             <Plus aria-hidden="true" />
             Adicionar tecnologias
           </button>
         </section>
 
         <fieldset className={styles.fieldset}>
-          <legend>Experiência <span aria-hidden="true">*</span></legend>
+          <legend>
+            Experiência <span aria-hidden="true">*</span>
+          </legend>
           <div className={styles.segmentedControl}>
             {EXPERIENCE_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
-                className={props.experienceLevel === option.value ? styles.segmentSelected : ""}
+                className={
+                  props.experienceLevel === option.value
+                    ? styles.segmentSelected
+                    : ""
+                }
                 aria-pressed={props.experienceLevel === option.value}
                 onClick={() => {
                   props.onExperienceLevelChange(option.value);
@@ -161,7 +184,8 @@ export default function DeveloperProfileForm(props: Props) {
                 <span
                   key={option.value}
                   className={
-                    activeExperience && option.strength <= activeExperience.strength
+                    activeExperience &&
+                    option.strength <= activeExperience.strength
                       ? styles.experienceMeterActive
                       : ""
                   }
@@ -171,7 +195,9 @@ export default function DeveloperProfileForm(props: Props) {
 
             <div className={styles.experienceCopy}>
               <strong>
-                {activeExperience ? activeExperience.label : "Escolha o nível que mais combina com você"}
+                {activeExperience
+                  ? activeExperience.label
+                  : "Escolha o nível que mais combina com você"}
               </strong>
               <span>
                 {activeExperience
@@ -184,7 +210,9 @@ export default function DeveloperProfileForm(props: Props) {
 
         <section className={styles.section}>
           <div className={styles.field}>
-            <label htmlFor="developer-portfolio">Portfólio <span>opcional</span></label>
+            <label htmlFor="developer-portfolio">
+              Portfólio <span>opcional</span>
+            </label>
             <input
               id="developer-portfolio"
               type="text"
@@ -199,12 +227,26 @@ export default function DeveloperProfileForm(props: Props) {
           </div>
         </section>
 
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
 
         <footer className={styles.footer}>
-          <button className={styles.submitButton} type="submit" disabled={props.saving}>
-            {props.saving && <LoaderCircle className={styles.spinner} aria-hidden="true" />}
-            {props.saving ? "Salvando..." : props.completed ? "Salvar alterações" : "Salvar e continuar"}
+          <button
+            className={styles.submitButton}
+            type="submit"
+            disabled={props.saving}
+          >
+            {props.saving && (
+              <LoaderCircle className={styles.spinner} aria-hidden="true" />
+            )}
+            {props.saving
+              ? "Salvando..."
+              : props.completed
+                ? "Salvar alterações"
+                : "Salvar e continuar"}
           </button>
         </footer>
       </form>

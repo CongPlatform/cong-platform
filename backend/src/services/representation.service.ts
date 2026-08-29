@@ -1,6 +1,4 @@
-import type {
-  PoolClient,
-} from "pg";
+import type { PoolClient } from "pg";
 
 import pool from "../config/database.js";
 
@@ -14,8 +12,7 @@ import type {
 interface UserRow {
   id: string;
   active: boolean;
-  onboardingRepresentations:
-    OrganizationType[];
+  onboardingRepresentations: OrganizationType[];
 }
 
 interface SystemRoleRow {
@@ -25,8 +22,7 @@ interface SystemRoleRow {
 interface OrganizationRow {
   id: string;
   name: string;
-  organizationType:
-    OrganizationType;
+  organizationType: OrganizationType;
   active: boolean;
 }
 
@@ -34,75 +30,46 @@ export interface OrganizationSearchResult {
   id: string;
   name: string;
 
-  organizationType:
-    OrganizationType;
+  organizationType: OrganizationType;
 
-  city:
-    | string
-    | null;
+  city: string | null;
 
-  state:
-    | string
-    | null;
+  state: string | null;
 
-  legalName:
-    | string
-    | null;
+  legalName: string | null;
 
-  cnpj:
-    | string
-    | null;
+  cnpj: string | null;
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
   areas: string[];
 
-  initiativeKind:
-    | string
-    | null;
+  initiativeKind: string | null;
 
-  membershipStatus:
-    | "pending"
-    | "active"
-    | "suspended"
-    | null;
+  membershipStatus: "pending" | "active" | "suspended" | null;
 }
 
 export interface MyRepresentation {
   id: string;
 
-  organizationId:
-    string;
+  organizationId: string;
 
-  organizationName:
-    string;
+  organizationName: string;
 
-  organizationType:
-    OrganizationType;
+  organizationType: OrganizationType;
 
-  status:
-    | "pending"
-    | "active"
-    | "suspended";
+  status: "pending" | "active" | "suspended";
 
-  roleCode:
-    string | null;
+  roleCode: string | null;
 
-  roleName:
-    string;
+  roleName: string;
 }
 
 /* ==================================================
    HELPERS
    ================================================== */
 
-function requireActiveUser(
-  user:
-    | UserRow
-    | undefined,
-): UserRow {
+function requireActiveUser(user: UserRow | undefined): UserRow {
   if (!user) {
     throw new AppError(
       "User account was not found",
@@ -112,22 +79,15 @@ function requireActiveUser(
   }
 
   if (!user.active) {
-    throw new AppError(
-      "User account is inactive",
-      403,
-      "USER_INACTIVE",
-    );
+    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
   }
 
   return user;
 }
 
-async function getUser(
-  authUserId: string,
-): Promise<UserRow> {
-  const result =
-    await pool.query<UserRow>(
-      `
+async function getUser(authUserId: string): Promise<UserRow> {
+  const result = await pool.query<UserRow>(
+    `
         select
           id,
           active,
@@ -137,21 +97,18 @@ async function getUser(
         where auth_user_id = $1
         limit 1
       `,
-      [authUserId],
-    );
-
-  return requireActiveUser(
-    result.rows[0],
+    [authUserId],
   );
+
+  return requireActiveUser(result.rows[0]);
 }
 
 async function getUserForUpdate(
   client: PoolClient,
   authUserId: string,
 ): Promise<UserRow> {
-  const result =
-    await client.query<UserRow>(
-      `
+  const result = await client.query<UserRow>(
+    `
         select
           id,
           active,
@@ -162,21 +119,18 @@ async function getUserForUpdate(
         limit 1
         for update
       `,
-      [authUserId],
-    );
-
-  return requireActiveUser(
-    result.rows[0],
+    [authUserId],
   );
+
+  return requireActiveUser(result.rows[0]);
 }
 
 async function getSystemRole(
   client: PoolClient,
   code: string,
 ): Promise<SystemRoleRow> {
-  const result =
-    await client.query<SystemRoleRow>(
-      `
+  const result = await client.query<SystemRoleRow>(
+    `
         select id
         from public.roles
         where code = $1
@@ -184,11 +138,10 @@ async function getSystemRole(
           and is_system = true
         limit 1
       `,
-      [code],
-    );
+    [code],
+  );
 
-  const role =
-    result.rows[0];
+  const role = result.rows[0];
 
   if (!role) {
     throw new AppError(
@@ -205,11 +158,7 @@ function requireSelectedRepresentation(
   user: UserRow,
   type: OrganizationType,
 ): void {
-  if (
-    !user
-      .onboardingRepresentations
-      .includes(type)
-  ) {
+  if (!user.onboardingRepresentations.includes(type)) {
     throw new AppError(
       "This institutional representation was not selected during onboarding",
       409,
@@ -225,12 +174,10 @@ function requireSelectedRepresentation(
 export async function getMyRepresentations(
   authUserId: string,
 ): Promise<MyRepresentation[]> {
-  const user =
-    await getUser(authUserId);
+  const user = await getUser(authUserId);
 
-  const result =
-    await pool.query<MyRepresentation>(
-      `
+  const result = await pool.query<MyRepresentation>(
+    `
         select
           ou.id,
           o.id
@@ -252,8 +199,8 @@ export async function getMyRepresentations(
         where ou.user_id = $1
         order by ou.created_at asc
       `,
-      [user.id],
-    );
+    [user.id],
+  );
 
   return result.rows;
 }
@@ -267,26 +214,18 @@ export async function searchOrganizations(
   type: OrganizationType,
   query: string,
 ): Promise<OrganizationSearchResult[]> {
-  const user =
-    await getUser(authUserId);
+  const user = await getUser(authUserId);
 
-  requireSelectedRepresentation(
-    user,
-    type,
-  );
+  requireSelectedRepresentation(user, type);
 
-  const normalized =
-    query.trim();
+  const normalized = query.trim();
 
-  if (
-    normalized.length < 2
-  ) {
+  if (normalized.length < 2) {
     return [];
   }
 
-  const result =
-    await pool.query<OrganizationSearchResult>(
-      `
+  const result = await pool.query<OrganizationSearchResult>(
+    `
         select
           o.id,
           o.name,
@@ -331,12 +270,8 @@ export async function searchOrganizations(
           o.name asc
         limit 10
       `,
-      [
-        user.id,
-        type,
-        normalized,
-      ],
-    );
+    [user.id, type, normalized],
+  );
 
   return result.rows;
 }
@@ -349,32 +284,21 @@ export async function createRepresentation(
   authUserId: string,
   input: CreateRepresentationInput,
 ): Promise<MyRepresentation> {
-  const client =
-    await pool.connect();
+  const client = await pool.connect();
 
   try {
-    await client.query(
-      "begin",
-    );
+    await client.query("begin");
 
-    const user =
-      await getUserForUpdate(
-        client,
-        authUserId,
-      );
+    const user = await getUserForUpdate(client, authUserId);
 
-    requireSelectedRepresentation(
-      user,
-      input.organizationType,
-    );
+    requireSelectedRepresentation(user, input.organizationType);
 
     if (input.cnpj) {
-      const duplicateCnpjResult =
-        await client.query<{
-          id: string;
-          name: string;
-        }>(
-          `
+      const duplicateCnpjResult = await client.query<{
+        id: string;
+        name: string;
+      }>(
+        `
             select
               id,
               name
@@ -392,11 +316,10 @@ export async function createRepresentation(
             )
             limit 1
           `,
-          [input.cnpj],
-        );
+        [input.cnpj],
+      );
 
-      const duplicate =
-        duplicateCnpjResult.rows[0];
+      const duplicate = duplicateCnpjResult.rows[0];
 
       if (duplicate) {
         throw new AppError(
@@ -407,15 +330,10 @@ export async function createRepresentation(
       }
     }
 
-    const adminRole =
-      await getSystemRole(
-        client,
-        "organization_admin",
-      );
+    const adminRole = await getSystemRole(client, "organization_admin");
 
-    const organizationResult =
-      await client.query<OrganizationRow>(
-        `
+    const organizationResult = await client.query<OrganizationRow>(
+      `
           insert into public.organizations (
             name,
             legal_name,
@@ -445,36 +363,35 @@ export async function createRepresentation(
               as "organizationType",
             active
         `,
-        [
-          input.name,
-          input.legalName ?? null,
-          input.cnpj ?? null,
-          input.email ?? null,
-          input.phone ?? null,
-          input.description ?? null,
+      [
+        input.name,
+        input.legalName ?? null,
+        input.cnpj ?? null,
+        input.email ?? null,
+        input.phone ?? null,
+        input.description ?? null,
 
-          JSON.stringify({
-            cep: input.cep,
-            street: input.street,
-            district: input.district,
-            number: input.number,
-            complement: input.complement,
-            city: input.city,
-            state: input.state,
-          }),
+        JSON.stringify({
+          cep: input.cep,
+          street: input.street,
+          district: input.district,
+          number: input.number,
+          complement: input.complement,
+          city: input.city,
+          state: input.state,
+        }),
 
-          JSON.stringify({
-            initiativeKind: input.initiativeKind,
-            areas: input.areas,
-            supportTypes: input.supportTypes,
-          }),
+        JSON.stringify({
+          initiativeKind: input.initiativeKind,
+          areas: input.areas,
+          supportTypes: input.supportTypes,
+        }),
 
-          input.organizationType,
-        ],
-      );
+        input.organizationType,
+      ],
+    );
 
-    const organization =
-      organizationResult.rows[0];
+    const organization = organizationResult.rows[0];
 
     if (!organization) {
       throw new AppError(
@@ -484,9 +401,8 @@ export async function createRepresentation(
       );
     }
 
-    const membershipResult =
-      await client.query<MyRepresentation>(
-        `
+    const membershipResult = await client.query<MyRepresentation>(
+      `
           insert into public.organization_users (
             organization_id,
             user_id,
@@ -515,17 +431,16 @@ export async function createRepresentation(
             'Administrador'::text
               as "roleName"
         `,
-        [
-          organization.id,
-          user.id,
-          adminRole.id,
-          organization.name,
-          organization.organizationType,
-        ],
-      );
+      [
+        organization.id,
+        user.id,
+        adminRole.id,
+        organization.name,
+        organization.organizationType,
+      ],
+    );
 
-    const representation =
-      membershipResult.rows[0];
+    const representation = membershipResult.rows[0];
 
     if (!representation) {
       throw new AppError(
@@ -535,19 +450,14 @@ export async function createRepresentation(
       );
     }
 
-    await client.query(
-      "commit",
-    );
+    await client.query("commit");
 
     return representation;
   } catch (error) {
-    await client.query(
-      "rollback",
-    );
+    await client.query("rollback");
 
     if (
-      typeof error ===
-        "object" &&
+      typeof error === "object" &&
       error !== null &&
       "code" in error &&
       error.code === "23505"
@@ -573,23 +483,15 @@ export async function requestRepresentation(
   authUserId: string,
   organizationId: string,
 ): Promise<MyRepresentation> {
-  const client =
-    await pool.connect();
+  const client = await pool.connect();
 
   try {
-    await client.query(
-      "begin",
-    );
+    await client.query("begin");
 
-    const user =
-      await getUserForUpdate(
-        client,
-        authUserId,
-      );
+    const user = await getUserForUpdate(client, authUserId);
 
-    const organizationResult =
-      await client.query<OrganizationRow>(
-        `
+    const organizationResult = await client.query<OrganizationRow>(
+      `
           select
             id,
             name,
@@ -601,16 +503,12 @@ export async function requestRepresentation(
           limit 1
           for update
         `,
-        [organizationId],
-      );
+      [organizationId],
+    );
 
-    const organization =
-      organizationResult.rows[0];
+    const organization = organizationResult.rows[0];
 
-    if (
-      !organization ||
-      !organization.active
-    ) {
+    if (!organization || !organization.active) {
       throw new AppError(
         "Organization was not found",
         404,
@@ -618,14 +516,10 @@ export async function requestRepresentation(
       );
     }
 
-    requireSelectedRepresentation(
-      user,
-      organization.organizationType,
-    );
+    requireSelectedRepresentation(user, organization.organizationType);
 
-    const existingResult =
-      await client.query<MyRepresentation>(
-        `
+    const existingResult = await client.query<MyRepresentation>(
+      `
           select
             ou.id,
             o.id
@@ -648,25 +542,14 @@ export async function requestRepresentation(
             and ou.user_id = $2
           limit 1
         `,
-        [
-          organization.id,
-          user.id,
-        ],
-      );
+      [organization.id, user.id],
+    );
 
-    const existing =
-      existingResult.rows[0];
+    const existing = existingResult.rows[0];
 
     if (existing) {
-      if (
-        existing.status ===
-          "pending" ||
-        existing.status ===
-          "active"
-      ) {
-        await client.query(
-          "commit",
-        );
+      if (existing.status === "pending" || existing.status === "active") {
+        await client.query("commit");
 
         return existing;
       }
@@ -678,15 +561,13 @@ export async function requestRepresentation(
       );
     }
 
-    const representativeRole =
-      await getSystemRole(
-        client,
-        "organization_representative",
-      );
+    const representativeRole = await getSystemRole(
+      client,
+      "organization_representative",
+    );
 
-    const result =
-      await client.query<MyRepresentation>(
-        `
+    const result = await client.query<MyRepresentation>(
+      `
           insert into public.organization_users (
             organization_id,
             user_id,
@@ -713,17 +594,16 @@ export async function requestRepresentation(
             'Representante'::text
               as "roleName"
         `,
-        [
-          organization.id,
-          user.id,
-          representativeRole.id,
-          organization.name,
-          organization.organizationType,
-        ],
-      );
+      [
+        organization.id,
+        user.id,
+        representativeRole.id,
+        organization.name,
+        organization.organizationType,
+      ],
+    );
 
-    const representation =
-      result.rows[0];
+    const representation = result.rows[0];
 
     if (!representation) {
       throw new AppError(
@@ -733,15 +613,11 @@ export async function requestRepresentation(
       );
     }
 
-    await client.query(
-      "commit",
-    );
+    await client.query("commit");
 
     return representation;
   } catch (error) {
-    await client.query(
-      "rollback",
-    );
+    await client.query("rollback");
 
     throw error;
   } finally {
@@ -756,15 +632,13 @@ export async function cancelRepresentationRequest(
   authUserId: string,
   representationId: string,
 ): Promise<void> {
-  const user =
-    await getUser(authUserId);
+  const user = await getUser(authUserId);
 
-  const currentResult =
-    await pool.query<{
-      id: string;
-      status: "pending" | "active" | "suspended";
-    }>(
-      `
+  const currentResult = await pool.query<{
+    id: string;
+    status: "pending" | "active" | "suspended";
+  }>(
+    `
         select
           id,
           status
@@ -773,11 +647,10 @@ export async function cancelRepresentationRequest(
           and user_id = $2
         limit 1
       `,
-      [representationId, user.id],
-    );
+    [representationId, user.id],
+  );
 
-  const current =
-    currentResult.rows[0];
+  const current = currentResult.rows[0];
 
   if (!current) {
     throw new AppError(
@@ -795,16 +668,15 @@ export async function cancelRepresentationRequest(
     );
   }
 
-  const deleteResult =
-    await pool.query(
-      `
+  const deleteResult = await pool.query(
+    `
         delete from public.organization_users
         where id = $1
           and user_id = $2
           and status = 'pending'
       `,
-      [representationId, user.id],
-    );
+    [representationId, user.id],
+  );
 
   if (deleteResult.rowCount === 0) {
     throw new AppError(
@@ -814,7 +686,6 @@ export async function cancelRepresentationRequest(
     );
   }
 }
-
 
 /* ==================================================
    CHECAGEM DE CNPJ PARA FEEDBACK EM TEMPO REAL

@@ -27,15 +27,8 @@
   width: min(94vw, 1220px);
   max-height: 94dvh;
 
-  filter:
-    drop-shadow(
-      0 34px 52px
-      rgb(var(--color-black-rgb) / 0.22)
-    )
-    drop-shadow(
-      0 10px 16px
-      rgb(var(--color-black-rgb) / 0.08)
-    );
+  filter: drop-shadow(0 34px 52px rgb(var(--color-black-rgb) / 0.22))
+    drop-shadow(0 10px 16px rgb(var(--color-black-rgb) / 0.08));
 
   animation: paperIn 220ms ease both;
 }
@@ -53,10 +46,7 @@
 }
 
 .paperFrame[data-size="automatico"] {
-  width: min(
-    95vw,
-    clamp(900px, 88vw, 1320px)
-  );
+  width: min(95vw, clamp(900px, 88vw, 1320px));
 }
 
 /* Folha secundária mais sutil e elegante */
@@ -65,11 +55,7 @@
   position: absolute;
   z-index: 0;
 
-  inset:
-    18px
-    -14px
-    -16px
-    18px;
+  inset: 18px -14px -16px 18px;
 
   background:
     linear-gradient(
@@ -81,16 +67,13 @@
       to bottom,
       transparent 0,
       transparent 35px,
-      rgb(var(--color-paper-rule-rgb) / 0.07)
-        35px 36px
+      rgb(var(--color-paper-rule-rgb) / 0.07) 35px 36px
     ),
     var(--color-paper-sheet);
 
   box-shadow:
-    0 16px 30px
-      rgb(var(--color-black-rgb) / 0.09),
-    inset 0 0 0 1px
-      rgb(var(--color-paper-shadow-rgb) / 0.04);
+    0 16px 30px rgb(var(--color-black-rgb) / 0.09),
+    inset 0 0 0 1px rgb(var(--color-paper-shadow-rgb) / 0.04);
 
   transform: rotate(1deg);
 
@@ -134,14 +117,12 @@
   position: absolute;
   inset: 0;
 
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0 78px,
-      rgb(var(--color-paper-redline-rgb) / 0.16)
-        78px 80px,
-      transparent 80px
-    );
+  background: linear-gradient(
+    90deg,
+    transparent 0 78px,
+    rgb(var(--color-paper-redline-rgb) / 0.16) 78px 80px,
+    transparent 80px
+  );
 
   opacity: 0.45;
 }
@@ -182,10 +163,8 @@
   border-color: var(--color-paper-clip);
 
   box-shadow:
-    2px 4px 6px
-      rgb(var(--color-black-rgb) / 0.14),
-    inset 1px 1px 0
-      rgb(var(--color-white-rgb) / 0.22);
+    2px 4px 6px rgb(var(--color-black-rgb) / 0.14),
+    inset 1px 1px 0 rgb(var(--color-white-rgb) / 0.22);
 }
 
 .clipInner {
@@ -197,9 +176,7 @@
   border-width: 3px;
   border-color: var(--color-paper-clip);
 
-  box-shadow:
-    inset 1px 1px 0
-      rgb(var(--color-white-rgb) / 0.14);
+  box-shadow: inset 1px 1px 0 rgb(var(--color-white-rgb) / 0.14);
 }
 
 .clipHighlight {
@@ -211,8 +188,7 @@
   width: 2px;
   height: 58px;
 
-  background:
-    rgb(var(--color-white-rgb) / 0.2);
+  background: rgb(var(--color-white-rgb) / 0.2);
 
   border-radius: 999px;
 
@@ -222,44 +198,22 @@
 .paper {
   --paper-background: var(--color-paper-modal);
 
-  --paper-ink:
-    var(
-      --color-navy,
-      var(--color-paper-ink)
-    );
+  --paper-ink: var(--color-navy, var(--color-paper-ink));
 
-  --paper-primary:
-    var(
-      --color-primary,
-      var(--color-paper-primary)
-    );
+  --paper-primary: var(--color-primary, var(--color-paper-primary));
 
-  --paper-primary-dark:
-    var(
-      --color-primary-dark,
-      var(--color-paper-primary-dark)
-    );
+  --paper-primary-dark: var(
+    --color-primary-dark,
+    var(--color-paper-primary-dark)
+  );
 
-  --paper-muted:
-    var(--color-paper-muted);
+  --paper-muted: var(--color-paper-muted);
 
-  --paper-rule:
-    rgb(
-      var(--color-paper-rule-rgb) /
-      0.17
-    );
+  --paper-rule: rgb(var(--color-paper-rule-rgb) / 0.17);
 
-  --paper-redline:
-    rgb(
-      var(--color-paper-redline-rgb) /
-      0.34
-    );
+  --paper-redline: rgb(var(--color-paper-redline-rgb) / 0.34);
 
-  --paper-border:
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.11
-    );
+  --paper-border: rgb(var(--color-paper-ink-rgb) / 0.11);
 
   position: relative;
   z-index: 2;
@@ -276,11 +230,8 @@
 
   overflow: hidden;
 
-  padding:
-    clamp(38px, 3.5vw, 52px)
-    clamp(36px, 4vw, 62px)
-    clamp(28px, 3vw, 40px)
-    clamp(88px, 7vw, 120px);
+  padding: clamp(38px, 3.5vw, 52px) clamp(36px, 4vw, 62px)
+    clamp(28px, 3vw, 40px) clamp(88px, 7vw, 120px);
 
   color: var(--paper-ink);
   background: var(--paper-background);
@@ -374,39 +325,28 @@
     linear-gradient(
       90deg,
       transparent 0 78px,
-      var(--paper-redline)
-        78px 80px,
+      var(--paper-redline) 78px 80px,
       transparent 80px
     ),
     repeating-linear-gradient(
       to bottom,
       transparent 0,
       transparent 35px,
-      var(--paper-rule)
-        35px 36px
+      var(--paper-rule) 35px 36px
     ),
     radial-gradient(
       circle at 14% 18%,
-      rgb(
-        var(--color-paper-accent-rgb) /
-        0.035
-      ),
+      rgb(var(--color-paper-accent-rgb) / 0.035),
       transparent 22%
     ),
     radial-gradient(
       circle at 84% 78%,
-      rgb(
-        var(--color-paper-primary-rgb) /
-        0.035
-      ),
+      rgb(var(--color-paper-primary-rgb) / 0.035),
       transparent 24%
     ),
     repeating-radial-gradient(
       circle at 20% 20%,
-      rgb(
-        var(--color-paper-texture-rgb) /
-        0.016
-      ) 0 1px,
+      rgb(var(--color-paper-texture-rgb) / 0.016) 0 1px,
       transparent 1px 6px
     );
 }
@@ -417,12 +357,11 @@
   position: absolute;
   inset: 0;
 
-  background:
-    linear-gradient(
-      180deg,
-      rgb(var(--color-white-rgb) / 0.7),
-      transparent 14%
-    );
+  background: linear-gradient(
+    180deg,
+    rgb(var(--color-white-rgb) / 0.7),
+    transparent 14%
+  );
 }
 
 .holeRail {
@@ -451,22 +390,14 @@
 
   flex: 0 0 auto;
 
-  background:
-    rgb(
-      var(--color-paper-hole-rgb) /
-      0.72
-    );
+  background: rgb(var(--color-paper-hole-rgb) / 0.72);
 
-  border-radius:
-    48% 52% 46% 54%;
+  border-radius: 48% 52% 46% 54%;
 
   box-shadow:
-    inset 2px 2px 4px
-      rgb(var(--color-black-rgb) / 0.38),
-    inset -1px -1px 2px
-      rgb(var(--color-white-rgb) / 0.1),
-    0 1px 0
-      rgb(var(--color-white-rgb) / 0.55);
+    inset 2px 2px 4px rgb(var(--color-black-rgb) / 0.38),
+    inset -1px -1px 2px rgb(var(--color-white-rgb) / 0.1),
+    0 1px 0 rgb(var(--color-white-rgb) / 0.55);
 
   transform: rotate(-5deg);
 }
@@ -482,8 +413,7 @@
   width: 4px;
   height: 2px;
 
-  background:
-    rgb(var(--color-white-rgb) / 0.18);
+  background: rgb(var(--color-white-rgb) / 0.18);
 
   border-radius: 50%;
 }
@@ -499,15 +429,11 @@
   width: 11px;
   height: 1px;
 
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgb(
-        var(--color-paper-scratch-rgb) /
-        0.13
-      )
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--color-paper-scratch-rgb) / 0.13)
+  );
 }
 
 .hole:nth-child(even) {
@@ -530,9 +456,7 @@
 
   gap: 24px;
 
-  border-bottom:
-    1px dashed
-    var(--paper-border);
+  border-bottom: 1px dashed var(--paper-border);
 }
 
 .titleArea {
@@ -554,26 +478,15 @@
   place-items: center;
 
   color: var(--paper-primary);
-  background:
-    rgb(var(--color-white-rgb) / 0.54);
+  background: rgb(var(--color-white-rgb) / 0.54);
 
-  border:
-    1px solid
-    rgb(
-      var(--color-paper-primary-rgb) /
-      0.16
-    );
+  border: 1px solid rgb(var(--color-paper-primary-rgb) / 0.16);
 
   border-radius: 50%;
 
   box-shadow:
-    inset 0 1px 0
-      rgb(var(--color-white-rgb) / 0.82),
-    0 3px 10px
-      rgb(
-        var(--color-paper-ink-rgb) /
-        0.05
-      );
+    inset 0 1px 0 rgb(var(--color-white-rgb) / 0.82),
+    0 3px 10px rgb(var(--color-paper-ink-rgb) / 0.05);
 
   transform: rotate(-4deg);
 }
@@ -621,24 +534,13 @@
   place-items: center;
 
   color: var(--paper-ink);
-  background:
-    rgb(var(--color-white-rgb) / 0.58);
+  background: rgb(var(--color-white-rgb) / 0.58);
 
-  border:
-    1px solid
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.13
-    );
+  border: 1px solid rgb(var(--color-paper-ink-rgb) / 0.13);
 
   border-radius: 50%;
 
-  box-shadow:
-    0 4px 12px
-      rgb(
-        var(--color-paper-ink-rgb) /
-        0.06
-      );
+  box-shadow: 0 4px 12px rgb(var(--color-paper-ink-rgb) / 0.06);
 
   cursor: pointer;
 
@@ -653,13 +555,9 @@
   color: var(--color-white);
   background: var(--paper-ink);
 
-  box-shadow:
-    0 8px 18px
-      rgb(var(--color-black-rgb) / 0.12);
+  box-shadow: 0 8px 18px rgb(var(--color-black-rgb) / 0.12);
 
-  transform:
-    rotate(7deg)
-    scale(1.04);
+  transform: rotate(7deg) scale(1.04);
 }
 
 .closeButton svg {
@@ -670,21 +568,13 @@
 .content {
   min-height: 0;
 
-  padding:
-    clamp(24px, 3vw, 34px)
-    8px
-    clamp(24px, 3vw, 32px);
+  padding: clamp(24px, 3vw, 34px) 8px clamp(24px, 3vw, 32px);
 
   overflow-y: auto;
 
   scrollbar-width: thin;
 
-  scrollbar-color:
-    rgb(
-      var(--color-paper-primary-rgb) /
-      0.4
-    )
-    transparent;
+  scrollbar-color: rgb(var(--color-paper-primary-rgb) / 0.4) transparent;
 }
 
 .content::-webkit-scrollbar {
@@ -692,11 +582,7 @@
 }
 
 .content::-webkit-scrollbar-thumb {
-  background:
-    rgb(
-      var(--color-paper-primary-rgb) /
-      0.38
-    );
+  background: rgb(var(--color-paper-primary-rgb) / 0.38);
 
   border-radius: 999px;
 }
@@ -725,25 +611,17 @@
 .message + .dataWrapper {
   padding-top: 26px;
 
-  border-top:
-    1px dashed
-    var(--paper-border);
+  border-top: 1px dashed var(--paper-border);
 }
 
 .dataGrid {
   display: grid;
 
-  gap:
-    22px
-    clamp(24px, 3vw, 44px);
+  gap: 22px clamp(24px, 3vw, 44px);
 }
 
 .dataGrid[data-level="0"] {
-  grid-template-columns:
-    repeat(
-      auto-fit,
-      minmax(270px, 1fr)
-    );
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
 }
 
 .dataSection {
@@ -751,44 +629,22 @@
 
   margin: 4px 0;
 
-  padding:
-    18px
-    8px
-    22px;
+  padding: 18px 8px 22px;
 
-  border-top:
-    1px dashed
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.13
-    );
+  border-top: 1px dashed rgb(var(--color-paper-ink-rgb) / 0.13);
 
-  border-bottom:
-    1px dashed
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.13
-    );
+  border-bottom: 1px dashed rgb(var(--color-paper-ink-rgb) / 0.13);
 }
 
 .dataSection h3 {
   width: fit-content;
 
-  margin:
-    0
-    0
-    20px;
+  margin: 0 0 20px;
 
-  padding:
-    4px
-    12px;
+  padding: 4px 12px;
 
   color: var(--paper-primary);
-  background:
-    rgb(
-      var(--color-paper-primary-rgb) /
-      0.075
-    );
+  background: rgb(var(--color-paper-primary-rgb) / 0.075);
 
   border-radius: 999px;
 
@@ -804,18 +660,9 @@
   min-width: 0;
   min-height: 64px;
 
-  padding:
-    4px
-    8px
-    11px
-    15px;
+  padding: 4px 8px 11px 15px;
 
-  border-bottom:
-    1px solid
-    rgb(
-      var(--color-paper-field-rule-rgb) /
-      0.2
-    );
+  border-bottom: 1px solid rgb(var(--color-paper-field-rule-rgb) / 0.2);
 }
 
 .dataField::before {
@@ -829,29 +676,17 @@
 
   width: 3px;
 
-  background:
-    rgb(
-      var(--color-paper-primary-rgb) /
-      0.45
-    );
+  background: rgb(var(--color-paper-primary-rgb) / 0.45);
 
   border-radius: 999px;
 }
 
 .dataField:nth-child(3n + 2)::before {
-  background:
-    rgb(
-      var(--color-paper-redline-rgb) /
-      0.46
-    );
+  background: rgb(var(--color-paper-redline-rgb) / 0.46);
 }
 
 .dataField:nth-child(3n + 3)::before {
-  background:
-    rgb(
-      var(--color-paper-gold-rgb) /
-      0.58
-    );
+  background: rgb(var(--color-paper-gold-rgb) / 0.58);
 }
 
 .dataLabel {
@@ -859,11 +694,7 @@
 
   margin-bottom: 5px;
 
-  color:
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.56
-    );
+  color: rgb(var(--color-paper-ink-rgb) / 0.56);
 
   font-size: var(--font-paper-label);
   font-weight: var(--font-extrabold);
@@ -889,11 +720,7 @@
 }
 
 .emptyValue {
-  color:
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.46
-    );
+  color: rgb(var(--color-paper-ink-rgb) / 0.46);
 
   font-family: var(--font-body);
   font-style: italic;
@@ -911,18 +738,9 @@
   padding: 5px 10px;
 
   color: var(--paper-primary);
-  background:
-    rgb(
-      var(--color-paper-primary-rgb) /
-      0.065
-    );
+  background: rgb(var(--color-paper-primary-rgb) / 0.065);
 
-  border:
-    1px solid
-    rgb(
-      var(--color-paper-primary-rgb) /
-      0.16
-    );
+  border: 1px solid rgb(var(--color-paper-primary-rgb) / 0.16);
 
   border-radius: 999px;
 
@@ -940,15 +758,9 @@
 .arrayItem {
   padding: 14px;
 
-  background:
-    rgb(var(--color-white-rgb) / 0.28);
+  background: rgb(var(--color-white-rgb) / 0.28);
 
-  border:
-    1px dashed
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.15
-    );
+  border: 1px dashed rgb(var(--color-paper-ink-rgb) / 0.15);
 
   border-radius: 8px;
 }
@@ -962,19 +774,13 @@
 
   gap: 20px;
 
-  border-top:
-    1px dashed
-    var(--paper-border);
+  border-top: 1px dashed var(--paper-border);
 }
 
 .footerNote {
   max-width: 480px;
 
-  color:
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.52
-    );
+  color: rgb(var(--color-paper-ink-rgb) / 0.52);
 
   font-size: var(--font-paper-footer);
   line-height: var(--line-normal);
@@ -984,9 +790,7 @@
   min-width: 156px;
   min-height: 52px;
 
-  padding:
-    0
-    26px;
+  padding: 0 26px;
 
   display: inline-flex;
   align-items: center;
@@ -1000,12 +804,7 @@
   border: 0;
   border-radius: 10px;
 
-  box-shadow:
-    5px 6px 0
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.13
-    );
+  box-shadow: 5px 6px 0 rgb(var(--color-paper-ink-rgb) / 0.13);
 
   font-size: var(--font-paper-button);
   font-weight: var(--font-extrabold);
@@ -1021,12 +820,7 @@
 .okButton:hover {
   background: var(--paper-primary-dark);
 
-  box-shadow:
-    2px 3px 0
-    rgb(
-      var(--color-paper-ink-rgb) /
-      0.16
-    );
+  box-shadow: 2px 3px 0 rgb(var(--color-paper-ink-rgb) / 0.16);
 
   transform: translateY(2px);
 }
@@ -1038,12 +832,7 @@
 
 .closeButton:focus-visible,
 .okButton:focus-visible {
-  outline:
-    3px solid
-    rgb(
-      var(--color-paper-accent-rgb) /
-      0.9
-    );
+  outline: 3px solid rgb(var(--color-paper-accent-rgb) / 0.9);
 
   outline-offset: 3px;
 }
@@ -1062,19 +851,13 @@
   from {
     opacity: 0;
 
-    transform:
-      translateY(18px)
-      rotate(-0.5deg)
-      scale(0.98);
+    transform: translateY(18px) rotate(-0.5deg) scale(0.98);
   }
 
   to {
     opacity: 1;
 
-    transform:
-      translateY(0)
-      rotate(0deg)
-      scale(1);
+    transform: translateY(0) rotate(0deg) scale(1);
   }
 }
 
@@ -1092,16 +875,14 @@
       linear-gradient(
         90deg,
         transparent 0 64px,
-        var(--paper-redline)
-          64px 66px,
+        var(--paper-redline) 64px 66px,
         transparent 66px
       ),
       repeating-linear-gradient(
         to bottom,
         transparent 0,
         transparent 35px,
-        var(--paper-rule)
-          35px 36px
+        var(--paper-rule) 35px 36px
       ),
       var(--paper-background);
   }
@@ -1115,11 +896,7 @@
   }
 
   .backSheet {
-    inset:
-      16px
-      -10px
-      -12px
-      14px;
+    inset: 16px -10px -12px 14px;
   }
 }
 
@@ -1138,11 +915,7 @@
   .paper {
     max-height: 95dvh;
 
-    padding:
-      42px
-      18px
-      22px
-      56px;
+    padding: 42px 18px 22px 56px;
   }
 
   .paperTexture {
@@ -1150,16 +923,14 @@
       linear-gradient(
         90deg,
         transparent 0 42px,
-        var(--paper-redline)
-          42px 44px,
+        var(--paper-redline) 42px 44px,
         transparent 44px
       ),
       repeating-linear-gradient(
         to bottom,
         transparent 0,
         transparent 34px,
-        var(--paper-rule)
-          34px 35px
+        var(--paper-rule) 34px 35px
       ),
       var(--paper-background);
   }
@@ -1225,11 +996,7 @@
   }
 
   .backSheet {
-    inset:
-      14px
-      -4px
-      -8px
-      8px;
+    inset: 14px -4px -8px 8px;
   }
 }
 
@@ -1239,11 +1006,7 @@
   }
 
   .paper {
-    padding:
-      38px
-      14px
-      18px
-      48px;
+    padding: 38px 14px 18px 48px;
   }
 
   .titleArea {
@@ -1256,13 +1019,11 @@
   }
 
   .eyebrow {
-    font-size:
-      var(--font-paper-eyebrow-mobile);
+    font-size: var(--font-paper-eyebrow-mobile);
   }
 
   .titleContent h2 {
-    font-size:
-      var(--font-paper-title-mobile);
+    font-size: var(--font-paper-title-mobile);
   }
 
   .closeButton {
@@ -1280,11 +1041,7 @@
   }
 
   .dataField {
-    padding:
-      4px
-      4px
-      10px
-      11px;
+    padding: 4px 4px 10px 11px;
   }
 
   .paperClip {

@@ -29,7 +29,10 @@ const DAYS = [
 
 const PERIODS = ["Manhã", "Tarde", "Noite"] as const;
 
-const FREQUENCIES: { value: Exclude<VolunteerFrequency, "flexible">; label: string }[] = [
+const FREQUENCIES: {
+  value: Exclude<VolunteerFrequency, "flexible">;
+  label: string;
+}[] = [
   { value: "punctual", label: "Pontualmente" },
   { value: "monthly", label: "Algumas vezes por mês" },
   { value: "weekly", label: "Toda semana" },
@@ -41,7 +44,12 @@ function toggle(values: string[], value: string): string[] {
     : [...values, value];
 }
 
-export default function AvailabilityModal({ open, value, onChange, onClose }: Props) {
+export default function AvailabilityModal({
+  open,
+  value,
+  onChange,
+  onClose,
+}: Props) {
   const handleClose = useCallback(() => onClose(), [onClose]);
 
   useEffect(() => {
@@ -73,13 +81,26 @@ export default function AvailabilityModal({ open, value, onChange, onClose }: Pr
         if (event.target === event.currentTarget) handleClose();
       }}
     >
-      <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="availability-title">
+      <section
+        className={styles.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="availability-title"
+      >
         <header className={styles.header}>
           <div>
             <h3 id="availability-title">Disponibilidade</h3>
-            <p>Uma visão geral já basta. A escala exata pode ser combinada depois.</p>
+            <p>
+              Uma visão geral já basta. A escala exata pode ser combinada
+              depois.
+            </p>
           </div>
-          <button type="button" className={styles.closeButton} onClick={handleClose} aria-label="Fechar">
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={handleClose}
+            aria-label="Fechar"
+          >
             <X aria-hidden="true" />
           </button>
         </header>
@@ -115,7 +136,12 @@ export default function AvailabilityModal({ open, value, onChange, onClose }: Pr
                       type="button"
                       className={selected ? styles.selected : ""}
                       aria-pressed={selected}
-                      onClick={() => onChange({ ...value, days: toggle(value.days, valueName) })}
+                      onClick={() =>
+                        onChange({
+                          ...value,
+                          days: toggle(value.days, valueName),
+                        })
+                      }
                     >
                       {shortLabel}
                     </button>
@@ -135,7 +161,12 @@ export default function AvailabilityModal({ open, value, onChange, onClose }: Pr
                       type="button"
                       className={selected ? styles.selected : ""}
                       aria-pressed={selected}
-                      onClick={() => onChange({ ...value, periods: toggle(value.periods, period) })}
+                      onClick={() =>
+                        onChange({
+                          ...value,
+                          periods: toggle(value.periods, period),
+                        })
+                      }
                     >
                       {period}
                     </button>
@@ -152,13 +183,16 @@ export default function AvailabilityModal({ open, value, onChange, onClose }: Pr
                 onChange={(event) =>
                   onChange({
                     ...value,
-                    frequency: (event.target.value || undefined) as VolunteerFrequency | undefined,
+                    frequency: (event.target.value || undefined) as
+                      VolunteerFrequency | undefined,
                   })
                 }
               >
                 <option value="">Selecione</option>
                 {FREQUENCIES.map((frequency) => (
-                  <option key={frequency.value} value={frequency.value}>{frequency.label}</option>
+                  <option key={frequency.value} value={frequency.value}>
+                    {frequency.label}
+                  </option>
                 ))}
               </select>
             </div>
