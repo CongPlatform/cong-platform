@@ -34,10 +34,7 @@ export default function Pending() {
           Voltar
         </button>
 
-        <Link
-          to="/app/comunidade"
-          className={styles.dashboardLink}
-        >
+        <Link to="/app/comunidade" className={styles.dashboardLink}>
           <FiHome aria-hidden="true" />
           Visão geral
         </Link>
@@ -51,15 +48,11 @@ export default function Pending() {
               Página em desenvolvimento
             </span>
 
-            <span className={styles.issue}>
-              CONG / 01
-            </span>
+            <span className={styles.issue}>CONG / 01</span>
           </div>
 
           <div className={styles.titleBlock}>
-            <span className={styles.kicker}>
-              ESTA ÁREA ESTÁ
-            </span>
+            <span className={styles.kicker}>ESTA ÁREA ESTÁ</span>
 
             <h1>
               EM
@@ -69,16 +62,13 @@ export default function Pending() {
 
           <p className={styles.description}>
             Devido à alta quantidade de páginas que o projeto demanda,
-            desenvolvemos as principais, que estavam dentro do alcance
-            do grupo. As demais seguem em construção, e buscamos
-            finalizá-las o mais breve possível.
+            desenvolvemos as principais, que estavam dentro do alcance do grupo.
+            As demais seguem em construção, e buscamos finalizá-las o mais breve
+            possível.
           </p>
 
           <div className={styles.actions}>
-            <Link
-              to="/app/comunidade"
-              className={styles.primaryButton}
-            >
+            <Link to="/app/comunidade" className={styles.primaryButton}>
               <FiHome aria-hidden="true" />
               Voltar ao Dashboard
             </Link>
@@ -108,39 +98,24 @@ export default function Pending() {
             </div>
 
             <div className={styles.steps}>
-              <span className={styles.stepComplete}>
-                Planejamento
-              </span>
-              <span className={styles.stepActive}>
-                Desenvolvimento
-              </span>
+              <span className={styles.stepComplete}>Planejamento</span>
+              <span className={styles.stepActive}>Desenvolvimento</span>
               <span>Finalização</span>
             </div>
           </div>
         </div>
 
-        <aside
-          className={styles.visual}
-          aria-hidden="true"
-        >
+        <aside className={styles.visual} aria-hidden="true">
           <div className={styles.poster}>
-            <span className={styles.posterLabel}>
-              CONG
-            </span>
+            <span className={styles.posterLabel}>CONG</span>
 
-            <span className={styles.posterNumber}>
-              01
-            </span>
+            <span className={styles.posterNumber}>01</span>
 
             <div className={styles.posterCenter}>
               <span className={styles.ring} />
               <span className={styles.ringSecondary} />
 
-              <img
-                src={mascote}
-                alt=""
-                className={styles.mascot}
-              />
+              <img src={mascote} alt="" className={styles.mascot} />
             </div>
 
             <span className={styles.posterCaption}>
@@ -158,9 +133,7 @@ export default function Pending() {
 
       <footer className={styles.footer}>
         <span>© 2026 CONG Plataforma</span>
-        <span>
-          Esta página faz parte da evolução contínua do projeto.
-        </span>
+        <span>Esta página faz parte da evolução contínua do projeto.</span>
       </footer>
     </main>
   );

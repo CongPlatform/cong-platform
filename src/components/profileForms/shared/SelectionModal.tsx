@@ -30,7 +30,9 @@ function normalizeOption(option: string | SelectionOption): SelectionOption {
 }
 
 function sameValue(first: string, second: string): boolean {
-  return first.localeCompare(second, undefined, { sensitivity: "accent" }) === 0;
+  return (
+    first.localeCompare(second, undefined, { sensitivity: "accent" }) === 0
+  );
 }
 
 export default function SelectionModal({
@@ -86,7 +88,8 @@ export default function SelectionModal({
     const normalizedQuery = query.trim().toLocaleLowerCase();
     const filtered = normalizedQuery
       ? normalizedOptions.filter((option) => {
-          const haystack = `${option.label ?? option.value} ${option.meta ?? ""} ${option.code ?? ""}`.toLocaleLowerCase();
+          const haystack =
+            `${option.label ?? option.value} ${option.meta ?? ""} ${option.code ?? ""}`.toLocaleLowerCase();
           return haystack.includes(normalizedQuery);
         })
       : normalizedOptions;
@@ -189,7 +192,9 @@ export default function SelectionModal({
         </div>
 
         <div className={styles.metaRow}>
-          <span>{selected.length} selecionada{selected.length === 1 ? "" : "s"}</span>
+          <span>
+            {selected.length} selecionada{selected.length === 1 ? "" : "s"}
+          </span>
           {maxSelected && <span>máximo {maxSelected}</span>}
         </div>
 
@@ -207,7 +212,9 @@ export default function SelectionModal({
                 aria-pressed={checked}
               >
                 <span className={styles.optionCopy}>
-                  {option.code && <span className={styles.codeBadge}>{option.code}</span>}
+                  {option.code && (
+                    <span className={styles.codeBadge}>{option.code}</span>
+                  )}
                   <span>
                     <strong>{option.label ?? value}</strong>
                     {option.meta && <small>{option.meta}</small>}
@@ -261,16 +268,24 @@ export default function SelectionModal({
                     }
                   }}
                 />
-                <button type="button" onClick={addCustom}>Adicionar</button>
+                <button type="button" onClick={addCustom}>
+                  Adicionar
+                </button>
               </div>
             )}
           </div>
         )}
 
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
 
         <footer className={styles.footer}>
-          <button type="button" onClick={handleClose}>Concluir seleção</button>
+          <button type="button" onClick={handleClose}>
+            Concluir seleção
+          </button>
         </footer>
       </section>
     </div>

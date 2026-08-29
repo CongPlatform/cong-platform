@@ -407,7 +407,8 @@ const projects: Project[] = [
     id: "project-research",
     area: "pesquisa",
     name: "Mapa de necessidades",
-    description: "Pesquisa contínua sobre desafios enfrentados por organizações.",
+    description:
+      "Pesquisa contínua sobre desafios enfrentados por organizações.",
     status: "Pesquisa",
     progress: 31,
   },
@@ -481,7 +482,6 @@ const opportunities: Opportunity[] = [
     icon: UsersRound,
   },
 ];
-
 
 const heroWords: Array<{
   word: string;
@@ -691,8 +691,8 @@ export default function Community() {
           <span className={styles.sectionEyebrow}>Conheça por dentro</span>
           <h2>Escolha uma área e veja como ela participa</h2>
           <p>
-            Cada opção abre uma apresentação própria, com o papel daquela área
-            e exemplos de publicação, projeto e oportunidade dentro da comunidade.
+            Cada opção abre uma apresentação própria, com o papel daquela área e
+            exemplos de publicação, projeto e oportunidade dentro da comunidade.
           </p>
         </header>
 
@@ -762,7 +762,9 @@ export default function Community() {
               <header className={styles.examplesHeader}>
                 <div>
                   <span>Como aparece na plataforma</span>
-                  <strong>Exemplos de {activeAreaData.label.toLowerCase()}</strong>
+                  <strong>
+                    Exemplos de {activeAreaData.label.toLowerCase()}
+                  </strong>
                 </div>
                 <small>Prévia institucional</small>
               </header>
@@ -778,7 +780,10 @@ export default function Community() {
                   <p>{activeAreaData.examplePost.description}</p>
                 </div>
 
-                <MessageCircle aria-hidden="true" className={styles.exampleComment} />
+                <MessageCircle
+                  aria-hidden="true"
+                  className={styles.exampleComment}
+                />
               </article>
 
               <div className={styles.exampleCards}>
@@ -982,7 +987,9 @@ export default function Community() {
           </span>
 
           <div>
-            <span className={styles.sectionEyebrow}>Convivência e segurança</span>
+            <span className={styles.sectionEyebrow}>
+              Convivência e segurança
+            </span>
             <h2>Código de conduta</h2>
 
             <ul>
@@ -1004,7 +1011,10 @@ export default function Community() {
               </li>
             </ul>
 
-            <a href="/documentacao#codigo-de-conduta" className={styles.inlineLink}>
+            <a
+              href="/documentacao#codigo-de-conduta"
+              className={styles.inlineLink}
+            >
               Ler código completo
               <ArrowRight aria-hidden="true" />
             </a>
@@ -1015,7 +1025,9 @@ export default function Community() {
       <section className={styles.finalSection}>
         <div className={styles.finalCard}>
           <div>
-            <span className={styles.sectionEyebrow}>Faça parte dessa construção</span>
+            <span className={styles.sectionEyebrow}>
+              Faça parte dessa construção
+            </span>
             <h2>
               Toda habilidade pode gerar <span>impacto.</span>
             </h2>
@@ -1066,7 +1078,9 @@ export default function Community() {
               <X aria-hidden="true" />
             </button>
 
-            <span className={`${styles.modalIcon} ${styles[selectedPost.tone]}`}>
+            <span
+              className={`${styles.modalIcon} ${styles[selectedPost.tone]}`}
+            >
               <SelectedPostIcon aria-hidden="true" />
             </span>
 

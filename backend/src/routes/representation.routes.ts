@@ -1,6 +1,4 @@
-import {
-  Router,
-} from "express";
+import { Router } from "express";
 
 import {
   cancelMyRepresentationRequest,
@@ -16,41 +14,25 @@ import {
   requestRepresentationSchema,
 } from "../validators/representation.validator.js";
 
-import {
-  validateBody,
-} from "../middlewares/validate.js";
+import { validateBody } from "../middlewares/validate.js";
 
-const representationRouter =
-  Router();
+const representationRouter = Router();
 
-representationRouter.get(
-  "/",
-  listMyRepresentations,
-);
+representationRouter.get("/", listMyRepresentations);
 
-representationRouter.get(
-  "/check-cnpj",
-  checkMyRepresentationCnpj,
-);
+representationRouter.get("/check-cnpj", checkMyRepresentationCnpj);
 
-representationRouter.get(
-  "/search",
-  searchRepresentationOrganizations,
-);
+representationRouter.get("/search", searchRepresentationOrganizations);
 
 representationRouter.post(
   "/",
-  validateBody(
-    createRepresentationSchema,
-  ),
+  validateBody(createRepresentationSchema),
   createMyRepresentation,
 );
 
 representationRouter.post(
   "/request",
-  validateBody(
-    requestRepresentationSchema,
-  ),
+  validateBody(requestRepresentationSchema),
   requestMyRepresentation,
 );
 

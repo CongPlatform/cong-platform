@@ -1,12 +1,6 @@
-import {
-  apiPatch,
-  apiPost,
-  apiRequest,
-} from "./api";
+import { apiPatch, apiPost, apiRequest } from "./api";
 
-import type {
-  CollaborationRole,
-} from "./collaborationProfileService";
+import type { CollaborationRole } from "./collaborationProfileService";
 
 /* ==================================================
    IDENTIDADE
@@ -22,15 +16,12 @@ export interface OnboardingIdentityInput {
    PARTICIPAÇÃO
    ================================================== */
 
-export type OnboardingRepresentation =
-  | "ngo"
-  | "company";
+export type OnboardingRepresentation = "ngo" | "company";
 
 export interface OnboardingParticipationInput {
   roles: CollaborationRole[];
 
-  representations:
-    OnboardingRepresentation[];
+  representations: OnboardingRepresentation[];
 }
 
 /* ==================================================
@@ -48,10 +39,7 @@ interface MessageResponse {
 export async function saveOnboardingIdentity(
   input: OnboardingIdentityInput,
 ): Promise<void> {
-  await apiPatch<MessageResponse>(
-    "/account/me/onboarding/identity",
-    input,
-  );
+  await apiPatch<MessageResponse>("/account/me/onboarding/identity", input);
 }
 
 /* ==================================================
@@ -61,19 +49,15 @@ export async function saveOnboardingIdentity(
 export async function saveOnboardingParticipation(
   input: OnboardingParticipationInput,
 ): Promise<void> {
-  await apiRequest<MessageResponse>(
-    "/account/me/onboarding/participation",
-    {
-      method: "PUT",
+  await apiRequest<MessageResponse>("/account/me/onboarding/participation", {
+    method: "PUT",
 
-      body: JSON.stringify({
-        roles: input.roles,
+    body: JSON.stringify({
+      roles: input.roles,
 
-        representations:
-          input.representations,
-      }),
-    },
-  );
+      representations: input.representations,
+    }),
+  });
 }
 
 /* ==================================================
@@ -81,8 +65,5 @@ export async function saveOnboardingParticipation(
    ================================================== */
 
 export async function completeOnboarding(): Promise<void> {
-  await apiPost<MessageResponse>(
-    "/account/me/onboarding/complete",
-    {},
-  );
+  await apiPost<MessageResponse>("/account/me/onboarding/complete", {});
 }

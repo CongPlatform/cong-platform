@@ -1,17 +1,16 @@
 import type { Request, Response } from "express";
 
 import {
+  completeOAuthUser,
   getCurrentUser,
   loginUser,
-  logoutUserSession,
+  resendSignupConfirmation,
   refreshUserSession,
   registerUser,
-  resendSignupConfirmation,
+  logoutUserSession,
 } from "../services/auth.service.js";
 
-import {
-  getEmailVerificationStatus,
-} from "../services/email-verification.service.js";
+import { getEmailVerificationStatus } from "../services/email-verification.service.js";
 
 import { AppError } from "../utils/app-error.js";
 
@@ -19,62 +18,43 @@ import { AppError } from "../utils/app-error.js";
    EMAIL VERIFICATION COOKIE
 ================================================== */
 
-const isProduction =
-  process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === "production";
 
-const VERIFICATION_COOKIE_NAME =
-  isProduction
-    ? "__Host-cong-email-verification"
-    : "cong-email-verification";
+const VERIFICATION_COOKIE_NAME = isProduction
+  ? "__Host-cong-email-verification"
+  : "cong-email-verification";
 
-function clearVerificationCookie(
-  res: Response,
-): void {
-  res.clearCookie(
-    VERIFICATION_COOKIE_NAME,
-    {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "strict",
-      path: "/",
-    },
-  );
+function clearVerificationCookie(res: Response): void {
+  res.clearCookie(VERIFICATION_COOKIE_NAME, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict",
+    path: "/",
+  });
 }
 
-function getCookie(
-  req: Request,
-  name: string,
-): string | null {
-  const cookieHeader =
-    req.headers.cookie;
+function getCookie(req: Request, name: string): string | null {
+  const cookieHeader = req.headers.cookie;
 
   if (!cookieHeader) {
     return null;
   }
 
-  for (
-    const cookie of cookieHeader.split(";")
-  ) {
-    const [
-      cookieName,
-      ...cookieValueParts
-    ] = cookie.trim().split("=");
+  for (const cookie of cookieHeader.split(";")) {
+    const [cookieName, ...cookieValueParts] = cookie.trim().split("=");
 
     if (cookieName !== name) {
       continue;
     }
 
-    const cookieValue =
-      cookieValueParts.join("=");
+    const cookieValue = cookieValueParts.join("=");
 
     if (!cookieValue) {
       return null;
     }
 
     try {
-      return decodeURIComponent(
-        cookieValue,
-      );
+      return decodeURIComponent(cookieValue);
     } catch {
       return null;
     }
@@ -87,10 +67,7 @@ function getCookie(
    ERROR HANDLER
 ================================================== */
 
-function handleControllerError(
-  error: unknown,
-  res: Response,
-): void {
+function handleControllerError(error: unknown, res: Response): void {
   if (error instanceof AppError) {
     res.status(error.statusCode).json({
       error: error.message,
@@ -100,10 +77,7 @@ function handleControllerError(
     return;
   }
 
-  console.error(
-    "Unexpected authentication controller error:",
-    error,
-  );
+  console.error("Unexpected authentication controller error:", error);
 
   res.status(500).json({
     error: "Internal server error",
@@ -115,23 +89,15 @@ function handleControllerError(
    REGISTER
 ================================================== */
 
-export async function register(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function register(req: Request, res: Response): Promise<void> {
   try {
-    const {
+    const { name, email, password } = req.body;
+
+    const result = await registerUser({
       name,
       email,
       password,
-    } = req.body;
-
-    const result =
-      await registerUser({
-        name,
-        email,
-        password,
-      });
+    });
 
     /*
      * O token de acompanhamento NÃO
@@ -140,30 +106,21 @@ export async function register(
      * O navegador o recebe somente
      * em cookie HttpOnly.
      */
-    res.cookie(
-      VERIFICATION_COOKIE_NAME,
-      result.verification.token,
-      {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: "strict",
-        path: "/",
-        expires:
-          result.verification.expiresAt,
-      },
-    );
+    res.cookie(VERIFICATION_COOKIE_NAME, result.verification.token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "strict",
+      path: "/",
+      expires: result.verification.expiresAt,
+    });
 
     res.status(201).json({
-      message:
-        "User created successfully",
+      message: "User created successfully",
 
       user: result.user,
     });
   } catch (error) {
-    handleControllerError(
-      error,
-      res,
-    );
+    handleControllerError(error, res);
   }
 }
 
@@ -180,15 +137,9 @@ export async function emailVerificationStatus(
      * O status não deve ser servido
      * de cache.
      */
-    res.setHeader(
-      "Cache-Control",
-      "no-store",
-    );
+    res.setHeader("Cache-Control", "no-store");
 
-    const token = getCookie(
-      req,
-      VERIFICATION_COOKIE_NAME,
-    );
+    const token = getCookie(req, VERIFICATION_COOKIE_NAME);
 
     /*
      * Sem cookie não revelamos nenhuma
@@ -202,10 +153,7 @@ export async function emailVerificationStatus(
       return;
     }
 
-    const status =
-      await getEmailVerificationStatus(
-        token,
-      );
+    const status = await getEmailVerificationStatus(token);
 
     /*
      * NÃO apagamos o cookie quando
@@ -215,10 +163,7 @@ export async function emailVerificationStatus(
      * precisar reconhecer que este é
      * o navegador que iniciou o cadastro.
      */
-    if (
-      status === "expired" ||
-      status === "unavailable"
-    ) {
+    if (status === "expired" || status === "unavailable") {
       clearVerificationCookie(res);
     }
 
@@ -226,10 +171,7 @@ export async function emailVerificationStatus(
       status,
     });
   } catch (error) {
-    handleControllerError(
-      error,
-      res,
-    );
+    handleControllerError(error, res);
   }
 }
 
@@ -237,28 +179,61 @@ export async function emailVerificationStatus(
    LOGIN
 ================================================== */
 
-export async function login(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function login(req: Request, res: Response): Promise<void> {
   try {
-    const {
+    const { email, password } = req.body;
+
+    const result = await loginUser({
       email,
       password,
-    } = req.body;
-
-    const result =
-      await loginUser({
-        email,
-        password,
-      });
+    });
 
     res.status(200).json(result);
   } catch (error) {
-    handleControllerError(
-      error,
-      res,
-    );
+    handleControllerError(error, res);
+  }
+}
+
+/* ==================================================
+   OAuth
+================================================== */
+
+export async function completeOAuth(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const authUser = res.locals.authUser;
+
+    if (!authUser) {
+      throw new AppError(
+        "Authenticated user was not found",
+        401,
+        "AUTH_USER_NOT_FOUND",
+      );
+    }
+
+    const user = await completeOAuthUser(authUser);
+
+    res.status(200).json({
+      user,
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({
+        error: error.message,
+        code: error.code,
+      });
+
+      return;
+    }
+
+    console.error("Unexpected OAuth completion error:", error);
+
+    res.status(500).json({
+      error: "Internal server error",
+      code: "INTERNAL_SERVER_ERROR",
+    });
   }
 }
 
@@ -266,13 +241,9 @@ export async function login(
    CURRENT USER
 ================================================== */
 
-export async function me(
-  _req: Request,
-  res: Response,
-): Promise<void> {
+export async function me(_req: Request, res: Response): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
     if (!authUser?.id) {
       throw new AppError(
@@ -290,20 +261,13 @@ export async function me(
       );
     }
 
-    const user =
-      await getCurrentUser(
-        authUser.id,
-        authUser.email,
-      );
+    const user = await getCurrentUser(authUser.id, authUser.email);
 
     res.status(200).json({
       user,
     });
   } catch (error) {
-    handleControllerError(
-      error,
-      res,
-    );
+    handleControllerError(error, res);
   }
 }
 
@@ -311,26 +275,15 @@ export async function me(
    REFRESH
 ================================================== */
 
-export async function refresh(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function refresh(req: Request, res: Response): Promise<void> {
   try {
-    const {
-      refreshToken,
-    } = req.body;
+    const { refreshToken } = req.body;
 
-    const session =
-      await refreshUserSession(
-        refreshToken,
-      );
+    const session = await refreshUserSession(refreshToken);
 
     res.status(200).json(session);
   } catch (error) {
-    handleControllerError(
-      error,
-      res,
-    );
+    handleControllerError(error, res);
   }
 }
 
@@ -338,13 +291,9 @@ export async function refresh(
    LOGOUT
 ================================================== */
 
-export async function logout(
-  _req: Request,
-  res: Response,
-): Promise<void> {
+export async function logout(_req: Request, res: Response): Promise<void> {
   try {
-    const accessToken =
-      res.locals.accessToken;
+    const accessToken = res.locals.accessToken;
 
     if (!accessToken) {
       throw new AppError(
@@ -354,16 +303,11 @@ export async function logout(
       );
     }
 
-    await logoutUserSession(
-      accessToken,
-    );
+    await logoutUserSession(accessToken);
 
     res.status(204).send();
   } catch (error) {
-    handleControllerError(
-      error,
-      res,
-    );
+    handleControllerError(error, res);
   }
 }
 
@@ -378,9 +322,7 @@ export async function resendConfirmation(
   try {
     const { email } = req.body;
 
-    await resendSignupConfirmation(
-      email,
-    );
+    await resendSignupConfirmation(email);
 
     /*
      * Resposta propositalmente genérica.
@@ -391,9 +333,6 @@ export async function resendConfirmation(
         "If the account is awaiting confirmation, a new email has been sent.",
     });
   } catch (error) {
-    handleControllerError(
-      error,
-      res,
-    );
+    handleControllerError(error, res);
   }
 }

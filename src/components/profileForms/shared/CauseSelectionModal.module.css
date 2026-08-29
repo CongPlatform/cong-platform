@@ -44,7 +44,7 @@
 .header p {
   margin: 0;
   color: #6d798a;
-  font-size: .84rem;
+  font-size: 0.84rem;
   line-height: 1.45;
 }
 
@@ -117,7 +117,7 @@
   gap: 10px;
   padding: 10px 20px 8px;
   color: #788497;
-  font-size: .74rem;
+  font-size: 0.74rem;
 }
 
 .selectedSummary {
@@ -134,7 +134,7 @@
   border-radius: 999px;
   background: #f6f9fd;
   color: #315d9a;
-  font-size: .73rem;
+  font-size: 0.73rem;
   font-weight: 700;
 }
 
@@ -224,12 +224,12 @@
 
 .causeCopy strong {
   color: #293b52;
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
 
 .causeCopy small {
   color: #7a8696;
-  font-size: .73rem;
+  font-size: 0.73rem;
 }
 
 .featuredBadge {
@@ -240,7 +240,7 @@
   border-radius: 999px;
   background: #fff7e8;
   color: #8a6218;
-  font-size: .68rem;
+  font-size: 0.68rem;
   font-weight: 780;
 }
 
@@ -274,7 +274,7 @@
   align-items: center;
   gap: 5px;
   font: inherit;
-  font-size: .75rem;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
@@ -298,7 +298,7 @@
 .error {
   margin: 0;
   padding: 11px 20px;
-  font-size: .79rem;
+  font-size: 0.79rem;
 }
 
 .empty {
@@ -327,28 +327,49 @@
   background: #2f68b7;
   color: #fff;
   font: inherit;
-  font-size: .82rem;
+  font-size: 0.82rem;
   font-weight: 730;
   cursor: pointer;
 }
 
 @media (max-width: 560px) {
-  .backdrop { padding: 10px; }
-  .dialog { max-height: calc(100vh - 20px); border-radius: 15px; }
-  .header { padding: 16px 15px 12px; }
-  .searchBox { margin-inline: 15px; }
+  .backdrop {
+    padding: 10px;
+  }
+  .dialog {
+    max-height: calc(100vh - 20px);
+    border-radius: 15px;
+  }
+  .header {
+    padding: 16px 15px 12px;
+  }
+  .searchBox {
+    margin-inline: 15px;
+  }
   .metaRow,
   .selectedSummary,
-  .list { padding-inline: 15px; }
-  .causeMainButton { grid-template-columns: 26px minmax(0, 1fr); }
-  .featuredBadge { display: none; }
-  .subtopics { padding-left: 12px; }
-  .footer { padding: 12px 15px 15px; }
-  .footer button { width: 100%; }
+  .list {
+    padding-inline: 15px;
+  }
+  .causeMainButton {
+    grid-template-columns: 26px minmax(0, 1fr);
+  }
+  .featuredBadge {
+    display: none;
+  }
+  .subtopics {
+    padding-left: 12px;
+  }
+  .footer {
+    padding: 12px 15px 15px;
+  }
+  .footer button {
+    width: 100%;
+  }
 }
 
 .expandButton:disabled {
-  opacity: .35;
+  opacity: 0.35;
   cursor: not-allowed;
   background: transparent;
 }

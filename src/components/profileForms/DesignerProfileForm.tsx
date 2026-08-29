@@ -1,7 +1,10 @@
 import { useState, type SubmitEvent } from "react";
 import { LoaderCircle, Plus, X } from "lucide-react";
 
-import { DESIGN_SPECIALTY_OPTIONS, DESIGN_TOOL_OPTIONS } from "../../data/profileCatalog";
+import {
+  DESIGN_SPECIALTY_OPTIONS,
+  DESIGN_TOOL_OPTIONS,
+} from "../../data/profileCatalog";
 import SelectionModal from "./shared/SelectionModal";
 import styles from "./ProfileForm.module.css";
 
@@ -105,10 +108,19 @@ export default function DesignerProfileForm(props: Props) {
 
         <section className={styles.section}>
           <div className={styles.compactHeading}>
-            <h3>Especialidades <span aria-hidden="true">*</span></h3>
+            <h3>
+              Especialidades <span aria-hidden="true">*</span>
+            </h3>
           </div>
-          <SelectedItems values={props.specialties} onChange={props.onSpecialtiesChange} />
-          <button type="button" className={styles.addButton} onClick={() => setSpecialtiesOpen(true)}>
+          <SelectedItems
+            values={props.specialties}
+            onChange={props.onSpecialtiesChange}
+          />
+          <button
+            type="button"
+            className={styles.addButton}
+            onClick={() => setSpecialtiesOpen(true)}
+          >
             <Plus aria-hidden="true" />
             Adicionar especialidades
           </button>
@@ -116,10 +128,16 @@ export default function DesignerProfileForm(props: Props) {
 
         <section className={styles.section}>
           <div className={styles.compactHeading}>
-            <h3>Ferramentas <span aria-hidden="true">*</span></h3>
+            <h3>
+              Ferramentas <span aria-hidden="true">*</span>
+            </h3>
           </div>
           <SelectedItems values={props.tools} onChange={props.onToolsChange} />
-          <button type="button" className={styles.addButton} onClick={() => setToolsOpen(true)}>
+          <button
+            type="button"
+            className={styles.addButton}
+            onClick={() => setToolsOpen(true)}
+          >
             <Plus aria-hidden="true" />
             Adicionar ferramentas
           </button>
@@ -127,7 +145,9 @@ export default function DesignerProfileForm(props: Props) {
 
         <section className={styles.section}>
           <div className={styles.field}>
-            <label htmlFor="designer-portfolio">Portfólio <span>opcional</span></label>
+            <label htmlFor="designer-portfolio">
+              Portfólio <span>opcional</span>
+            </label>
             <input
               id="designer-portfolio"
               type="text"
@@ -142,12 +162,26 @@ export default function DesignerProfileForm(props: Props) {
           </div>
         </section>
 
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
 
         <footer className={styles.footer}>
-          <button className={styles.submitButton} type="submit" disabled={props.saving}>
-            {props.saving && <LoaderCircle className={styles.spinner} aria-hidden="true" />}
-            {props.saving ? "Salvando..." : props.completed ? "Salvar alterações" : "Salvar e continuar"}
+          <button
+            className={styles.submitButton}
+            type="submit"
+            disabled={props.saving}
+          >
+            {props.saving && (
+              <LoaderCircle className={styles.spinner} aria-hidden="true" />
+            )}
+            {props.saving
+              ? "Salvando..."
+              : props.completed
+                ? "Salvar alterações"
+                : "Salvar e continuar"}
           </button>
         </footer>
       </form>

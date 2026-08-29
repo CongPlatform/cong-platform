@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode, type SubmitEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type SubmitEvent,
+} from "react";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -54,7 +60,10 @@ type Props = {
   draft: RepresentationDraft;
   saving: boolean;
   onBack: () => void;
-  onChange: <K extends keyof RepresentationDraft>(field: K, value: RepresentationDraft[K]) => void;
+  onChange: <K extends keyof RepresentationDraft>(
+    field: K,
+    value: RepresentationDraft[K],
+  ) => void;
   onSubmit: () => void | Promise<void>;
 };
 
@@ -95,7 +104,11 @@ function SelectedItems({
       {values.map((value) => (
         <span className={styles.chip} key={value}>
           <span>{getLabel(value)}</span>
-          <button type="button" onClick={() => onRemove(value)} aria-label={`Remover ${getLabel(value)}`}>
+          <button
+            type="button"
+            onClick={() => onRemove(value)}
+            aria-label={`Remover ${getLabel(value)}`}
+          >
             <X aria-hidden="true" />
           </button>
         </span>
@@ -140,9 +153,15 @@ export default function InstitutionRepresentationForm({
   const [supportOpen, setSupportOpen] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepMessage, setCepMessage] = useState("");
-  const [cepStatus, setCepStatus] = useState<"idle" | "valid" | "error">("idle");
-  const [cnpjCheck, setCnpjCheck] = useState<CnpjCheckState>({ status: "idle" });
-  const [touched, setTouched] = useState<Partial<Record<TouchKey, boolean>>>({});
+  const [cepStatus, setCepStatus] = useState<"idle" | "valid" | "error">(
+    "idle",
+  );
+  const [cnpjCheck, setCnpjCheck] = useState<CnpjCheckState>({
+    status: "idle",
+  });
+  const [touched, setTouched] = useState<Partial<Record<TouchKey, boolean>>>(
+    {},
+  );
   const [validationAttempted, setValidationAttempted] = useState(false);
 
   const onChangeRef = useRef(onChange);
@@ -158,7 +177,8 @@ export default function InstitutionRepresentationForm({
   const currentCnpjRef = useRef(onlyDigits(draft.cnpj));
   const cnpjRequestRef = useRef(0);
 
-  const kind: InitiativeKind = type === "company" ? "formal" : draft.initiativeKind;
+  const kind: InitiativeKind =
+    type === "company" ? "formal" : draft.initiativeKind;
   const requiresCnpj = type === "company" || kind === "formal";
   const cnpjDigits = onlyDigits(draft.cnpj);
   const cnpjComplete = cnpjDigits.length === 14;
@@ -170,7 +190,8 @@ export default function InstitutionRepresentationForm({
     setTouched((current) => ({ ...current, [field]: true }));
   };
 
-  const shouldShow = (field: TouchKey, hasValue: boolean) => Boolean(touched[field] || hasValue || validationAttempted);
+  const shouldShow = (field: TouchKey, hasValue: boolean) =>
+    Boolean(touched[field] || hasValue || validationAttempted);
 
   const clearAddressFromPreviousCep = () => {
     onChangeRef.current("street", "");
@@ -213,7 +234,11 @@ export default function InstitutionRepresentationForm({
 
       void lookupCep(draft.cep)
         .then((address) => {
-          if (requestId !== cepRequestRef.current || currentCepRef.current !== digits) return;
+          if (
+            requestId !== cepRequestRef.current ||
+            currentCepRef.current !== digits
+          )
+            return;
 
           onChangeRef.current("street", address.street);
           onChangeRef.current("district", address.district);
@@ -226,9 +251,15 @@ export default function InstitutionRepresentationForm({
           );
         })
         .catch(() => {
-          if (requestId !== cepRequestRef.current || currentCepRef.current !== digits) return;
+          if (
+            requestId !== cepRequestRef.current ||
+            currentCepRef.current !== digits
+          )
+            return;
           setCepStatus("error");
-          setCepMessage("CEP não encontrado. Confira o número ou preencha o endereço manualmente.");
+          setCepMessage(
+            "CEP não encontrado. Confira o número ou preencha o endereço manualmente.",
+          );
         })
         .finally(() => {
           if (requestId === cepRequestRef.current) setCepLoading(false);
@@ -245,7 +276,8 @@ export default function InstitutionRepresentationForm({
     const digits = onlyDigits(draft.cnpj);
     currentCnpjRef.current = digits;
 
-    if (!requiresCnpj || digits.length !== 14 || !isValidCnpj(draft.cnpj)) return;
+    if (!requiresCnpj || digits.length !== 14 || !isValidCnpj(draft.cnpj))
+      return;
 
     const requestId = ++cnpjRequestRef.current;
     const timer = window.setTimeout(() => {
@@ -253,19 +285,28 @@ export default function InstitutionRepresentationForm({
 
       void checkRepresentationCnpj(draft.cnpj)
         .then((result) => {
-          if (requestId !== cnpjRequestRef.current || currentCnpjRef.current !== digits) return;
+          if (
+            requestId !== cnpjRequestRef.current ||
+            currentCnpjRef.current !== digits
+          )
+            return;
 
           if (result.available) {
             setCnpjCheck({ status: "available" });
           } else {
             setCnpjCheck({
               status: "duplicate",
-              organizationName: result.organization?.name ?? "uma instituição já cadastrada",
+              organizationName:
+                result.organization?.name ?? "uma instituição já cadastrada",
             });
           }
         })
         .catch(() => {
-          if (requestId !== cnpjRequestRef.current || currentCnpjRef.current !== digits) return;
+          if (
+            requestId !== cnpjRequestRef.current ||
+            currentCnpjRef.current !== digits
+          )
+            return;
           setCnpjCheck({ status: "error" });
         });
     }, 420);
@@ -283,8 +324,12 @@ export default function InstitutionRepresentationForm({
   const descriptionInvalid = draft.description.trim().length < 20;
   const cepInvalid = cepDigits.length !== 8;
   const numberInvalid = !draft.number.trim();
-  const locationInvalid = !draft.city.trim() || !BRAZIL_STATES.some((state) => state.code === draft.state);
-  const areasInvalid = draft.areas.filter((value) => !parseCauseSelection(value).subtopic).length === 0;
+  const locationInvalid =
+    !draft.city.trim() ||
+    !BRAZIL_STATES.some((state) => state.code === draft.state);
+  const areasInvalid =
+    draft.areas.filter((value) => !parseCauseSelection(value).subtopic)
+      .length === 0;
   const supportInvalid = type === "company" && draft.supportTypes.length === 0;
   const duplicateCnpj = cnpjCheck.status === "duplicate";
 
@@ -331,19 +376,31 @@ export default function InstitutionRepresentationForm({
 
         <header className={styles.header}>
           <span className={styles.eyebrow}>Representação</span>
-          <h2>{type === "company" ? "Empresa apoiadora" : "Organização ou iniciativa"}</h2>
-          <p>{type === "company" ? "Cadastre os dados essenciais da empresa." : "Cadastre os dados essenciais da iniciativa."}</p>
+          <h2>
+            {type === "company"
+              ? "Empresa apoiadora"
+              : "Organização ou iniciativa"}
+          </h2>
+          <p>
+            {type === "company"
+              ? "Cadastre os dados essenciais da empresa."
+              : "Cadastre os dados essenciais da iniciativa."}
+          </p>
         </header>
 
         {type === "ngo" && (
           <fieldset className={styles.fieldset}>
-            <legend>Tipo de iniciativa <span aria-hidden="true">*</span></legend>
+            <legend>
+              Tipo de iniciativa <span aria-hidden="true">*</span>
+            </legend>
             <div className={styles.segmentedControl}>
-              {([
-                ["formal", "Organização formal"],
-                ["independent", "Projeto independente"],
-                ["punctual", "Ação pontual"],
-              ] as const).map(([value, label]) => (
+              {(
+                [
+                  ["formal", "Organização formal"],
+                  ["independent", "Projeto independente"],
+                  ["punctual", "Ação pontual"],
+                ] as const
+              ).map(([value, label]) => (
                 <button
                   type="button"
                   key={value}
@@ -367,35 +424,56 @@ export default function InstitutionRepresentationForm({
 
         <section className={styles.section}>
           <div className={styles.field}>
-            <label htmlFor="representation-name">{type === "company" ? "Nome da empresa" : kind === "punctual" ? "Nome da ação" : "Nome da iniciativa"} *</label>
+            <label htmlFor="representation-name">
+              {type === "company"
+                ? "Nome da empresa"
+                : kind === "punctual"
+                  ? "Nome da ação"
+                  : "Nome da iniciativa"}{" "}
+              *
+            </label>
             <input
               id="representation-name"
               value={draft.name}
               onBlur={() => markTouched("name")}
               onChange={(event) => onChange("name", event.target.value)}
               maxLength={120}
-              aria-invalid={shouldShow("name", Boolean(draft.name)) && nameInvalid}
+              aria-invalid={
+                shouldShow("name", Boolean(draft.name)) && nameInvalid
+              }
             />
             {shouldShow("name", Boolean(draft.name)) && nameInvalid && (
-              <FieldFeedback tone="error">Use pelo menos 2 caracteres.</FieldFeedback>
+              <FieldFeedback tone="error">
+                Use pelo menos 2 caracteres.
+              </FieldFeedback>
             )}
           </div>
 
           {requiresCnpj && (
             <div className={styles.fieldRow}>
               <div className={styles.field}>
-                <label htmlFor="representation-legal-name">Razão social *</label>
+                <label htmlFor="representation-legal-name">
+                  Razão social *
+                </label>
                 <input
                   id="representation-legal-name"
                   value={draft.legalName}
                   onBlur={() => markTouched("legalName")}
-                  onChange={(event) => onChange("legalName", event.target.value)}
+                  onChange={(event) =>
+                    onChange("legalName", event.target.value)
+                  }
                   maxLength={160}
-                  aria-invalid={shouldShow("legalName", Boolean(draft.legalName)) && legalNameInvalid}
+                  aria-invalid={
+                    shouldShow("legalName", Boolean(draft.legalName)) &&
+                    legalNameInvalid
+                  }
                 />
-                {shouldShow("legalName", Boolean(draft.legalName)) && legalNameInvalid && (
-                  <FieldFeedback tone="error">Informe a razão social completa.</FieldFeedback>
-                )}
+                {shouldShow("legalName", Boolean(draft.legalName)) &&
+                  legalNameInvalid && (
+                    <FieldFeedback tone="error">
+                      Informe a razão social completa.
+                    </FieldFeedback>
+                  )}
               </div>
 
               <div className={styles.field}>
@@ -414,32 +492,52 @@ export default function InstitutionRepresentationForm({
                     }}
                     placeholder="00.000.000/0000-00"
                     maxLength={18}
-                    aria-invalid={Boolean(draft.cnpj) && (!cnpjValid || duplicateCnpj)}
+                    aria-invalid={
+                      Boolean(draft.cnpj) && (!cnpjValid || duplicateCnpj)
+                    }
                   />
                   {cnpjCheck.status === "checking" && (
-                    <span className={styles.loadingStatus}><LoaderCircle className={styles.spinner} aria-hidden="true" /></span>
+                    <span className={styles.loadingStatus}>
+                      <LoaderCircle
+                        className={styles.spinner}
+                        aria-hidden="true"
+                      />
+                    </span>
                   )}
                 </div>
 
                 {shouldShow("cnpj", Boolean(draft.cnpj)) && !cnpjComplete && (
-                  <FieldFeedback tone="error">Complete os 14 dígitos do CNPJ.</FieldFeedback>
+                  <FieldFeedback tone="error">
+                    Complete os 14 dígitos do CNPJ.
+                  </FieldFeedback>
                 )}
                 {cnpjComplete && !cnpjValid && (
-                  <FieldFeedback tone="error">CNPJ inválido pelos dígitos verificadores.</FieldFeedback>
+                  <FieldFeedback tone="error">
+                    CNPJ inválido pelos dígitos verificadores.
+                  </FieldFeedback>
                 )}
                 {cnpjValid && cnpjCheck.status === "checking" && (
-                  <FieldFeedback tone="neutral">Verificando se este CNPJ já está cadastrado...</FieldFeedback>
+                  <FieldFeedback tone="neutral">
+                    Verificando se este CNPJ já está cadastrado...
+                  </FieldFeedback>
                 )}
                 {cnpjValid && cnpjCheck.status === "available" && (
-                  <FieldFeedback tone="valid">CNPJ válido e disponível para cadastro.</FieldFeedback>
+                  <FieldFeedback tone="valid">
+                    CNPJ válido e disponível para cadastro.
+                  </FieldFeedback>
                 )}
                 {cnpjValid && cnpjCheck.status === "duplicate" && (
                   <FieldFeedback tone="error">
-                    Este CNPJ já está cadastrado como “{cnpjCheck.organizationName}”. Use a busca de instituições para solicitar vínculo.
+                    Este CNPJ já está cadastrado como “
+                    {cnpjCheck.organizationName}”. Use a busca de instituições
+                    para solicitar vínculo.
                   </FieldFeedback>
                 )}
                 {cnpjValid && cnpjCheck.status === "error" && (
-                  <FieldFeedback tone="neutral">Não foi possível conferir a duplicidade agora. O servidor validará novamente ao cadastrar.</FieldFeedback>
+                  <FieldFeedback tone="neutral">
+                    Não foi possível conferir a duplicidade agora. O servidor
+                    validará novamente ao cadastrar.
+                  </FieldFeedback>
                 )}
               </div>
             </div>
@@ -456,10 +554,14 @@ export default function InstitutionRepresentationForm({
                 value={draft.email}
                 onBlur={() => markTouched("email")}
                 onChange={(event) => onChange("email", event.target.value)}
-                aria-invalid={shouldShow("email", Boolean(draft.email)) && emailInvalid}
+                aria-invalid={
+                  shouldShow("email", Boolean(draft.email)) && emailInvalid
+                }
               />
               {shouldShow("email", Boolean(draft.email)) && emailInvalid && (
-                <FieldFeedback tone="error">Digite um e-mail válido.</FieldFeedback>
+                <FieldFeedback tone="error">
+                  Digite um e-mail válido.
+                </FieldFeedback>
               )}
             </div>
 
@@ -470,12 +572,18 @@ export default function InstitutionRepresentationForm({
                 inputMode="tel"
                 value={draft.phone}
                 onBlur={() => markTouched("phone")}
-                onChange={(event) => onChange("phone", formatPhone(event.target.value))}
+                onChange={(event) =>
+                  onChange("phone", formatPhone(event.target.value))
+                }
                 placeholder="(19) 99999-9999"
-                aria-invalid={shouldShow("phone", Boolean(draft.phone)) && phoneInvalid}
+                aria-invalid={
+                  shouldShow("phone", Boolean(draft.phone)) && phoneInvalid
+                }
               />
               {shouldShow("phone", Boolean(draft.phone)) && phoneInvalid && (
-                <FieldFeedback tone="error">Informe DDD e telefone com 10 ou 11 dígitos.</FieldFeedback>
+                <FieldFeedback tone="error">
+                  Informe DDD e telefone com 10 ou 11 dígitos.
+                </FieldFeedback>
               )}
             </div>
           </div>
@@ -488,17 +596,35 @@ export default function InstitutionRepresentationForm({
               onBlur={() => markTouched("description")}
               onChange={(event) => onChange("description", event.target.value)}
               maxLength={500}
-              placeholder={kind === "punctual" ? "Explique o objetivo da ação e como ela funciona." : "Conte brevemente o que a iniciativa faz."}
-              aria-invalid={shouldShow("description", Boolean(draft.description)) && descriptionInvalid}
+              placeholder={
+                kind === "punctual"
+                  ? "Explique o objetivo da ação e como ela funciona."
+                  : "Conte brevemente o que a iniciativa faz."
+              }
+              aria-invalid={
+                shouldShow("description", Boolean(draft.description)) &&
+                descriptionInvalid
+              }
             />
-            <FieldFeedback tone={descriptionInvalid && shouldShow("description", Boolean(draft.description)) ? "error" : "neutral"}>
+            <FieldFeedback
+              tone={
+                descriptionInvalid &&
+                shouldShow("description", Boolean(draft.description))
+                  ? "error"
+                  : "neutral"
+              }
+            >
               {draft.description.trim().length}/500 caracteres · mínimo de 20.
             </FieldFeedback>
           </div>
         </section>
 
         <section className={styles.section}>
-          <div className={styles.compactHeading}><h3>Localização <span aria-hidden="true">*</span></h3></div>
+          <div className={styles.compactHeading}>
+            <h3>
+              Localização <span aria-hidden="true">*</span>
+            </h3>
+          </div>
 
           <div className={styles.cepOnlyRow}>
             <div className={styles.field}>
@@ -512,16 +638,37 @@ export default function InstitutionRepresentationForm({
                   onChange={(event) => handleCepChange(event.target.value)}
                   placeholder="00000-000"
                   maxLength={9}
-                  aria-invalid={shouldShow("cep", Boolean(draft.cep)) && cepInvalid}
+                  aria-invalid={
+                    shouldShow("cep", Boolean(draft.cep)) && cepInvalid
+                  }
                 />
-                {cepLoading && <span className={styles.loadingStatus}><LoaderCircle className={styles.spinner} aria-hidden="true" /></span>}
+                {cepLoading && (
+                  <span className={styles.loadingStatus}>
+                    <LoaderCircle
+                      className={styles.spinner}
+                      aria-hidden="true"
+                    />
+                  </span>
+                )}
               </div>
 
-              {shouldShow("cep", Boolean(draft.cep)) && cepDigits.length > 0 && cepDigits.length < 8 && (
-                <FieldFeedback tone="error">Complete os 8 dígitos do CEP.</FieldFeedback>
-              )}
+              {shouldShow("cep", Boolean(draft.cep)) &&
+                cepDigits.length > 0 &&
+                cepDigits.length < 8 && (
+                  <FieldFeedback tone="error">
+                    Complete os 8 dígitos do CEP.
+                  </FieldFeedback>
+                )}
               {cepMessage && (
-                <FieldFeedback tone={cepStatus === "valid" ? "valid" : cepStatus === "error" ? "error" : "neutral"}>
+                <FieldFeedback
+                  tone={
+                    cepStatus === "valid"
+                      ? "valid"
+                      : cepStatus === "error"
+                        ? "error"
+                        : "neutral"
+                  }
+                >
                   {cepMessage}
                 </FieldFeedback>
               )}
@@ -550,11 +697,17 @@ export default function InstitutionRepresentationForm({
                     onChange={(event) => onChange("number", event.target.value)}
                     maxLength={20}
                     placeholder="S/N"
-                    aria-invalid={shouldShow("number", Boolean(draft.number)) && numberInvalid}
+                    aria-invalid={
+                      shouldShow("number", Boolean(draft.number)) &&
+                      numberInvalid
+                    }
                   />
-                  {shouldShow("number", Boolean(draft.number)) && numberInvalid && (
-                    <FieldFeedback tone="error">Informe o número ou use S/N.</FieldFeedback>
-                  )}
+                  {shouldShow("number", Boolean(draft.number)) &&
+                    numberInvalid && (
+                      <FieldFeedback tone="error">
+                        Informe o número ou use S/N.
+                      </FieldFeedback>
+                    )}
                 </div>
               </div>
 
@@ -564,16 +717,22 @@ export default function InstitutionRepresentationForm({
                   <input
                     id="representation-district"
                     value={draft.district}
-                    onChange={(event) => onChange("district", event.target.value)}
+                    onChange={(event) =>
+                      onChange("district", event.target.value)
+                    }
                     maxLength={100}
                   />
                 </div>
                 <div className={styles.field}>
-                  <label htmlFor="representation-complement">Complemento <span>opcional</span></label>
+                  <label htmlFor="representation-complement">
+                    Complemento <span>opcional</span>
+                  </label>
                   <input
                     id="representation-complement"
                     value={draft.complement}
-                    onChange={(event) => onChange("complement", event.target.value)}
+                    onChange={(event) =>
+                      onChange("complement", event.target.value)
+                    }
                     maxLength={100}
                   />
                 </div>
@@ -582,21 +741,34 @@ export default function InstitutionRepresentationForm({
               <div className={styles.fieldRow}>
                 <div className={styles.field}>
                   <label htmlFor="representation-city">Cidade *</label>
-                  <input id="representation-city" value={draft.city} onChange={(event) => onChange("city", event.target.value)} maxLength={80} />
+                  <input
+                    id="representation-city"
+                    value={draft.city}
+                    onChange={(event) => onChange("city", event.target.value)}
+                    maxLength={80}
+                  />
                 </div>
                 <div className={styles.field}>
                   <label htmlFor="representation-state">UF *</label>
-                  <select id="representation-state" value={draft.state} onChange={(event) => onChange("state", event.target.value)}>
+                  <select
+                    id="representation-state"
+                    value={draft.state}
+                    onChange={(event) => onChange("state", event.target.value)}
+                  >
                     <option value="">Selecione</option>
                     {BRAZIL_STATES.map((state) => (
-                      <option key={state.code} value={state.code}>{state.code} - {state.name}</option>
+                      <option key={state.code} value={state.code}>
+                        {state.code} - {state.name}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
               {validationAttempted && locationInvalid && (
-                <FieldFeedback tone="error">Confirme cidade e UF antes de continuar.</FieldFeedback>
+                <FieldFeedback tone="error">
+                  Confirme cidade e UF antes de continuar.
+                </FieldFeedback>
               )}
             </>
           )}
@@ -604,7 +776,12 @@ export default function InstitutionRepresentationForm({
 
         <section className={styles.section}>
           <div className={styles.compactHeading}>
-            <h3>{type === "company" ? "Causas que deseja apoiar" : "Áreas de atuação"} <span aria-hidden="true">*</span></h3>
+            <h3>
+              {type === "company"
+                ? "Causas que deseja apoiar"
+                : "Áreas de atuação"}{" "}
+              <span aria-hidden="true">*</span>
+            </h3>
           </div>
           <SelectedItems
             values={draft.areas}
@@ -615,36 +792,69 @@ export default function InstitutionRepresentationForm({
                 "areas",
                 parsed.subtopic
                   ? draft.areas.filter((item) => item !== value)
-                  : draft.areas.filter((item) => parseCauseSelection(item).parent !== parsed.parent),
+                  : draft.areas.filter(
+                      (item) =>
+                        parseCauseSelection(item).parent !== parsed.parent,
+                    ),
               );
             }}
           />
-          <button type="button" className={styles.addButton} onClick={() => setAreasOpen(true)}>
+          <button
+            type="button"
+            className={styles.addButton}
+            onClick={() => setAreasOpen(true)}
+          >
             <Plus aria-hidden="true" />
             {type === "company" ? "Adicionar causas" : "Adicionar áreas"}
           </button>
           {validationAttempted && areasInvalid && (
-            <FieldFeedback tone="error">Escolha pelo menos uma causa principal.</FieldFeedback>
+            <FieldFeedback tone="error">
+              Escolha pelo menos uma causa principal.
+            </FieldFeedback>
           )}
         </section>
 
         {type === "company" && (
           <section className={styles.section}>
-            <div className={styles.compactHeading}><h3>Como pode apoiar <span aria-hidden="true">*</span></h3></div>
-            <SelectedItems values={draft.supportTypes} onRemove={(value) => onChange("supportTypes", draft.supportTypes.filter((item) => item !== value))} />
-            <button type="button" className={styles.addButton} onClick={() => setSupportOpen(true)}>
+            <div className={styles.compactHeading}>
+              <h3>
+                Como pode apoiar <span aria-hidden="true">*</span>
+              </h3>
+            </div>
+            <SelectedItems
+              values={draft.supportTypes}
+              onRemove={(value) =>
+                onChange(
+                  "supportTypes",
+                  draft.supportTypes.filter((item) => item !== value),
+                )
+              }
+            />
+            <button
+              type="button"
+              className={styles.addButton}
+              onClick={() => setSupportOpen(true)}
+            >
               <Plus aria-hidden="true" />
               Adicionar formas de apoio
             </button>
             {validationAttempted && supportInvalid && (
-              <FieldFeedback tone="error">Escolha pelo menos uma forma de apoio.</FieldFeedback>
+              <FieldFeedback tone="error">
+                Escolha pelo menos uma forma de apoio.
+              </FieldFeedback>
             )}
           </section>
         )}
 
         <footer className={styles.footer}>
-          <button type="submit" className={styles.submitButton} disabled={saving || cnpjCheck.status === "checking"}>
-            {saving && <LoaderCircle className={styles.spinner} aria-hidden="true" />}
+          <button
+            type="submit"
+            className={styles.submitButton}
+            disabled={saving || cnpjCheck.status === "checking"}
+          >
+            {saving && (
+              <LoaderCircle className={styles.spinner} aria-hidden="true" />
+            )}
             {saving ? "Cadastrando..." : "Cadastrar e continuar"}
           </button>
         </footer>

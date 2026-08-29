@@ -175,7 +175,8 @@ export async function apiRequest<T>(
       {
         ...requestOptions,
 
-        headers: requestHeaders,  /* Necessário para o cookie HttpOnly de acompanhamento da confirmação. O projeto trabalha com /api no mesmo origin. */
+        headers:
+          requestHeaders /* Necessário para o cookie HttpOnly de acompanhamento da confirmação. O projeto trabalha com /api no mesmo origin. */,
         credentials: "same-origin",
       },
     );

@@ -241,7 +241,10 @@ export const CAUSE_OPTIONS: readonly CauseOption[] = [
 
 export const CAUSE_SUBTOPIC_SEPARATOR = "::";
 
-export function serializeCauseSubtopic(parent: string, subtopic: string): string {
+export function serializeCauseSubtopic(
+  parent: string,
+  subtopic: string,
+): string {
   return `${parent}${CAUSE_SUBTOPIC_SEPARATOR}${subtopic}`;
 }
 
@@ -358,7 +361,11 @@ export const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
   { value: "Coreano", label: "Coreano", code: "KO" },
   { value: "Árabe", label: "Árabe", code: "AR" },
   { value: "Russo", label: "Russo", code: "RU" },
-  { value: "Língua de sinais internacional", label: "Língua de sinais internacional", code: "IS" },
+  {
+    value: "Língua de sinais internacional",
+    label: "Língua de sinais internacional",
+    code: "IS",
+  },
 ];
 
 export const ACCESSIBILITY_SKILL_OPTIONS = [

@@ -116,7 +116,10 @@
   color: var(--muted-strong);
   background: var(--surface);
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
 .desktopCollapseButton:hover,
@@ -179,7 +182,9 @@
   font-weight: var(--font-medium);
   background: transparent;
   cursor: pointer;
-  transition: color 150ms ease, background 150ms ease;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
 }
 
 .navigationItem:hover {
@@ -335,7 +340,9 @@
   border: 1px solid var(--border-strong);
   border-radius: 11px;
   background: var(--surface);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .search:focus-within {
@@ -1110,11 +1117,21 @@
   background: #69a0e5;
 }
 
-.mockChart i:nth-child(1) { height: 38%; }
-.mockChart i:nth-child(2) { height: 64%; }
-.mockChart i:nth-child(3) { height: 48%; }
-.mockChart i:nth-child(4) { height: 82%; }
-.mockChart i:nth-child(5) { height: 70%; }
+.mockChart i:nth-child(1) {
+  height: 38%;
+}
+.mockChart i:nth-child(2) {
+  height: 64%;
+}
+.mockChart i:nth-child(3) {
+  height: 48%;
+}
+.mockChart i:nth-child(4) {
+  height: 82%;
+}
+.mockChart i:nth-child(5) {
+  height: 70%;
+}
 
 .mockRows {
   display: grid;
@@ -1224,7 +1241,10 @@
   border-radius: 15px;
   background: var(--surface);
   scroll-snap-align: start;
-  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .opportunityCard:hover {
@@ -1233,10 +1253,22 @@
   box-shadow: 0 10px 24px rgb(24 36 54 / 7%);
 }
 
-.opportunityCard[data-tone="green"] { --tone: var(--green); --tone-soft: var(--green-soft); }
-.opportunityCard[data-tone="purple"] { --tone: var(--purple); --tone-soft: var(--purple-soft); }
-.opportunityCard[data-tone="yellow"] { --tone: var(--yellow); --tone-soft: var(--yellow-soft); }
-.opportunityCard[data-tone="teal"] { --tone: var(--teal); --tone-soft: var(--teal-soft); }
+.opportunityCard[data-tone="green"] {
+  --tone: var(--green);
+  --tone-soft: var(--green-soft);
+}
+.opportunityCard[data-tone="purple"] {
+  --tone: var(--purple);
+  --tone-soft: var(--purple-soft);
+}
+.opportunityCard[data-tone="yellow"] {
+  --tone: var(--yellow);
+  --tone-soft: var(--yellow-soft);
+}
+.opportunityCard[data-tone="teal"] {
+  --tone: var(--teal);
+  --tone-soft: var(--teal-soft);
+}
 
 .opportunityCardTop {
   display: flex;
@@ -1480,10 +1512,22 @@
   font-size: var(--font-xs);
 }
 
-.avatarBlue { color: #1b4f8e; background: #e5effc; }
-.avatarGreen { color: #176345; background: #e7f4ed; }
-.avatarPurple { color: #67449e; background: #efe9f8; }
-.avatarYellow { color: #946100; background: #fff1ca; }
+.avatarBlue {
+  color: #1b4f8e;
+  background: #e5effc;
+}
+.avatarGreen {
+  color: #176345;
+  background: #e7f4ed;
+}
+.avatarPurple {
+  color: #67449e;
+  background: #efe9f8;
+}
+.avatarYellow {
+  color: #946100;
+  background: #fff1ca;
+}
 
 .postAuthor {
   min-width: 0;
@@ -2022,11 +2066,26 @@
   background: var(--color-primary-50);
 }
 
-.rolePanel > header > span[data-tone="green"] { color: var(--green); background: var(--green-soft); }
-.rolePanel > header > span[data-tone="purple"] { color: var(--purple); background: var(--purple-soft); }
-.rolePanel > header > span[data-tone="yellow"] { color: var(--yellow); background: var(--yellow-soft); }
-.rolePanel > header > span[data-tone="pink"] { color: var(--pink); background: var(--pink-soft); }
-.rolePanel > header > span[data-tone="teal"] { color: var(--teal); background: var(--teal-soft); }
+.rolePanel > header > span[data-tone="green"] {
+  color: var(--green);
+  background: var(--green-soft);
+}
+.rolePanel > header > span[data-tone="purple"] {
+  color: var(--purple);
+  background: var(--purple-soft);
+}
+.rolePanel > header > span[data-tone="yellow"] {
+  color: var(--yellow);
+  background: var(--yellow-soft);
+}
+.rolePanel > header > span[data-tone="pink"] {
+  color: var(--pink);
+  background: var(--pink-soft);
+}
+.rolePanel > header > span[data-tone="teal"] {
+  color: var(--teal);
+  background: var(--teal-soft);
+}
 
 .roleSelector {
   display: grid;
@@ -2362,12 +2421,30 @@
   cursor: pointer;
 }
 
-.createTypeGrid button[data-tone="green"] { --tone: var(--green); --tone-soft: var(--green-soft); }
-.createTypeGrid button[data-tone="blue"] { --tone: var(--brand-dark); --tone-soft: var(--color-primary-50); }
-.createTypeGrid button[data-tone="purple"] { --tone: var(--purple); --tone-soft: var(--purple-soft); }
-.createTypeGrid button[data-tone="yellow"] { --tone: var(--yellow); --tone-soft: var(--yellow-soft); }
-.createTypeGrid button[data-tone="teal"] { --tone: var(--teal); --tone-soft: var(--teal-soft); }
-.createTypeGrid button[data-tone="pink"] { --tone: var(--pink); --tone-soft: var(--pink-soft); }
+.createTypeGrid button[data-tone="green"] {
+  --tone: var(--green);
+  --tone-soft: var(--green-soft);
+}
+.createTypeGrid button[data-tone="blue"] {
+  --tone: var(--brand-dark);
+  --tone-soft: var(--color-primary-50);
+}
+.createTypeGrid button[data-tone="purple"] {
+  --tone: var(--purple);
+  --tone-soft: var(--purple-soft);
+}
+.createTypeGrid button[data-tone="yellow"] {
+  --tone: var(--yellow);
+  --tone-soft: var(--yellow-soft);
+}
+.createTypeGrid button[data-tone="teal"] {
+  --tone: var(--teal);
+  --tone-soft: var(--teal-soft);
+}
+.createTypeGrid button[data-tone="pink"] {
+  --tone: var(--pink);
+  --tone-soft: var(--pink-soft);
+}
 
 .createTypeGrid button > span {
   width: 34px;
@@ -2487,7 +2564,9 @@
   color: var(--ink);
   background: var(--surface);
   font-size: var(--font-sm);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .modalTitleField input {
@@ -2998,8 +3077,7 @@
     padding: 10px 12px;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      "menu search actions";
+    grid-template-areas: "menu search actions";
     gap: 8px;
   }
 

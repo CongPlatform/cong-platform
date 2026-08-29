@@ -63,11 +63,19 @@ export interface CollaborationProfile {
   updatedAt: string;
 }
 
-interface CollaborationProfilesResponse { profiles: CollaborationProfile[]; }
-interface CollaborationProfileResponse { profile: CollaborationProfile; }
+interface CollaborationProfilesResponse {
+  profiles: CollaborationProfile[];
+}
+interface CollaborationProfileResponse {
+  profile: CollaborationProfile;
+}
 
-export async function getMyCollaborationProfiles(): Promise<CollaborationProfile[]> {
-  const response = await apiGet<CollaborationProfilesResponse>("/account/me/collaboration-profiles");
+export async function getMyCollaborationProfiles(): Promise<
+  CollaborationProfile[]
+> {
+  const response = await apiGet<CollaborationProfilesResponse>(
+    "/account/me/collaboration-profiles",
+  );
   return response.profiles;
 }
 
@@ -93,11 +101,15 @@ export async function updateMyCollaborationProfile(
   return response.profile;
 }
 
-export async function deleteMyCollaborationProfile(profileId: string): Promise<void> {
+export async function deleteMyCollaborationProfile(
+  profileId: string,
+): Promise<void> {
   await apiDelete<void>(`/account/me/collaboration-profiles/${profileId}`);
 }
 
-export async function activateMyCollaborationProfile(profileId: string): Promise<CollaborationProfile> {
+export async function activateMyCollaborationProfile(
+  profileId: string,
+): Promise<CollaborationProfile> {
   const response = await apiPatch<CollaborationProfileResponse>(
     "/account/me/collaboration-profiles/active",
     { profileId },

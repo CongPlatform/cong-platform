@@ -182,8 +182,7 @@ const audiences: Audience[] = [
       {
         icon: Users,
         title: "Cocriação com usuários reais",
-        description:
-          "Desenvolva soluções com base na rotina das organizações.",
+        description: "Desenvolva soluções com base na rotina das organizações.",
       },
     ],
   },
@@ -194,8 +193,7 @@ const audiences: Audience[] = [
     eyebrow: "Impacto sem fronteiras",
     description:
       "Ajude a adaptar a plataforma para novos idiomas, regiões e contextos culturais.",
-    closingText:
-      "Cada tradução permite que novas comunidades utilizem a CONG.",
+    closingText: "Cada tradução permite que novas comunidades utilizem a CONG.",
     icon: Languages,
     benefits: [
       {
@@ -250,14 +248,12 @@ const audiences: Audience[] = [
       {
         icon: HandHeart,
         title: "Contribuições com propósito",
-        description:
-          "Entenda como cada atividade ajuda uma organização.",
+        description: "Entenda como cada atividade ajuda uma organização.",
       },
       {
         icon: BarChart3,
         title: "Histórico de impacto",
-        description:
-          "Acompanhe suas horas, atividades e resultados gerados.",
+        description: "Acompanhe suas horas, atividades e resultados gerados.",
       },
     ],
   },
@@ -305,9 +301,8 @@ export default function AudienceShowcase() {
     useState<AudienceId>("ongs");
 
   const selectedAudience =
-    audiences.find(
-      (audience) => audience.id === selectedAudienceId,
-    ) ?? audiences[0];
+    audiences.find((audience) => audience.id === selectedAudienceId) ??
+    audiences[0];
 
   return (
     <section
@@ -316,20 +311,14 @@ export default function AudienceShowcase() {
     >
       <div className={styles.sectionContainer}>
         <header className={styles.sectionHeader}>
-          <span
-            className={styles.headerSparkle}
-            aria-hidden={true}
-          >
+          <span className={styles.headerSparkle} aria-hidden={true}>
             <Sparkles size={22} strokeWidth={1.8} />
           </span>
 
-          <h2 id="audience-title">
-            Encontre seu lugar na CONG
-          </h2>
+          <h2 id="audience-title">Encontre seu lugar na CONG</h2>
 
           <p>
-            Explore a plataforma pela perspectiva que mais combina
-            com você.
+            Explore a plataforma pela perspectiva que mais combina com você.
           </p>
         </header>
 
@@ -341,8 +330,7 @@ export default function AudienceShowcase() {
           >
             {audiences.map((audience) => {
               const Icon = audience.icon;
-              const isSelected =
-                selectedAudienceId === audience.id;
+              const isSelected = selectedAudienceId === audience.id;
 
               return (
                 <button
@@ -354,9 +342,7 @@ export default function AudienceShowcase() {
                   aria-controls={`audience-panel-${audience.id}`}
                   className={[
                     styles.audienceTab,
-                    isSelected
-                      ? styles.audienceTabActive
-                      : "",
+                    isSelected ? styles.audienceTabActive : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
@@ -369,11 +355,7 @@ export default function AudienceShowcase() {
                     });
                   }}
                 >
-                  <Icon
-                    size={21}
-                    strokeWidth={1.8}
-                    aria-hidden={true}
-                  />
+                  <Icon size={21} strokeWidth={1.8} aria-hidden={true} />
 
                   <span>{audience.tabLabel}</span>
                 </button>
@@ -425,18 +407,9 @@ export default function AudienceShowcase() {
                 const BenefitIcon = benefit.icon;
 
                 return (
-                  <div
-                    className={styles.benefitItem}
-                    key={benefit.title}
-                  >
-                    <span
-                      className={styles.benefitIcon}
-                      aria-hidden={true}
-                    >
-                      <BenefitIcon
-                        size={22}
-                        strokeWidth={1.7}
-                      />
+                  <div className={styles.benefitItem} key={benefit.title}>
+                    <span className={styles.benefitIcon} aria-hidden={true}>
+                      <BenefitIcon size={22} strokeWidth={1.7} />
                     </span>
 
                     <span className={styles.benefitText}>
@@ -449,28 +422,20 @@ export default function AudienceShowcase() {
             </div>
 
             <div className={styles.panelClosing}>
-              <Sparkles
-                size={20}
-                strokeWidth={1.8}
-                aria-hidden={true}
-              />
+              <Sparkles size={20} strokeWidth={1.8} aria-hidden={true} />
 
               <span>{selectedAudience.closingText}</span>
             </div>
           </div>
 
-          <AudiencePreview
-            audienceId={selectedAudience.id}
-          />
+          <AudiencePreview audienceId={selectedAudience.id} />
         </article>
       </div>
     </section>
   );
 }
 
-function AudiencePreview({
-  audienceId,
-}: AudiencePreviewProps) {
+function AudiencePreview({ audienceId }: AudiencePreviewProps) {
   return (
     <div className={styles.previewArea}>
       <div className={styles.previewWindow}>
@@ -478,37 +443,22 @@ function AudiencePreview({
 
         <div className={styles.previewBody}>
           {audienceId === "ongs" && <OngPreview />}
-          {audienceId === "developers" && (
-            <DeveloperPreview />
-          )}
-          {audienceId === "designers" && (
-            <DesignerPreview />
-          )}
-          {audienceId === "translators" && (
-            <TranslatorPreview />
-          )}
-          {audienceId === "volunteers" && (
-            <VolunteerPreview />
-          )}
-          {audienceId === "companies" && (
-            <CompanyPreview />
-          )}
+          {audienceId === "developers" && <DeveloperPreview />}
+          {audienceId === "designers" && <DesignerPreview />}
+          {audienceId === "translators" && <TranslatorPreview />}
+          {audienceId === "volunteers" && <VolunteerPreview />}
+          {audienceId === "companies" && <CompanyPreview />}
         </div>
       </div>
 
-      <span
-        className={styles.previewDecoration}
-        aria-hidden={true}
-      >
+      <span className={styles.previewDecoration} aria-hidden={true}>
         <Sparkles size={24} strokeWidth={1.6} />
       </span>
     </div>
   );
 }
 
-function PreviewBrowserBar({
-  audienceId,
-}: AudiencePreviewProps) {
+function PreviewBrowserBar({ audienceId }: AudiencePreviewProps) {
   const titles: Record<AudienceId, string> = {
     ongs: "Construtor da organização",
     developers: "Comunidade de desenvolvimento",
@@ -526,13 +476,9 @@ function PreviewBrowserBar({
         <span />
       </div>
 
-      <span className={styles.previewAddress}>
-        cong.org/{audienceId}
-      </span>
+      <span className={styles.previewAddress}>cong.org/{audienceId}</span>
 
-      <span className={styles.previewTopbarTitle}>
-        {titles[audienceId]}
-      </span>
+      <span className={styles.previewTopbarTitle}>{titles[audienceId]}</span>
     </div>
   );
 }
@@ -540,7 +486,10 @@ function PreviewBrowserBar({
 function OngPreview() {
   return (
     <>
-      <div className={styles.mobileOngPreview} aria-label="Prévia mobile do painel da organização">
+      <div
+        className={styles.mobileOngPreview}
+        aria-label="Prévia mobile do painel da organização"
+      >
         <div className={styles.mobileOngHeader}>
           <div>
             <span>Minha organização</span>
@@ -595,91 +544,91 @@ function OngPreview() {
       </div>
 
       <div className={styles.builderPreview}>
-      <aside className={styles.builderSidebar}>
-        <div className={styles.builderLogo}>
-          <Blocks size={18} />
-          <strong>Módulos</strong>
-        </div>
-
-        <div className={styles.builderSearch}>
-          <Search size={14} />
-          <span>Buscar módulo</span>
-        </div>
-
-        <div className={styles.builderModules}>
-          <div className={styles.builderModule}>
-            <GripVertical size={15} />
-            <Users size={17} />
-            <span>Beneficiários</span>
+        <aside className={styles.builderSidebar}>
+          <div className={styles.builderLogo}>
+            <Blocks size={18} />
+            <strong>Módulos</strong>
           </div>
 
-          <div className={styles.builderModule}>
-            <GripVertical size={15} />
-            <HandHeart size={17} />
-            <span>Doações</span>
+          <div className={styles.builderSearch}>
+            <Search size={14} />
+            <span>Buscar módulo</span>
           </div>
 
-          <div className={styles.builderModule}>
-            <GripVertical size={15} />
-            <Box size={17} />
-            <span>Estoque</span>
+          <div className={styles.builderModules}>
+            <div className={styles.builderModule}>
+              <GripVertical size={15} />
+              <Users size={17} />
+              <span>Beneficiários</span>
+            </div>
+
+            <div className={styles.builderModule}>
+              <GripVertical size={15} />
+              <HandHeart size={17} />
+              <span>Doações</span>
+            </div>
+
+            <div className={styles.builderModule}>
+              <GripVertical size={15} />
+              <Box size={17} />
+              <span>Estoque</span>
+            </div>
+
+            <div className={styles.builderModule}>
+              <GripVertical size={15} />
+              <BarChart3 size={17} />
+              <span>Relatórios</span>
+            </div>
+          </div>
+        </aside>
+
+        <div className={styles.builderCanvas}>
+          <div className={styles.builderCanvasHeader}>
+            <div>
+              <span>Sistema da minha ONG</span>
+              <strong>Painel principal</strong>
+            </div>
+
+            <button type="button">
+              <Eye size={15} />
+              Visualizar
+            </button>
           </div>
 
-          <div className={styles.builderModule}>
-            <GripVertical size={15} />
-            <BarChart3 size={17} />
-            <span>Relatórios</span>
-          </div>
-        </div>
-      </aside>
-
-      <div className={styles.builderCanvas}>
-        <div className={styles.builderCanvasHeader}>
-          <div>
-            <span>Sistema da minha ONG</span>
-            <strong>Painel principal</strong>
+          <div className={styles.noCodeBadge}>
+            <MousePointer2 size={14} />
+            Sem código
           </div>
 
-          <button type="button">
-            <Eye size={15} />
-            Visualizar
-          </button>
-        </div>
+          <div className={styles.dropArea}>
+            <div className={styles.dropAreaHeader}>
+              <span>Resumo da organização</span>
 
-        <div className={styles.noCodeBadge}>
-          <MousePointer2 size={14} />
-          Sem código
-        </div>
+              <Settings2 size={16} />
+            </div>
 
-        <div className={styles.dropArea}>
-          <div className={styles.dropAreaHeader}>
-            <span>Resumo da organização</span>
+            <div className={styles.dropStats}>
+              <span>
+                <Users size={18} />
+                <strong>342</strong>
+                Pessoas atendidas
+              </span>
 
-            <Settings2 size={16} />
+              <span>
+                <HandHeart size={18} />
+                <strong>128</strong>
+                Voluntários
+              </span>
+            </div>
           </div>
 
-          <div className={styles.dropStats}>
-            <span>
-              <Users size={18} />
-              <strong>342</strong>
-              Pessoas atendidas
-            </span>
-
-            <span>
-              <HandHeart size={18} />
-              <strong>128</strong>
-              Voluntários
-            </span>
+          <div className={styles.emptyDropZone}>
+            <Plus size={22} />
+            <strong>Arraste um módulo para cá</strong>
+            <span>Personalize sua página visualmente</span>
           </div>
-        </div>
-
-        <div className={styles.emptyDropZone}>
-          <Plus size={22} />
-          <strong>Arraste um módulo para cá</strong>
-          <span>Personalize sua página visualmente</span>
         </div>
       </div>
-    </div>
     </>
   );
 }
@@ -743,38 +692,20 @@ function DeveloperPreview() {
 
           <pre>
             <code>
-              <span className={styles.codePurple}>
-                export
-              </span>{" "}
-              <span className={styles.codePurple}>
-                function
-              </span>{" "}
-              <span className={styles.codeBlue}>
-                DonationModule
-              </span>
+              <span className={styles.codePurple}>export</span>{" "}
+              <span className={styles.codePurple}>function</span>{" "}
+              <span className={styles.codeBlue}>DonationModule</span>
               {"() {"}
               {"\n  "}
-              <span className={styles.codePurple}>
-                return
-              </span>{" "}
-              (
-              {"\n    "}
-              <span className={styles.codeBlue}>
-                &lt;Module
-              </span>
+              <span className={styles.codePurple}>return</span> ({"\n    "}
+              <span className={styles.codeBlue}>&lt;Module</span>
               {"\n      "}
-              <span className={styles.codeGreen}>
-                title
-              </span>
+              <span className={styles.codeGreen}>title</span>
               {'="Doações"'}
               {"\n      "}
-              <span className={styles.codeGreen}>
-                openSource
-              </span>
+              <span className={styles.codeGreen}>openSource</span>
               {"\n    "}
-              <span className={styles.codeBlue}>
-                /&gt;
-              </span>
+              <span className={styles.codeBlue}>/&gt;</span>
               {"\n  );\n}"}
             </code>
           </pre>
@@ -787,9 +718,7 @@ function DeveloperPreview() {
               Issue #42
             </span>
 
-            <strong>
-              Adicionar exportação de relatórios
-            </strong>
+            <strong>Adicionar exportação de relatórios</strong>
 
             <div>
               <small>boa primeira contribuição</small>
@@ -844,15 +773,11 @@ function DesignerPreview() {
       </div>
 
       <div className={styles.designCanvas}>
-        <div className={styles.designFrameLabel}>
-          Painel da ONG · 1280
-        </div>
+        <div className={styles.designFrameLabel}>Painel da ONG · 1280</div>
 
         <div className={styles.designFrame}>
           <div className={styles.designMiniHeader}>
-            <span className={styles.designMiniLogo}>
-              C
-            </span>
+            <span className={styles.designMiniLogo}>C</span>
 
             <div>
               <span />
@@ -990,10 +915,7 @@ function TranslatorPreview() {
               <small>Original</small>
             </span>
 
-            <textarea
-              value="Organize sua ONG em um só lugar"
-              readOnly
-            />
+            <textarea value="Organize sua ONG em um só lugar" readOnly />
           </label>
 
           <label>
@@ -1002,10 +924,7 @@ function TranslatorPreview() {
               <small>Em revisão</small>
             </span>
 
-            <textarea
-              value="Organize your nonprofit in one place"
-              readOnly
-            />
+            <textarea value="Organize your nonprofit in one place" readOnly />
           </label>
 
           <label>
@@ -1014,10 +933,7 @@ function TranslatorPreview() {
               <small>Pendente</small>
             </span>
 
-            <textarea
-              value="Organiza tu ONG en un solo lugar"
-              readOnly
-            />
+            <textarea value="Organiza tu ONG en un solo lugar" readOnly />
           </label>
         </div>
 
@@ -1027,9 +943,7 @@ function TranslatorPreview() {
             Glossário verificado
           </span>
 
-          <button type="button">
-            Salvar tradução
-          </button>
+          <button type="button">Salvar tradução</button>
         </div>
       </div>
     </div>
@@ -1042,20 +956,14 @@ function VolunteerPreview() {
       <div className={styles.volunteerHeader}>
         <div>
           <span>Olá, Marina!</span>
-          <strong>
-            Encontre uma oportunidade para ajudar
-          </strong>
+          <strong>Encontre uma oportunidade para ajudar</strong>
         </div>
 
-        <span className={styles.volunteerAvatar}>
-          M
-        </span>
+        <span className={styles.volunteerAvatar}>M</span>
       </div>
 
       <div className={styles.volunteerFilters}>
-        <span className={styles.volunteerFilterActive}>
-          Para você
-        </span>
+        <span className={styles.volunteerFilterActive}>Para você</span>
         <span>Remoto</span>
         <span>Presencial</span>
         <span>Esta semana</span>
@@ -1071,13 +979,11 @@ function VolunteerPreview() {
             <small>Remoto</small>
           </div>
 
-          <strong>
-            Criar materiais para campanha social
-          </strong>
+          <strong>Criar materiais para campanha social</strong>
 
           <p>
-            Ajude uma ONG a preparar conteúdos visuais para
-            sua próxima campanha.
+            Ajude uma ONG a preparar conteúdos visuais para sua próxima
+            campanha.
           </p>
 
           <div className={styles.opportunityTags}>
@@ -1147,9 +1053,7 @@ function CompanyPreview() {
           </span>
         </div>
 
-        <button type="button">
-          Exportar relatório
-        </button>
+        <button type="button">Exportar relatório</button>
       </div>
 
       <div className={styles.companyStats}>
@@ -1196,14 +1100,9 @@ function CompanyPreview() {
           </div>
 
           <div className={styles.chartBars}>
-            {[36, 48, 41, 60, 54, 76, 70, 86].map(
-              (height, index) => (
-                <span
-                  key={index}
-                  style={{ height: `${height}%` }}
-                />
-              ),
-            )}
+            {[36, 48, 41, 60, 54, 76, 70, 86].map((height, index) => (
+              <span key={index} style={{ height: `${height}%` }} />
+            ))}
           </div>
 
           <div className={styles.chartLabels}>

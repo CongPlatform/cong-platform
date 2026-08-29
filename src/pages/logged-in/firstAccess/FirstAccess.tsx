@@ -362,7 +362,11 @@ function FirstAccessIdentity({ account }: { account: FirstAccessAccount }) {
               {suggestedFirstName && (
                 <> Aqui você escolhe apenas como quer aparecer.</>
               )}
-              <> Seu nome de exibição pode se repetir; o @ é o identificador único da sua conta.</>
+              <>
+                {" "}
+                Seu nome de exibição pode se repetir; o @ é o identificador
+                único da sua conta.
+              </>
             </p>
           </div>
 

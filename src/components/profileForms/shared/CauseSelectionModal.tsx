@@ -84,11 +84,7 @@ export default function CauseSelectionModal({
 
     const filtered = normalizedQuery
       ? CAUSE_OPTIONS.filter((cause) => {
-          const haystack = [
-            cause.label,
-            cause.category,
-            ...cause.subtopics,
-          ]
+          const haystack = [cause.label, cause.category, ...cause.subtopics]
             .join(" ")
             .toLocaleLowerCase();
 
@@ -144,7 +140,9 @@ export default function CauseSelectionModal({
     const parentSelected = parents.includes(parent);
 
     if (!parentSelected) {
-      setError("Selecione primeiro a causa principal para escolher seus subtópicos.");
+      setError(
+        "Selecione primeiro a causa principal para escolher seus subtópicos.",
+      );
       return;
     }
 
@@ -203,7 +201,9 @@ export default function CauseSelectionModal({
         </div>
 
         <div className={styles.metaRow}>
-          <span>{parents.length} de {maxParents} causas principais</span>
+          <span>
+            {parents.length} de {maxParents} causas principais
+          </span>
           <span>Subtópicos são opcionais</span>
         </div>
 
@@ -254,9 +254,17 @@ export default function CauseSelectionModal({
                     className={styles.expandButton}
                     onClick={() => toggleExpanded(cause.label)}
                     disabled={!checked}
-                    aria-label={checked ? `${expanded ? "Ocultar" : "Mostrar"} subtópicos de ${cause.label}` : `Selecione ${cause.label} para acessar os subtópicos`}
+                    aria-label={
+                      checked
+                        ? `${expanded ? "Ocultar" : "Mostrar"} subtópicos de ${cause.label}`
+                        : `Selecione ${cause.label} para acessar os subtópicos`
+                    }
                   >
-                    {expanded ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+                    {expanded ? (
+                      <ChevronUp aria-hidden="true" />
+                    ) : (
+                      <ChevronDown aria-hidden="true" />
+                    )}
                   </button>
                 </div>
 
@@ -286,14 +294,22 @@ export default function CauseSelectionModal({
           })}
 
           {visibleOptions.length === 0 && (
-            <p className={styles.empty}>Nenhuma causa ou subtópico encontrado.</p>
+            <p className={styles.empty}>
+              Nenhuma causa ou subtópico encontrado.
+            </p>
           )}
         </div>
 
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
 
         <footer className={styles.footer}>
-          <button type="button" onClick={handleClose}>Concluir seleção</button>
+          <button type="button" onClick={handleClose}>
+            Concluir seleção
+          </button>
         </footer>
       </section>
     </div>

@@ -6,12 +6,11 @@
   border: 1px solid var(--color-border);
   border-radius: 20px;
 
-  background:
-    linear-gradient(
-      180deg,
-      var(--color-surface-raised),
-      var(--color-surface)
-    );
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-raised),
+    var(--color-surface)
+  );
 
   box-shadow: var(--shadow-sm);
 
@@ -90,8 +89,7 @@
 
   padding: 20px;
 
-  border: 1.5px dashed
-    var(--color-blue-border);
+  border: 1.5px dashed var(--color-blue-border);
 
   border-radius: 16px;
 
@@ -111,18 +109,11 @@
     border-color 180ms ease,
     background 180ms ease,
     box-shadow 180ms ease,
-    transform 300ms
-      cubic-bezier(
-        0.2,
-        0.8,
-        0.2,
-        1.2
-      );
+    transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1.2);
 }
 
 .dropzone:hover {
-  border-color:
-    var(--color-primary);
+  border-color: var(--color-primary);
 
   background:
     radial-gradient(
@@ -141,19 +132,15 @@
 
 .dropzone[data-dragging="true"] {
   border-style: solid;
-  border-color:
-    var(--color-primary);
+  border-color: var(--color-primary);
 
-  background:
-    linear-gradient(
-      135deg,
-      var(--color-primary-50),
-      var(--color-blue-pale)
-    );
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-50),
+    var(--color-blue-pale)
+  );
 
-  box-shadow:
-    var(--shadow-focus),
-    var(--shadow-primary);
+  box-shadow: var(--shadow-focus), var(--shadow-primary);
 
   transform: scale(1.015);
 }
@@ -168,30 +155,25 @@
 
   opacity: 0;
 
-  background:
-    linear-gradient(
-      110deg,
-      transparent 25%,
-      var(--color-white-60) 48%,
-      transparent 70%
-    );
+  background: linear-gradient(
+    110deg,
+    transparent 25%,
+    var(--color-white-60) 48%,
+    transparent 70%
+  );
 
-  transform:
-    translateX(-120%);
+  transform: translateX(-120%);
 }
 
 .dropzone[data-dragging="true"]::after {
   opacity: 1;
 
-  animation:
-    dropzoneSweep 1.4s
-      ease-in-out infinite;
+  animation: dropzoneSweep 1.4s ease-in-out infinite;
 }
 
 @keyframes dropzoneSweep {
   to {
-    transform:
-      translateX(120%);
+    transform: translateX(120%);
   }
 }
 
@@ -208,22 +190,14 @@
 
   border-radius: 15px;
 
-  color:
-    var(--color-primary);
+  color: var(--color-primary);
 
-  background:
-    var(--color-primary-100);
+  background: var(--color-primary-100);
 
   transition:
     color 180ms ease,
     background 180ms ease,
-    transform 300ms
-      cubic-bezier(
-        0.2,
-        0.8,
-        0.2,
-        1.2
-      );
+    transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1.2);
 }
 
 .dropIcon svg {
@@ -231,17 +205,12 @@
   height: 24px;
 }
 
-.dropzone[data-dragging="true"]
-  .dropIcon {
-  color:
-    var(--color-text-inverse);
+.dropzone[data-dragging="true"] .dropIcon {
+  color: var(--color-text-inverse);
 
-  background:
-    var(--color-primary);
+  background: var(--color-primary);
 
-  transform:
-    translateY(3px)
-    scale(1.08);
+  transform: translateY(3px) scale(1.08);
 }
 
 .dropText {
@@ -253,30 +222,23 @@
 }
 
 .dropText strong {
-  color:
-    var(--color-ink-strong);
+  color: var(--color-ink-strong);
 
-  font-size:
-    var(--font-md);
+  font-size: var(--font-md);
 
-  font-weight:
-    var(--font-semibold);
+  font-weight: var(--font-semibold);
 }
 
 .dropText span {
-  color:
-    var(--color-muted);
+  color: var(--color-muted);
 
-  font-size:
-    var(--font-sm);
+  font-size: var(--font-sm);
 }
 
 .dropText u {
-  color:
-    var(--color-primary-dark);
+  color: var(--color-primary-dark);
 
-  text-decoration-color:
-    var(--color-primary-300);
+  text-decoration-color: var(--color-primary-300);
 
   text-underline-offset: 3px;
 }
@@ -284,11 +246,9 @@
 .dropText small {
   margin-top: 4px;
 
-  color:
-    var(--color-text-subtle);
+  color: var(--color-text-subtle);
 
-  font-size:
-    var(--font-xs);
+  font-size: var(--font-xs);
 }
 
 /* ==================================================
@@ -309,23 +269,17 @@
 
   padding: 10px 12px;
 
-  border: 1px solid
-    var(--color-red-200);
+  border: 1px solid var(--color-red-200);
 
   border-radius: 11px;
 
-  color:
-    var(--color-error-strong);
+  color: var(--color-error-strong);
 
-  background:
-    var(--color-error-soft);
+  background: var(--color-error-soft);
 
-  font-size:
-    var(--font-xs);
+  font-size: var(--font-xs);
 
-  animation:
-    rejectionEnter
-    260ms ease both;
+  animation: rejectionEnter 260ms ease both;
 }
 
 .rejection svg {
@@ -336,8 +290,7 @@
   from {
     opacity: 0;
 
-    transform:
-      translateY(-5px);
+    transform: translateY(-5px);
   }
 }
 
@@ -361,13 +314,11 @@
 
   padding: 10px 12px;
 
-  border: 1px solid
-    var(--color-border);
+  border: 1px solid var(--color-border);
 
   border-radius: 14px;
 
-  background:
-    var(--color-surface);
+  background: var(--color-surface);
 
   transition:
     border-color 180ms ease,
@@ -376,44 +327,34 @@
 }
 
 .fileItem[data-status="error"] {
-  border-color:
-    var(--color-red-200);
+  border-color: var(--color-red-200);
 
-  background:
-    var(--color-danger-pale);
+  background: var(--color-danger-pale);
 
-  animation:
-    uploadErrorShake
-    360ms ease;
+  animation: uploadErrorShake 360ms ease;
 }
 
 .fileItem[data-status="success"] {
-  border-color:
-    var(--color-green-border);
+  border-color: var(--color-green-border);
 
-  background:
-    var(--color-success-soft);
+  background: var(--color-success-soft);
 }
 
 @keyframes uploadErrorShake {
   20% {
-    transform:
-      translateX(-5px);
+    transform: translateX(-5px);
   }
 
   40% {
-    transform:
-      translateX(4px);
+    transform: translateX(4px);
   }
 
   60% {
-    transform:
-      translateX(-3px);
+    transform: translateX(-3px);
   }
 
   80% {
-    transform:
-      translateX(2px);
+    transform: translateX(2px);
   }
 }
 
@@ -436,11 +377,9 @@
 
   border-radius: 13px;
 
-  color:
-    var(--color-primary);
+  color: var(--color-primary);
 
-  background:
-    var(--color-primary-50);
+  background: var(--color-primary-50);
 }
 
 .preview > svg {
@@ -460,35 +399,19 @@
 }
 
 .previewGhost {
-  filter:
-    grayscale(1)
-    brightness(0.55);
+  filter: grayscale(1) brightness(0.55);
 
   opacity: 0.48;
 }
 
 .previewProgress {
-  clip-path:
-    inset(
-      calc(
-        100% -
-          var(
-            --upload-progress
-          )
-      )
-      0
-      0
-      0
-    );
+  clip-path: inset(calc(100% - var(--upload-progress)) 0 0 0);
 
-  transition:
-    clip-path 220ms linear;
+  transition: clip-path 220ms linear;
 }
 
-.fileItem[data-status="ready"]
-  .previewProgress {
-  clip-path:
-    inset(0);
+.fileItem[data-status="ready"] .previewProgress {
+  clip-path: inset(0);
 }
 
 .successBadge {
@@ -503,26 +426,15 @@
   display: grid;
   place-items: center;
 
-  border: 2px solid
-    var(--color-white);
+  border: 2px solid var(--color-white);
 
   border-radius: 50%;
 
-  color:
-    var(--color-white);
+  color: var(--color-white);
 
-  background:
-    var(--color-success-strong);
+  background: var(--color-success-strong);
 
-  animation:
-    successPop
-    400ms
-    cubic-bezier(
-      0.2,
-      0.8,
-      0.2,
-      1.3
-    );
+  animation: successPop 400ms cubic-bezier(0.2, 0.8, 0.2, 1.3);
 }
 
 .successBadge svg {
@@ -534,8 +446,7 @@
   from {
     opacity: 0;
 
-    transform:
-      scale(0.4);
+    transform: scale(0.4);
   }
 }
 
@@ -561,14 +472,11 @@
 
   overflow: hidden;
 
-  color:
-    var(--color-ink-strong);
+  color: var(--color-ink-strong);
 
-  font-size:
-    var(--font-sm);
+  font-size: var(--font-sm);
 
-  font-weight:
-    var(--font-semibold);
+  font-weight: var(--font-semibold);
 
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -577,11 +485,9 @@
 .fileHeading span {
   flex: none;
 
-  color:
-    var(--color-text-subtle);
+  color: var(--color-text-subtle);
 
-  font-size:
-    var(--font-xs);
+  font-size: var(--font-xs);
 }
 
 .progressTrack {
@@ -593,39 +499,31 @@
 
   border-radius: 999px;
 
-  background:
-    var(--color-slate-100);
+  background: var(--color-slate-100);
 }
 
 .progressBar {
-  width:
-    var(--upload-progress);
+  width: var(--upload-progress);
 
   height: 100%;
 
   border-radius: inherit;
 
-  background:
-    linear-gradient(
-      90deg,
-      var(--color-primary),
-      var(--color-primary-light)
-    );
+  background: linear-gradient(
+    90deg,
+    var(--color-primary),
+    var(--color-primary-light)
+  );
 
-  transition:
-    width 220ms linear;
+  transition: width 220ms linear;
 }
 
-.fileItem[data-status="success"]
-  .progressBar {
-  background:
-    var(--color-success-strong);
+.fileItem[data-status="success"] .progressBar {
+  background: var(--color-success-strong);
 }
 
-.fileItem[data-status="error"]
-  .progressBar {
-  background:
-    var(--color-error);
+.fileItem[data-status="error"] .progressBar {
+  background: var(--color-error);
 }
 
 .fileFooter {
@@ -640,26 +538,19 @@
 .statusText {
   min-width: 0;
 
-  color:
-    var(--color-muted);
+  color: var(--color-muted);
 
-  font-size:
-    var(--font-xs);
+  font-size: var(--font-xs);
 }
 
-.fileItem[data-status="error"]
-  .statusText {
-  color:
-    var(--color-error-strong);
+.fileItem[data-status="error"] .statusText {
+  color: var(--color-error-strong);
 }
 
-.fileItem[data-status="success"]
-  .statusText {
-  color:
-    var(--color-success-strong);
+.fileItem[data-status="success"] .statusText {
+  color: var(--color-success-strong);
 
-  font-weight:
-    var(--font-medium);
+  font-weight: var(--font-medium);
 }
 
 /* ==================================================
@@ -699,40 +590,31 @@
 
   border-radius: 8px;
 
-  font-size:
-    var(--font-xs);
+  font-size: var(--font-xs);
 
-  font-weight:
-    var(--font-semibold);
+  font-weight: var(--font-semibold);
 }
 
 .primaryAction {
-  color:
-    var(--color-text-inverse);
+  color: var(--color-text-inverse);
 
-  background:
-    var(--color-primary);
+  background: var(--color-primary);
 }
 
 .primaryAction:hover {
-  background:
-    var(--color-primary-dark);
+  background: var(--color-primary-dark);
 
-  transform:
-    translateY(-1px);
+  transform: translateY(-1px);
 }
 
 .retryButton {
-  color:
-    var(--color-primary-dark);
+  color: var(--color-primary-dark);
 
-  background:
-    var(--color-primary-50);
+  background: var(--color-primary-50);
 }
 
 .retryButton:hover {
-  background:
-    var(--color-primary-100);
+  background: var(--color-primary-100);
 }
 
 .iconButton {
@@ -744,19 +626,15 @@
 
   border-radius: 8px;
 
-  color:
-    var(--color-muted);
+  color: var(--color-muted);
 
-  background:
-    var(--color-transparent);
+  background: var(--color-transparent);
 }
 
 .iconButton:hover {
-  color:
-    var(--color-ink);
+  color: var(--color-ink);
 
-  background:
-    var(--color-surface-muted);
+  background: var(--color-surface-muted);
 }
 
 .primaryAction:focus-visible,
@@ -764,8 +642,7 @@
 .iconButton:focus-visible {
   outline: none;
 
-  box-shadow:
-    var(--shadow-focus);
+  box-shadow: var(--shadow-focus);
 }
 
 /* ==================================================
@@ -812,10 +689,7 @@
   }
 }
 
-@media (
-  prefers-reduced-motion:
-    reduce
-) {
+@media (prefers-reduced-motion: reduce) {
   .dropzone,
   .dropIcon,
   .progressBar,

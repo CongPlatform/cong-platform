@@ -153,10 +153,7 @@ export default function HowItWorks() {
 
   return (
     <div className={styles.howItWorks}>
-      <section
-        className={styles.hero}
-        aria-labelledby="how-it-works-title"
-      >
+      <section className={styles.hero} aria-labelledby="how-it-works-title">
         <div className={styles.heroInner}>
           <div className={styles.leftVisual} aria-hidden="true">
             <div className={styles.paperCollage}>
@@ -252,28 +249,21 @@ export default function HowItWorks() {
               id="how-it-works-title"
               aria-label={`Da rotina da ONG ao sistema que ${currentWord}`}
             >
-              <span className={styles.heroIntro}>
-                Como funciona na prática
-              </span>
+              <span className={styles.heroIntro}>Como funciona na prática</span>
 
               <span className={styles.heroStatement}>
                 <span className={styles.titleLine}>Da rotina da ONG</span>
                 <span className={styles.titleLine}>ao sistema que</span>
 
                 <span className={styles.wordLine}>
-                  <span
-                    className={styles.wordViewport}
-                    aria-hidden="true"
-                  >
+                  <span className={styles.wordViewport} aria-hidden="true">
                     <span className={styles.wordMeasure}>
                       {rotatingWords.map((word) => (
                         <span key={word}>{word}</span>
                       ))}
                     </span>
 
-                    <span className={dynamicWordClassName}>
-                      {currentWord}
-                    </span>
+                    <span className={dynamicWordClassName}>{currentWord}</span>
                   </span>
                 </span>
               </span>
@@ -342,7 +332,7 @@ export default function HowItWorks() {
       </section>
 
       <SystemLayers />
-      <SocialDeliveryFlow/>
+      <SocialDeliveryFlow />
     </div>
   );
 }

@@ -1,16 +1,7 @@
-import {
-  apiGet,
-  apiPost,
-  apiRequest,
-} from "./api";
-import type {
-  OnboardingRepresentation,
-} from "./onboardingService";
+import { apiGet, apiPost, apiRequest } from "./api";
+import type { OnboardingRepresentation } from "./onboardingService";
 
-export type RepresentationStatus =
-  | "pending"
-  | "active"
-  | "suspended";
+export type RepresentationStatus = "pending" | "active" | "suspended";
 
 export interface MyRepresentation {
   id: string;
@@ -125,7 +116,6 @@ export async function requestMyRepresentation(
   );
   return response.representation;
 }
-
 
 export async function cancelMyRepresentationRequest(
   representationId: string,

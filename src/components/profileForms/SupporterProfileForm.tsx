@@ -103,7 +103,9 @@ export default function SupporterProfileForm({
       </fieldset>
 
       <fieldset className={styles.section}>
-        <legend className={styles.sectionTitle}>Quais causas você quer apoiar?</legend>
+        <legend className={styles.sectionTitle}>
+          Quais causas você quer apoiar?
+        </legend>
         <p className={styles.sectionDescription}>
           Escolha pelo menos uma. Isso ajuda a CONG a encontrar organizações,
           campanhas e oportunidades mais próximas do que importa para você.
@@ -122,7 +124,9 @@ export default function SupporterProfileForm({
                     {group.label}
                   </span>
                   <span className={styles.accordionCount}>
-                    {selectedInGroup > 0 ? `${selectedInGroup} escolhida(s)` : "abrir"}
+                    {selectedInGroup > 0
+                      ? `${selectedInGroup} escolhida(s)`
+                      : "abrir"}
                   </span>
                 </summary>
 

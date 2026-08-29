@@ -14,22 +14,36 @@
   align-items: center;
   gap: 6px;
   font: inherit;
-  font-size: .82rem;
+  font-size: 0.82rem;
   font-weight: 760;
   cursor: pointer;
 }
-.backButton svg { width: 16px; height: 16px; }
+.backButton svg {
+  width: 16px;
+  height: 16px;
+}
 
-.header { display: grid; gap: 5px; }
+.header {
+  display: grid;
+  gap: 5px;
+}
 .eyebrow {
   color: #2d62a9;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  font-size: .72rem;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
   font-weight: 850;
 }
-.header h2 { margin: 0; font-size: clamp(1.5rem, 2.5vw, 2rem); }
-.header p { margin: 0; color: #6f7b8c; line-height: 1.45; font-size: .88rem; }
+.header h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+}
+.header p {
+  margin: 0;
+  color: #6f7b8c;
+  line-height: 1.45;
+  font-size: 0.88rem;
+}
 
 .fieldset,
 .section {
@@ -50,11 +64,13 @@
 .compactHeading h3 {
   margin: 0;
   color: #23364f;
-  font-size: .94rem;
+  font-size: 0.94rem;
   font-weight: 850;
 }
 .fieldset legend span,
-.compactHeading h3 span { color: #2f67b7; }
+.compactHeading h3 span {
+  color: #2f67b7;
+}
 
 .segmentedControl {
   width: fit-content;
@@ -73,7 +89,7 @@
   background: transparent;
   color: #566378;
   font: inherit;
-  font-size: .79rem;
+  font-size: 0.79rem;
   font-weight: 720;
   cursor: pointer;
 }
@@ -91,11 +107,18 @@
 
 .addressRow {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(110px, .55fr);
+  grid-template-columns: minmax(0, 2fr) minmax(110px, 0.55fr);
   gap: 10px;
 }
-.smallField { display: grid; gap: 6px; }
-.smallField label { color: #394a60; font-size: .79rem; font-weight: 800; }
+.smallField {
+  display: grid;
+  gap: 6px;
+}
+.smallField label {
+  color: #394a60;
+  font-size: 0.79rem;
+  font-weight: 800;
+}
 .smallField input {
   width: 100%;
   box-sizing: border-box;
@@ -112,8 +135,15 @@
   border-color: #3b77cf;
   box-shadow: 0 0 0 3px rgb(59 119 207 / 11%);
 }
-.field { display: grid; gap: 6px; }
-.field label { color: #394a60; font-size: .79rem; font-weight: 800; }
+.field {
+  display: grid;
+  gap: 6px;
+}
+.field label {
+  color: #394a60;
+  font-size: 0.79rem;
+  font-weight: 800;
+}
 .field input,
 .field select,
 .field textarea {
@@ -139,10 +169,16 @@
   border-color: #3b77cf;
   box-shadow: 0 0 0 3px rgb(59 119 207 / 11%);
 }
-.field input[aria-invalid="true"] { border-color: #c65757; }
+.field input[aria-invalid="true"] {
+  border-color: #c65757;
+}
 
-.statusInput { position: relative; }
-.statusInput input { padding-right: 86px; }
+.statusInput {
+  position: relative;
+}
+.statusInput input {
+  padding-right: 86px;
+}
 .validStatus,
 .invalidStatus {
   position: absolute;
@@ -152,17 +188,24 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: .68rem;
+  font-size: 0.68rem;
   font-weight: 800;
 }
-.validStatus { color: #39744b; }
-.invalidStatus { color: #a34343; }
+.validStatus {
+  color: #39744b;
+}
+.invalidStatus {
+  color: #a34343;
+}
 .validStatus svg,
-.invalidStatus svg { width: 14px; height: 14px; }
+.invalidStatus svg {
+  width: 14px;
+  height: 14px;
+}
 
 .cepRow {
   display: grid;
-  grid-template-columns: minmax(180px, .7fr) auto;
+  grid-template-columns: minmax(180px, 0.7fr) auto;
   gap: 9px;
   align-items: end;
 }
@@ -174,7 +217,7 @@
   color: #285b9e;
   padding: 8px 12px;
   font: inherit;
-  font-size: .82rem;
+  font-size: 0.82rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
@@ -182,11 +225,25 @@
   gap: 6px;
   cursor: pointer;
 }
-.lookupButton svg { width: 16px; height: 16px; }
-.lookupButton:disabled { opacity: .55; cursor: not-allowed; }
-.cepMessage { margin: -3px 0 0; color: #667488; font-size: .77rem; }
+.lookupButton svg {
+  width: 16px;
+  height: 16px;
+}
+.lookupButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.cepMessage {
+  margin: -3px 0 0;
+  color: #667488;
+  font-size: 0.77rem;
+}
 
-.selectedList { display: flex; flex-wrap: wrap; gap: 7px; }
+.selectedList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
 .chip {
   display: inline-flex;
   align-items: center;
@@ -197,9 +254,13 @@
   border-radius: 999px;
   background: #f8fafc;
   color: #33455f;
-  font-size: .82rem;
+  font-size: 0.82rem;
 }
-.chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .chip button {
   width: 22px;
   height: 22px;
@@ -211,8 +272,14 @@
   color: #718095;
   cursor: pointer;
 }
-.chip button:hover { background: #e9eef5; color: #1f395d; }
-.chip svg { width: 13px; height: 13px; }
+.chip button:hover {
+  background: #e9eef5;
+  color: #1f395d;
+}
+.chip svg {
+  width: 13px;
+  height: 13px;
+}
 
 .addButton {
   width: fit-content;
@@ -226,14 +293,25 @@
   background: #fbfcfe;
   color: #285ea9;
   font: inherit;
-  font-size: .84rem;
+  font-size: 0.84rem;
   font-weight: 760;
   cursor: pointer;
 }
-.addButton svg { width: 16px; height: 16px; }
+.addButton svg {
+  width: 16px;
+  height: 16px;
+}
 
-.error { margin: 0; color: #a43f3f; font-size: .81rem; font-weight: 750; }
-.footer { display: flex; justify-content: flex-end; }
+.error {
+  margin: 0;
+  color: #a43f3f;
+  font-size: 0.81rem;
+  font-weight: 750;
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+}
 .submitButton {
   min-height: 44px;
   border: 0;
@@ -250,18 +328,38 @@
   cursor: pointer;
   box-shadow: 0 8px 18px rgb(213 151 31 / 16%);
 }
-.submitButton:disabled { opacity: .58; cursor: not-allowed; box-shadow: none; }
-.spinner { animation: spin 900ms linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.submitButton:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.spinner {
+  animation: spin 900ms linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 @media (max-width: 720px) {
   .fieldRow,
-  .addressRow { grid-template-columns: 1fr; }
-  .segmentedControl { width: 100%; display: grid; grid-template-columns: 1fr; }
+  .addressRow {
+    grid-template-columns: 1fr;
+  }
+  .segmentedControl {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 520px) {
-  .cepRow { grid-template-columns: 1fr; }
-  .submitButton { width: 100%; }
+  .cepRow {
+    grid-template-columns: 1fr;
+  }
+  .submitButton {
+    width: 100%;
+  }
   .footer {
     position: sticky;
     bottom: 0;
@@ -297,7 +395,7 @@
   align-items: flex-start;
   gap: 5px;
   color: #738095;
-  font-size: .73rem;
+  font-size: 0.73rem;
   line-height: 1.4;
 }
 
