@@ -46,6 +46,15 @@ import {
   type CollaborationRole,
 } from "../services/collaborationProfileService";
 
+import {
+  cancelMyRepresentationRequest,
+  createMyRepresentation,
+  getMyRepresentations,
+  requestMyRepresentation,
+  type CreateRepresentationInput,
+  type MyRepresentation,
+} from "../services/representationService";
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -100,6 +109,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [collaborationProfilesLoading, setCollaborationProfilesLoading] =
     useState(false);
 
+  const [representations, setRepresentations] = useState<MyRepresentation[]>(
+    [],
+  );
+
+  const [representationsLoading, setRepresentationsLoading] = useState(false);
+
   const [userData, setUserData] = useState<CongUserData | null>(null);
 
   const [profiles, setProfiles] = useState<CongProfile[]>([]);
@@ -120,6 +135,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     setProfiles([]);
     setCollaborationProfiles([]);
     setCollaborationProfilesLoading(false);
+    setRepresentations([]);
+    setRepresentationsLoading(false);
 
     setAccountLoading(false);
     setProfilesLoading(false);
@@ -135,6 +152,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true);
       setAccountLoading(true);
       setCollaborationProfilesLoading(true);
+      setRepresentationsLoading(true);
 
       storeAuthTokens(accessToken, refreshToken, remember);
 
@@ -147,13 +165,22 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         const authenticatedUser: AuthUser = {
           id: response.user.id,
           name: currentAccount.displayName ?? currentAccount.name,
-          email: currentAccount.email,
+          email: currentAccount.authentication.email,
         };
 
         setUser(authenticatedUser);
         setAccount(currentAccount);
-
         setCollaborationProfiles(currentCollaborationProfiles);
+
+        try {
+          setRepresentations(await getMyRepresentations());
+        } catch (representationError) {
+          console.error(
+            "Não foi possível carregar as representações da conta:",
+            representationError,
+          );
+          setRepresentations([]);
+        }
 
         /*
          * Estrutura antiga mantida temporariamente
@@ -183,6 +210,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         setLoading(false);
         setAccountLoading(false);
         setCollaborationProfilesLoading(false);
+        setRepresentationsLoading(false);
       }
     },
     [clearSessionState],
@@ -219,7 +247,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         return {
           ...currentUser,
           name: currentAccount.displayName ?? currentAccount.name,
-          email: currentAccount.email,
+          email: currentAccount.authentication.email,
         };
       });
     } finally {
@@ -245,6 +273,75 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       setCollaborationProfilesLoading(false);
     }
   }, []);
+
+  const refreshRepresentations = useCallback(async (): Promise<void> => {
+    const token = getStoredAuthToken();
+
+    if (!token) {
+      setRepresentations([]);
+      return;
+    }
+
+    setRepresentationsLoading(true);
+
+    try {
+      setRepresentations(await getMyRepresentations());
+    } finally {
+      setRepresentationsLoading(false);
+    }
+  }, []);
+
+  const createRepresentation = useCallback(
+    async (input: CreateRepresentationInput): Promise<MyRepresentation> => {
+      setRepresentationsLoading(true);
+
+      try {
+        const representation = await createMyRepresentation(input);
+        setRepresentations((current) => [
+          ...current.filter((item) => item.id !== representation.id),
+          representation,
+        ]);
+        return representation;
+      } finally {
+        setRepresentationsLoading(false);
+      }
+    },
+    [],
+  );
+
+  const requestRepresentation = useCallback(
+    async (organizationId: string): Promise<MyRepresentation> => {
+      setRepresentationsLoading(true);
+
+      try {
+        const representation = await requestMyRepresentation(organizationId);
+        setRepresentations((current) => [
+          ...current.filter((item) => item.id !== representation.id),
+          representation,
+        ]);
+        return representation;
+      } finally {
+        setRepresentationsLoading(false);
+      }
+    },
+    [],
+  );
+
+  const cancelRepresentationRequest = useCallback(
+    async (representationId: string): Promise<void> => {
+      setRepresentationsLoading(true);
+
+      try {
+        await cancelMyRepresentationRequest(representationId);
+        setRepresentations((current) =>
+          current.filter((item) => item.id !== representationId),
+        );
+      } finally {
+        setRepresentationsLoading(false);
+      }
+    },
+    [],
+  );
 
   const activeCollaborationProfile = useMemo(() => {
     return collaborationProfiles.find((profile) => profile.isActive) ?? null;
@@ -360,7 +457,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
           return {
             ...currentUser,
             name: updatedAccount.displayName ?? updatedAccount.name,
-            email: updatedAccount.email,
+            email: updatedAccount.authentication.email,
           };
         });
 
@@ -462,6 +559,17 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
         setCollaborationProfiles([]);
       }
+
+      try {
+        await refreshRepresentations();
+      } catch (representationError) {
+        console.error(
+          "Sessão restaurada, mas não foi possível carregar as representações:",
+          representationError,
+        );
+
+        setRepresentations([]);
+      }
     } catch (sessionError) {
       console.error("Erro ao restaurar sessão:", sessionError);
 
@@ -475,6 +583,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     clearSessionState,
     refreshAccount,
     refreshCollaborationProfiles,
+    refreshRepresentations,
   ]);
 
   useEffect(() => {
@@ -527,6 +636,21 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
           setCollaborationProfiles([]);
         }
+
+        try {
+          await refreshRepresentations();
+        } catch (representationError) {
+          if (cancelled) {
+            return;
+          }
+
+          console.error(
+            "Sessão restaurada, mas não foi possível carregar as representações:",
+            representationError,
+          );
+
+          setRepresentations([]);
+        }
       })
       .catch((sessionError) => {
         if (cancelled) {
@@ -552,6 +676,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     clearSessionState,
     refreshAccount,
     refreshCollaborationProfiles,
+    refreshRepresentations,
   ]);
 
   const login = useCallback(
@@ -679,6 +804,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
     collaborationProfiles,
     activeCollaborationProfile,
+    representations,
 
     userData,
     profiles: orderedProfiles,
@@ -687,6 +813,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     loading,
     accountLoading,
     collaborationProfilesLoading,
+    representationsLoading,
     profilesLoading,
 
     error,
@@ -698,6 +825,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     refreshSession,
     refreshAccount,
     refreshCollaborationProfiles,
+    refreshRepresentations,
 
     updateAccount,
     uploadAvatar,
@@ -707,6 +835,10 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     updateCollaborationProfile,
     deleteCollaborationProfile,
     activateCollaborationProfile,
+
+    createRepresentation,
+    requestRepresentation,
+    cancelRepresentationRequest,
 
     switchProfile,
     logout,

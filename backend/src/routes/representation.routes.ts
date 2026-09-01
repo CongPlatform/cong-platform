@@ -1,8 +1,8 @@
-import {
-  Router,
-} from "express";
+import { Router } from "express";
 
 import {
+  cancelMyRepresentationRequest,
+  checkMyRepresentationCnpj,
   createMyRepresentation,
   listMyRepresentations,
   requestMyRepresentation,
@@ -14,37 +14,31 @@ import {
   requestRepresentationSchema,
 } from "../validators/representation.validator.js";
 
-import {
-  validateBody,
-} from "../middlewares/validate.js";
+import { validateBody } from "../middlewares/validate.js";
 
-const representationRouter =
-  Router();
+const representationRouter = Router();
 
-representationRouter.get(
-  "/",
-  listMyRepresentations,
-);
+representationRouter.get("/", listMyRepresentations);
 
-representationRouter.get(
-  "/search",
-  searchRepresentationOrganizations,
-);
+representationRouter.get("/check-cnpj", checkMyRepresentationCnpj);
+
+representationRouter.get("/search", searchRepresentationOrganizations);
 
 representationRouter.post(
   "/",
-  validateBody(
-    createRepresentationSchema,
-  ),
+  validateBody(createRepresentationSchema),
   createMyRepresentation,
 );
 
 representationRouter.post(
   "/request",
-  validateBody(
-    requestRepresentationSchema,
-  ),
+  validateBody(requestRepresentationSchema),
   requestMyRepresentation,
+);
+
+representationRouter.delete(
+  "/request/:representationId",
+  cancelMyRepresentationRequest,
 );
 
 export default representationRouter;

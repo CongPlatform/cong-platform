@@ -15,15 +15,11 @@ export const supabaseAdmin = createClient(
 );
 
 export function createSupabaseAuthClient() {
-  return createClient(
-    env.supabaseUrl,
-    env.supabasePublishableKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false,
-      },
+  return createClient(env.supabaseUrl, env.supabasePublishableKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
     },
-  );
+  });
 }

@@ -1,20 +1,10 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  FiRefreshCw,
-  FiX,
-} from "react-icons/fi";
+import { FiRefreshCw, FiX } from "react-icons/fi";
 
 import FileUploader from "../../../../components/upload/FileUploader";
 
-import type {
-  UploadExecutionOptions,
-} from "../../../../components/upload/types";
+import type { UploadExecutionOptions } from "../../../../components/upload/types";
 
 import styles from "./AvatarUploader.module.css";
 
@@ -42,9 +32,7 @@ interface AvatarUploaderProps {
 
   name: string;
 
-  onSelectFile: (
-    file: File,
-  ) => void;
+  onSelectFile: (file: File) => void;
 
   onUseDefault: () => void;
 
@@ -61,58 +49,37 @@ export default function AvatarUploader({
   onUseDefault,
   onClose,
 }: AvatarUploaderProps) {
-  const previewUrlRef =
-    useRef<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
-  const [
-    localDraft,
-    setLocalDraft,
-  ] = useState<LocalAvatarDraft>({
+  const [localDraft, setLocalDraft] = useState<LocalAvatarDraft>({
     type: "unchanged",
   });
 
-  const [
-    uploaderKey,
-    setUploaderKey,
-  ] = useState(0);
+  const [uploaderKey, setUploaderKey] = useState(0);
 
-  const clearPreview =
-    useCallback((): void => {
-      if (
-        previewUrlRef.current
-      ) {
-        URL.revokeObjectURL(
-          previewUrlRef.current,
-        );
+  const clearPreview = useCallback((): void => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
 
-        previewUrlRef.current =
-          null;
-      }
-    }, []);
+      previewUrlRef.current = null;
+    }
+  }, []);
 
-  const resetLocalDraft =
-    useCallback((): void => {
-      clearPreview();
+  const resetLocalDraft = useCallback((): void => {
+    clearPreview();
 
-      setLocalDraft({
-        type: "unchanged",
-      });
+    setLocalDraft({
+      type: "unchanged",
+    });
 
-      setUploaderKey(
-        (current) =>
-          current + 1,
-      );
-    }, [clearPreview]);
+    setUploaderKey((current) => current + 1);
+  }, [clearPreview]);
 
-  const handleCancel =
-    useCallback((): void => {
-      resetLocalDraft();
+  const handleCancel = useCallback((): void => {
+    resetLocalDraft();
 
-      onClose();
-    }, [
-      onClose,
-      resetLocalDraft,
-    ]);
+    onClose();
+  }, [onClose, resetLocalDraft]);
 
   /*
    * Enquanto o modal estiver aberto,
@@ -125,15 +92,12 @@ export default function AvatarUploader({
       return;
     }
 
-    const previousOverflow =
-      document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
 
-    document.body.style.overflow =
-      "hidden";
+    document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow =
-        previousOverflow;
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
@@ -146,31 +110,18 @@ export default function AvatarUploader({
       return;
     }
 
-    function handleKeyDown(
-      event: KeyboardEvent,
-    ): void {
-      if (
-        event.key === "Escape"
-      ) {
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape") {
         handleCancel();
       }
     }
 
-    window.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [
-    open,
-    handleCancel,
-  ]);
+  }, [open, handleCancel]);
 
   /*
    * Limpa qualquer Object URL que ainda
@@ -189,23 +140,15 @@ export default function AvatarUploader({
   const previewUrl =
     localDraft.type === "upload"
       ? localDraft.previewUrl
-      : localDraft.type ===
-          "default"
+      : localDraft.type === "default"
         ? defaultAvatarUrl
         : currentAvatarUrl;
 
   const previewIsDefault =
-    localDraft.type ===
-      "default" ||
-    (
-      localDraft.type ===
-        "unchanged" &&
-      usingDefaultAvatar
-    );
+    localDraft.type === "default" ||
+    (localDraft.type === "unchanged" && usingDefaultAvatar);
 
-  const changed =
-    localDraft.type !==
-    "unchanged";
+  const changed = localDraft.type !== "unchanged";
 
   /*
    * O botão "Enviar" do FileUploader
@@ -220,11 +163,9 @@ export default function AvatarUploader({
   ): Promise<void> {
     clearPreview();
 
-    const preview =
-      URL.createObjectURL(file);
+    const preview = URL.createObjectURL(file);
 
-    previewUrlRef.current =
-      preview;
+    previewUrlRef.current = preview;
 
     options.onProgress(1);
 
@@ -240,10 +181,7 @@ export default function AvatarUploader({
    * FileUploader vazio.
    */
   function handleFileStaged(): void {
-    setUploaderKey(
-      (current) =>
-        current + 1,
-    );
+    setUploaderKey((current) => current + 1);
   }
 
   function handleUseDefault(): void {
@@ -253,10 +191,7 @@ export default function AvatarUploader({
       type: "default",
     });
 
-    setUploaderKey(
-      (current) =>
-        current + 1,
-    );
+    setUploaderKey((current) => current + 1);
   }
 
   /*
@@ -266,19 +201,11 @@ export default function AvatarUploader({
    * O backend continua intocado.
    */
   function handleSave(): void {
-    if (
-      localDraft.type ===
-      "upload"
-    ) {
-      onSelectFile(
-        localDraft.file,
-      );
+    if (localDraft.type === "upload") {
+      onSelectFile(localDraft.file);
     }
 
-    if (
-      localDraft.type ===
-      "default"
-    ) {
+    if (localDraft.type === "default") {
       onUseDefault();
     }
 
@@ -292,10 +219,7 @@ export default function AvatarUploader({
       className={styles.overlay}
       role="presentation"
       onMouseDown={(event) => {
-        if (
-          event.target ===
-          event.currentTarget
-        ) {
+        if (event.target === event.currentTarget) {
           handleCancel();
         }
       }}
@@ -306,124 +230,65 @@ export default function AvatarUploader({
         aria-modal="true"
         aria-labelledby="avatar-uploader-title"
       >
-        <header
-          className={
-            styles.modalHeader
-          }
-        >
-          <h2
-            id="avatar-uploader-title"
-          >
-            Alterar foto
-          </h2>
+        <header className={styles.modalHeader}>
+          <h2 id="avatar-uploader-title">Alterar foto</h2>
 
           <button
             type="button"
-            className={
-              styles.closeButton
-            }
+            className={styles.closeButton}
             aria-label="Fechar"
-            onClick={
-              handleCancel
-            }
+            onClick={handleCancel}
           >
             <FiX />
           </button>
         </header>
 
-        <div
-          className={
-            styles.previewArea
-          }
-        >
-          <div
-            className={
-              styles.avatarPreview
-            }
-          >
-            <img
-              src={previewUrl}
-              alt={`Prévia da foto de ${name}`}
-            />
+        <div className={styles.previewArea}>
+          <div className={styles.avatarPreview}>
+            <img src={previewUrl} alt={`Prévia da foto de ${name}`} />
           </div>
 
           <button
             type="button"
-            className={
-              styles.defaultAction
-            }
-            disabled={
-              previewIsDefault
-            }
-            onClick={
-              handleUseDefault
-            }
+            className={styles.defaultAction}
+            disabled={previewIsDefault}
+            onClick={handleUseDefault}
           >
             <FiRefreshCw />
 
-            {previewIsDefault
-              ? "Avatar padrão em uso"
-              : "Usar avatar padrão"}
+            {previewIsDefault ? "Avatar padrão em uso" : "Usar avatar padrão"}
           </button>
         </div>
 
-        <div
-          className={
-            styles.uploaderArea
-          }
-        >
+        <div className={styles.uploaderArea}>
           <FileUploader
             key={uploaderKey}
             title=""
             description=""
-            accept={[
-              "image/jpeg",
-              "image/png",
-              "image/webp",
-            ]}
-            maxSize={
-              5 * 1024 * 1024
-            }
+            accept={["image/jpeg", "image/png", "image/webp"]}
+            maxSize={5 * 1024 * 1024}
             maxFiles={1}
             multiple={false}
             autoUpload={false}
-            onUpload={
-              stageFile
-            }
-            onUploaded={
-              handleFileStaged
-            }
+            onUpload={stageFile}
+            onUploaded={handleFileStaged}
           />
         </div>
 
-        <footer
-          className={
-            styles.modalFooter
-          }
-        >
+        <footer className={styles.modalFooter}>
           <button
             type="button"
-            className={
-              styles.cancelButton
-            }
-            onClick={
-              handleCancel
-            }
+            className={styles.cancelButton}
+            onClick={handleCancel}
           >
             Cancelar
           </button>
 
           <button
             type="button"
-            className={
-              styles.saveButton
-            }
-            disabled={
-              !changed
-            }
-            onClick={
-              handleSave
-            }
+            className={styles.saveButton}
+            disabled={!changed}
+            onClick={handleSave}
           >
             Salvar
           </button>

@@ -109,4 +109,3 @@ Dependency updates that address known vulnerabilities are welcome through Pull R
 Security reports are reviewed by the CONG maintainers.
 
 Once the public repository is available, the preferred reporting mechanism will be GitHub's private vulnerability reporting feature.
-

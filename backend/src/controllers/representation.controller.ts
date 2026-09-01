@@ -1,70 +1,46 @@
-import type {
-  Request,
-  Response,
-} from "express";
+import type { Request, Response } from "express";
 
 import * as z from "zod";
 
 import {
+  cancelRepresentationRequest,
+  checkRepresentationCnpjAvailability,
   createRepresentation,
   getMyRepresentations,
   requestRepresentation,
   searchOrganizations,
 } from "../services/representation.service.js";
 
-import {
-  organizationTypeSchema,
-} from "../validators/representation.validator.js";
+import { organizationTypeSchema } from "../validators/representation.validator.js";
 
 import { AppError } from "../utils/app-error.js";
 
-function handleError(
-  error: unknown,
-  res: Response,
-): void {
-  if (
-    error instanceof AppError
-  ) {
-    res
-      .status(error.statusCode)
-      .json({
-        error: error.message,
-        code: error.code,
-      });
-
-    return;
-  }
-
-  if (
-    error instanceof z.ZodError
-  ) {
-    res
-      .status(400)
-      .json({
-        error:
-          "Invalid representation data",
-        code:
-          "INVALID_REPRESENTATION_DATA",
-        issues:
-          error.issues,
-      });
-
-    return;
-  }
-
-  console.error(
-    "Representation controller error:",
-    error,
-  );
-
-  res
-    .status(500)
-    .json({
-      error:
-        "Internal server error",
-      code:
-        "INTERNAL_SERVER_ERROR",
+function handleError(error: unknown, res: Response): void {
+  if (error instanceof AppError) {
+    res.status(error.statusCode).json({
+      error: error.message,
+      code: error.code,
     });
+
+    return;
+  }
+
+  if (error instanceof z.ZodError) {
+    res.status(400).json({
+      error: "Invalid representation data",
+      code: "INVALID_REPRESENTATION_DATA",
+      issues: error.issues,
+    });
+
+    return;
+  }
+
+  console.error("Representation controller error:", error);
+
+  res.status(500).json({
+    error: "Internal server error",
+    code: "INTERNAL_SERVER_ERROR",
+  });
 }
 
 export async function listMyRepresentations(
@@ -72,22 +48,15 @@ export async function listMyRepresentations(
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const representations =
-      await getMyRepresentations(
-        authUser.id,
-      );
+    const representations = await getMyRepresentations(authUser.id);
 
     res.status(200).json({
       representations,
     });
   } catch (error) {
-    handleError(
-      error,
-      res,
-    );
+    handleError(error, res);
   }
 }
 
@@ -96,35 +65,19 @@ export async function searchRepresentationOrganizations(
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const type =
-      organizationTypeSchema.parse(
-        req.query.type,
-      );
+    const type = organizationTypeSchema.parse(req.query.type);
 
-    const query =
-      typeof req.query.q ===
-        "string"
-        ? req.query.q
-        : "";
+    const query = typeof req.query.q === "string" ? req.query.q : "";
 
-    const organizations =
-      await searchOrganizations(
-        authUser.id,
-        type,
-        query,
-      );
+    const organizations = await searchOrganizations(authUser.id, type, query);
 
     res.status(200).json({
       organizations,
     });
   } catch (error) {
-    handleError(
-      error,
-      res,
-    );
+    handleError(error, res);
   }
 }
 
@@ -133,23 +86,15 @@ export async function createMyRepresentation(
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const representation =
-      await createRepresentation(
-        authUser.id,
-        req.body,
-      );
+    const representation = await createRepresentation(authUser.id, req.body);
 
     res.status(201).json({
       representation,
     });
   } catch (error) {
-    handleError(
-      error,
-      res,
-    );
+    handleError(error, res);
   }
 }
 
@@ -158,22 +103,60 @@ export async function requestMyRepresentation(
   res: Response,
 ): Promise<void> {
   try {
-    const authUser =
-      res.locals.authUser;
+    const authUser = res.locals.authUser;
 
-    const representation =
-      await requestRepresentation(
-        authUser.id,
-        req.body.organizationId,
-      );
+    const representation = await requestRepresentation(
+      authUser.id,
+      req.body.organizationId,
+    );
 
     res.status(201).json({
       representation,
     });
   } catch (error) {
-    handleError(
-      error,
-      res,
-    );
+    handleError(error, res);
+  }
+}
+
+export async function cancelMyRepresentationRequest(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const authUser = res.locals.authUser;
+
+    const representationId = req.params.representationId;
+
+    if (typeof representationId !== "string" || representationId.length === 0) {
+      throw new AppError(
+        "Invalid representation identifier",
+        400,
+        "INVALID_REPRESENTATION_ID",
+      );
+    }
+
+    await cancelRepresentationRequest(authUser.id, representationId);
+
+    res.status(204).send();
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function checkMyRepresentationCnpj(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const cnpj = req.query.cnpj;
+
+    if (typeof cnpj !== "string" || cnpj.trim().length === 0) {
+      throw new AppError("CNPJ is required", 400, "CNPJ_REQUIRED");
+    }
+
+    const result = await checkRepresentationCnpjAvailability(cnpj);
+    res.status(200).json(result);
+  } catch (error) {
+    handleError(error, res);
   }
 }

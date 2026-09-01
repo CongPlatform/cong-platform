@@ -20,6 +20,7 @@ import { TransitionLink } from "../../components/pageTransitionProvider/Transiti
 
 import { useAuth } from "../../contexts/auth-context";
 import { ApiError } from "../../services/api";
+import { startOAuthLogin } from "../../services/oauthService";
 
 import mascote from "../../assets/mascot/cong-default.webp";
 import styles from "./Login.module.css";
@@ -44,6 +45,8 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
+
+type SocialProvider = "google" | "github";
 
 function getAuthenticationErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) {
@@ -87,6 +90,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const [authenticationError, setAuthenticationError] = useState("");
+
+  const [socialProviderLoading, setSocialProviderLoading] =
+    useState<SocialProvider | null>(null);
 
   const {
     register,
@@ -181,6 +187,62 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = async (): Promise<void> => {
+    setAuthenticationError("");
+    setSocialProviderLoading("google");
+
+    try {
+      const routeState = location.state as {
+        from?: string;
+      } | null;
+
+      const requestedRoute = routeState?.from;
+
+      const returnTo = requestedRoute?.startsWith("/app/")
+        ? requestedRoute
+        : "/app/comunidade";
+
+      await startOAuthLogin("google", returnTo);
+    } catch (error) {
+      console.error("Erro ao iniciar login com Google:", error);
+
+      setAuthenticationError(
+        "Não foi possível iniciar o login com Google. Tente novamente.",
+      );
+
+      setSocialProviderLoading(null);
+    }
+  };
+
+  const handleGithubLogin = async (): Promise<void> => {
+    setAuthenticationError("");
+    setSocialProviderLoading("github");
+
+    try {
+      const routeState = location.state as {
+        from?: string;
+      } | null;
+
+      const requestedRoute = routeState?.from;
+
+      const returnTo = requestedRoute?.startsWith("/app/")
+        ? requestedRoute
+        : "/app/comunidade";
+
+      await startOAuthLogin("github", returnTo);
+    } catch (error) {
+      console.error("Erro ao iniciar login com GitHub:", error);
+
+      setAuthenticationError(
+        "Não foi possível iniciar o login com GitHub. Tente novamente.",
+      );
+
+      setSocialProviderLoading(null);
+    }
+  };
+
+  const isAuthenticating = isSubmitting || socialProviderLoading !== null;
+
   return (
     <main className={styles.loginPage}>
       <button
@@ -232,7 +294,7 @@ export default function Login() {
             className={styles.form}
             onSubmit={handleSubmit(authenticateUser)}
             noValidate
-            aria-busy={isSubmitting}
+            aria-busy={isAuthenticating}
           >
             <div className={styles.field}>
               <label htmlFor="login-email">E-mail</label>
@@ -251,7 +313,7 @@ export default function Login() {
                   type="email"
                   placeholder="nome@exemplo.com"
                   autoComplete="email"
-                  disabled={isSubmitting}
+                  disabled={isAuthenticating}
                   aria-invalid={Boolean(errors.email)}
                   aria-describedby={
                     errors.email ? "login-email-error" : undefined
@@ -290,7 +352,7 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Digite sua senha"
                   autoComplete="current-password"
-                  disabled={isSubmitting}
+                  disabled={isAuthenticating}
                   aria-invalid={Boolean(errors.password)}
                   aria-describedby={
                     errors.password ? "login-password-error" : undefined
@@ -304,7 +366,7 @@ export default function Login() {
                   type="button"
                   className={styles.passwordToggle}
                   onClick={() => setShowPassword((current) => !current)}
-                  disabled={isSubmitting}
+                  disabled={isAuthenticating}
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                   aria-pressed={showPassword}
                 >
@@ -331,7 +393,7 @@ export default function Login() {
               <label className={styles.rememberOption}>
                 <input
                   type="checkbox"
-                  disabled={isSubmitting}
+                  disabled={isAuthenticating}
                   {...register("remember")}
                 />
 
@@ -352,7 +414,7 @@ export default function Login() {
             <button
               type="submit"
               className={styles.loginButton}
-              disabled={isSubmitting}
+              disabled={isAuthenticating}
             >
               <span>{isSubmitting ? "Entrando..." : "Entrar"}</span>
 
@@ -368,7 +430,8 @@ export default function Login() {
             <button
               type="button"
               className={`${styles.socialButton} ${styles.githubButton}`}
-              disabled={isSubmitting}
+              onClick={handleGithubLogin}
+              disabled={isAuthenticating}
             >
               <FaGithub aria-hidden="true" />
 
@@ -378,7 +441,8 @@ export default function Login() {
             <button
               type="button"
               className={`${styles.socialButton} ${styles.googleButton}`}
-              disabled={isSubmitting}
+              onClick={handleGoogleLogin}
+              disabled={isAuthenticating}
             >
               <FcGoogle aria-hidden="true" />
 

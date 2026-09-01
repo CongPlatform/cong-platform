@@ -11,10 +11,7 @@
   background-color: var(--color-paper);
 
   background-image:
-    linear-gradient(
-      rgb(var(--color-grid-rgb) / 4.5%) 1px,
-      transparent 1px
-    ),
+    linear-gradient(rgb(var(--color-grid-rgb) / 4.5%) 1px, transparent 1px),
     linear-gradient(
       90deg,
       rgb(var(--color-grid-rgb) / 4.5%) 1px,
@@ -145,20 +142,15 @@
   min-height: 475px;
   padding: clamp(1.4rem, 2.5vw, 2.2rem);
 
-  background:
-    rgb(var(--color-white-rgb) / 92%);
+  background: rgb(var(--color-white-rgb) / 92%);
 
-  border:
-    1.5px solid
-    rgb(var(--color-ink-rgb) / 12%);
+  border: 1.5px solid rgb(var(--color-ink-rgb) / 12%);
 
   border-radius: 18px;
 
   box-shadow:
-    0 18px 34px
-      rgb(var(--color-ink-rgb) / 7%),
-    8px 10px 0
-      rgb(var(--color-ink-rgb) / 3%);
+    0 18px 34px rgb(var(--color-ink-rgb) / 7%),
+    8px 10px 0 rgb(var(--color-ink-rgb) / 3%);
 
   transform: rotate(-0.25deg);
 }
@@ -171,12 +163,9 @@
   width: 64px;
   height: 20px;
 
-  background:
-    rgb(var(--color-accent-rgb) / 30%);
+  background: rgb(var(--color-accent-rgb) / 30%);
 
-  border:
-    1px solid
-    rgb(var(--color-black-rgb) / 4%);
+  border: 1px solid rgb(var(--color-black-rgb) / 4%);
 }
 
 .boardTapeLeft {
@@ -213,47 +202,41 @@
 
   gap: 1rem;
 
-  border:
-    1px solid
-    rgb(var(--color-ink-rgb) / 8%);
+  border: 1px solid rgb(var(--color-ink-rgb) / 8%);
 
   border-radius: 14px;
 }
 
 .layerGreen {
-  background:
-    linear-gradient(
-      90deg,
-      rgb(var(--color-card-green-rgb) / 92%) 0 145px,
-      rgb(var(--color-white-rgb) / 82%) 145px 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgb(var(--color-card-green-rgb) / 92%) 0 145px,
+    rgb(var(--color-white-rgb) / 82%) 145px 100%
+  );
 }
 
 .layerBlue {
-  background:
-    linear-gradient(
-      90deg,
-      rgb(var(--color-card-blue-rgb) / 92%) 0 145px,
-      rgb(var(--color-white-rgb) / 82%) 145px 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgb(var(--color-card-blue-rgb) / 92%) 0 145px,
+    rgb(var(--color-white-rgb) / 82%) 145px 100%
+  );
 }
 
 .layerYellow {
-  background:
-    linear-gradient(
-      90deg,
-      rgb(var(--color-card-yellow-rgb) / 92%) 0 145px,
-      rgb(var(--color-white-rgb) / 82%) 145px 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgb(var(--color-card-yellow-rgb) / 92%) 0 145px,
+    rgb(var(--color-white-rgb) / 82%) 145px 100%
+  );
 }
 
 .layerPurple {
-  background:
-    linear-gradient(
-      90deg,
-      rgb(var(--color-card-purple-rgb) / 92%) 0 145px,
-      rgb(var(--color-white-rgb) / 82%) 145px 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgb(var(--color-card-purple-rgb) / 92%) 0 145px,
+    rgb(var(--color-white-rgb) / 82%) 145px 100%
+  );
 }
 
 .layerLabel {
@@ -286,8 +269,7 @@
 
 .layerItems {
   display: grid;
-  grid-template-columns:
-    repeat(5, minmax(85px, 1fr));
+  grid-template-columns: repeat(5, minmax(85px, 1fr));
 
   gap: 0.58rem;
 }
@@ -304,12 +286,9 @@
   gap: 0.32rem;
 
   color: var(--color-navy);
-  background:
-    rgb(var(--color-white-rgb) / 86%);
+  background: rgb(var(--color-white-rgb) / 86%);
 
-  border:
-    1px solid
-    rgb(var(--color-ink-rgb) / 7%);
+  border: 1px solid rgb(var(--color-ink-rgb) / 7%);
 
   border-radius: 10px;
 
@@ -332,12 +311,9 @@
 
   gap: 1rem;
 
-  background:
-    rgb(var(--color-white-rgb) / 82%);
+  background: rgb(var(--color-white-rgb) / 82%);
 
-  border:
-    1.5px dashed
-    rgb(var(--color-ink-rgb) / 18%);
+  border: 1.5px dashed rgb(var(--color-ink-rgb) / 18%);
 
   border-radius: 16px;
 }
@@ -351,9 +327,7 @@
   width: 18px;
   height: 48px;
 
-  border:
-    2px solid
-    rgb(var(--color-ink-rgb) / 44%);
+  border: 2px solid rgb(var(--color-ink-rgb) / 44%);
 
   border-bottom: none;
   border-radius: 9px 9px 0 0;
@@ -372,9 +346,7 @@
   width: 7px;
   height: 34px;
 
-  border:
-    1.5px solid
-    rgb(var(--color-ink-rgb) / 30%);
+  border: 1.5px solid rgb(var(--color-ink-rgb) / 30%);
 
   border-bottom: none;
   border-radius: 7px 7px 0 0;
@@ -385,9 +357,7 @@
 
   padding: 1rem 1rem 1rem 1.15rem;
 
-  border:
-    1px solid
-    rgb(var(--color-ink-rgb) / 8%);
+  border: 1px solid rgb(var(--color-ink-rgb) / 8%);
 
   border-radius: 12px;
 }
@@ -407,8 +377,7 @@
 }
 
 .noteBlue {
-  background:
-    rgb(var(--color-card-blue-rgb) / 58%);
+  background: rgb(var(--color-card-blue-rgb) / 58%);
 }
 
 .noteBlue::before {
@@ -416,8 +385,7 @@
 }
 
 .noteYellow {
-  background:
-    rgb(var(--color-card-yellow-rgb) / 58%);
+  background: rgb(var(--color-card-yellow-rgb) / 58%);
 }
 
 .noteYellow::before {
@@ -425,8 +393,7 @@
 }
 
 .noteGreen {
-  background:
-    rgb(var(--color-card-green-rgb) / 58%);
+  background: rgb(var(--color-card-green-rgb) / 58%);
 }
 
 .noteGreen::before {
@@ -469,8 +436,7 @@
 
   .layerNotes {
     display: grid;
-    grid-template-columns:
-      repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

@@ -11,10 +11,7 @@
   background-color: var(--color-paper);
 
   background-image:
-    linear-gradient(
-      rgb(var(--color-grid-rgb) / 4.5%) 1px,
-      transparent 1px
-    ),
+    linear-gradient(rgb(var(--color-grid-rgb) / 4.5%) 1px, transparent 1px),
     linear-gradient(
       90deg,
       rgb(var(--color-grid-rgb) / 4.5%) 1px,
@@ -126,20 +123,15 @@
   width: 56px;
   height: 18px;
 
-  background:
-    repeating-linear-gradient(
-      -35deg,
-      var(--color-accent-soft) 0 4px,
-      rgb(var(--color-white-rgb) / 58%) 4px 8px
-    );
+  background: repeating-linear-gradient(
+    -35deg,
+    var(--color-accent-soft) 0 4px,
+    rgb(var(--color-white-rgb) / 58%) 4px 8px
+  );
 
-  border:
-    1px solid
-    rgb(var(--color-black-rgb) / 5%);
+  border: 1px solid rgb(var(--color-black-rgb) / 5%);
 
-  transform:
-    translateX(-50%)
-    rotate(-4deg);
+  transform: translateX(-50%) rotate(-4deg);
 }
 
 /* =====================================================
@@ -156,9 +148,7 @@
   display: grid;
   place-items: center;
 
-  border:
-    1px solid
-    rgb(var(--color-ink-rgb) / 9%);
+  border: 1px solid rgb(var(--color-ink-rgb) / 9%);
 
   border-radius: 12px;
 }
@@ -239,20 +229,15 @@
   min-height: 390px;
   padding: clamp(1.25rem, 2.2vw, 1.75rem);
 
-  background:
-    rgb(var(--color-white-rgb) / 92%);
+  background: rgb(var(--color-white-rgb) / 92%);
 
-  border:
-    1.5px solid
-    rgb(var(--color-ink-rgb) / 12%);
+  border: 1.5px solid rgb(var(--color-ink-rgb) / 12%);
 
   border-radius: 16px;
 
   box-shadow:
-    0 17px 30px
-      rgb(var(--color-ink-rgb) / 7%),
-    7px 8px 0
-      rgb(var(--color-ink-rgb) / 3%);
+    0 17px 30px rgb(var(--color-ink-rgb) / 7%),
+    7px 8px 0 rgb(var(--color-ink-rgb) / 3%);
 }
 
 .controlCard {
@@ -315,9 +300,7 @@
   color: var(--color-navy);
   background: var(--color-accent-pale);
 
-  border:
-    1px solid
-    rgb(var(--color-ink-rgb) / 8%);
+  border: 1px solid rgb(var(--color-ink-rgb) / 8%);
 
   border-radius: 11px;
 
@@ -339,9 +322,7 @@
 
   background: var(--color-surface-soft);
 
-  border:
-    1px solid
-    rgb(var(--color-ink-rgb) / 7%);
+  border: 1px solid rgb(var(--color-ink-rgb) / 7%);
 
   border-radius: 10px;
 }
@@ -390,12 +371,9 @@
 
   gap: 0.55rem;
 
-  background:
-    rgb(var(--color-white-rgb) / 74%);
+  background: rgb(var(--color-white-rgb) / 74%);
 
-  border:
-    1px solid
-    rgb(var(--color-ink-rgb) / 7%);
+  border: 1px solid rgb(var(--color-ink-rgb) / 7%);
 
   border-radius: 9px;
 }
@@ -473,15 +451,9 @@
 
   gap: 0.65rem;
 
-  background:
-    rgb(
-      var(--color-details-result-soft-rgb) /
-      52%
-    );
+  background: rgb(var(--color-details-result-soft-rgb) / 52%);
 
-  border:
-    1px solid
-    rgb(var(--color-ink-rgb) / 7%);
+  border: 1px solid rgb(var(--color-ink-rgb) / 7%);
 
   border-radius: 10px;
 }
@@ -496,8 +468,7 @@
   place-items: center;
 
   color: var(--color-secondary-dark);
-  background:
-    rgb(var(--color-white-rgb) / 74%);
+  background: rgb(var(--color-white-rgb) / 74%);
 
   border-radius: 9px;
 }
@@ -533,15 +504,11 @@
   color: var(--color-navy);
   background: var(--color-paper);
 
-  border:
-    1.5px solid
-    rgb(var(--color-ink-rgb) / 12%);
+  border: 1.5px solid rgb(var(--color-ink-rgb) / 12%);
 
   border-radius: 50%;
 
-  box-shadow:
-    0 8px 14px
-    rgb(var(--color-ink-rgb) / 7%);
+  box-shadow: 0 8px 14px rgb(var(--color-ink-rgb) / 7%);
 }
 
 /* =====================================================

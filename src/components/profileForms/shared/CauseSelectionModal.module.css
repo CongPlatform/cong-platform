@@ -1,0 +1,375 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgb(15 28 45 / 54%);
+  backdrop-filter: blur(4px);
+}
+
+.dialog {
+  width: min(720px, 100%);
+  max-height: min(760px, calc(100vh - 44px));
+  overflow: hidden;
+  border: 1px solid #dce3ec;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgb(20 40 66 / 24%);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 20px 14px;
+}
+
+.header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.header h3 {
+  margin: 0;
+  color: #17283d;
+  font-size: 1.12rem;
+}
+
+.header p {
+  margin: 0;
+  color: #6d798a;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.closeButton,
+.expandButton {
+  border: 0;
+  background: transparent;
+  color: #627188;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.closeButton {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+
+.closeButton:hover,
+.expandButton:hover {
+  background: #f1f4f8;
+  color: #254f88;
+}
+
+.closeButton svg,
+.expandButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.searchBox {
+  flex: 0 0 auto;
+  margin: 0 20px;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #d9e0e9;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.searchBox:focus-within {
+  border-color: #3974c9;
+  box-shadow: 0 0 0 3px rgb(57 116 201 / 10%);
+}
+
+.searchBox svg {
+  width: 17px;
+  height: 17px;
+  color: #6f7f92;
+}
+
+.searchBox input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #26394f;
+  font: inherit;
+}
+
+.metaRow {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 20px 8px;
+  color: #788497;
+  font-size: 0.74rem;
+}
+
+.selectedSummary {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 20px 10px;
+}
+
+.selectedSummary span {
+  padding: 5px 8px;
+  border: 1px solid #dae4f2;
+  border-radius: 999px;
+  background: #f6f9fd;
+  color: #315d9a;
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.list {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 5px 20px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  scrollbar-gutter: stable;
+}
+
+.causeCard {
+  flex: 0 0 auto;
+  min-height: 58px;
+  height: auto;
+  border: 1px solid #e0e5ec;
+  border-radius: 13px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.causeCardSelected {
+  border-color: #8db0e3;
+  box-shadow: inset 3px 0 #3474cf;
+}
+
+.causeMainRow {
+  min-height: 58px;
+  height: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  align-items: stretch;
+}
+
+.causeMainButton {
+  min-width: 0;
+  min-height: 58px;
+  height: auto;
+  border: 0;
+  background: transparent;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  color: #26394f;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.causeMainButton:hover {
+  background: #fafcff;
+}
+
+.checkBox {
+  width: 23px;
+  height: 23px;
+  border: 1px solid #bdc9d8;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.causeCardSelected .checkBox {
+  border-color: #3974ca;
+  background: #3974ca;
+}
+
+.checkBox svg {
+  width: 14px;
+  height: 14px;
+}
+
+.causeCopy {
+  min-width: 0;
+  min-height: 36px;
+  display: grid;
+  gap: 2px;
+}
+
+.causeCopy strong {
+  color: #293b52;
+  font-size: 0.85rem;
+}
+
+.causeCopy small {
+  color: #7a8696;
+  font-size: 0.73rem;
+}
+
+.featuredBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #fff7e8;
+  color: #8a6218;
+  font-size: 0.68rem;
+  font-weight: 780;
+}
+
+.featuredBadge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.expandButton {
+  width: 42px;
+  border-left: 1px solid #edf0f4;
+}
+
+.subtopics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px 12px 12px 49px;
+  border-top: 1px solid #edf0f4;
+  background: #fbfcfe;
+}
+
+.subtopic {
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 1px solid #dbe3ed;
+  border-radius: 999px;
+  background: #fff;
+  color: #4b5d74;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.subtopic > span {
+  color: #3970bd;
+  font-weight: 850;
+}
+
+.subtopic svg {
+  width: 12px;
+  height: 12px;
+}
+
+.subtopicSelected {
+  border-color: #8eafe0;
+  background: #f1f6fd;
+  color: #285993;
+}
+
+.empty,
+.error {
+  margin: 0;
+  padding: 11px 20px;
+  font-size: 0.79rem;
+}
+
+.empty {
+  color: #758195;
+}
+
+.error {
+  color: #a23f3f;
+  font-weight: 700;
+}
+
+.footer {
+  flex: 0 0 auto;
+  padding: 13px 20px 18px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #edf0f4;
+  background: #fff;
+}
+
+.footer button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #2f68b7;
+  color: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 730;
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .backdrop {
+    padding: 10px;
+  }
+  .dialog {
+    max-height: calc(100vh - 20px);
+    border-radius: 15px;
+  }
+  .header {
+    padding: 16px 15px 12px;
+  }
+  .searchBox {
+    margin-inline: 15px;
+  }
+  .metaRow,
+  .selectedSummary,
+  .list {
+    padding-inline: 15px;
+  }
+  .causeMainButton {
+    grid-template-columns: 26px minmax(0, 1fr);
+  }
+  .featuredBadge {
+    display: none;
+  }
+  .subtopics {
+    padding-left: 12px;
+  }
+  .footer {
+    padding: 12px 15px 15px;
+  }
+  .footer button {
+    width: 100%;
+  }
+}
+
+.expandButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: transparent;
+}

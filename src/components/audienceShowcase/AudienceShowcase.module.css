@@ -11,10 +11,7 @@
   background-color: var(--color-paper);
 
   background-image:
-    linear-gradient(
-      rgb(var(--color-grid-rgb) / 0.055) 1px,
-      transparent 1px
-    ),
+    linear-gradient(rgb(var(--color-grid-rgb) / 0.055) 1px, transparent 1px),
     linear-gradient(
       90deg,
       rgb(var(--color-grid-rgb) / 0.055) 1px,
@@ -241,8 +238,7 @@
   border: 1px solid var(--color-gray-300);
   border-radius: 30px;
 
-  box-shadow:
-    0 20px 55px rgb(var(--color-black-rgb) / 0.08);
+  box-shadow: 0 20px 55px rgb(var(--color-black-rgb) / 0.08);
 
   animation: audiencePanelEnter 380ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -655,10 +651,7 @@
   padding: 1.2rem;
 
   background-image:
-    linear-gradient(
-      rgb(var(--color-grid-rgb) / 0.05) 1px,
-      transparent 1px
-    ),
+    linear-gradient(rgb(var(--color-grid-rgb) / 0.05) 1px, transparent 1px),
     linear-gradient(
       90deg,
       rgb(var(--color-grid-rgb) / 0.05) 1px,
@@ -1170,10 +1163,7 @@
   overflow: hidden;
 
   background-image:
-    linear-gradient(
-      rgb(var(--color-grid-rgb) / 0.05) 1px,
-      transparent 1px
-    ),
+    linear-gradient(rgb(var(--color-grid-rgb) / 0.05) 1px, transparent 1px),
     linear-gradient(
       90deg,
       rgb(var(--color-grid-rgb) / 0.05) 1px,
@@ -2497,9 +2487,7 @@
 
 @media (max-width: 420px) {
   .audienceSection {
-    padding:
-      2.5rem
-      0.6rem;
+    padding: 2.5rem 0.6rem;
   }
 
   .sectionHeader {
@@ -3287,7 +3275,6 @@
     box-shadow: 5px 7px 0 var(--color-gray-200);
   }
 }
-
 
 /* =========================================================
    ADAPTAÇÃO RESPONSIVA V3 — CARROSSEL + PREVIEW FIEL

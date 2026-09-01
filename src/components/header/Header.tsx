@@ -33,8 +33,7 @@ export default function Header() {
     }
 
     return (
-      location.pathname === path ||
-      location.pathname.startsWith(`${path}/`)
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
     );
   }
 
@@ -68,18 +67,11 @@ export default function Header() {
         onClick={() => setMobileOpen(false)}
         aria-label="CONG — Página inicial"
       >
-        <img
-          src={logo}
-          alt="CONG"
-          className={styles.logo}
-        />
+        <img src={logo} alt="CONG" className={styles.logo} />
       </TransitionLink>
 
       {/* Navegação desktop */}
-      <nav
-        className={styles.nav}
-        aria-label="Navegação principal"
-      >
+      <nav className={styles.nav} aria-label="Navegação principal">
         {links.map((link) => {
           const active = isActivePath(link.path);
 
@@ -87,9 +79,7 @@ export default function Header() {
             <TransitionLink
               key={link.path}
               to={link.path}
-              className={`${styles.link} ${
-                active ? styles.active : ""
-              }`}
+              className={`${styles.link} ${active ? styles.active : ""}`}
               aria-current={active ? "page" : undefined}
             >
               <span>{link.label}</span>
@@ -152,14 +142,8 @@ export default function Header() {
 
       {/* Menu mobile */}
       {mobileOpen && (
-        <div
-          id="cong-mobile-menu"
-          className={styles.mobileMenu}
-        >
-          <nav
-            className={styles.mobileNav}
-            aria-label="Navegação móvel"
-          >
+        <div id="cong-mobile-menu" className={styles.mobileMenu}>
+          <nav className={styles.mobileNav} aria-label="Navegação móvel">
             {links.map((link) => {
               const active = isActivePath(link.path);
 

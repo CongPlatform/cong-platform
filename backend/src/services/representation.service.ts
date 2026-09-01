@@ -1,6 +1,4 @@
-import type {
-  PoolClient,
-} from "pg";
+import type { PoolClient } from "pg";
 
 import pool from "../config/database.js";
 
@@ -14,8 +12,8 @@ import type {
 interface UserRow {
   id: string;
   active: boolean;
-  onboardingRepresentations:
-    OrganizationType[];
+  onboardingStep: "identity" | "roles" | "profiles" | "completed";
+  onboardingRepresentations: OrganizationType[];
 }
 
 interface SystemRoleRow {
@@ -25,8 +23,7 @@ interface SystemRoleRow {
 interface OrganizationRow {
   id: string;
   name: string;
-  organizationType:
-    OrganizationType;
+  organizationType: OrganizationType;
   active: boolean;
 }
 
@@ -34,57 +31,46 @@ export interface OrganizationSearchResult {
   id: string;
   name: string;
 
-  organizationType:
-    OrganizationType;
+  organizationType: OrganizationType;
 
-  city:
-    | string
-    | null;
+  city: string | null;
 
-  state:
-    | string
-    | null;
+  state: string | null;
 
-  membershipStatus:
-    | "pending"
-    | "active"
-    | "suspended"
-    | null;
+  legalName: string | null;
+
+  cnpj: string | null;
+
+  description: string | null;
+
+  areas: string[];
+
+  initiativeKind: string | null;
+
+  membershipStatus: "pending" | "active" | "suspended" | null;
 }
 
 export interface MyRepresentation {
   id: string;
 
-  organizationId:
-    string;
+  organizationId: string;
 
-  organizationName:
-    string;
+  organizationName: string;
 
-  organizationType:
-    OrganizationType;
+  organizationType: OrganizationType;
 
-  status:
-    | "pending"
-    | "active"
-    | "suspended";
+  status: "pending" | "active" | "suspended";
 
-  roleCode:
-    string | null;
+  roleCode: string | null;
 
-  roleName:
-    string;
+  roleName: string;
 }
 
 /* ==================================================
    HELPERS
    ================================================== */
 
-function requireActiveUser(
-  user:
-    | UserRow
-    | undefined,
-): UserRow {
+function requireActiveUser(user: UserRow | undefined): UserRow {
   if (!user) {
     throw new AppError(
       "User account was not found",
@@ -94,49 +80,43 @@ function requireActiveUser(
   }
 
   if (!user.active) {
-    throw new AppError(
-      "User account is inactive",
-      403,
-      "USER_INACTIVE",
-    );
+    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
   }
 
   return user;
 }
 
-async function getUser(
-  authUserId: string,
-): Promise<UserRow> {
-  const result =
-    await pool.query<UserRow>(
-      `
+async function getUser(authUserId: string): Promise<UserRow> {
+  const result = await pool.query<UserRow>(
+    `
         select
           id,
           active,
+          onboarding_step
+            as "onboardingStep",
           onboarding_representations
             as "onboardingRepresentations"
         from public.users
         where auth_user_id = $1
         limit 1
       `,
-      [authUserId],
-    );
-
-  return requireActiveUser(
-    result.rows[0],
+    [authUserId],
   );
+
+  return requireActiveUser(result.rows[0]);
 }
 
 async function getUserForUpdate(
   client: PoolClient,
   authUserId: string,
 ): Promise<UserRow> {
-  const result =
-    await client.query<UserRow>(
-      `
+  const result = await client.query<UserRow>(
+    `
         select
           id,
           active,
+          onboarding_step
+            as "onboardingStep",
           onboarding_representations
             as "onboardingRepresentations"
         from public.users
@@ -144,21 +124,18 @@ async function getUserForUpdate(
         limit 1
         for update
       `,
-      [authUserId],
-    );
-
-  return requireActiveUser(
-    result.rows[0],
+    [authUserId],
   );
+
+  return requireActiveUser(result.rows[0]);
 }
 
 async function getSystemRole(
   client: PoolClient,
   code: string,
 ): Promise<SystemRoleRow> {
-  const result =
-    await client.query<SystemRoleRow>(
-      `
+  const result = await client.query<SystemRoleRow>(
+    `
         select id
         from public.roles
         where code = $1
@@ -166,11 +143,10 @@ async function getSystemRole(
           and is_system = true
         limit 1
       `,
-      [code],
-    );
+    [code],
+  );
 
-  const role =
-    result.rows[0];
+  const role = result.rows[0];
 
   if (!role) {
     throw new AppError(
@@ -183,21 +159,23 @@ async function getSystemRole(
   return role;
 }
 
-function requireSelectedRepresentation(
+function requireRepresentationAvailable(
   user: UserRow,
   type: OrganizationType,
 ): void {
-  if (
-    !user
-      .onboardingRepresentations
-      .includes(type)
-  ) {
-    throw new AppError(
-      "This institutional representation was not selected during onboarding",
-      409,
-      "ONBOARDING_REPRESENTATION_NOT_SELECTED",
-    );
+  if (user.onboardingStep === "completed") {
+    return;
   }
+
+  if (user.onboardingRepresentations.includes(type)) {
+    return;
+  }
+
+  throw new AppError(
+    "This institutional representation was not selected during onboarding",
+    409,
+    "ONBOARDING_REPRESENTATION_NOT_SELECTED",
+  );
 }
 
 /* ==================================================
@@ -207,12 +185,10 @@ function requireSelectedRepresentation(
 export async function getMyRepresentations(
   authUserId: string,
 ): Promise<MyRepresentation[]> {
-  const user =
-    await getUser(authUserId);
+  const user = await getUser(authUserId);
 
-  const result =
-    await pool.query<MyRepresentation>(
-      `
+  const result = await pool.query<MyRepresentation>(
+    `
         select
           ou.id,
           o.id
@@ -234,8 +210,8 @@ export async function getMyRepresentations(
         where ou.user_id = $1
         order by ou.created_at asc
       `,
-      [user.id],
-    );
+    [user.id],
+  );
 
   return result.rows;
 }
@@ -249,26 +225,18 @@ export async function searchOrganizations(
   type: OrganizationType,
   query: string,
 ): Promise<OrganizationSearchResult[]> {
-  const user =
-    await getUser(authUserId);
+  const user = await getUser(authUserId);
 
-  requireSelectedRepresentation(
-    user,
-    type,
-  );
+  requireRepresentationAvailable(user, type);
 
-  const normalized =
-    query.trim();
+  const normalized = query.trim();
 
-  if (
-    normalized.length < 2
-  ) {
+  if (normalized.length < 2) {
     return [];
   }
 
-  const result =
-    await pool.query<OrganizationSearchResult>(
-      `
+  const result = await pool.query<OrganizationSearchResult>(
+    `
         select
           o.id,
           o.name,
@@ -278,6 +246,16 @@ export async function searchOrganizations(
             as city,
           o.address ->> 'state'
             as state,
+          o.legal_name
+            as "legalName",
+          o.cnpj,
+          o.description,
+          coalesce(
+            o.settings -> 'areas',
+            '[]'::jsonb
+          ) as areas,
+          o.settings ->> 'initiativeKind'
+            as "initiativeKind",
           ou.status
             as "membershipStatus"
         from public.organizations o
@@ -303,12 +281,8 @@ export async function searchOrganizations(
           o.name asc
         limit 10
       `,
-      [
-        user.id,
-        type,
-        normalized,
-      ],
-    );
+    [user.id, type, normalized],
+  );
 
   return result.rows;
 }
@@ -321,34 +295,56 @@ export async function createRepresentation(
   authUserId: string,
   input: CreateRepresentationInput,
 ): Promise<MyRepresentation> {
-  const client =
-    await pool.connect();
+  const client = await pool.connect();
 
   try {
-    await client.query(
-      "begin",
-    );
+    await client.query("begin");
 
-    const user =
-      await getUserForUpdate(
-        client,
-        authUserId,
-      );
+    const user = await getUserForUpdate(client, authUserId);
 
-    requireSelectedRepresentation(
-      user,
-      input.organizationType,
-    );
+    requireRepresentationAvailable(user, input.organizationType);
 
-    const adminRole =
-      await getSystemRole(
-        client,
-        "organization_admin",
-      );
-
-    const organizationResult =
-      await client.query<OrganizationRow>(
+    if (input.cnpj) {
+      const duplicateCnpjResult = await client.query<{
+        id: string;
+        name: string;
+      }>(
         `
+            select
+              id,
+              name
+            from public.organizations
+            where regexp_replace(
+              coalesce(cnpj, ''),
+              '[^0-9]',
+              '',
+              'g'
+            ) = regexp_replace(
+              $1,
+              '[^0-9]',
+              '',
+              'g'
+            )
+            limit 1
+          `,
+        [input.cnpj],
+      );
+
+      const duplicate = duplicateCnpjResult.rows[0];
+
+      if (duplicate) {
+        throw new AppError(
+          `Este CNPJ já está cadastrado como "${duplicate.name}". Procure a instituição existente e solicite o vínculo.`,
+          409,
+          "ORGANIZATION_CNPJ_ALREADY_EXISTS",
+        );
+      }
+    }
+
+    const adminRole = await getSystemRole(client, "organization_admin");
+
+    const organizationResult = await client.query<OrganizationRow>(
+      `
           insert into public.organizations (
             name,
             legal_name,
@@ -357,6 +353,7 @@ export async function createRepresentation(
             phone,
             description,
             address,
+            settings,
             organization_type
           )
           values (
@@ -367,7 +364,8 @@ export async function createRepresentation(
             $5,
             $6,
             $7::jsonb,
-            $8
+            $8::jsonb,
+            $9
           )
           returning
             id,
@@ -376,36 +374,35 @@ export async function createRepresentation(
               as "organizationType",
             active
         `,
-        [
-          input.name,
-          input.legalName ?? null,
-          input.cnpj ?? null,
-          input.email ?? null,
-          input.phone ?? null,
-          input.description ?? null,
+      [
+        input.name,
+        input.legalName ?? null,
+        input.cnpj ?? null,
+        input.email ?? null,
+        input.phone ?? null,
+        input.description ?? null,
 
-          JSON.stringify({
-            ...(input.city
-              ? {
-                  city:
-                    input.city,
-                }
-              : {}),
+        JSON.stringify({
+          cep: input.cep,
+          street: input.street,
+          district: input.district,
+          number: input.number,
+          complement: input.complement,
+          city: input.city,
+          state: input.state,
+        }),
 
-            ...(input.state
-              ? {
-                  state:
-                    input.state,
-                }
-              : {}),
-          }),
+        JSON.stringify({
+          initiativeKind: input.initiativeKind,
+          areas: input.areas,
+          supportTypes: input.supportTypes,
+        }),
 
-          input.organizationType,
-        ],
-      );
+        input.organizationType,
+      ],
+    );
 
-    const organization =
-      organizationResult.rows[0];
+    const organization = organizationResult.rows[0];
 
     if (!organization) {
       throw new AppError(
@@ -415,9 +412,8 @@ export async function createRepresentation(
       );
     }
 
-    const membershipResult =
-      await client.query<MyRepresentation>(
-        `
+    const membershipResult = await client.query<MyRepresentation>(
+      `
           insert into public.organization_users (
             organization_id,
             user_id,
@@ -446,17 +442,16 @@ export async function createRepresentation(
             'Administrador'::text
               as "roleName"
         `,
-        [
-          organization.id,
-          user.id,
-          adminRole.id,
-          organization.name,
-          organization.organizationType,
-        ],
-      );
+      [
+        organization.id,
+        user.id,
+        adminRole.id,
+        organization.name,
+        organization.organizationType,
+      ],
+    );
 
-    const representation =
-      membershipResult.rows[0];
+    const representation = membershipResult.rows[0];
 
     if (!representation) {
       throw new AppError(
@@ -466,19 +461,14 @@ export async function createRepresentation(
       );
     }
 
-    await client.query(
-      "commit",
-    );
+    await client.query("commit");
 
     return representation;
   } catch (error) {
-    await client.query(
-      "rollback",
-    );
+    await client.query("rollback");
 
     if (
-      typeof error ===
-        "object" &&
+      typeof error === "object" &&
       error !== null &&
       "code" in error &&
       error.code === "23505"
@@ -504,23 +494,15 @@ export async function requestRepresentation(
   authUserId: string,
   organizationId: string,
 ): Promise<MyRepresentation> {
-  const client =
-    await pool.connect();
+  const client = await pool.connect();
 
   try {
-    await client.query(
-      "begin",
-    );
+    await client.query("begin");
 
-    const user =
-      await getUserForUpdate(
-        client,
-        authUserId,
-      );
+    const user = await getUserForUpdate(client, authUserId);
 
-    const organizationResult =
-      await client.query<OrganizationRow>(
-        `
+    const organizationResult = await client.query<OrganizationRow>(
+      `
           select
             id,
             name,
@@ -532,16 +514,12 @@ export async function requestRepresentation(
           limit 1
           for update
         `,
-        [organizationId],
-      );
+      [organizationId],
+    );
 
-    const organization =
-      organizationResult.rows[0];
+    const organization = organizationResult.rows[0];
 
-    if (
-      !organization ||
-      !organization.active
-    ) {
+    if (!organization || !organization.active) {
       throw new AppError(
         "Organization was not found",
         404,
@@ -549,14 +527,10 @@ export async function requestRepresentation(
       );
     }
 
-    requireSelectedRepresentation(
-      user,
-      organization.organizationType,
-    );
+    requireRepresentationAvailable(user, organization.organizationType);
 
-    const existingResult =
-      await client.query<MyRepresentation>(
-        `
+    const existingResult = await client.query<MyRepresentation>(
+      `
           select
             ou.id,
             o.id
@@ -579,25 +553,14 @@ export async function requestRepresentation(
             and ou.user_id = $2
           limit 1
         `,
-        [
-          organization.id,
-          user.id,
-        ],
-      );
+      [organization.id, user.id],
+    );
 
-    const existing =
-      existingResult.rows[0];
+    const existing = existingResult.rows[0];
 
     if (existing) {
-      if (
-        existing.status ===
-          "pending" ||
-        existing.status ===
-          "active"
-      ) {
-        await client.query(
-          "commit",
-        );
+      if (existing.status === "pending" || existing.status === "active") {
+        await client.query("commit");
 
         return existing;
       }
@@ -609,15 +572,13 @@ export async function requestRepresentation(
       );
     }
 
-    const representativeRole =
-      await getSystemRole(
-        client,
-        "organization_representative",
-      );
+    const representativeRole = await getSystemRole(
+      client,
+      "organization_representative",
+    );
 
-    const result =
-      await client.query<MyRepresentation>(
-        `
+    const result = await client.query<MyRepresentation>(
+      `
           insert into public.organization_users (
             organization_id,
             user_id,
@@ -644,17 +605,16 @@ export async function requestRepresentation(
             'Representante'::text
               as "roleName"
         `,
-        [
-          organization.id,
-          user.id,
-          representativeRole.id,
-          organization.name,
-          organization.organizationType,
-        ],
-      );
+      [
+        organization.id,
+        user.id,
+        representativeRole.id,
+        organization.name,
+        organization.organizationType,
+      ],
+    );
 
-    const representation =
-      result.rows[0];
+    const representation = result.rows[0];
 
     if (!representation) {
       throw new AppError(
@@ -664,18 +624,124 @@ export async function requestRepresentation(
       );
     }
 
-    await client.query(
-      "commit",
-    );
+    await client.query("commit");
 
     return representation;
   } catch (error) {
-    await client.query(
-      "rollback",
-    );
+    await client.query("rollback");
 
     throw error;
   } finally {
     client.release();
   }
+}
+
+/* ==================================================
+   CANCELAR SOLICITAÇÃO DE VÍNCULO PENDENTE
+   ================================================== */
+export async function cancelRepresentationRequest(
+  authUserId: string,
+  representationId: string,
+): Promise<void> {
+  const user = await getUser(authUserId);
+
+  const currentResult = await pool.query<{
+    id: string;
+    status: "pending" | "active" | "suspended";
+  }>(
+    `
+        select
+          id,
+          status
+        from public.organization_users
+        where id = $1
+          and user_id = $2
+        limit 1
+      `,
+    [representationId, user.id],
+  );
+
+  const current = currentResult.rows[0];
+
+  if (!current) {
+    throw new AppError(
+      "Solicitação de vínculo não encontrada",
+      404,
+      "REPRESENTATION_REQUEST_NOT_FOUND",
+    );
+  }
+
+  if (current.status !== "pending") {
+    throw new AppError(
+      "Somente solicitações ainda pendentes podem ser canceladas",
+      409,
+      "REPRESENTATION_REQUEST_NOT_PENDING",
+    );
+  }
+
+  const deleteResult = await pool.query(
+    `
+        delete from public.organization_users
+        where id = $1
+          and user_id = $2
+          and status = 'pending'
+      `,
+    [representationId, user.id],
+  );
+
+  if (deleteResult.rowCount === 0) {
+    throw new AppError(
+      "A solicitação mudou de estado e não pode mais ser cancelada",
+      409,
+      "REPRESENTATION_REQUEST_CHANGED",
+    );
+  }
+}
+
+/* ==================================================
+   CHECAGEM DE CNPJ PARA FEEDBACK EM TEMPO REAL
+   ================================================== */
+export async function checkRepresentationCnpjAvailability(
+  cnpj: string,
+): Promise<{
+  available: boolean;
+  organization: {
+    id: string;
+    name: string;
+    organizationType: "ngo" | "company";
+  } | null;
+}> {
+  const result = await pool.query<{
+    id: string;
+    name: string;
+    organizationType: "ngo" | "company";
+  }>(
+    `
+      select
+        id,
+        name,
+        organization_type as "organizationType"
+      from public.organizations
+      where regexp_replace(
+        coalesce(cnpj, ''),
+        '[^0-9]',
+        '',
+        'g'
+      ) = regexp_replace(
+        $1,
+        '[^0-9]',
+        '',
+        'g'
+      )
+      limit 1
+    `,
+    [cnpj],
+  );
+
+  const organization = result.rows[0] ?? null;
+
+  return {
+    available: organization === null,
+    organization,
+  };
 }

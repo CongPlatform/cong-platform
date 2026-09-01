@@ -22,10 +22,26 @@ const initialControl = [
 ] as const;
 
 const requestRows = [
-  { label: "Solicitação recebida", status: "Concluído", tone: styles.statusGreen },
-  { label: "Beneficiário validado", status: "Concluído", tone: styles.statusGreen },
-  { label: "Itens separados", status: "Em andamento", tone: styles.statusYellow },
-  { label: "Entrega agendada", status: "Próxima etapa", tone: styles.statusBlue },
+  {
+    label: "Solicitação recebida",
+    status: "Concluído",
+    tone: styles.statusGreen,
+  },
+  {
+    label: "Beneficiário validado",
+    status: "Concluído",
+    tone: styles.statusGreen,
+  },
+  {
+    label: "Itens separados",
+    status: "Em andamento",
+    tone: styles.statusYellow,
+  },
+  {
+    label: "Entrega agendada",
+    status: "Próxima etapa",
+    tone: styles.statusBlue,
+  },
 ] as const;
 
 const operationalResults = [
@@ -48,8 +64,9 @@ export default function SocialDeliveryFlow() {
             Na prática: organização de uma entrega social
           </h2>
           <p>
-            Uma ação que antes dependia de mensagens, planilhas e anotações passa
-            a ter começo, acompanhamento e resultado registrados no mesmo fluxo.
+            Uma ação que antes dependia de mensagens, planilhas e anotações
+            passa a ter começo, acompanhamento e resultado registrados no mesmo
+            fluxo.
           </p>
         </header>
 

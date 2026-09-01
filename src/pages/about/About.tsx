@@ -1000,7 +1000,10 @@ export default function About() {
               <ArrowRight aria-hidden="true" />
             </TransitionLink>
 
-            <TransitionLink to="/como-funciona" className={styles.secondaryButton}>
+            <TransitionLink
+              to="/como-funciona"
+              className={styles.secondaryButton}
+            >
               Entender como funciona
               <Blocks aria-hidden="true" />
             </TransitionLink>

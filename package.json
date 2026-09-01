@@ -13,20 +13,22 @@
     "install:backend": "npm --prefix backend install",
     "build": "tsc -b && vite build && node scripts/generate-seo-pages.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.4.0",
-    "@supabase/supabase-js": "^2.112.3",
-    "gsap": "^3.15.0",
-    "lucide": "^1.21.0",
-    "lucide-react": "^1.21.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "react-hook-form": "^7.80.0",
-    "react-icons": "^5.6.0",
-    "react-router-dom": "^7.18.0",
-    "zod": "^4.4.3"
+    "@hookform/resolvers": "5.4.0",
+    "@supabase/supabase-js": "2.112.3",
+    "gsap": "3.15.0",
+    "lucide": "1.21.0",
+    "lucide-react": "^1.38.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-hook-form": "7.80.0",
+    "react-icons": "5.6.0",
+    "react-router-dom": "7.18.0",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
@@ -38,11 +40,12 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
-    "concurrently": "^10.0.3",
+    "concurrently": "^10.0.5",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "prettier": "^3.9.6",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"

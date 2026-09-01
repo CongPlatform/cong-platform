@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from "react";
-
+import { useEffect, useMemo, useState, type SubmitEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -20,73 +13,80 @@ import {
   Search,
   UserRound,
 } from "lucide-react";
-
 import { Navigate, useNavigate } from "react-router-dom";
 
+import DeveloperProfileForm, {
+  type DeveloperExperienceLevel,
+  type DeveloperProfileFormData,
+} from "../../../components/profileForms/DeveloperProfileForm";
+import DesignerProfileForm, {
+  type DesignerProfileFormData,
+} from "../../../components/profileForms/DesignerProfileForm";
+import TranslatorProfileForm, {
+  type TranslatorProfileFormData,
+} from "../../../components/profileForms/TranslatorProfileForm";
+import VolunteerProfileForm, {
+  type VolunteerProfileFormData,
+} from "../../../components/profileForms/VolunteerProfileForm";
+import InstitutionRepresentationForm, {
+  type RepresentationDraft,
+} from "../../../components/profileForms/InstitutionRepresentationForm";
+import ModalMensagem from "../../../components/modalMensagem/ModalMensagem";
+import { causeSelectionLabel } from "../../../data/profileCatalog";
 import { useAuth } from "../../../contexts/auth-context";
-
+import { ApiError } from "../../../services/api";
 import {
   createMyCollaborationProfile,
   updateMyCollaborationProfile,
+  type CollaborationProfile,
   type CollaborationProfileData,
   type CollaborationRole,
+  type DeveloperProfileData,
+  type DesignerProfileData,
+  type TranslatorProfileData,
+  type VolunteerProfileData,
 } from "../../../services/collaborationProfileService";
-
 import {
   completeOnboarding,
   type OnboardingRepresentation,
 } from "../../../services/onboardingService";
-
 import {
+  cancelMyRepresentationRequest,
   createMyRepresentation,
   getMyRepresentations,
   requestMyRepresentation,
   searchRepresentationOrganizations,
   type MyRepresentation,
   type OrganizationSearchResult,
+  type RepresentationStatus,
 } from "../../../services/representationService";
 
 import logo from "../../../assets/brand/logo-wordmark-dark.webp";
-import muscularCong from "../../../assets/mascot/cong-muscular-medalist.webp";
-
+import happyCong from "../../../assets/mascot/cong-happy.webp";
 import styles from "./CompleteProfiles.module.css";
 
-type PersonalDraft = {
-  technologies: string;
-  experienceLevel: string;
-  portfolioUrl: string;
-
-  specialties: string;
-  tools: string;
-
-  languages: string;
-  notes: string;
-
-  interestAreas: string;
-  availability: string;
-};
-
-type RepresentationDraft = {
-  name: string;
-  legalName: string;
-  cnpj: string;
-  email: string;
-  phone: string;
-  description: string;
-  city: string;
-  state: string;
-};
-
 type WorkspaceKey =
-  | `role:${CollaborationRole}`
-  | `representation:${OnboardingRepresentation}`;
+  `role:${CollaborationRole}` | `representation:${OnboardingRepresentation}`;
 
 type RepresentationMode = "choose" | "search" | "create";
+
+type DeveloperDraft = {
+  technologies: string[];
+  experienceLevel: DeveloperExperienceLevel;
+  portfolioUrl: string;
+};
+
+type PersonalDraftMap = {
+  developer: DeveloperDraft;
+  designer: DesignerProfileFormData;
+  translator: TranslatorProfileFormData;
+  volunteer: VolunteerProfileFormData;
+};
 
 const ROLE_LABELS: Record<CollaborationRole, string> = {
   developer: "Desenvolvedor",
   designer: "Designer",
-  translator: "Tradutor",
+  translator: "Tradução e acessibilidade",
   volunteer: "Voluntário",
 };
 
@@ -108,43 +108,31 @@ const REPRESENTATION_ICONS: Record<OnboardingRepresentation, typeof Building2> =
     company: BriefcaseBusiness,
   };
 
-const initialPersonalDraft: PersonalDraft = {
-  technologies: "",
-  experienceLevel: "",
-  portfolioUrl: "",
-
-  specialties: "",
-  tools: "",
-
-  languages: "",
-  notes: "",
-
-  interestAreas: "",
-  availability: "",
-};
-
-const initialRepresentationDraft: RepresentationDraft = {
+const EMPTY_REPRESENTATION: RepresentationDraft = {
   name: "",
   legalName: "",
   cnpj: "",
   email: "",
   phone: "",
   description: "",
+  cep: "",
+  street: "",
+  district: "",
+  number: "",
+  complement: "",
   city: "",
   state: "",
+  initiativeKind: "formal",
+  areas: [],
+  supportTypes: [],
 };
 
-function toList(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function optionalText(value: string): string | undefined {
-  const normalized = value.trim();
-
-  return normalized || undefined;
+function createEmptyRepresentationDraft(): RepresentationDraft {
+  return {
+    ...EMPTY_REPRESENTATION,
+    areas: [],
+    supportTypes: [],
+  };
 }
 
 function roleKey(role: CollaborationRole): WorkspaceKey {
@@ -157,109 +145,165 @@ function representationKey(
   return `representation:${representation}`;
 }
 
-function buildProfileData(
-  role: CollaborationRole,
-  draft: PersonalDraft,
-): CollaborationProfileData {
-  switch (role) {
-    case "developer":
-      return {
-        technologies: toList(draft.technologies),
-
-        experienceLevel:
-          draft.experienceLevel === "beginner" ||
-          draft.experienceLevel === "intermediate" ||
-          draft.experienceLevel === "advanced"
-            ? draft.experienceLevel
-            : undefined,
-
-        portfolioUrl: optionalText(draft.portfolioUrl),
-      };
-
-    case "designer":
-      return {
-        specialties: toList(draft.specialties),
-
-        tools: toList(draft.tools),
-
-        portfolioUrl: optionalText(draft.portfolioUrl),
-      };
-
-    case "translator":
-      return {
-        languages: toList(draft.languages),
-
-        notes: optionalText(draft.notes),
-      };
-
-    case "volunteer":
-      return {
-        interestAreas: toList(draft.interestAreas),
-
-        availability: optionalText(draft.availability),
-      };
-  }
+function optionalText(value: string): string | undefined {
+  const normalized = value.trim();
+  return normalized || undefined;
 }
 
-function personalDraftFromProfile(
+function emptyDraft(
   role: CollaborationRole,
-  profileData: CollaborationProfileData,
-): PersonalDraft {
-  const draft = {
-    ...initialPersonalDraft,
+): PersonalDraftMap[CollaborationRole] {
+  if (role === "developer") {
+    return { technologies: [], experienceLevel: "", portfolioUrl: "" };
+  }
+  if (role === "designer") {
+    return { specialties: [], tools: [], portfolioUrl: "" };
+  }
+  if (role === "translator") {
+    return { languages: [], accessibilitySkills: [], notes: "" };
+  }
+  return {
+    causes: [],
+    interestAreas: [],
+    availability: "",
+    opportunityPreference: "both",
   };
+}
+
+function draftFromProfile(
+  role: CollaborationRole,
+  profileData: CollaborationProfileData | undefined,
+): PersonalDraftMap[CollaborationRole] {
+  if (!profileData) return emptyDraft(role);
 
   if (role === "developer") {
-    const data = profileData as {
-      technologies?: string[];
-      experienceLevel?: string;
-      portfolioUrl?: string;
+    const data = profileData as DeveloperProfileData;
+    return {
+      technologies: data.technologies ?? [],
+      experienceLevel: data.experienceLevel ?? "",
+      portfolioUrl: data.portfolioUrl ?? "",
     };
-
-    draft.technologies = data.technologies?.join(", ") ?? "";
-
-    draft.experienceLevel = data.experienceLevel ?? "";
-
-    draft.portfolioUrl = data.portfolioUrl ?? "";
   }
 
   if (role === "designer") {
-    const data = profileData as {
-      specialties?: string[];
-      tools?: string[];
-      portfolioUrl?: string;
+    const data = profileData as DesignerProfileData;
+    return {
+      specialties: data.specialties ?? [],
+      tools: data.tools ?? [],
+      portfolioUrl: data.portfolioUrl ?? "",
     };
-
-    draft.specialties = data.specialties?.join(", ") ?? "";
-
-    draft.tools = data.tools?.join(", ") ?? "";
-
-    draft.portfolioUrl = data.portfolioUrl ?? "";
   }
 
   if (role === "translator") {
-    const data = profileData as {
-      languages?: string[];
-      notes?: string;
+    const data = profileData as TranslatorProfileData;
+    return {
+      languages: data.languages ?? [],
+      accessibilitySkills: data.accessibilitySkills ?? [],
+      notes: data.notes ?? "",
     };
-
-    draft.languages = data.languages?.join(", ") ?? "";
-
-    draft.notes = data.notes ?? "";
   }
 
-  if (role === "volunteer") {
-    const data = profileData as {
-      interestAreas?: string[];
-      availability?: string;
-    };
+  const data = profileData as VolunteerProfileData;
+  return {
+    causes: data.causes ?? [],
+    interestAreas: data.interestAreas ?? [],
+    availability: data.availability ?? "",
+    location: data.location,
+    availabilityDetails: data.availabilityDetails,
+    opportunityPreference: data.opportunityPreference ?? "both",
+  };
+}
 
-    draft.interestAreas = data.interestAreas?.join(", ") ?? "";
-
-    draft.availability = data.availability ?? "";
+function isProfileComplete(profile: CollaborationProfile): boolean {
+  if (profile.role === "developer") {
+    const data = profile.profileData as DeveloperProfileData;
+    return (
+      (data.technologies?.length ?? 0) > 0 && Boolean(data.experienceLevel)
+    );
   }
 
-  return draft;
+  if (profile.role === "designer") {
+    const data = profile.profileData as DesignerProfileData;
+    return (data.specialties?.length ?? 0) > 0 && (data.tools?.length ?? 0) > 0;
+  }
+
+  if (profile.role === "translator") {
+    const data = profile.profileData as TranslatorProfileData;
+    return (
+      (data.languages?.length ?? 0) + (data.accessibilitySkills?.length ?? 0) >
+      0
+    );
+  }
+
+  const data = profile.profileData as VolunteerProfileData;
+  const availability = data.availabilityDetails;
+  const availabilityComplete =
+    availability?.frequency === "flexible" ||
+    Boolean(
+      availability &&
+      availability.days.length > 0 &&
+      availability.periods.length > 0 &&
+      availability.frequency,
+    );
+
+  return (
+    (data.interestAreas?.length ?? 0) > 0 &&
+    (data.causes?.length ?? 0) > 0 &&
+    Boolean(data.location?.state && data.location?.city) &&
+    availabilityComplete
+  );
+}
+
+function representationStatusLabel(
+  status: RepresentationStatus | null,
+): string {
+  if (status === "active") return "Vínculo ativo";
+  if (status === "pending") return "Solicitação enviada";
+  return "Disponível";
+}
+
+function summarizeAreas(areas?: string[] | null): string | null {
+  if (!areas || areas.length === 0) return null;
+  return areas.slice(0, 4).map(causeSelectionLabel).join(" · ");
+}
+
+function toPersistedProfileData(
+  role: CollaborationRole,
+  draft: PersonalDraftMap[CollaborationRole],
+): CollaborationProfileData {
+  if (role === "developer") {
+    const data = draft as DeveloperDraft;
+    return {
+      technologies: data.technologies,
+      experienceLevel: data.experienceLevel || undefined,
+      portfolioUrl: optionalText(data.portfolioUrl),
+    };
+  }
+  if (role === "designer") {
+    const data = draft as DesignerProfileFormData;
+    return {
+      specialties: data.specialties,
+      tools: data.tools,
+      portfolioUrl: optionalText(data.portfolioUrl),
+    };
+  }
+  if (role === "translator") {
+    const data = draft as TranslatorProfileFormData;
+    return {
+      languages: data.languages,
+      accessibilitySkills: data.accessibilitySkills,
+      notes: optionalText(data.notes),
+    };
+  }
+  const data = draft as VolunteerProfileFormData;
+  return {
+    causes: data.causes,
+    interestAreas: data.interestAreas,
+    availability: optionalText(data.availability),
+    location: data.location,
+    availabilityDetails: data.availabilityDetails,
+    opportunityPreference: data.opportunityPreference,
+  };
 }
 
 export default function CompleteProfiles() {
@@ -276,27 +320,17 @@ export default function CompleteProfiles() {
     return (
       <main className={styles.loadingPage}>
         <LoaderCircle className={styles.spinner} aria-hidden="true" />
-
         <p>Preparando seus perfis...</p>
       </main>
     );
   }
-
-  if (!account) {
-    return null;
-  }
-
-  if (account.onboardingStep === "identity") {
+  if (!account) return null;
+  if (account.onboardingStep === "identity")
     return <Navigate to="/app/primeiro-acesso" replace />;
-  }
-
-  if (account.onboardingStep === "roles") {
+  if (account.onboardingStep === "roles")
     return <Navigate to="/app/escolher-funcao" replace />;
-  }
-
-  if (account.onboardingStep === "completed") {
+  if (account.onboardingStep === "completed")
     return <Navigate to="/app/comunidade" replace />;
-  }
 
   return (
     <CompleteProfilesWorkspace
@@ -319,15 +353,10 @@ function CompleteProfilesWorkspace({
   refreshCollaborationProfiles,
 }: {
   roles: CollaborationRole[];
-
   representationTypes: OnboardingRepresentation[];
-
   collaborationProfiles: ReturnType<typeof useAuth>["collaborationProfiles"];
-
   collaborationProfilesLoading: boolean;
-
   refreshAccount: () => Promise<void>;
-
   refreshCollaborationProfiles: () => Promise<void>;
 }) {
   const navigate = useNavigate();
@@ -335,7 +364,6 @@ function CompleteProfilesWorkspace({
   const workspaceKeys = useMemo<WorkspaceKey[]>(
     () => [
       ...roles.map(roleKey),
-
       ...representationTypes.map(representationKey),
     ],
     [roles, representationTypes],
@@ -344,84 +372,61 @@ function CompleteProfilesWorkspace({
   const [activeKey, setActiveKey] = useState<WorkspaceKey>(
     () => workspaceKeys[0] ?? "role:volunteer",
   );
-
   const [personalDrafts, setPersonalDrafts] = useState<
-    Partial<Record<CollaborationRole, PersonalDraft>>
-  >(() => {
-    const initial: Partial<Record<CollaborationRole, PersonalDraft>> = {};
-
-    for (const role of roles) {
-      const existing = collaborationProfiles.find(
-        (profile) => profile.role === role,
-      );
-
-      initial[role] = existing
-        ? personalDraftFromProfile(role, existing.profileData)
-        : {
-            ...initialPersonalDraft,
-          };
-    }
-
-    return initial;
-  });
-
+    Partial<PersonalDraftMap>
+  >({});
   const [representations, setRepresentations] = useState<MyRepresentation[]>(
     [],
   );
-
   const [representationsLoading, setRepresentationsLoading] = useState(true);
-
   const [representationMode, setRepresentationMode] =
     useState<RepresentationMode>("choose");
-
-  const [representationDraft, setRepresentationDraft] =
-    useState<RepresentationDraft>({
-      ...initialRepresentationDraft,
-    });
-
+  const [representationDrafts, setRepresentationDrafts] = useState<
+    Record<OnboardingRepresentation, RepresentationDraft>
+  >(() => ({
+    ngo: createEmptyRepresentationDraft(),
+    company: createEmptyRepresentationDraft(),
+  }));
+  const [representationToCancel, setRepresentationToCancel] =
+    useState<MyRepresentation | null>(null);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
   const [searchResults, setSearchResults] = useState<
     OrganizationSearchResult[]
   >([]);
-
+  const [lastSearchedQuery, setLastSearchedQuery] = useState("");
   const [searching, setSearching] = useState(false);
-
   const [saving, setSaving] = useState(false);
-
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-
     void getMyRepresentations()
       .then((result) => {
-        if (!cancelled) {
-          setRepresentations(result);
-        }
+        if (!cancelled) setRepresentations(result);
       })
       .catch((error) => {
         console.error("Não foi possível carregar as representações:", error);
-
-        if (!cancelled) {
+        if (!cancelled)
           setErrorMessage(
             "Não foi possível carregar seus vínculos institucionais.",
           );
-        }
       })
       .finally(() => {
-        if (!cancelled) {
-          setRepresentationsLoading(false);
-        }
+        if (!cancelled) setRepresentationsLoading(false);
       });
-
     return () => {
       cancelled = true;
     };
   }, []);
 
   const completedRoles = useMemo(
-    () => new Set(collaborationProfiles.map((profile) => profile.role)),
+    () =>
+      new Set(
+        collaborationProfiles
+          .filter(isProfileComplete)
+          .map((profile) => profile.role),
+      ),
     [collaborationProfiles],
   );
 
@@ -444,90 +449,62 @@ function CompleteProfilesWorkspace({
     representationTypes.filter((representation) =>
       completedRepresentations.has(representation),
     ).length;
-
   const totalCount = roles.length + representationTypes.length;
-
   const allCompleted = totalCount > 0 && completedCount === totalCount;
 
   const activeRole = activeKey.startsWith("role:")
     ? (activeKey.replace("role:", "") as CollaborationRole)
     : null;
-
   const activeRepresentation = activeKey.startsWith("representation:")
     ? (activeKey.replace("representation:", "") as OnboardingRepresentation)
     : null;
 
+  const representationDraft = activeRepresentation
+    ? representationDrafts[activeRepresentation]
+    : createEmptyRepresentationDraft();
+
+  const currentDraft = <R extends CollaborationRole>(
+    role: R,
+  ): PersonalDraftMap[R] => {
+    const edited = personalDrafts[role] as PersonalDraftMap[R] | undefined;
+    if (edited) return edited;
+    const profile = collaborationProfiles.find((item) => item.role === role);
+    return draftFromProfile(role, profile?.profileData) as PersonalDraftMap[R];
+  };
+
+  const setDraft = <R extends CollaborationRole>(
+    role: R,
+    value: PersonalDraftMap[R],
+  ) => {
+    setPersonalDrafts((current) => ({ ...current, [role]: value }));
+    setErrorMessage("");
+  };
+
   const moveToNext = (currentKey: WorkspaceKey) => {
-    const index = workspaceKeys.indexOf(currentKey);
-
-    const next = workspaceKeys[index + 1];
-
-    if (next) {
-      setActiveKey(next);
-    }
+    const next = workspaceKeys[workspaceKeys.indexOf(currentKey) + 1];
+    if (next) setActiveKey(next);
   };
 
-  const updatePersonalDraft = (
-    role: CollaborationRole,
-    field: keyof PersonalDraft,
-    value: string,
+  const savePersonal = async <R extends CollaborationRole>(
+    role: R,
+    draft: PersonalDraftMap[R],
   ) => {
-    setPersonalDrafts((current) => ({
-      ...current,
-
-      [role]: {
-        ...(current[role] ?? initialPersonalDraft),
-
-        [field]: value,
-      },
-    }));
-
-    setErrorMessage("");
-  };
-
-  const updateRepresentationDraft = (
-    field: keyof RepresentationDraft,
-    value: string,
-  ) => {
-    setRepresentationDraft((current) => ({
-      ...current,
-      [field]: value,
-    }));
-
-    setErrorMessage("");
-  };
-
-  const handleSavePersonal = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!activeRole || saving) {
-      return;
-    }
-
-    const draft = personalDrafts[activeRole] ?? initialPersonalDraft;
-
+    if (saving) return;
     setSaving(true);
     setErrorMessage("");
-
     try {
-      const profileData = buildProfileData(activeRole, draft);
-
+      const profileData = toPersistedProfileData(role, draft);
       const existing = collaborationProfiles.find(
-        (profile) => profile.role === activeRole,
+        (profile) => profile.role === role,
       );
-
-      if (existing) {
+      if (existing)
         await updateMyCollaborationProfile(existing.id, profileData);
-      } else {
-        await createMyCollaborationProfile(activeRole, profileData);
-      }
-
+      else await createMyCollaborationProfile(role, profileData);
+      setDraft(role, draft);
       await refreshCollaborationProfiles();
-
-      moveToNext(roleKey(activeRole));
+      moveToNext(roleKey(role));
     } catch (error) {
       console.error("Não foi possível salvar o perfil:", error);
-
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -538,26 +515,72 @@ function CompleteProfilesWorkspace({
     }
   };
 
-  const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
+  const updateRepresentationDraft = <K extends keyof RepresentationDraft>(
+    field: K,
+    value: RepresentationDraft[K],
+  ) => {
+    if (!activeRepresentation) return;
+
+    setRepresentationDrafts((current) => ({
+      ...current,
+      [activeRepresentation]: {
+        ...current[activeRepresentation],
+        [field]: value,
+      },
+    }));
+    setErrorMessage("");
+  };
+
+  useEffect(() => {
+    if (representationMode !== "search" || !activeRepresentation) return;
+
+    const query = searchQuery.trim();
+    if (query.length < 2) return;
+
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      setSearching(true);
+      setErrorMessage("");
+
+      void searchRepresentationOrganizations(activeRepresentation, query)
+        .then((results) => {
+          if (cancelled) return;
+          setSearchResults(results);
+          setLastSearchedQuery(query);
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          console.error("Não foi possível pesquisar instituições:", error);
+          setSearchResults([]);
+          setLastSearchedQuery(query);
+          setErrorMessage("Não foi possível pesquisar instituições agora.");
+        })
+        .finally(() => {
+          if (!cancelled) setSearching(false);
+        });
+    }, 320);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [representationMode, activeRepresentation, searchQuery]);
+
+  const handleSearch = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!activeRepresentation || searchQuery.trim().length < 2) {
-      return;
-    }
-
+    if (!activeRepresentation || searchQuery.trim().length < 2) return;
     setSearching(true);
     setErrorMessage("");
-
     try {
-      const result = await searchRepresentationOrganizations(
-        activeRepresentation,
-        searchQuery,
+      const query = searchQuery.trim();
+      setSearchResults(
+        await searchRepresentationOrganizations(activeRepresentation, query),
       );
-
-      setSearchResults(result);
+      setLastSearchedQuery(query);
     } catch (error) {
       console.error("Não foi possível pesquisar instituições:", error);
-
+      setSearchResults([]);
+      setLastSearchedQuery(searchQuery.trim());
       setErrorMessage("Não foi possível pesquisar instituições agora.");
     } finally {
       setSearching(false);
@@ -565,31 +588,22 @@ function CompleteProfilesWorkspace({
   };
 
   const handleRequest = async (organizationId: string) => {
-    if (saving || !activeRepresentation) {
-      return;
-    }
-
+    if (saving || !activeRepresentation) return;
     setSaving(true);
     setErrorMessage("");
-
     try {
       const representation = await requestMyRepresentation(organizationId);
-
       setRepresentations((current) => [
         ...current.filter((item) => item.id !== representation.id),
-
         representation,
       ]);
-
       setRepresentationMode("choose");
-
       setSearchQuery("");
       setSearchResults([]);
-
+      setLastSearchedQuery("");
       moveToNext(representationKey(activeRepresentation));
     } catch (error) {
       console.error("Não foi possível solicitar o vínculo:", error);
-
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -600,90 +614,116 @@ function CompleteProfilesWorkspace({
     }
   };
 
-  const handleCreateRepresentation = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-
-    if (!activeRepresentation || saving) {
+  const confirmCancelRepresentationRequest = async () => {
+    const representation = representationToCancel;
+    if (!representation || saving || representation.status !== "pending")
       return;
-    }
-
-    if (representationDraft.name.trim().length < 2) {
-      setErrorMessage("Informe o nome da instituição.");
-
-      return;
-    }
 
     setSaving(true);
     setErrorMessage("");
 
     try {
+      await cancelMyRepresentationRequest(representation.id);
+      setRepresentations((current) =>
+        current.filter((item) => item.id !== representation.id),
+      );
+      setSearchResults((current) =>
+        current.map((organization) =>
+          organization.id === representation.organizationId
+            ? { ...organization, membershipStatus: null }
+            : organization,
+        ),
+      );
+      setRepresentationMode("choose");
+    } catch (error) {
+      console.error(
+        "Não foi possível cancelar a solicitação de vínculo:",
+        error,
+      );
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível cancelar essa solicitação agora.",
+      );
+    } finally {
+      setSaving(false);
+      setRepresentationToCancel(null);
+    }
+  };
+
+  const handleCreateRepresentation = async () => {
+    if (saving || !activeRepresentation) return;
+    setSaving(true);
+    setErrorMessage("");
+    try {
       const representation = await createMyRepresentation({
         organizationType: activeRepresentation,
-
         name: representationDraft.name.trim(),
-
         legalName: optionalText(representationDraft.legalName),
-
         cnpj: optionalText(representationDraft.cnpj),
-
-        email: optionalText(representationDraft.email),
-
-        phone: optionalText(representationDraft.phone),
-
-        description: optionalText(representationDraft.description),
-
-        city: optionalText(representationDraft.city),
-
-        state: optionalText(representationDraft.state),
+        email: representationDraft.email.trim(),
+        phone: representationDraft.phone.trim(),
+        description: representationDraft.description.trim(),
+        cep: representationDraft.cep.trim(),
+        street: representationDraft.street.trim(),
+        district: representationDraft.district.trim(),
+        number: representationDraft.number.trim(),
+        complement: optionalText(representationDraft.complement),
+        city: representationDraft.city.trim(),
+        state: representationDraft.state.trim(),
+        initiativeKind:
+          activeRepresentation === "company"
+            ? "formal"
+            : representationDraft.initiativeKind,
+        areas: representationDraft.areas,
+        supportTypes:
+          activeRepresentation === "company"
+            ? representationDraft.supportTypes
+            : [],
       });
-
       setRepresentations((current) => [
         ...current.filter((item) => item.id !== representation.id),
-
         representation,
       ]);
-
-      setRepresentationDraft({
-        ...initialRepresentationDraft,
-      });
-
+      setRepresentationDrafts((current) => ({
+        ...current,
+        [activeRepresentation]: createEmptyRepresentationDraft(),
+      }));
       setRepresentationMode("choose");
-
       moveToNext(representationKey(activeRepresentation));
     } catch (error) {
       console.error("Não foi possível criar a instituição:", error);
 
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Não foi possível cadastrar a instituição.",
-      );
+      if (
+        error instanceof ApiError &&
+        error.code === "ORGANIZATION_CNPJ_ALREADY_EXISTS"
+      ) {
+        setErrorMessage(
+          error.message ||
+            "Esse CNPJ já está cadastrado. Procure a instituição existente e solicite o vínculo.",
+        );
+      } else {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível cadastrar a instituição.",
+        );
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  const handleFinish = async () => {
-    if (!allCompleted || saving) {
-      return;
-    }
-
+  const completeAfterWelcome = async () => {
+    if (!allCompleted || saving) return;
     setSaving(true);
     setErrorMessage("");
-
     try {
       await completeOnboarding();
-
       await refreshAccount();
-
-      navigate("/app/comunidade", {
-        replace: true,
-      });
+      navigate("/app/comunidade", { replace: true });
     } catch (error) {
       console.error("Não foi possível concluir o primeiro acesso:", error);
-
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -706,29 +746,25 @@ function CompleteProfilesWorkspace({
     <main className={styles.page}>
       <header className={styles.topbar}>
         <img src={logo} alt="CONG" className={styles.logo} />
-
         <button
           type="button"
           className={styles.backButton}
           onClick={() => navigate("/app/escolher-funcao")}
           disabled={saving}
         >
-          <ArrowLeft aria-hidden="true" />
-          Rever escolhas
+          <ArrowLeft aria-hidden="true" /> Rever escolhas
         </button>
       </header>
 
       <section className={styles.content}>
         <div className={styles.hero}>
           <span className={styles.eyebrow}>Seu lugar no bando</span>
-
           <h1>
             Complete seus <span className={styles.titleAccent}>perfis</span>
           </h1>
-
           <p>
-            Falta pouco. Complete as informações necessárias para ativar as
-            formas de participação que você escolheu.
+            Complete as informações essenciais para ativar suas formas de
+            participação.
           </p>
         </div>
 
@@ -737,56 +773,43 @@ function CompleteProfilesWorkspace({
             <div className={styles.progressHeader}>
               <div className={styles.progressMeta}>
                 <span>Progresso</span>
-
                 <strong>
                   {completedCount} de {totalCount} concluídos
                 </strong>
               </div>
-
               <div className={styles.progressTrack}>
                 <span
                   style={{
-                    width:
-                      totalCount === 0
-                        ? "0%"
-                        : `${(completedCount / totalCount) * 100}%`,
+                    width: totalCount
+                      ? `${(completedCount / totalCount) * 100}%`
+                      : "0%",
                   }}
                 />
               </div>
             </div>
 
             {roles.length > 0 && (
-              <div className={styles.navGroup}>
+              <nav className={styles.navGroup} aria-label="Seus perfis">
                 <span className={styles.navLabel}>Seus perfis</span>
-
                 {roles.map((role) => {
                   const Icon = ROLE_ICONS[role];
-
                   const completed = completedRoles.has(role);
-
-                  const key = roleKey(role);
-
-                  const active = activeKey === key;
-
+                  const active = activeKey === roleKey(role);
                   return (
                     <button
                       key={role}
                       type="button"
-                      className={`${styles.navItem} ${
-                        active ? styles.navItemActive : ""
-                      }`}
+                      className={`${styles.navItem} ${active ? styles.navItemActive : ""}`}
                       onClick={() => {
-                        setActiveKey(key);
+                        setActiveKey(roleKey(role));
                         setErrorMessage("");
                       }}
                     >
                       <span className={styles.navIcon}>
                         <Icon aria-hidden="true" />
                       </span>
-
                       <span className={styles.navCopy}>
                         <strong>{ROLE_LABELS[role]}</strong>
-
                         <small>
                           {completed
                             ? "Concluído"
@@ -795,15 +818,8 @@ function CompleteProfilesWorkspace({
                               : "Pendente"}
                         </small>
                       </span>
-
                       <span
-                        className={`${styles.statusIcon} ${
-                          completed
-                            ? styles.statusDone
-                            : active
-                              ? styles.statusActive
-                              : ""
-                        }`}
+                        className={`${styles.statusIcon} ${completed ? styles.statusDone : active ? styles.statusActive : ""}`}
                         aria-hidden="true"
                       >
                         {completed ? <Check /> : <Circle />}
@@ -811,45 +827,36 @@ function CompleteProfilesWorkspace({
                     </button>
                   );
                 })}
-              </div>
+              </nav>
             )}
 
             {representationTypes.length > 0 && (
-              <div className={styles.navGroup}>
+              <nav className={styles.navGroup} aria-label="Representações">
                 <span className={styles.navLabel}>Representações</span>
-
                 {representationTypes.map((representation) => {
                   const Icon = REPRESENTATION_ICONS[representation];
-
                   const completed =
                     completedRepresentations.has(representation);
-
-                  const key = representationKey(representation);
-
-                  const active = activeKey === key;
-
+                  const active =
+                    activeKey === representationKey(representation);
                   return (
                     <button
                       key={representation}
                       type="button"
-                      className={`${styles.navItem} ${
-                        active ? styles.navItemActive : ""
-                      }`}
+                      className={`${styles.navItem} ${active ? styles.navItemActive : ""}`}
                       onClick={() => {
-                        setActiveKey(key);
-
+                        setActiveKey(representationKey(representation));
                         setRepresentationMode("choose");
-
+                        setSearchQuery("");
+                        setSearchResults([]);
                         setErrorMessage("");
                       }}
                     >
                       <span className={styles.navIcon}>
                         <Icon aria-hidden="true" />
                       </span>
-
                       <span className={styles.navCopy}>
                         <strong>{REPRESENTATION_LABELS[representation]}</strong>
-
                         <small>
                           {completed
                             ? "Configurada"
@@ -858,15 +865,8 @@ function CompleteProfilesWorkspace({
                               : "Pendente"}
                         </small>
                       </span>
-
                       <span
-                        className={`${styles.statusIcon} ${
-                          completed
-                            ? styles.statusDone
-                            : active
-                              ? styles.statusActive
-                              : ""
-                        }`}
+                        className={`${styles.statusIcon} ${completed ? styles.statusDone : active ? styles.statusActive : ""}`}
                         aria-hidden="true"
                       >
                         {completed ? <Check /> : <Circle />}
@@ -874,54 +874,117 @@ function CompleteProfilesWorkspace({
                     </button>
                   );
                 })}
-              </div>
+              </nav>
             )}
-
-            <div className={styles.bandoCard}>
-              <div className={styles.bandoMascotWrap}>
-                <img
-                  src={muscularCong}
-                  alt=""
-                  aria-hidden="true"
-                  className={styles.bandoMascot}
-                />
-              </div>
-
-              <div className={styles.bandoCopy}>
-                <strong>Cada jeito de participar fortalece o bando.</strong>
-
-                <span>Obrigado por trazer a sua força para a CONG.</span>
-              </div>
-            </div>
 
             <button
               type="button"
               className={styles.finishButton}
               disabled={!allCompleted || saving}
-              onClick={() => void handleFinish()}
+              onClick={() => setWelcomeOpen(true)}
             >
               {saving && allCompleted ? (
                 <LoaderCircle className={styles.spinner} aria-hidden="true" />
               ) : (
                 <Check aria-hidden="true" />
               )}
-              Concluir primeiro acesso
+              Finalizar perfis
             </button>
           </aside>
 
           <section className={styles.panel}>
-            {activeRole && (
-              <PersonalProfileForm
-                role={activeRole}
-                draft={personalDrafts[activeRole] ?? initialPersonalDraft}
-                completed={completedRoles.has(activeRole)}
-                saving={saving || collaborationProfilesLoading}
-                onChange={(field, value) =>
-                  updatePersonalDraft(activeRole, field, value)
-                }
-                onSubmit={handleSavePersonal}
-              />
+            {errorMessage && (
+              <div className={styles.error} role="alert">
+                {errorMessage}
+              </div>
             )}
+
+            {activeRole === "developer" &&
+              (() => {
+                const draft = currentDraft("developer");
+                return (
+                  <DeveloperProfileForm
+                    technologies={draft.technologies}
+                    experienceLevel={draft.experienceLevel}
+                    portfolioUrl={draft.portfolioUrl}
+                    completed={completedRoles.has("developer")}
+                    saving={saving || collaborationProfilesLoading}
+                    onTechnologiesChange={(technologies) =>
+                      setDraft("developer", { ...draft, technologies })
+                    }
+                    onExperienceLevelChange={(experienceLevel) =>
+                      setDraft("developer", { ...draft, experienceLevel })
+                    }
+                    onPortfolioUrlChange={(portfolioUrl) =>
+                      setDraft("developer", { ...draft, portfolioUrl })
+                    }
+                    onSubmit={(data: DeveloperProfileFormData) =>
+                      savePersonal("developer", { ...data })
+                    }
+                  />
+                );
+              })()}
+
+            {activeRole === "designer" &&
+              (() => {
+                const draft = currentDraft("designer");
+                return (
+                  <DesignerProfileForm
+                    {...draft}
+                    completed={completedRoles.has("designer")}
+                    saving={saving || collaborationProfilesLoading}
+                    onSpecialtiesChange={(specialties) =>
+                      setDraft("designer", { ...draft, specialties })
+                    }
+                    onToolsChange={(tools) =>
+                      setDraft("designer", { ...draft, tools })
+                    }
+                    onPortfolioUrlChange={(portfolioUrl) =>
+                      setDraft("designer", { ...draft, portfolioUrl })
+                    }
+                    onSubmit={(data) => savePersonal("designer", data)}
+                  />
+                );
+              })()}
+
+            {activeRole === "translator" &&
+              (() => {
+                const draft = currentDraft("translator");
+                return (
+                  <TranslatorProfileForm
+                    {...draft}
+                    completed={completedRoles.has("translator")}
+                    saving={saving || collaborationProfilesLoading}
+                    onLanguagesChange={(languages) =>
+                      setDraft("translator", { ...draft, languages })
+                    }
+                    onAccessibilitySkillsChange={(accessibilitySkills) =>
+                      setDraft("translator", { ...draft, accessibilitySkills })
+                    }
+                    onNotesChange={(notes) =>
+                      setDraft("translator", { ...draft, notes })
+                    }
+                    onSubmit={(data) => savePersonal("translator", data)}
+                  />
+                );
+              })()}
+
+            {activeRole === "volunteer" &&
+              (() => {
+                const draft = currentDraft("volunteer");
+                return (
+                  <VolunteerProfileForm
+                    {...draft}
+                    completed={completedRoles.has("volunteer")}
+                    saving={saving || collaborationProfilesLoading}
+                    onChange={(data) => setDraft("volunteer", data)}
+                    onOpenParticipationChoices={() =>
+                      navigate("/app/escolher-funcao")
+                    }
+                    onSubmit={(data) => savePersonal("volunteer", data)}
+                  />
+                );
+              })()}
 
             {activeRepresentation && representationsLoading && (
               <div className={styles.loadingInline}>
@@ -931,25 +994,54 @@ function CompleteProfilesWorkspace({
             )}
 
             {activeRepresentation && !representationsLoading && (
-              <div>
-                <RepresentationHeading representation={activeRepresentation} />
+              <div className={styles.representationArea}>
+                <div className={styles.representationHeading}>
+                  <span className={styles.representationEyebrow}>
+                    Representação
+                  </span>
+                  <h2>{REPRESENTATION_LABELS[activeRepresentation]}</h2>
+                  <p>
+                    {activeRepresentation === "ngo"
+                      ? "Encontre uma iniciativa já cadastrada ou registre uma organização, coletivo ou ação."
+                      : "Encontre sua empresa ou cadastre uma nova representação apoiadora."}
+                  </p>
+                </div>
 
                 {activeRepresentationRecord ? (
                   <div className={styles.completedCard}>
                     <span className={styles.completedBadge}>
                       <Check aria-hidden="true" />
                     </span>
-
-                    <div>
+                    <div className={styles.completedCopy}>
                       <strong>
                         {activeRepresentationRecord.organizationName}
                       </strong>
-
                       <span>
                         {activeRepresentationRecord.status === "pending"
-                          ? "Solicitação enviada. A instituição poderá aprovar seu vínculo."
+                          ? "Solicitação enviada. A instituição ainda precisa aprovar seu vínculo."
                           : "Você já está vinculado a esta instituição."}
                       </span>
+                      <small className={styles.completedMeta}>
+                        {activeRepresentationRecord.organizationType ===
+                        "company"
+                          ? "Empresa apoiadora"
+                          : "ONG ou projeto social"}{" "}
+                        · {activeRepresentationRecord.roleName}
+                      </small>
+                      {activeRepresentationRecord.status === "pending" && (
+                        <button
+                          type="button"
+                          className={styles.cancelRequestButton}
+                          disabled={saving}
+                          onClick={() =>
+                            setRepresentationToCancel(
+                              activeRepresentationRecord,
+                            )
+                          }
+                        >
+                          Cancelar solicitação
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -964,19 +1056,15 @@ function CompleteProfilesWorkspace({
                           <span className={styles.choiceIcon}>
                             <Search aria-hidden="true" />
                           </span>
-
                           <strong>Encontrar uma instituição</strong>
-
                           <span>
-                            Procure uma que já tenha cadastro na CONG.
+                            Evite duplicidade: procure primeiro pelo cadastro já
+                            existente.
                           </span>
-
                           <span className={styles.choiceAction}>
-                            Procurar
-                            <ArrowRight aria-hidden="true" />
+                            Procurar <ArrowRight aria-hidden="true" />
                           </span>
                         </button>
-
                         <button
                           type="button"
                           className={styles.choiceCard}
@@ -985,24 +1073,25 @@ function CompleteProfilesWorkspace({
                           <span className={styles.choiceIcon}>
                             <Building2 aria-hidden="true" />
                           </span>
-
-                          <strong>Cadastrar nova</strong>
-
+                          <strong>
+                            {activeRepresentation === "ngo"
+                              ? "Cadastrar organização ou iniciativa"
+                              : "Cadastrar empresa"}
+                          </strong>
                           <span>
-                            Cadastre a instituição e torne-se o primeiro
-                            administrador.
+                            {activeRepresentation === "ngo"
+                              ? "Inclui projetos sem CNPJ e ações pontuais."
+                              : "Validação de CNPJ, CEP e UF assistida."}
                           </span>
-
                           <span className={styles.choiceAction}>
-                            Cadastrar
-                            <ArrowRight aria-hidden="true" />
+                            Cadastrar <ArrowRight aria-hidden="true" />
                           </span>
                         </button>
                       </div>
                     )}
 
                     {representationMode === "search" && (
-                      <div>
+                      <div className={styles.searchArea}>
                         <button
                           type="button"
                           className={styles.textButton}
@@ -1011,22 +1100,27 @@ function CompleteProfilesWorkspace({
                           <ArrowLeft aria-hidden="true" />
                           Voltar
                         </button>
-
                         <form
                           className={styles.searchForm}
-                          onSubmit={(event) => void handleSearch(event)}
+                          onSubmit={handleSearch}
                         >
                           <label htmlFor="organization-search">
                             Nome da instituição
                           </label>
-
                           <div className={styles.searchRow}>
                             <input
                               id="organization-search"
                               value={searchQuery}
-                              onChange={(event) =>
-                                setSearchQuery(event.target.value)
-                              }
+                              onChange={(event) => {
+                                const nextQuery = event.target.value;
+                                setSearchQuery(nextQuery);
+                                setErrorMessage("");
+                                if (nextQuery.trim().length < 2) {
+                                  setSearchResults([]);
+                                  setLastSearchedQuery("");
+                                  setSearching(false);
+                                }
+                              }}
                               minLength={2}
                               placeholder={
                                 activeRepresentation === "ngo"
@@ -1034,7 +1128,6 @@ function CompleteProfilesWorkspace({
                                   : "Ex.: Empresa apoiadora"
                               }
                             />
-
                             <button
                               type="submit"
                               disabled={
@@ -1053,57 +1146,91 @@ function CompleteProfilesWorkspace({
                             </button>
                           </div>
                         </form>
-
                         <div className={styles.searchResults}>
-                          {searchResults.map((organization) => (
-                            <article
-                              key={organization.id}
-                              className={styles.searchResult}
-                            >
-                              <div>
-                                <strong>{organization.name}</strong>
+                          {searchResults.map((organization) => {
+                            const locationText =
+                              [organization.city, organization.state]
+                                .filter(Boolean)
+                                .join(", ") || "Localização não informada";
+                            const areasText = summarizeAreas(
+                              organization.areas,
+                            );
 
-                                <span>
-                                  {[organization.city, organization.state]
-                                    .filter(Boolean)
-                                    .join(", ") || "Localização não informada"}
-                                </span>
-                              </div>
-
-                              <button
-                                type="button"
-                                disabled={
-                                  saving ||
-                                  organization.membershipStatus === "active" ||
-                                  organization.membershipStatus === "pending"
-                                }
-                                onClick={() =>
-                                  void handleRequest(organization.id)
-                                }
+                            return (
+                              <article
+                                key={organization.id}
+                                className={styles.searchResult}
                               >
-                                {organization.membershipStatus === "active"
-                                  ? "Já vinculado"
-                                  : organization.membershipStatus === "pending"
-                                    ? "Solicitação enviada"
-                                    : "Solicitar vínculo"}
-                              </button>
-                            </article>
-                          ))}
+                                <div className={styles.searchResultCopy}>
+                                  <div className={styles.searchResultHeader}>
+                                    <strong>{organization.name}</strong>
+                                    <span className={styles.searchResultStatus}>
+                                      {representationStatusLabel(
+                                        organization.membershipStatus,
+                                      )}
+                                    </span>
+                                  </div>
 
-                          {!searching &&
-                            searchQuery.trim().length >= 2 &&
-                            searchResults.length === 0 && (
-                              <p className={styles.emptyMessage}>
-                                Nenhuma instituição encontrada. Você pode
-                                cadastrá-la como nova.
-                              </p>
-                            )}
+                                  <span>{locationText}</span>
+                                  {organization.legalName && (
+                                    <span>
+                                      Razão social: {organization.legalName}
+                                    </span>
+                                  )}
+                                  {organization.cnpj && (
+                                    <span>CNPJ: {organization.cnpj}</span>
+                                  )}
+                                  {organization.description && (
+                                    <p
+                                      className={styles.searchResultDescription}
+                                    >
+                                      {organization.description}
+                                    </p>
+                                  )}
+                                  {areasText && (
+                                    <small className={styles.searchResultMeta}>
+                                      {areasText}
+                                    </small>
+                                  )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  disabled={
+                                    saving ||
+                                    organization.membershipStatus ===
+                                      "active" ||
+                                    organization.membershipStatus === "pending"
+                                  }
+                                  onClick={() =>
+                                    void handleRequest(organization.id)
+                                  }
+                                >
+                                  {organization.membershipStatus === "active"
+                                    ? "Já vinculado"
+                                    : organization.membershipStatus ===
+                                        "pending"
+                                      ? "Solicitação enviada"
+                                      : "Solicitar vínculo"}
+                                </button>
+                              </article>
+                            );
+                          })}
                         </div>
+                        {!searching &&
+                          searchQuery.trim().length >= 2 &&
+                          lastSearchedQuery === searchQuery.trim() &&
+                          searchResults.length === 0 && (
+                            <p className={styles.emptyMessage}>
+                              Nenhuma instituição encontrada. Você pode
+                              cadastrá-la como nova.
+                            </p>
+                          )}
                       </div>
                     )}
 
                     {representationMode === "create" && (
-                      <RepresentationCreateForm
+                      <InstitutionRepresentationForm
                         type={activeRepresentation}
                         draft={representationDraft}
                         saving={saving}
@@ -1116,391 +1243,70 @@ function CompleteProfilesWorkspace({
                 )}
               </div>
             )}
-
-            {errorMessage && (
-              <div className={styles.error} role="alert">
-                {errorMessage}
-              </div>
-            )}
           </section>
         </div>
-      </section>
-    </main>
-  );
-}
 
-function PersonalProfileForm({
-  role,
-  draft,
-  completed,
-  saving,
-  onChange,
-  onSubmit,
-}: {
-  role: CollaborationRole;
-
-  draft: PersonalDraft;
-
-  completed: boolean;
-
-  saving: boolean;
-
-  onChange: (field: keyof PersonalDraft, value: string) => void;
-
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-}) {
-  const Icon = ROLE_ICONS[role];
-
-  return (
-    <form onSubmit={onSubmit} className={styles.profileForm}>
-      <div className={styles.panelHeading}>
-        <div className={styles.panelIdentity}>
-          <span className={styles.panelIcon}>
-            <Icon aria-hidden="true" />
-          </span>
-
-          <span className={styles.panelEyebrow}>Perfil pessoal</span>
-        </div>
-
-        <h2>{ROLE_LABELS[role]}</h2>
-
-        <p>
-          {completed
-            ? "Este perfil já está configurado. Você pode ajustar os dados e salvar novamente."
-            : "Conte somente o necessário para a comunidade entender como você quer colaborar."}
-        </p>
-      </div>
-
-      <div className={styles.formFields}>
-        {role === "developer" && (
-          <>
-            <Field label="Tecnologias" required hint="Separe por vírgulas.">
-              <input
-                value={draft.technologies}
-                onChange={(event) =>
-                  onChange("technologies", event.target.value)
-                }
-                placeholder="React, TypeScript, Node.js"
-                required
-              />
-            </Field>
-
-            <Field label="Nível de experiência">
-              <select
-                value={draft.experienceLevel}
-                onChange={(event) =>
-                  onChange("experienceLevel", event.target.value)
-                }
-              >
-                <option value="">Prefiro não informar</option>
-
-                <option value="beginner">Iniciante</option>
-
-                <option value="intermediate">Intermediário</option>
-
-                <option value="advanced">Avançado</option>
-              </select>
-            </Field>
-
-            <Field label="Portfólio ou GitHub">
-              <input
-                type="url"
-                value={draft.portfolioUrl}
-                onChange={(event) =>
-                  onChange("portfolioUrl", event.target.value)
-                }
-                placeholder="https://..."
-              />
-            </Field>
-          </>
-        )}
-
-        {role === "designer" && (
-          <>
-            <Field label="Especialidades" required hint="Separe por vírgulas.">
-              <input
-                value={draft.specialties}
-                onChange={(event) =>
-                  onChange("specialties", event.target.value)
-                }
-                placeholder="UI, UX, identidade visual"
-                required
-              />
-            </Field>
-
-            <Field label="Ferramentas">
-              <input
-                value={draft.tools}
-                onChange={(event) => onChange("tools", event.target.value)}
-                placeholder="Figma, Illustrator, Canva"
-              />
-            </Field>
-
-            <Field label="Portfólio">
-              <input
-                type="url"
-                value={draft.portfolioUrl}
-                onChange={(event) =>
-                  onChange("portfolioUrl", event.target.value)
-                }
-                placeholder="https://..."
-              />
-            </Field>
-          </>
-        )}
-
-        {role === "translator" && (
-          <>
-            <Field label="Idiomas" required hint="Separe por vírgulas.">
-              <input
-                value={draft.languages}
-                onChange={(event) => onChange("languages", event.target.value)}
-                placeholder="Português, Inglês, Espanhol"
-                required
-              />
-            </Field>
-
-            <Field label="Observações">
-              <textarea
-                rows={5}
-                maxLength={300}
-                value={draft.notes}
-                onChange={(event) => onChange("notes", event.target.value)}
-                placeholder="Conte um pouco sobre sua experiência com tradução."
-              />
-            </Field>
-          </>
-        )}
-
-        {role === "volunteer" && (
-          <>
-            <Field
-              label="Áreas em que deseja ajudar"
-              required
-              hint="Separe por vírgulas."
-            >
-              <input
-                value={draft.interestAreas}
-                onChange={(event) =>
-                  onChange("interestAreas", event.target.value)
-                }
-                placeholder="Eventos, logística, atendimento"
-                required
-              />
-            </Field>
-
-            <Field label="Disponibilidade">
-              <input
-                maxLength={120}
-                value={draft.availability}
-                onChange={(event) =>
-                  onChange("availability", event.target.value)
-                }
-                placeholder="Finais de semana, período da tarde..."
-              />
-            </Field>
-          </>
-        )}
-      </div>
-
-      <div className={styles.panelActions}>
         <button
-          type="submit"
-          className={styles.primaryButton}
-          disabled={saving}
+          type="button"
+          className={styles.mobileFinishButton}
+          disabled={!allCompleted || saving}
+          onClick={() => setWelcomeOpen(true)}
         >
-          {saving ? (
+          {saving && allCompleted ? (
             <LoaderCircle className={styles.spinner} aria-hidden="true" />
-          ) : completed ? (
+          ) : (
             <Check aria-hidden="true" />
-          ) : (
-            <ArrowRight aria-hidden="true" />
           )}
-
-          {saving
-            ? "Salvando..."
-            : completed
-              ? "Salvar alterações"
-              : "Salvar e continuar"}
+          Finalizar perfis
         </button>
-      </div>
-    </form>
-  );
-}
+      </section>
 
-function RepresentationHeading({
-  representation,
-}: {
-  representation: OnboardingRepresentation;
-}) {
-  const Icon = REPRESENTATION_ICONS[representation];
+      <ModalMensagem
+        aberto={Boolean(representationToCancel)}
+        titulo="Cancelar solicitação de vínculo?"
+        tamanho="pequeno"
+        textoBotaoOk="Cancelar solicitação"
+        mensagem={
+          representationToCancel ? (
+            <div className={styles.confirmationMessage}>
+              <p>
+                A solicitação para{" "}
+                <strong>{representationToCancel.organizationName}</strong> ainda
+                está pendente.
+              </p>
+              <p>
+                Ao cancelar, você poderá procurar a instituição novamente ou
+                enviar uma nova solicitação depois.
+              </p>
+            </div>
+          ) : undefined
+        }
+        onOk={() => void confirmCancelRepresentationRequest()}
+        onFechar={() => setRepresentationToCancel(null)}
+      />
 
-  return (
-    <div className={styles.panelHeading}>
-      <div className={styles.panelIdentity}>
-        <span className={styles.panelIcon}>
-          <Icon aria-hidden="true" />
-        </span>
-
-        <span className={styles.panelEyebrow}>Representação</span>
-      </div>
-
-      <h2>{REPRESENTATION_LABELS[representation]}</h2>
-
-      <p>
-        Conecte-se a uma instituição que já está na CONG ou cadastre uma nova.
-      </p>
-    </div>
-  );
-}
-
-function RepresentationCreateForm({
-  type,
-  draft,
-  saving,
-  onBack,
-  onChange,
-  onSubmit,
-}: {
-  type: OnboardingRepresentation;
-
-  draft: RepresentationDraft;
-
-  saving: boolean;
-
-  onBack: () => void;
-
-  onChange: (field: keyof RepresentationDraft, value: string) => void;
-
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-}) {
-  return (
-    <form onSubmit={onSubmit}>
-      <button type="button" className={styles.textButton} onClick={onBack}>
-        <ArrowLeft aria-hidden="true" />
-        Voltar
-      </button>
-
-      <div className={styles.formFields}>
-        <Field
-          label={type === "ngo" ? "Nome da ONG ou projeto" : "Nome da empresa"}
-          required
-        >
-          <input
-            value={draft.name}
-            onChange={(event) => onChange("name", event.target.value)}
-            minLength={2}
-            maxLength={120}
-            required
-          />
-        </Field>
-
-        <Field label="Razão social">
-          <input
-            value={draft.legalName}
-            onChange={(event) => onChange("legalName", event.target.value)}
-            maxLength={160}
-          />
-        </Field>
-
-        <div className={styles.fieldRow}>
-          <Field label="CNPJ">
-            <input
-              value={draft.cnpj}
-              onChange={(event) => onChange("cnpj", event.target.value)}
-              maxLength={30}
-            />
-          </Field>
-
-          <Field label="Telefone">
-            <input
-              value={draft.phone}
-              onChange={(event) => onChange("phone", event.target.value)}
-              maxLength={40}
-            />
-          </Field>
-        </div>
-
-        <Field label="E-mail institucional">
-          <input
-            type="email"
-            value={draft.email}
-            onChange={(event) => onChange("email", event.target.value)}
-          />
-        </Field>
-
-        <Field label="Descrição">
-          <textarea
-            rows={4}
-            maxLength={500}
-            value={draft.description}
-            onChange={(event) => onChange("description", event.target.value)}
-          />
-        </Field>
-
-        <div className={styles.fieldRow}>
-          <Field label="Cidade">
-            <input
-              value={draft.city}
-              onChange={(event) => onChange("city", event.target.value)}
-              maxLength={80}
-            />
-          </Field>
-
-          <Field label="UF">
-            <input
-              value={draft.state}
-              onChange={(event) =>
-                onChange("state", event.target.value.toUpperCase())
-              }
-              maxLength={2}
-              placeholder="SP"
-            />
-          </Field>
-        </div>
-      </div>
-
-      <div className={styles.panelActions}>
-        <button
-          type="submit"
-          className={styles.primaryButton}
-          disabled={saving}
-        >
-          {saving ? (
-            <LoaderCircle className={styles.spinner} aria-hidden="true" />
-          ) : (
-            <Building2 aria-hidden="true" />
-          )}
-
-          {saving ? "Cadastrando..." : "Cadastrar e continuar"}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  required = false,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <label className={styles.field}>
-      <span>
-        {label}
-
-        {required && <strong>*</strong>}
-      </span>
-
-      {children}
-
-      {hint && <small>{hint}</small>}
-    </label>
+      <ModalMensagem
+        aberto={welcomeOpen}
+        titulo="Bem-vindo ao bando"
+        tamanho="medio"
+        textoBotaoOk="Entrar na CONG"
+        fecharAoClicarFora={false}
+        mensagem={
+          <div className={styles.welcomeMessage}>
+            <img src={happyCong} alt="Mascote Cong comemorando" />
+            <div>
+              <strong>A união faz a força.</strong>
+              <p>
+                Seus perfis estão prontos. A CONG vai usar essas informações
+                para aproximar você de pessoas, causas e oportunidades que
+                combinam com a sua forma de participar.
+              </p>
+            </div>
+          </div>
+        }
+        onOk={() => void completeAfterWelcome()}
+        onFechar={() => setWelcomeOpen(false)}
+      />
+    </main>
   );
 }

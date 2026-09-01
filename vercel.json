@@ -4,6 +4,23 @@
       "includeFiles": "backend/certs/supabase-ca.crt"
     }
   },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "dev.cong.com.br"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/como-funciona",

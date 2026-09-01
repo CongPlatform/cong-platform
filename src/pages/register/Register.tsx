@@ -55,9 +55,7 @@ const COMMON_PASSWORDS = [
 const PREDICTABLE_RUNS =
   /0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|qwer|wert|asdf|sdfg|zxcv/i;
 
-const DISALLOWED_PASSWORDS = new Set([
-  "cachorro-verde-na-praia-2026",
-]);
+const DISALLOWED_PASSWORDS = new Set(["cachorro-verde-na-praia-2026"]);
 
 function normalizePasswordForBlocklist(password: string) {
   return password.trim().toLowerCase();

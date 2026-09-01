@@ -32,7 +32,7 @@ export const TransitionLink = forwardRef<
     onClick,
     ...props
   },
-  ref
+  ref,
 ) {
   const { navigateWithTransition } = usePageTransition();
 

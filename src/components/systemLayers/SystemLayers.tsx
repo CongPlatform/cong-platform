@@ -110,7 +110,10 @@ export default function SystemLayers() {
 
             <div className={styles.layersStack}>
               {layers.map((layer) => (
-                <div key={layer.title} className={`${styles.layerRow} ${layer.tone}`}>
+                <div
+                  key={layer.title}
+                  className={`${styles.layerRow} ${layer.tone}`}
+                >
                   <header className={styles.layerLabel}>
                     <span>{layer.label}</span>
                     <strong>{layer.title}</strong>
@@ -122,7 +125,11 @@ export default function SystemLayers() {
 
                       return (
                         <div key={item.label} className={styles.layerItem}>
-                          <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                          <Icon
+                            size={18}
+                            strokeWidth={1.8}
+                            aria-hidden="true"
+                          />
                           <span>{item.label}</span>
                         </div>
                       );
@@ -133,11 +140,17 @@ export default function SystemLayers() {
             </div>
           </article>
 
-          <aside className={styles.layerNotes} aria-label="Princípios das camadas">
+          <aside
+            className={styles.layerNotes}
+            aria-label="Princípios das camadas"
+          >
             <span className={styles.notesClip} aria-hidden="true" />
 
             {layerNotes.map((note) => (
-              <article key={note.title} className={`${styles.layerNote} ${note.tone}`}>
+              <article
+                key={note.title}
+                className={`${styles.layerNote} ${note.tone}`}
+              >
                 <strong>{note.title}</strong>
                 <p>{note.text}</p>
               </article>

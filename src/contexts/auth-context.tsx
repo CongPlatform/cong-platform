@@ -11,14 +11,15 @@ import type {
   UserAccount,
 } from "../services/accountService";
 
+import type {
+  CreateRepresentationInput,
+  MyRepresentation,
+} from "../services/representationService";
+
 export type JourneyId = "skills" | "donations" | "volunteering" | "ngo";
 
 export type ProfileType =
-  | "personal"
-  | "contributor"
-  | "donor"
-  | "volunteer"
-  | "organization";
+  "personal" | "contributor" | "donor" | "volunteer" | "organization";
 
 export type ProfileStatus = "active" | "inactive" | "pending";
 
@@ -91,7 +92,21 @@ export interface AuthContextValue {
 
   collaborationProfilesLoading: boolean;
 
+  representations: MyRepresentation[];
+
+  representationsLoading: boolean;
+
   refreshCollaborationProfiles: () => Promise<void>;
+
+  refreshRepresentations: () => Promise<void>;
+
+  createRepresentation: (
+    input: CreateRepresentationInput,
+  ) => Promise<MyRepresentation>;
+
+  requestRepresentation: (organizationId: string) => Promise<MyRepresentation>;
+
+  cancelRepresentationRequest: (representationId: string) => Promise<void>;
 
   createCollaborationProfile: (
     role: CollaborationRole,

@@ -8,9 +8,7 @@ import "./global.css";
 import "./styles/colors.css";
 import "./styles/typography.css";
 
-createRoot(
-  document.getElementById("root")!,
-).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
       <App />

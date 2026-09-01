@@ -77,3 +77,6 @@ api-tests.http
 /cls
 /dir
 /git
+
+# Arquivos exclusivamente locais / nunca versionar
+/local-private/

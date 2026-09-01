@@ -1,0 +1,141 @@
+.editor {
+  margin-top: 20px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--color-primary-200);
+  border-radius: 16px;
+
+  background: var(--color-surface);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.toolbar {
+  min-height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 10px 16px;
+
+  border-bottom: 1px solid var(--color-border-light);
+
+  background: var(--color-primary-50);
+}
+
+.toolbar > span {
+  color: var(--color-primary-dark);
+
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+}
+
+.closeButton {
+  min-height: 36px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 12px;
+
+  border: 1px solid var(--color-border-medium);
+  border-radius: 9px;
+
+  color: var(--color-ink);
+  background: var(--color-surface);
+
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+
+  cursor: pointer;
+
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.closeButton svg {
+  width: 15px;
+  height: 15px;
+}
+
+.closeButton:hover {
+  border-color: var(--color-primary-200);
+
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+
+.closeButton:focus-visible {
+  outline: none;
+
+  box-shadow: var(--shadow-focus);
+}
+
+.formContainer {
+  padding: 22px;
+}
+
+.error {
+  margin: 16px 22px 0;
+  padding: 11px 13px;
+
+  border-radius: 10px;
+
+  color: var(--color-error-strong);
+  background: var(--color-error-soft);
+
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+}
+
+.toolbar > div {
+  min-width: 0;
+
+  display: grid;
+  gap: 2px;
+}
+
+.toolbarEyebrow {
+  color: var(--color-text-subtle);
+
+  font-size: var(--font-2xs);
+  font-weight: var(--font-semibold);
+
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.toolbar strong {
+  color: var(--color-primary-dark);
+
+  font-size: var(--font-sm);
+}
+
+@media (max-width: 600px) {
+  .toolbar {
+    padding: 10px 13px;
+  }
+
+  .formContainer {
+    padding: 16px;
+  }
+
+  .error {
+    margin-right: 16px;
+    margin-left: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .closeButton {
+    transition: none;
+  }
+}

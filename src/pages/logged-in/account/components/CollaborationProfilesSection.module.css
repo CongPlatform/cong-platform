@@ -1,0 +1,499 @@
+.section {
+  margin-top: 6px;
+}
+
+.toolbar {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.count {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.addButton,
+.primaryAction,
+.emptyState > button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid var(--color-primary);
+  border-radius: 9px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.addButton svg,
+.primaryAction svg {
+  width: 15px;
+  height: 15px;
+}
+
+.error,
+.success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: var(--font-sm);
+}
+
+.error {
+  color: var(--color-error-strong);
+}
+.success {
+  color: var(--color-success-strong);
+}
+
+.list {
+  border-top: 1px solid var(--app-border, var(--color-border));
+}
+
+.row {
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+}
+
+.rowSummary {
+  width: 100%;
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 4px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rowSummary:hover {
+  background: rgb(var(--color-primary-rgb) / 3%);
+}
+
+.rowSummary > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--app-muted, var(--color-text-subtle));
+}
+
+.roleIcon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 11px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+
+.roleIcon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.rowTitle {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.rowTitle strong {
+  color: var(--app-ink, var(--color-ink-strong));
+  font-size: var(--font-sm);
+}
+
+.rowTitle small {
+  overflow: hidden;
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activeText {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-success-strong);
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.activeText svg {
+  width: 14px;
+  height: 14px;
+}
+
+.rowDetails {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  padding: 6px 4px 20px 58px;
+}
+
+.rowDetails dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  margin: 0;
+}
+
+.rowDetails dl div {
+  display: grid;
+  gap: 4px;
+}
+
+.rowDetails dt {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-2xs);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+.rowDetails dd {
+  margin: 0;
+  color: var(--app-ink, var(--color-ink));
+  font-size: var(--font-xs);
+  font-weight: var(--font-medium);
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.textButton {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 0;
+  color: var(--color-primary-dark);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.textButton:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rolePicker {
+  margin: 8px 0 18px;
+  padding: 18px 0;
+  border-top: 1px solid var(--app-border, var(--color-border));
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+}
+
+.rolePickerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.rolePickerHeader > div {
+  display: grid;
+  gap: 4px;
+}
+
+.rolePickerHeader strong {
+  color: var(--app-ink, var(--color-ink-strong));
+  font-size: var(--font-sm);
+}
+
+.rolePickerHeader span {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+}
+
+.rolePickerHeader button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: var(--app-muted, var(--color-text-subtle));
+  background: transparent;
+  cursor: pointer;
+}
+
+.roleOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+
+.roleOption {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border: 0;
+  border-top: 1px solid var(--app-border, var(--color-border));
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.roleOption > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.roleOption strong {
+  font-size: var(--font-sm);
+}
+.roleOption small {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  line-height: 1.5;
+}
+.roleOption > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-primary);
+}
+
+.emptyState {
+  min-height: 96px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-top: 1px solid var(--app-border, var(--color-border));
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+}
+
+.emptyState > svg {
+  width: 22px;
+  height: 22px;
+  color: var(--color-primary-dark);
+}
+
+.emptyState strong {
+  font-size: var(--font-sm);
+}
+.emptyState p {
+  margin: 4px 0 0;
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+}
+
+.skeletonList {
+  display: grid;
+  border-top: 1px solid var(--app-border, var(--color-border));
+}
+
+.skeletonList span {
+  height: 76px;
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--color-primary-rgb) / 5%),
+    transparent
+  );
+  animation: pulse 1.3s ease-in-out infinite;
+}
+
+.spinner {
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 720px) {
+  .rowSummary {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .activeText {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .rowSummary > svg {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .rowDetails {
+    grid-template-columns: 1fr;
+    padding-left: 0;
+  }
+
+  .rowActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .roleOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .emptyState {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .emptyState > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .skeletonList span {
+    animation: none;
+  }
+}
+
+/* ==================================================
+   VISÃO COMPACTA — usada na visão geral da conta
+   ================================================== */
+
+.compact {
+  margin-top: 2px;
+}
+
+.compact .list {
+  border-top: 0;
+}
+
+.compact .rowSummary {
+  min-height: 62px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  padding: 10px 4px;
+}
+
+.compact .roleIcon {
+  display: none;
+}
+
+.compact .rowTitle {
+  gap: 2px;
+}
+
+.compact .rowTitle strong {
+  font-size: var(--font-xs);
+}
+
+.compact .rowTitle small {
+  font-size: var(--font-2xs);
+}
+
+.compact .activeText {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--color-primary-dark);
+  background: rgb(var(--color-primary-rgb) / 7%);
+}
+
+.compact .rowDetails {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgb(var(--color-primary-rgb) / 3.5%);
+}
+
+.compact .rowDetails dl {
+  gap: 18px;
+}
+
+.compact .rowActions {
+  align-self: center;
+}
+
+.compact .textButton,
+.compact .primaryAction {
+  min-height: 34px;
+  font-size: var(--font-2xs);
+}
+
+.viewAllButton {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+  border: 0;
+  color: var(--color-primary);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.viewAllButton:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.viewAllButton:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+@media (max-width: 720px) {
+  .compact .rowSummary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .compact .activeText {
+    grid-column: 1;
+  }
+
+  .compact .rowSummary > svg {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .compact .rowDetails {
+    grid-template-columns: 1fr;
+  }
+}
