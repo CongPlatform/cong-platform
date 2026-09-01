@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /app/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://cong.com.br/sitemap.xml
