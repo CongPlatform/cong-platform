@@ -6,7 +6,7 @@ interface AvatarSource {
 }
 
 const DICEBEAR_API_VERSION = "10.x";
-const DEFAULT_AVATAR_STYLE = "adventurer-neutral";
+const DEFAULT_AVATAR_STYLE = "personas";
 
 export function buildDefaultAvatarUrl(account: AvatarSource): string {
   const seed = account.username?.trim() || account.name.trim() || account.id;

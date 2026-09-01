@@ -15,6 +15,10 @@ export const updateAccountSchema = z
   .object({
     name: z.string().trim().min(2).max(100).optional(),
 
+    displayName: z.string().trim().min(1).max(60).optional(),
+
+    pronouns: z.union([z.string().trim().min(1).max(60), z.null()]).optional(),
+
     username: usernameSchema.optional(),
 
     bio: z
@@ -31,6 +35,8 @@ export const updateAccountSchema = z
   .refine(
     (data) =>
       data.name !== undefined ||
+      data.displayName !== undefined ||
+      data.pronouns !== undefined ||
       data.username !== undefined ||
       data.bio !== undefined,
     {

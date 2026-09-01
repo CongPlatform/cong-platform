@@ -1,0 +1,538 @@
+.shell {
+  --app-sidebar-width: 232px;
+  --app-topbar-height: 64px;
+  --app-canvas: #f4f6f9;
+  --app-surface: #ffffff;
+  --app-surface-subtle: #f7f9fc;
+  --app-border: #dfe4eb;
+  --app-border-strong: #cdd5df;
+  --app-ink: #142033;
+  --app-muted: #687386;
+  --app-muted-strong: #465267;
+  --app-brand: var(--color-primary-600);
+  --app-brand-dark: var(--color-primary-700);
+
+  width: 100%;
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: var(--app-sidebar-width) minmax(0, 1fr);
+  overflow-x: clip;
+  color: var(--app-ink);
+  background: var(--app-canvas);
+  font-family: var(--font-interface);
+  transition: grid-template-columns 180ms ease;
+}
+
+.shellCollapsed {
+  --app-sidebar-width: 76px;
+}
+
+.shell button,
+.shell input {
+  font-family: inherit;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  width: 100%;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  overflow: hidden;
+  background: var(--app-surface);
+  border-right: 1px solid var(--app-border);
+}
+
+.sidebarHeader {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.brand {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.brandExtended {
+  width: 142px;
+  min-width: 142px;
+  height: auto;
+  object-fit: contain;
+}
+
+.brandCompact {
+  display: none;
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.desktopCollapseButton,
+.mobileCloseButton,
+.mobileMenuButton,
+.topbarIconButton {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  color: var(--app-muted-strong);
+  background: var(--app-surface);
+  cursor: pointer;
+}
+
+.desktopCollapseButton:hover,
+.mobileCloseButton:hover,
+.mobileMenuButton:hover,
+.topbarIconButton:hover {
+  color: var(--app-brand);
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+}
+
+.mobileCloseButton,
+.mobileMenuButton {
+  display: none;
+}
+
+.sidebarNavigation {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.sidebarNavigation::-webkit-scrollbar {
+  display: none;
+}
+
+.navigationGroup,
+.sidebarFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navigationDivider {
+  height: 1px;
+  margin: 0 8px;
+  background: var(--app-border);
+}
+
+.navigationItem {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  color: var(--app-muted-strong);
+  background: transparent;
+  text-align: left;
+  text-decoration: none;
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+}
+
+.navigationItem:hover {
+  color: var(--app-ink);
+  background: #f1f4f8;
+}
+
+.navigationIcon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.navigationIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.navigationLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navigationBadge {
+  min-width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  padding-inline: 6px;
+  border-radius: 999px;
+  color: var(--color-primary-700);
+  background: var(--color-primary-100);
+  font-size: var(--font-2xs);
+  font-weight: var(--font-semibold);
+}
+
+.navigationItemActive {
+  color: var(--color-white);
+  background: #315a9c;
+  font-weight: var(--font-semibold);
+  box-shadow: 0 8px 18px rgb(35 79 143 / 14%);
+}
+
+.navigationItemActive::before {
+  content: "";
+  position: absolute;
+  inset: 8px auto 8px 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--color-accent-400);
+}
+
+.navigationItemActive .navigationIcon {
+  color: var(--color-white);
+  background: rgb(255 255 255 / 12%);
+}
+
+.sidebarFooter {
+  padding-top: 12px;
+  border-top: 1px solid var(--app-border);
+}
+
+.logoutButton:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.shellCollapsed .sidebar {
+  padding-inline: 10px;
+}
+
+.shellCollapsed .sidebarHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shellCollapsed .brandExtended,
+.shellCollapsed .navigationLabel,
+.shellCollapsed .navigationBadge {
+  display: none;
+}
+
+.shellCollapsed .brandCompact {
+  display: block;
+}
+
+.shellCollapsed .brand,
+.shellCollapsed .navigationItem {
+  justify-content: center;
+}
+
+.shellCollapsed .navigationItem {
+  grid-template-columns: 32px;
+  padding-inline: 6px;
+}
+
+.workspace {
+  min-width: 0;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  min-height: var(--app-topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--app-border);
+  background: rgb(255 255 255 / 92%);
+  backdrop-filter: blur(14px);
+}
+
+.topbarStart {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search {
+  width: min(100%, 520px);
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 0 11px;
+  border: 1px solid var(--app-border);
+  border-radius: 11px;
+  background: var(--app-surface-subtle);
+}
+
+.search > svg {
+  color: var(--app-muted);
+}
+
+.search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--app-ink);
+  background: transparent;
+}
+
+.search kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  color: var(--app-muted);
+  background: var(--app-surface);
+  font-size: 10px;
+}
+
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbarCreateButton {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid var(--app-brand);
+  border-radius: 10px;
+  color: var(--color-white);
+  background: var(--app-brand);
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.topbarIconButton {
+  position: relative;
+}
+
+.topbarBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  border: 2px solid var(--app-surface);
+  border-radius: 999px;
+  color: var(--color-white);
+  background: var(--app-brand);
+  font-size: 9px;
+  font-weight: var(--font-bold);
+}
+
+.profileTrigger {
+  min-width: 0;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 8px 4px 5px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: var(--app-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.profileTrigger:hover {
+  border-color: var(--app-border);
+  background: var(--app-surface-subtle);
+}
+
+.topbarAvatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--color-primary-50);
+}
+
+.topbarAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileTriggerText {
+  min-width: 0;
+  display: grid;
+  text-align: left;
+}
+
+.profileTriggerText strong,
+.profileTriggerText small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileTriggerText strong {
+  max-width: 150px;
+  font-size: var(--font-xs);
+}
+
+.profileTriggerText small {
+  color: var(--app-muted);
+  font-size: var(--font-3xs);
+}
+
+.workspaceContent {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.mobileOverlay {
+  display: none;
+}
+
+@media (max-width: 920px) {
+  .shell,
+  .shellCollapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: min(84vw, 280px);
+    transform: translateX(-105%);
+    box-shadow: 24px 0 60px rgb(15 35 64 / 18%);
+    transition: transform 180ms ease;
+  }
+
+  .sidebarMobileOpen {
+    transform: translateX(0);
+  }
+
+  .desktopCollapseButton {
+    display: none;
+  }
+
+  .mobileCloseButton,
+  .mobileMenuButton {
+    display: grid;
+  }
+
+  .brandExtended {
+    display: block !important;
+  }
+
+  .brandCompact {
+    display: none !important;
+  }
+
+  .navigationLabel {
+    display: inline !important;
+  }
+
+  .navigationItem {
+    grid-template-columns: 32px minmax(0, 1fr) auto !important;
+    justify-content: initial !important;
+    padding-inline: 9px !important;
+  }
+
+  .mobileOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: block;
+    border: 0;
+    background: rgb(15 35 64 / 42%);
+    backdrop-filter: blur(3px);
+  }
+
+  .topbar {
+    padding-inline: 16px;
+  }
+
+  .search kbd,
+  .topbarCreateButton span,
+  .profileTriggerText {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    gap: 10px;
+    padding-inline: 12px;
+  }
+
+  .search {
+    min-height: 38px;
+  }
+
+  .topbarCreateButton {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .topbarActions {
+    gap: 5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell,
+  .sidebar,
+  .navigationItem {
+    transition: none;
+  }
+}

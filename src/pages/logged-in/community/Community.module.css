@@ -1,4 +1,4 @@
-.shell {
+﻿.shell {
   --sidebar-width: 232px;
   --topbar-height: 64px;
   --canvas: #f3f5f8;
@@ -3025,7 +3025,7 @@
   }
 }
 /* ==================================================
-   RESPONSIVE HARDENING — comunidade logada
+   RESPONSIVE HARDENING â€” comunidade logada
    ================================================== */
 .shell,
 .workspace,
@@ -3231,3 +3231,39 @@
     max-height: 100svh;
   }
 }
+/* CONG_SHARED_LOGGED_LAYOUT_V1_START
+   A navegaÃ§Ã£o lateral e a topbar agora pertencem ao LoggedInLayout.
+   Este bloco desativa somente a casca duplicada que ainda existe dentro
+   da Comunidade, preservando todo o conteÃºdo e os modais atuais. */
+.shell,
+.shellCollapsed {
+  display: block;
+  min-height: auto;
+  background: transparent;
+}
+
+.sidebar,
+.topbar,
+.mobileOverlay {
+  display: none !important;
+}
+
+.workspace {
+  min-width: 0;
+  min-height: auto;
+  display: block;
+  background: transparent;
+}
+
+.page {
+  min-height: auto;
+  padding: 28px clamp(22px, 3vw, 44px) 64px;
+  background: transparent;
+}
+
+.pageGrid {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+/* CONG_SHARED_LOGGED_LAYOUT_V1_END */

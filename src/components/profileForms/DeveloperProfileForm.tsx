@@ -20,6 +20,7 @@ type Props = {
   portfolioUrl: string;
   completed: boolean;
   saving: boolean;
+  submitLabel?: string;
   onTechnologiesChange: (value: string[]) => void;
   onExperienceLevelChange: (value: DeveloperExperienceLevel) => void;
   onPortfolioUrlChange: (value: string) => void;
@@ -244,9 +245,8 @@ export default function DeveloperProfileForm(props: Props) {
             )}
             {props.saving
               ? "Salvando..."
-              : props.completed
-                ? "Salvar alterações"
-                : "Salvar e continuar"}
+              : (props.submitLabel ??
+                (props.completed ? "Salvar alterações" : "Salvar e continuar"))}
           </button>
         </footer>
       </form>

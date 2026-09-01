@@ -1,0 +1,616 @@
+.section {
+  margin-top: 6px;
+}
+
+.toolbar {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.toolbar > span {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.addButton {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid var(--color-primary);
+  border-radius: 9px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.addButton svg {
+  width: 15px;
+  height: 15px;
+}
+
+.error,
+.success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: var(--font-sm);
+}
+
+.error {
+  color: var(--color-error-strong);
+}
+.success {
+  color: var(--color-success-strong);
+}
+.error svg,
+.success svg {
+  width: 16px;
+  height: 16px;
+}
+
+.list {
+  border-top: 1px solid var(--app-border, var(--color-border));
+}
+
+.row {
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+}
+
+.rowSummary {
+  width: 100%;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 4px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rowSummary:hover {
+  background: rgb(var(--color-primary-rgb) / 3%);
+}
+
+.rowSummary > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--app-muted, var(--color-text-subtle));
+}
+
+.cardIcon,
+.typeIcon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 11px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+
+.cardIcon svg,
+.typeIcon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.rowTitle {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.rowTitle small {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-2xs);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+.rowTitle strong {
+  color: var(--app-ink, var(--color-ink-strong));
+  font-size: var(--font-sm);
+}
+
+.rowTitle > span {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+}
+
+.statusText {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.statusText i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.statusActive {
+  color: var(--color-success-strong);
+}
+.statusPending {
+  color: var(--color-warning-strong);
+}
+.statusSuspended {
+  color: var(--color-error-strong);
+}
+
+.rowDetails {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.5fr) minmax(260px, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 4px 20px 58px;
+}
+
+.rowDetails > div {
+  min-width: 0;
+}
+
+.detailLabel {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-2xs);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+.rowDetails strong {
+  color: var(--app-ink, var(--color-ink));
+  font-size: var(--font-xs);
+}
+
+.rowDetails small {
+  display: block;
+  margin-top: 3px;
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-2xs);
+}
+
+.pendingExplanation p {
+  margin: 4px 0 0;
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  line-height: 1.5;
+}
+
+.cancelButton {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  border: 0;
+  color: var(--color-error-strong);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.cancelButton:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.addPanel {
+  margin: 10px 0 22px;
+  padding: 18px 0;
+  border-top: 1px solid var(--app-border, var(--color-border));
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+}
+
+.addPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.addPanelHeader > div {
+  display: grid;
+  gap: 4px;
+}
+.addPanelHeader span {
+  color: var(--color-primary-dark);
+  font-size: var(--font-2xs);
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+}
+.addPanelHeader strong {
+  color: var(--app-ink, var(--color-ink));
+  font-size: var(--font-sm);
+}
+.addPanelHeader > button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: var(--app-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.typeGrid,
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+
+.typeOption,
+.modeOption {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 4px;
+  border: 0;
+  border-top: 1px solid var(--app-border, var(--color-border));
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.modeOption > svg:first-child {
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  border-radius: 11px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+
+.typeOption > span:nth-child(2),
+.modeOption > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.typeOption strong,
+.modeOption strong {
+  font-size: var(--font-sm);
+}
+.typeOption small,
+.modeOption small {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  line-height: 1.5;
+}
+.typeOption > svg,
+.modeOption > svg:last-child {
+  width: 16px;
+  height: 16px;
+  color: var(--color-primary);
+}
+
+.searchArea {
+  display: grid;
+  gap: 12px;
+}
+.backLink {
+  width: max-content;
+  padding: 0;
+  border: 0;
+  color: var(--color-primary-dark);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+.searchForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.searchInput {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--app-border-strong, var(--color-border-medium));
+  border-radius: 9px;
+  background: var(--app-surface, var(--color-surface));
+}
+.searchInput svg {
+  width: 16px;
+  height: 16px;
+  color: var(--app-muted);
+}
+.searchInput input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--app-ink);
+}
+.searchForm > button,
+.resultRow > button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--color-primary-200);
+  border-radius: 9px;
+  color: var(--color-primary-dark);
+  background: var(--app-surface);
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+.searchEmpty {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: var(--font-sm);
+}
+.results {
+  border-top: 1px solid var(--app-border);
+}
+.resultRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--app-border);
+}
+.resultRow > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.resultRow strong {
+  font-size: var(--font-sm);
+}
+.resultRow span,
+.resultRow p {
+  color: var(--app-muted);
+  font-size: var(--font-xs);
+}
+.resultRow p {
+  margin: 3px 0 0;
+  line-height: 1.5;
+}
+
+.emptyState {
+  min-height: 94px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-top: 1px solid var(--app-border, var(--color-border));
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+}
+
+.emptyState > svg {
+  width: 22px;
+  height: 22px;
+  color: var(--color-primary-dark);
+}
+.emptyState strong {
+  font-size: var(--font-sm);
+}
+.emptyState p {
+  margin: 4px 0 0;
+  color: var(--app-muted);
+  font-size: var(--font-xs);
+}
+
+.loadingRows {
+  display: grid;
+  border-top: 1px solid var(--app-border);
+}
+.loadingRows span {
+  height: 82px;
+  border-bottom: 1px solid var(--app-border);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--color-primary-rgb) / 5%),
+    transparent
+  );
+  animation: pulse 1.3s ease-in-out infinite;
+}
+.spinner {
+  width: 15px;
+  height: 15px;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 760px) {
+  .rowSummary {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .statusText {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .rowSummary > svg {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .rowDetails {
+    grid-template-columns: 1fr;
+    padding-left: 0;
+  }
+  .typeGrid,
+  .modeGrid {
+    grid-template-columns: 1fr;
+  }
+  .resultRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .resultRow > button,
+  .addButton {
+    width: 100%;
+  }
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .searchForm {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .loadingRows span {
+    animation: none;
+  }
+}
+
+/* ==================================================
+   VISÃO COMPACTA — usada na visão geral da conta
+   ================================================== */
+
+.compact {
+  margin-top: 2px;
+}
+
+.compact .list {
+  border-top: 0;
+}
+
+.compact .rowSummary {
+  min-height: 64px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  padding: 10px 4px;
+}
+
+.compact .cardIcon {
+  display: none;
+}
+
+.compact .rowTitle small {
+  display: none;
+}
+
+.compact .rowTitle strong {
+  font-size: var(--font-xs);
+}
+
+.compact .statusText {
+  font-size: var(--font-2xs);
+}
+
+.compact .rowDetails {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgb(var(--color-primary-rgb) / 3.5%);
+}
+
+.compact .rowDetails > div:first-child {
+  display: none;
+}
+
+.compact .pendingExplanation p {
+  max-width: 52ch;
+}
+
+.compact .cancelButton {
+  width: max-content;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgb(var(--color-ink-rgb) / 10%);
+  border-radius: 8px;
+  color: var(--color-error-strong);
+  background: rgb(var(--color-white-rgb) / 70%);
+  text-decoration: none;
+}
+
+.viewAllButton {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+  border: 0;
+  color: var(--color-primary);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.viewAllButton:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.viewAllButton:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+@media (max-width: 720px) {
+  .compact .rowSummary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .compact .statusText {
+    grid-column: 1;
+  }
+
+  .compact .rowSummary > svg {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

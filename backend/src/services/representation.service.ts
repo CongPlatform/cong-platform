@@ -12,6 +12,7 @@ import type {
 interface UserRow {
   id: string;
   active: boolean;
+  onboardingStep: "identity" | "roles" | "profiles" | "completed";
   onboardingRepresentations: OrganizationType[];
 }
 
@@ -91,6 +92,8 @@ async function getUser(authUserId: string): Promise<UserRow> {
         select
           id,
           active,
+          onboarding_step
+            as "onboardingStep",
           onboarding_representations
             as "onboardingRepresentations"
         from public.users
@@ -112,6 +115,8 @@ async function getUserForUpdate(
         select
           id,
           active,
+          onboarding_step
+            as "onboardingStep",
           onboarding_representations
             as "onboardingRepresentations"
         from public.users
@@ -154,17 +159,23 @@ async function getSystemRole(
   return role;
 }
 
-function requireSelectedRepresentation(
+function requireRepresentationAvailable(
   user: UserRow,
   type: OrganizationType,
 ): void {
-  if (!user.onboardingRepresentations.includes(type)) {
-    throw new AppError(
-      "This institutional representation was not selected during onboarding",
-      409,
-      "ONBOARDING_REPRESENTATION_NOT_SELECTED",
-    );
+  if (user.onboardingStep === "completed") {
+    return;
   }
+
+  if (user.onboardingRepresentations.includes(type)) {
+    return;
+  }
+
+  throw new AppError(
+    "This institutional representation was not selected during onboarding",
+    409,
+    "ONBOARDING_REPRESENTATION_NOT_SELECTED",
+  );
 }
 
 /* ==================================================
@@ -216,7 +227,7 @@ export async function searchOrganizations(
 ): Promise<OrganizationSearchResult[]> {
   const user = await getUser(authUserId);
 
-  requireSelectedRepresentation(user, type);
+  requireRepresentationAvailable(user, type);
 
   const normalized = query.trim();
 
@@ -291,7 +302,7 @@ export async function createRepresentation(
 
     const user = await getUserForUpdate(client, authUserId);
 
-    requireSelectedRepresentation(user, input.organizationType);
+    requireRepresentationAvailable(user, input.organizationType);
 
     if (input.cnpj) {
       const duplicateCnpjResult = await client.query<{
@@ -516,7 +527,7 @@ export async function requestRepresentation(
       );
     }
 
-    requireSelectedRepresentation(user, organization.organizationType);
+    requireRepresentationAvailable(user, organization.organizationType);
 
     const existingResult = await client.query<MyRepresentation>(
       `

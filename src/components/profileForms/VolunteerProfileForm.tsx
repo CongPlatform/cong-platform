@@ -45,6 +45,7 @@ export type VolunteerProfileFormData = {
 type Props = VolunteerProfileFormData & {
   completed: boolean;
   saving: boolean;
+  submitLabel?: string;
   onChange: (data: VolunteerProfileFormData) => void;
   onOpenParticipationChoices?: () => void;
   onSubmit: (data: VolunteerProfileFormData) => void | Promise<void>;
@@ -553,9 +554,8 @@ export default function VolunteerProfileForm(props: Props) {
             )}
             {props.saving
               ? "Salvando..."
-              : props.completed
-                ? "Salvar alterações"
-                : "Salvar e continuar"}
+              : (props.submitLabel ??
+                (props.completed ? "Salvar alterações" : "Salvar e continuar"))}
           </button>
         </footer>
       </form>
