@@ -19,6 +19,7 @@ import Account from "../pages/logged-in/account/Account";
 import LoggedInCommunity from "../pages/logged-in/community/Community";
 import CompleteProfiles from "../pages/logged-in/completeProfiles/CompleteProfiles";
 import RoleSelection from "../pages/logged-in/roleSelection/RoleSelection";
+import OAuthCallback from "../pages/oauth-callback/OAuthCallback";
 
 import Login from "../pages/login/Login";
 import Pending from "../pages/pending/Pending";
@@ -55,6 +56,8 @@ export default function AppRoutes() {
           <Route path="/signup" element={<Register />} />
 
           <Route path="/auth/confirm" element={<AuthConfirm />} />
+
+          <Route path="/auth/oauth/callback" element={<OAuthCallback />} />
 
           {/* ==================================================
               ÁREA AUTENTICADA
