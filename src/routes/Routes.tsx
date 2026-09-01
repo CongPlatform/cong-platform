@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "../components/ProtectedRoute";
+import RouteSeo from "../components/seo/RouteSeo";
 import { PageTransitionProvider } from "../components/pageTransitionProvider/PageTransitionProvider";
 import MainLayout from "../layouts/MainLayout";
 
@@ -23,6 +24,7 @@ import CompleteProfiles from "../pages/logged-in/completeProfiles/CompleteProfil
 export default function AppRoutes() {
   return (
     <BrowserRouter>
+      <RouteSeo />
       <PageTransitionProvider>
         <Routes>
           {/* Site institucional */}
