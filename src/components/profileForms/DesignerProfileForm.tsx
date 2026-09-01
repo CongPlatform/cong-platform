@@ -17,6 +17,7 @@ export type DesignerProfileFormData = {
 type Props = DesignerProfileFormData & {
   completed: boolean;
   saving: boolean;
+  submitLabel?: string;
   onSpecialtiesChange: (value: string[]) => void;
   onToolsChange: (value: string[]) => void;
   onPortfolioUrlChange: (value: string) => void;
@@ -179,9 +180,8 @@ export default function DesignerProfileForm(props: Props) {
             )}
             {props.saving
               ? "Salvando..."
-              : props.completed
-                ? "Salvar alterações"
-                : "Salvar e continuar"}
+              : (props.submitLabel ??
+                (props.completed ? "Salvar alterações" : "Salvar e continuar"))}
           </button>
         </footer>
       </form>

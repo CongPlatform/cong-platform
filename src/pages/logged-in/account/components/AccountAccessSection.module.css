@@ -1,0 +1,160 @@
+.section {
+  display: grid;
+  gap: 30px;
+  margin-top: 6px;
+}
+
+.block {
+  display: grid;
+  gap: 12px;
+}
+
+.blockHeading,
+.blockHeadingInline > div {
+  display: grid;
+  gap: 4px;
+}
+
+.blockHeadingInline {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.blockHeading h3,
+.blockHeadingInline h3 {
+  margin: 0;
+  color: var(--app-ink, var(--color-ink-strong));
+  font-family: var(--font-interface);
+  font-size: var(--font-md);
+  font-weight: var(--font-semibold);
+}
+
+.blockHeading p,
+.blockHeadingInline p {
+  margin: 0;
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  line-height: 1.5;
+}
+
+.blockHeadingInline > span {
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+}
+
+.emailRow,
+.providerRow {
+  min-height: 66px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 4px;
+  border-top: 1px solid var(--app-border, var(--color-border));
+}
+
+.emailRow {
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+}
+
+.providerRow {
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+}
+
+.providerIcon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 10px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+
+.providerIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.emailRow > div,
+.providerRow > div {
+  min-width: 0;
+}
+
+.emailRow strong,
+.providerRow strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--app-ink, var(--color-ink-strong));
+  font-size: var(--font-sm);
+}
+
+.emailRow > div > span,
+.providerRow p {
+  margin: 3px 0 0;
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  line-height: 1.5;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.status svg {
+  width: 14px;
+  height: 14px;
+}
+
+.statusConnected {
+  color: var(--color-success-strong);
+}
+.statusPending {
+  color: var(--color-warning-strong);
+}
+
+.providers {
+  display: grid;
+}
+
+.emptyProviders {
+  padding: 16px 0;
+  border-top: 1px solid var(--app-border, var(--color-border));
+  border-bottom: 1px solid var(--app-border, var(--color-border));
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-sm);
+}
+
+.securityNote {
+  max-width: 850px;
+  margin: 0;
+  padding-top: 4px;
+  color: var(--app-muted, var(--color-text-subtle));
+  font-size: var(--font-xs);
+  line-height: 1.6;
+}
+
+@media (max-width: 620px) {
+  .blockHeadingInline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .emailRow,
+  .providerRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .status {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

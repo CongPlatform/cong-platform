@@ -1,10 +1,19 @@
 import { apiDelete, apiGet, apiPatch, apiUpload } from "./api";
 
 import type { CollaborationRole } from "./collaborationProfileService";
-
 import type { OnboardingRepresentation } from "./onboardingService";
 
 export type OnboardingStep = "identity" | "roles" | "profiles" | "completed";
+
+export type AccountAuthProvider = "email" | "google" | "github";
+
+export interface AccountAuthentication {
+  email: string;
+
+  emailVerified: boolean;
+
+  providers: AccountAuthProvider[];
+}
 
 export interface UserAccount {
   id: string;
@@ -21,7 +30,7 @@ export interface UserAccount {
 
   avatarPath: string | null;
 
-  email: string;
+  authentication: AccountAuthentication;
 
   onboardingStep: OnboardingStep;
 
@@ -36,6 +45,10 @@ export interface UserAccount {
 
 export interface UpdateAccountInput {
   name?: string;
+
+  displayName?: string;
+
+  pronouns?: string | null;
 
   username?: string;
 

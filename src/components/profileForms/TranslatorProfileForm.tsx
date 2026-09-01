@@ -26,6 +26,7 @@ export type TranslatorProfileFormData = {
 type Props = TranslatorProfileFormData & {
   completed: boolean;
   saving: boolean;
+  submitLabel?: string;
   onLanguagesChange: (value: string[]) => void;
   onAccessibilitySkillsChange: (value: string[]) => void;
   onNotesChange: (value: string) => void;
@@ -169,9 +170,8 @@ export default function TranslatorProfileForm(props: Props) {
             )}
             {props.saving
               ? "Salvando..."
-              : props.completed
-                ? "Salvar alterações"
-                : "Salvar e continuar"}
+              : (props.submitLabel ??
+                (props.completed ? "Salvar alterações" : "Salvar e continuar"))}
           </button>
         </footer>
       </form>

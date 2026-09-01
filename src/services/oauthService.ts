@@ -67,7 +67,7 @@ export async function completeOAuthLogin(): Promise<string> {
      * Se a criação/vinculação da conta CONG falhar,
      * não deixamos tokens parcialmente válidos.
      */
-    
+
     await supabase.auth.signOut();
 
     throw error;

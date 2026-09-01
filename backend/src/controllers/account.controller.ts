@@ -1,9 +1,12 @@
 import type { Request, Response } from "express";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 import {
   checkUsernameAvailability,
   getAccount,
   updateAccount,
+  type AccountAuthentication,
+  type AccountAuthProvider,
 } from "../services/account.service.js";
 
 import {
@@ -13,19 +16,61 @@ import {
 
 import { AppError } from "../utils/app-error.js";
 
+const accountAuthProviderOrder: AccountAuthProvider[] = [
+  "email",
+  "google",
+  "github",
+];
+
+function isAccountAuthProvider(value: unknown): value is AccountAuthProvider {
+  return value === "email" || value === "google" || value === "github";
+}
+
+function getAccountAuthentication(
+  authUser: SupabaseUser,
+): AccountAuthentication {
+  if (!authUser.email) {
+    throw new AppError(
+      "Authenticated user email was not found",
+      401,
+      "AUTH_USER_EMAIL_NOT_FOUND",
+    );
+  }
+
+  const identityProviders = (authUser.identities ?? []).map(
+    (identity) => identity.provider,
+  );
+
+  const metadataProviders = Array.isArray(authUser.app_metadata.providers)
+    ? authUser.app_metadata.providers
+    : [];
+
+  const primaryMetadataProvider = authUser.app_metadata.provider;
+
+  const providerSet = new Set<AccountAuthProvider>(
+    [
+      ...identityProviders,
+      ...metadataProviders,
+      primaryMetadataProvider,
+    ].filter(isAccountAuthProvider),
+  );
+
+  return {
+    email: authUser.email,
+    emailVerified: Boolean(authUser.email_confirmed_at),
+    providers: accountAuthProviderOrder.filter((provider) =>
+      providerSet.has(provider),
+    ),
+  };
+}
+
 export async function me(_req: Request, res: Response): Promise<void> {
   try {
     const authUser = res.locals.authUser;
 
-    if (!authUser?.email) {
-      throw new AppError(
-        "Authenticated user email was not found",
-        401,
-        "AUTH_USER_EMAIL_NOT_FOUND",
-      );
-    }
+    const authentication = getAccountAuthentication(authUser);
 
-    const user = await getAccount(authUser.id, authUser.email);
+    const user = await getAccount(authUser.id, authentication);
 
     res.status(200).json({
       user,
@@ -39,6 +84,8 @@ export async function me(_req: Request, res: Response): Promise<void> {
 
       return;
     }
+
+    console.error("Erro ao carregar conta:", error);
 
     res.status(500).json({
       error: "Internal server error",
@@ -89,15 +136,9 @@ export async function updateMe(req: Request, res: Response): Promise<void> {
   try {
     const authUser = res.locals.authUser;
 
-    if (!authUser?.email) {
-      throw new AppError(
-        "Authenticated user email was not found",
-        401,
-        "AUTH_USER_EMAIL_NOT_FOUND",
-      );
-    }
+    const authentication = getAccountAuthentication(authUser);
 
-    const user = await updateAccount(authUser.id, authUser.email, req.body);
+    const user = await updateAccount(authUser.id, authentication, req.body);
 
     res.status(200).json({
       message: "Account updated successfully",
@@ -112,6 +153,8 @@ export async function updateMe(req: Request, res: Response): Promise<void> {
 
       return;
     }
+
+    console.error("Erro ao atualizar conta:", error);
 
     res.status(500).json({
       error: "Internal server error",

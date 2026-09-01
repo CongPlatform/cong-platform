@@ -59,6 +59,7 @@ type Props = {
   type: OnboardingRepresentation;
   draft: RepresentationDraft;
   saving: boolean;
+  submitLabel?: string;
   onBack: () => void;
   onChange: <K extends keyof RepresentationDraft>(
     field: K,
@@ -145,6 +146,7 @@ export default function InstitutionRepresentationForm({
   type,
   draft,
   saving,
+  submitLabel,
   onBack,
   onChange,
   onSubmit,
@@ -855,7 +857,9 @@ export default function InstitutionRepresentationForm({
             {saving && (
               <LoaderCircle className={styles.spinner} aria-hidden="true" />
             )}
-            {saving ? "Cadastrando..." : "Cadastrar e continuar"}
+            {saving
+              ? "Cadastrando..."
+              : (submitLabel ?? "Cadastrar e continuar")}
           </button>
         </footer>
       </form>

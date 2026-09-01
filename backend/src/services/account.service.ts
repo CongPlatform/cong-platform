@@ -7,6 +7,14 @@ import type { OnboardingRepresentation } from "../validators/onboarding.validato
 
 export type OnboardingStep = "identity" | "roles" | "profiles" | "completed";
 
+export type AccountAuthProvider = "email" | "google" | "github";
+
+export interface AccountAuthentication {
+  email: string;
+  emailVerified: boolean;
+  providers: AccountAuthProvider[];
+}
+
 interface Account {
   id: string;
   name: string;
@@ -15,7 +23,7 @@ interface Account {
   username: string | null;
   bio: string | null;
   avatarPath: string | null;
-  email: string;
+  authentication: AccountAuthentication;
   onboardingStep: OnboardingStep;
   onboardingRoles: CollaborationRole[];
   onboardingRepresentations: OnboardingRepresentation[];
@@ -25,6 +33,8 @@ interface Account {
 
 interface UpdateAccountInput {
   name?: string;
+  displayName?: string;
+  pronouns?: string | null;
   username?: string;
   bio?: string | null;
 }
@@ -45,7 +55,10 @@ interface AccountRow {
   updatedAt: Date;
 }
 
-function toAccount(user: AccountRow, email: string): Account {
+function toAccount(
+  user: AccountRow,
+  authentication: AccountAuthentication,
+): Account {
   return {
     id: user.id,
     name: user.name,
@@ -54,7 +67,7 @@ function toAccount(user: AccountRow, email: string): Account {
     username: user.username,
     bio: user.bio,
     avatarPath: getAvatarPublicUrl(user.avatarPath),
-    email,
+    authentication,
     onboardingStep: user.onboardingStep,
     onboardingRoles: user.onboardingRoles,
     onboardingRepresentations: user.onboardingRepresentations,
@@ -65,7 +78,7 @@ function toAccount(user: AccountRow, email: string): Account {
 
 export async function getAccount(
   authUserId: string,
-  email: string,
+  authentication: AccountAuthentication,
 ): Promise<Account> {
   const result = await pool.query<AccountRow>(
     `
@@ -104,12 +117,12 @@ export async function getAccount(
     throw new AppError("User account is inactive", 403, "USER_INACTIVE");
   }
 
-  return toAccount(user, email);
+  return toAccount(user, authentication);
 }
 
 export async function updateAccount(
   authUserId: string,
-  email: string,
+  authentication: AccountAuthentication,
   input: UpdateAccountInput,
 ): Promise<Account> {
   const fields: string[] = [];
@@ -117,23 +130,31 @@ export async function updateAccount(
 
   let parameterIndex = 2;
 
-  if (input.name !== undefined) {
-    fields.push(`name = $${parameterIndex}`);
-    values.push(input.name);
+  function addField(column: string, value: unknown): void {
+    fields.push(`${column} = $${parameterIndex}`);
+    values.push(value);
     parameterIndex++;
+  }
+
+  if (input.name !== undefined) {
+    addField("name", input.name);
+  }
+
+  if (input.displayName !== undefined) {
+    addField("display_name", input.displayName);
+  }
+
+  if (input.pronouns !== undefined) {
+    addField("pronouns", input.pronouns);
   }
 
   if (input.username !== undefined) {
-    fields.push(`username = $${parameterIndex}`);
-    values.push(input.username);
-    parameterIndex++;
+    addField("username", input.username);
   }
 
   if (input.bio !== undefined) {
-    fields.push(`bio = $${parameterIndex}`);
-    values.push(input.bio);
+    addField("bio", input.bio);
   }
-
   try {
     const result = await pool.query<AccountRow>(
       `
@@ -172,7 +193,7 @@ export async function updateAccount(
       throw new AppError("User account is inactive", 403, "USER_INACTIVE");
     }
 
-    return toAccount(user, email);
+    return toAccount(user, authentication);
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
