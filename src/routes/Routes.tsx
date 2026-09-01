@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "../components/ProtectedRoute";
+import RouteSeo from "../components/seo/RouteSeo";
 import { PageTransitionProvider } from "../components/pageTransitionProvider/PageTransitionProvider";
 
 import LoggedInLayout from "../layouts/LoggedInLayout";
@@ -26,6 +27,7 @@ import Register from "../pages/register/Register";
 export default function AppRoutes() {
   return (
     <BrowserRouter>
+      <RouteSeo />
       <PageTransitionProvider>
         <Routes>
           {/* ==================================================

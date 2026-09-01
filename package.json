@@ -11,7 +11,7 @@
     "backend:start": "npm --prefix backend start",
     "backend:migrate": "npm --prefix backend run migrate",
     "install:backend": "npm --prefix backend install",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/generate-seo-pages.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier . --write",

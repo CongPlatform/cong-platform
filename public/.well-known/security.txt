@@ -1,0 +1,4 @@
+Contact: mailto:congplatform@gmail.com
+Canonical: https://cong.com.br/.well-known/security.txt
+Preferred-Languages: pt-BR, en
+Expires: 2027-09-01T00:00:00.000Z
