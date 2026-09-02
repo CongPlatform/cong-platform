@@ -17,6 +17,7 @@ import HowItWorks from "../pages/how-it-works/HowItWorks";
 
 import Account from "../pages/logged-in/account/Account";
 import LoggedInCommunity from "../pages/logged-in/community/Community";
+import OrganizationProvider from "../contexts/OrganizationProvider";
 import CompleteProfiles from "../pages/logged-in/completeProfiles/CompleteProfiles";
 import RoleSelection from "../pages/logged-in/roleSelection/RoleSelection";
 import OAuthCallback from "../pages/oauth-callback/OAuthCallback";
@@ -66,9 +67,6 @@ export default function AppRoutes() {
           <Route element={<ProtectedRoute />}>
             {/* ----------------------------------------------
                 ONBOARDING
-
-                Essas páginas NÃO usam LoggedInLayout,
-                porque ainda fazem parte do primeiro acesso.
                 ---------------------------------------------- */}
 
             <Route path="/app/primeiro-acesso" element={<FirstAccess />} />
@@ -82,11 +80,15 @@ export default function AppRoutes() {
 
             {/* ----------------------------------------------
                 SISTEMA PRINCIPAL
-
-                Daqui para baixo, sidebar/topbar compartilhadas.
                 ---------------------------------------------- */}
 
-            <Route element={<LoggedInLayout />}>
+            <Route
+              element={
+                <OrganizationProvider>
+                  <LoggedInLayout />
+                </OrganizationProvider>
+              }
+            >
               <Route path="/app/comunidade" element={<LoggedInCommunity />} />
 
               <Route path="/app/minha-conta" element={<Account />} />

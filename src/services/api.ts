@@ -1,3 +1,5 @@
+import { getStoredActiveOrganizationId } from "./organizationStorage";
+
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 
 const API_URL = configuredApiUrl
@@ -68,6 +70,7 @@ export function clearStoredAuthToken(): void {
 interface ApiRequestOptions extends RequestInit {
   authenticated?: boolean;
   retryOnUnauthorized?: boolean;
+  organizationScoped?: boolean;
 }
 
 interface RefreshResponse {
@@ -145,6 +148,7 @@ export async function apiRequest<T>(
   const {
     authenticated = true,
     retryOnUnauthorized = true,
+    organizationScoped = false,
     headers,
     ...requestOptions
   } = options;
@@ -167,6 +171,20 @@ export async function apiRequest<T>(
     }
   }
 
+  if (organizationScoped) {
+    const organizationId = getStoredActiveOrganizationId();
+
+    if (!organizationId) {
+      throw new ApiError(
+        "Nenhuma organização ativa foi selecionada.",
+        400,
+        "ORGANIZATION_CONTEXT_REQUIRED",
+      );
+    }
+
+    requestHeaders.set("X-Organization-Id", organizationId);
+  }
+
   let response: Response;
 
   try {
@@ -175,8 +193,7 @@ export async function apiRequest<T>(
       {
         ...requestOptions,
 
-        headers:
-          requestHeaders /* Necessário para o cookie HttpOnly de acompanhamento da confirmação. O projeto trabalha com /api no mesmo origin. */,
+        headers: requestHeaders,
         credentials: "same-origin",
       },
     );
@@ -204,6 +221,7 @@ export async function apiRequest<T>(
       headers,
       authenticated: true,
       retryOnUnauthorized: false,
+      organizationScoped,
     });
   }
 
@@ -471,5 +489,47 @@ export function apiPatch<T>(endpoint: string, data?: unknown): Promise<T> {
 export function apiDelete<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, {
     method: "DELETE",
+  });
+}
+
+export function apiTenantGet<T>(endpoint: string): Promise<T> {
+  return apiRequest<T>(endpoint, {
+    method: "GET",
+    organizationScoped: true,
+  });
+}
+
+export function apiTenantPost<T>(endpoint: string, data?: unknown): Promise<T> {
+  return apiRequest<T>(endpoint, {
+    method: "POST",
+
+    body:
+      data === undefined
+        ? undefined
+        : data instanceof FormData
+          ? data
+          : JSON.stringify(data),
+
+    organizationScoped: true,
+  });
+}
+
+export function apiTenantPatch<T>(
+  endpoint: string,
+  data?: unknown,
+): Promise<T> {
+  return apiRequest<T>(endpoint, {
+    method: "PATCH",
+
+    body: data === undefined ? undefined : JSON.stringify(data),
+
+    organizationScoped: true,
+  });
+}
+
+export function apiTenantDelete<T>(endpoint: string): Promise<T> {
+  return apiRequest<T>(endpoint, {
+    method: "DELETE",
+    organizationScoped: true,
   });
 }

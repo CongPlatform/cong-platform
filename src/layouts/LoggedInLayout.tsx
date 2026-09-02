@@ -26,6 +26,7 @@ import logoCompact from "../assets/brand/logo-mark.webp";
 import logoExtended from "../assets/brand/logo-wordmark-dark.webp";
 
 import { useAuth } from "../contexts/auth-context";
+
 import { buildDefaultAvatarUrl } from "../utils/avatar";
 
 import styles from "./LoggedInLayout.module.css";
