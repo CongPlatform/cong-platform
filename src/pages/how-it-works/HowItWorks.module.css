@@ -881,7 +881,6 @@
   position: absolute;
   z-index: 3;
 
-  top: 22px;
   left: 50%;
 
   width: 480px;
@@ -1286,7 +1285,7 @@
 }
 
 .thoughtDotLarge {
-  top: 360px;
+  top: 315px;
   left: 294px;
 
   width: 34px;
@@ -1298,7 +1297,7 @@
 }
 
 .thoughtDotMedium {
-  top: 405px;
+  top: 360px;
   left: 276px;
 
   width: 23px;
@@ -1310,7 +1309,7 @@
 }
 
 .thoughtDotSmall {
-  top: 438px;
+  top: 390px;
   left: 264px;
 
   width: 14px;
@@ -1330,9 +1329,9 @@
   z-index: 4;
 
   left: 50%;
-  bottom: -2px;
+  bottom: -100px;
 
-  width: 272px;
+  width: 300px;
   max-width: none;
   height: auto;
 

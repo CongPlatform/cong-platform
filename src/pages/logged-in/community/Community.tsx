@@ -5,22 +5,17 @@ import {
   FiActivity,
   FiArrowRight,
   FiBell,
-  FiBookmark,
   FiBox,
   FiCalendar,
-  FiCheckCircle,
   FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
   FiClock,
   FiCode,
   FiCompass,
-  FiDownload,
-  FiExternalLink,
   FiFileText,
   FiFolder,
   FiGitBranch,
-  FiGitCommit,
   FiGlobe,
   FiGrid,
   FiHeart,
@@ -33,14 +28,11 @@ import {
   FiMapPin,
   FiMenu,
   FiMessageCircle,
-  FiMoreHorizontal,
   FiPaperclip,
   FiPenTool,
   FiPlus,
   FiSearch,
-  FiSend,
   FiSettings,
-  FiShare2,
   FiStar,
   FiTag,
   FiUser,
@@ -54,6 +46,13 @@ import {
   type CongProfile,
   type ProfileType,
 } from "../../../contexts/auth-context";
+
+import CommunityPostCard from "../../../components/community/CommunityPostCard";
+import CommunityPostComposer from "../../../components/community/CommunityPostComposer";
+import {
+  getCommunityPosts,
+  type CommunityPost,
+} from "../../../services/communityService";
 
 import mascot from "../../../assets/mascot/cong-happy.webp";
 import logoCompact from "../../../assets/brand/logo-mark.webp";
@@ -71,8 +70,6 @@ type CommunityRole =
 type Tone = "blue" | "green" | "purple" | "yellow" | "pink" | "teal";
 type FeedFilter =
   "all" | "following" | "projects" | "opportunities" | "discussions";
-type CreateType =
-  "need" | "project" | "module" | "discussion" | "event" | "update";
 
 type NavigationItem = {
   label: string;
@@ -173,57 +170,6 @@ const feedFilters: readonly [FeedFilter, string][] = [
   ["projects", "Projetos"],
   ["opportunities", "Oportunidades"],
   ["discussions", "Discussões"],
-];
-
-const createTypes: Array<{
-  id: CreateType;
-  label: string;
-  description: string;
-  icon: IconType;
-  tone: Tone;
-}> = [
-  {
-    id: "need",
-    label: "Necessidade",
-    description: "Peça apoio para uma demanda real",
-    icon: FiHeart,
-    tone: "green",
-  },
-  {
-    id: "project",
-    label: "Projeto",
-    description: "Apresente uma iniciativa em andamento",
-    icon: FiFolder,
-    tone: "blue",
-  },
-  {
-    id: "module",
-    label: "Módulo",
-    description: "Compartilhe uma solução reutilizável",
-    icon: FiBox,
-    tone: "purple",
-  },
-  {
-    id: "discussion",
-    label: "Discussão",
-    description: "Abra uma conversa com a comunidade",
-    icon: FiMessageCircle,
-    tone: "yellow",
-  },
-  {
-    id: "event",
-    label: "Evento",
-    description: "Divulgue encontros e atividades",
-    icon: FiCalendar,
-    tone: "teal",
-  },
-  {
-    id: "update",
-    label: "Atualização",
-    description: "Mostre o que mudou em um projeto",
-    icon: FiActivity,
-    tone: "pink",
-  },
 ];
 
 const opportunities: Opportunity[] = [
@@ -466,7 +412,9 @@ export default function LoggedCommunity() {
   );
   const [feedFilter, setFeedFilter] = useState<FeedFilter>("all");
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [createType, setCreateType] = useState<CreateType>("need");
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState<string | null>(null);
 
   const userName =
     userData?.fullName ||
@@ -488,8 +436,6 @@ export default function LoggedCommunity() {
   );
 
   const personalizedPanel = personalizedPanels[selectedRole];
-  const selectedCreateType =
-    createTypes.find((item) => item.id === createType) ?? createTypes[0];
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -530,15 +476,54 @@ export default function LoggedCommunity() {
     };
   }, [createModalOpen]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCommunityFeed() {
+      try {
+        setPostsLoading(true);
+        setPostsError(null);
+
+        const communityPosts = await getCommunityPosts();
+
+        if (!cancelled) {
+          setPosts(communityPosts);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setPostsError(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível carregar as publicações.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setPostsLoading(false);
+        }
+      }
+    }
+
+    void loadCommunityFeed();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const navigateToPending = () => {
     setMobileMenuOpen(false);
     setProfileMenuOpen(false);
     navigate("/em-construcao");
   };
 
-  const openCreateModal = (type: CreateType = "need") => {
-    setCreateType(type);
+  const openCreateModal = () => {
     setCreateModalOpen(true);
+  };
+
+  const handlePostCreated = (post: CommunityPost) => {
+    setPosts((current) => [post, ...current]);
+    setCreateModalOpen(false);
   };
 
   const handleCommunityRoleChange = (role: CommunityRole) => {
@@ -573,6 +558,28 @@ export default function LoggedCommunity() {
       console.error("Não foi possível encerrar a sessão:", error);
     }
   };
+
+  const visibleFeedPosts = useMemo(() => {
+    if (feedFilter === "opportunities") {
+      return posts.filter((post) => post.kind === "request");
+    }
+
+    if (feedFilter === "discussions") {
+      return posts.filter(
+        (post) => post.kind === "question" || post.kind === "general",
+      );
+    }
+
+    if (feedFilter === "projects") {
+      return posts.filter(
+        (post) => post.kind === "update" || post.kind === "resource",
+      );
+    }
+
+    // "Seguindo" ainda depende do futuro sistema de follows. Enquanto isso,
+    // preservamos o feed completo em vez de simular um filtro inexistente.
+    return posts;
+  }, [feedFilter, posts]);
 
   const scrollOpportunities = (direction: "left" | "right") => {
     opportunityRailRef.current?.scrollBy({
@@ -727,7 +734,7 @@ export default function LoggedCommunity() {
             <button
               type="button"
               className={styles.topbarCreateButton}
-              onClick={() => openCreateModal("need")}
+              onClick={() => openCreateModal()}
             >
               <FiPlus />
               <span>Criar</span>
@@ -844,7 +851,7 @@ export default function LoggedCommunity() {
                     42 pessoas colaborando agora
                   </span>
                 </div>
-                <button type="button" onClick={() => openCreateModal("need")}>
+                <button type="button" onClick={() => openCreateModal()}>
                   <FiPlus />
                   Nova publicação
                 </button>
@@ -1021,7 +1028,7 @@ export default function LoggedCommunity() {
               <button
                 type="button"
                 className={styles.compactComposer}
-                onClick={() => openCreateModal("update")}
+                onClick={() => openCreateModal()}
               >
                 <span className={styles.composerAvatar}>
                   {activeProfileInitials}
@@ -1076,366 +1083,37 @@ export default function LoggedCommunity() {
                 </div>
 
                 <div className={styles.feedList}>
-                  <article
-                    className={`${styles.post} ${styles.projectUpdatePost}`}
-                  >
-                    <header className={styles.postHeader}>
-                      <span
-                        className={`${styles.postAvatar} ${styles.avatarBlue}`}
-                      >
-                        RA
-                      </span>
-                      <div className={styles.postAuthor}>
-                        <div>
-                          <strong>Rede Acolher</strong>
-                          <FiCheckCircle title="Organização verificada" />
-                          <span>publicou uma atualização</span>
-                        </div>
-                        <small>há 38 min · Projeto público</small>
-                      </div>
-                      <button
-                        type="button"
-                        className={styles.moreButton}
-                        aria-label="Mais opções"
-                      >
-                        <FiMoreHorizontal />
-                      </button>
-                    </header>
+                  {postsLoading ? (
+                    <article className={styles.post}>
+                      <p aria-live="polite">Carregando publicações...</p>
+                    </article>
+                  ) : null}
 
-                    <div className={styles.projectUpdateLayout}>
-                      <div className={styles.projectUpdateCopy}>
-                        <span className={styles.postKind}>
-                          <FiGitCommit /> Atualização de projeto
-                        </span>
-                        <h2>
-                          O fluxo de triagem já está funcionando no ambiente de
-                          testes
-                        </h2>
-                        <p>
-                          Finalizamos a primeira versão da busca por famílias e
-                          da linha do tempo de atendimentos. Agora estamos
-                          revisando acessibilidade e permissões.
-                        </p>
-                        <div className={styles.changeList}>
-                          <span>
-                            <FiCheckCircle /> Busca e filtros concluídos
-                          </span>
-                          <span>
-                            <FiCheckCircle /> Histórico por família
-                          </span>
-                          <span>
-                            <FiClock /> Revisão de acessibilidade em andamento
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          className={styles.textLink}
-                          onClick={navigateToPending}
-                        >
-                          Ver changelog <FiArrowRight />
-                        </button>
-                      </div>
-                      <div className={styles.updateVisual}>
-                        <div className={styles.updateVisualTop}>
-                          <span>v0.8.0</span>
-                          <b>12 tarefas concluídas</b>
-                        </div>
-                        <div className={styles.updateTimeline}>
-                          <span className={styles.timelineDone}>
-                            <i />
-                            Cadastro
-                          </span>
-                          <span className={styles.timelineDone}>
-                            <i />
-                            Triagem
-                          </span>
-                          <span className={styles.timelineActive}>
-                            <i />
-                            Acessibilidade
-                          </span>
-                          <span>
-                            <i />
-                            Publicação
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                  {postsError ? (
+                    <article className={styles.post}>
+                      <p role="alert">{postsError}</p>
+                    </article>
+                  ) : null}
 
-                    <div className={styles.postEngagement}>
-                      <span>32 apoios · 11 comentários</span>
-                      <div>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiHeart /> Apoiar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiMessageCircle /> Comentar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiShare2 /> Compartilhar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiBookmark />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-
-                  <article className={`${styles.post} ${styles.needPost}`}>
-                    <header className={styles.postHeader}>
-                      <span
-                        className={`${styles.postAvatar} ${styles.avatarGreen}`}
-                      >
-                        OE
-                      </span>
-                      <div className={styles.postAuthor}>
-                        <div>
-                          <strong>ONG Esperança</strong>
-                          <FiCheckCircle title="Organização verificada" />
-                          <span>publicou uma necessidade</span>
-                        </div>
-                        <small>há 2 h · São Paulo, SP</small>
-                      </div>
-                      <button
-                        type="button"
-                        className={styles.moreButton}
-                        aria-label="Mais opções"
-                      >
-                        <FiMoreHorizontal />
-                      </button>
-                    </header>
-
-                    <div className={styles.needPostBody}>
-                      <div className={styles.needPostCopy}>
-                        <span className={styles.postKind}>
-                          <FiHeart /> Oportunidade de voluntariado
-                        </span>
-                        <h2>Precisamos organizar nossa comunicação digital</h2>
-                        <p>
-                          Queremos melhorar a presença online da organização
-                          para alcançar mais famílias e parceiros. Procuramos
-                          apoio para planejar conteúdo e estruturar uma rotina
-                          simples de publicação.
-                        </p>
-                        <div className={styles.tags}>
-                          <span>Comunicação</span>
-                          <span>Marketing digital</span>
-                          <span>Remoto</span>
-                        </div>
-                      </div>
-                      <aside className={styles.needSummary}>
-                        <span className={styles.paperLabel}>
-                          Precisamos de ajuda
-                        </span>
-                        <dl>
-                          <div>
-                            <dt>Duração</dt>
-                            <dd>4 semanas</dd>
-                          </div>
-                          <div>
-                            <dt>Disponibilidade</dt>
-                            <dd>3 h por semana</dd>
-                          </div>
-                          <div>
-                            <dt>Interessados</dt>
-                            <dd>3 de 5 pessoas</dd>
-                          </div>
-                        </dl>
-                        <button type="button" onClick={navigateToPending}>
-                          Quero contribuir <FiArrowRight />
-                        </button>
-                      </aside>
-                    </div>
-
-                    <div className={styles.postEngagement}>
-                      <span>24 apoios · 8 comentários</span>
-                      <div>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiHeart /> Apoiar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiMessageCircle /> Comentar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiShare2 /> Compartilhar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiBookmark />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-
-                  <article className={`${styles.post} ${styles.modulePost}`}>
-                    <header className={styles.postHeader}>
-                      <span
-                        className={`${styles.postAvatar} ${styles.avatarPurple}`}
-                      >
-                        MO
-                      </span>
-                      <div className={styles.postAuthor}>
-                        <div>
-                          <strong>Marina Oliveira</strong>
-                          <span>compartilhou um módulo</span>
-                        </div>
-                        <small>há 4 h · Desenvolvedora</small>
-                      </div>
-                      <button
-                        type="button"
-                        className={styles.moreButton}
-                        aria-label="Mais opções"
-                      >
-                        <FiMoreHorizontal />
-                      </button>
-                    </header>
-
-                    <div className={styles.modulePostIntro}>
+                  {!postsLoading && !postsError && visibleFeedPosts.length === 0 ? (
+                    <article className={styles.post}>
                       <p>
-                        A nova versão do módulo de doações já pode ser testada.
-                        Ela inclui categorias personalizadas, histórico por
-                        doador e exportação simplificada.
+                        {posts.length === 0
+                          ? "Ainda não existem publicações na comunidade."
+                          : "Nenhuma publicação corresponde a este filtro."}
                       </p>
-                    </div>
+                    </article>
+                  ) : null}
 
-                    <section className={styles.repositoryCard}>
-                      <div className={styles.repositoryTop}>
-                        <span className={styles.repositoryIcon}>
-                          <FiBox />
-                        </span>
-                        <div>
-                          <small>cong/modulos</small>
-                          <h2>gestao-de-doacoes</h2>
-                        </div>
-                        <b>v1.4.0</b>
-                      </div>
-                      <p>
-                        Gestão de doadores, campanhas e relatórios em um módulo
-                        open source personalizável.
-                      </p>
-                      <div className={styles.repositoryLanguage}>
-                        <span>
-                          <i /> TypeScript
-                        </span>
-                        <span>
-                          <FiStar /> 31
-                        </span>
-                        <span>
-                          <FiGitBranch /> 12
-                        </span>
-                        <span>
-                          <FiDownload /> 128 downloads
-                        </span>
-                      </div>
-                      <footer>
-                        <div className={styles.repositoryTopics}>
-                          <span>doações</span>
-                          <span>relatórios</span>
-                          <span>firebase</span>
-                        </div>
-                        <button type="button" onClick={navigateToPending}>
-                          Abrir módulo <FiExternalLink />
-                        </button>
-                      </footer>
-                    </section>
-
-                    <div className={styles.postEngagement}>
-                      <span>31 apoios · 6 comentários</span>
-                      <div>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiHeart /> Apoiar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiMessageCircle /> Comentar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiShare2 /> Compartilhar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiBookmark />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-
-                  <article
-                    className={`${styles.post} ${styles.discussionPost}`}
-                  >
-                    <header className={styles.postHeader}>
-                      <span
-                        className={`${styles.postAvatar} ${styles.avatarYellow}`}
-                      >
-                        CF
-                      </span>
-                      <div className={styles.postAuthor}>
-                        <div>
-                          <strong>Comunidade Fazer</strong>
-                          <span>iniciou uma discussão</span>
-                        </div>
-                        <small>ontem · Estratégia e captação</small>
-                      </div>
-                      <button
-                        type="button"
-                        className={styles.moreButton}
-                        aria-label="Mais opções"
-                      >
-                        <FiMoreHorizontal />
-                      </button>
-                    </header>
-
-                    <div className={styles.discussionBody}>
-                      <span className={styles.postKind}>
-                        <FiMessageCircle /> Discussão aberta
-                      </span>
-                      <h2>
-                        Como pequenas ONGs podem manter doadores próximos sem
-                        ferramentas caras?
-                      </h2>
-                      <p>
-                        Estamos comparando rotinas simples, planilhas, mensagens
-                        e módulos gratuitos. Quais práticas realmente
-                        funcionaram na sua organização?
-                      </p>
-                      <blockquote>
-                        <span className={styles.quoteAvatar}>LS</span>
-                        <div>
-                          <strong>Larissa Santos respondeu</strong>
-                          <p>
-                            O que mais ajudou foi criar uma rotina mensal curta
-                            e mostrar o destino de cada contribuição com
-                            exemplos concretos.
-                          </p>
-                        </div>
-                      </blockquote>
-                      <div className={styles.discussionFooter}>
-                        <div className={styles.avatarStack}>
-                          <span>LS</span>
-                          <span>JP</span>
-                          <span>AM</span>
-                          <span>+14</span>
-                        </div>
-                        <button type="button" onClick={navigateToPending}>
-                          Ver 28 respostas <FiArrowRight />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className={styles.postEngagement}>
-                      <span>17 pessoas participando</span>
-                      <div>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiHeart /> Apoiar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiMessageCircle /> Responder
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiShare2 /> Compartilhar
-                        </button>
-                        <button type="button" onClick={navigateToPending}>
-                          <FiBookmark />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
+                  {!postsLoading &&
+                    !postsError &&
+                    visibleFeedPosts.map((post) => (
+                      <CommunityPostCard
+                        key={post.id}
+                        post={post}
+                        onPendingAction={navigateToPending}
+                      />
+                    ))}
                 </div>
               </section>
             </div>
@@ -1558,129 +1236,10 @@ export default function LoggedCommunity() {
       </section>
 
       {createModalOpen ? (
-        <div
-          className={styles.modalBackdrop}
-          role="presentation"
-          onMouseDown={() => setCreateModalOpen(false)}
-        >
-          <section
-            className={styles.createModal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-publication-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <header className={styles.modalHeader}>
-              <div>
-                <span>Criar na comunidade</span>
-                <h2 id="create-publication-title">
-                  O que você quer compartilhar?
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCreateModalOpen(false)}
-                aria-label="Fechar"
-              >
-                <FiX />
-              </button>
-            </header>
-
-            <div className={styles.createTypeGrid}>
-              {createTypes.map((type) => {
-                const Icon = type.icon;
-                return (
-                  <button
-                    key={type.id}
-                    type="button"
-                    data-tone={type.tone}
-                    className={
-                      createType === type.id ? styles.createTypeSelected : ""
-                    }
-                    onClick={() => setCreateType(type.id)}
-                  >
-                    <span>
-                      <Icon />
-                    </span>
-                    <div>
-                      <strong>{type.label}</strong>
-                      <small>{type.description}</small>
-                    </div>
-                    {createType === type.id ? <FiCheckCircle /> : null}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className={styles.modalForm}>
-              <div className={styles.modalIdentity}>
-                <span className={styles.composerAvatar}>
-                  {activeProfileInitials}
-                </span>
-                <div>
-                  <strong>{activeProfileName}</strong>
-                  <small>Publicando como {activeProfileLabel}</small>
-                </div>
-                <button type="button" onClick={navigateToPending}>
-                  <FiGlobe /> Toda a comunidade <FiChevronDown />
-                </button>
-              </div>
-
-              <label className={styles.modalTitleField}>
-                <span>Título</span>
-                <input
-                  type="text"
-                  placeholder={
-                    selectedCreateType.id === "discussion"
-                      ? "Qual pergunta você quer abrir para a comunidade?"
-                      : `Dê um título para sua ${selectedCreateType.label.toLowerCase()}`
-                  }
-                />
-              </label>
-
-              <label className={styles.modalTextField}>
-                <span>Conte mais</span>
-                <textarea placeholder="Explique o contexto, o que já existe e como as pessoas podem participar." />
-              </label>
-
-              <div className={styles.modalAttachments}>
-                <button type="button" onClick={navigateToPending}>
-                  <FiImage /> Imagem ou capa
-                </button>
-                <button type="button" onClick={navigateToPending}>
-                  <FiPaperclip /> Arquivo
-                </button>
-                <button type="button" onClick={navigateToPending}>
-                  <FiLink /> Link
-                </button>
-                <button type="button" onClick={navigateToPending}>
-                  <FiTag /> Tags
-                </button>
-              </div>
-
-              <div className={styles.coverHint}>
-                <FiImage />
-                <span>
-                  <strong>Sem imagem? Tudo bem.</strong>A CONG cria uma capa
-                  automática usando ícone, categoria e dados da publicação.
-                </span>
-              </div>
-            </div>
-
-            <footer className={styles.modalFooter}>
-              <button type="button" onClick={() => setCreateModalOpen(false)}>
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className={styles.publishButton}
-                onClick={navigateToPending}
-              >
-                <FiSend /> Publicar {selectedCreateType.label.toLowerCase()}
-              </button>
-            </footer>
-          </section>
-        </div>
+        <CommunityPostComposer
+          onClose={() => setCreateModalOpen(false)}
+          onCreated={handlePostCreated}
+        />
       ) : null}
     </div>
   );

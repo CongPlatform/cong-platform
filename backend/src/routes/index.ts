@@ -3,6 +3,7 @@ import { Router } from "express";
 import authRouter from "./auth.routes.js";
 import accountRouter from "./account.routes.js";
 import organizationRouter from "./organization.routes.js";
+import communityRouter from "./community.routes.js";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.get("/api/health", (_req, res) => {
 router.use("/api/auth", authRouter);
 router.use("/api/account", accountRouter);
 router.use("/api/organizations", organizationRouter);
+router.use("/api/community", communityRouter);
 
 export default router;
