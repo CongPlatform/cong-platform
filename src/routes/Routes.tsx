@@ -12,7 +12,6 @@ import OrganizationProvider from "../contexts/OrganizationProvider";
 // ==================================================
 
 const MainLayout = lazy(() => import("../layouts/MainLayout"));
-
 const LoggedInLayout = lazy(() => import("../layouts/LoggedInLayout"));
 
 // ==================================================
@@ -20,17 +19,13 @@ const LoggedInLayout = lazy(() => import("../layouts/LoggedInLayout"));
 // ==================================================
 
 const Home = lazy(() => import("../pages/home/Home"));
-
 const HowItWorks = lazy(() => import("../pages/how-it-works/HowItWorks"));
-
 const Documentation = lazy(
   () => import("../pages/documentation/Documentation"),
 );
-
 const InstitutionalCommunity = lazy(
   () => import("../pages/community/Community"),
 );
-
 const About = lazy(() => import("../pages/about/About"));
 
 // ==================================================
@@ -38,11 +33,9 @@ const About = lazy(() => import("../pages/about/About"));
 // ==================================================
 
 const Login = lazy(() => import("../pages/login/Login"));
-
 const Register = lazy(() => import("../pages/register/Register"));
-
+const VerifyEmail = lazy(() => import("../pages/verifyEmail/VerifyEmail"));
 const AuthConfirm = lazy(() => import("../pages/auth-confirm/AuthConfirm"));
-
 const OAuthCallback = lazy(
   () => import("../pages/oauth-callback/OAuthCallback"),
 );
@@ -54,21 +47,16 @@ const OAuthCallback = lazy(
 const FirstAccess = lazy(
   () => import("../pages/logged-in/firstAccess/FirstAccess"),
 );
-
 const RoleSelection = lazy(
   () => import("../pages/logged-in/roleSelection/RoleSelection"),
 );
-
 const CompleteProfiles = lazy(
   () => import("../pages/logged-in/completeProfiles/CompleteProfiles"),
 );
-
 const Account = lazy(() => import("../pages/logged-in/account/Account"));
-
 const LoggedInCommunity = lazy(
   () => import("../pages/logged-in/community/Community"),
 );
-
 const Pending = lazy(() => import("../pages/pending/Pending"));
 
 export default function AppRoutes() {
@@ -85,13 +73,9 @@ export default function AppRoutes() {
 
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
-
               <Route path="/como-funciona" element={<HowItWorks />} />
-
               <Route path="/documentacao" element={<Documentation />} />
-
               <Route path="/comunidade" element={<InstitutionalCommunity />} />
-
               <Route path="/sobre" element={<About />} />
             </Route>
 
@@ -100,12 +84,19 @@ export default function AppRoutes() {
                 ================================================== */}
 
             <Route path="/login" element={<Login />} />
-
             <Route path="/signup" element={<Register />} />
+
+            {/*
+              O cadastro navega explicitamente para esta rota depois de criar
+              a conta. Sem ela, o fallback "*" redireciona para a Home.
+            */}
+            <Route path="/verifique-seu-email" element={<VerifyEmail />} />
 
             <Route path="/auth/confirm" element={<AuthConfirm />} />
 
+            {/* Rota atual + alias para redirects OAuth antigos/configurados. */}
             <Route path="/auth/oauth/callback" element={<OAuthCallback />} />
+            <Route path="/oauth-callback" element={<OAuthCallback />} />
 
             {/* ==================================================
                 ÁREA AUTENTICADA
@@ -117,9 +108,7 @@ export default function AppRoutes() {
                   ---------------------------------------------- */}
 
               <Route path="/app/primeiro-acesso" element={<FirstAccess />} />
-
               <Route path="/app/escolher-funcao" element={<RoleSelection />} />
-
               <Route
                 path="/app/completar-perfis"
                 element={<CompleteProfiles />}
@@ -137,9 +126,7 @@ export default function AppRoutes() {
                 }
               >
                 <Route path="/app/comunidade" element={<LoggedInCommunity />} />
-
                 <Route path="/app/minha-conta" element={<Account />} />
-
                 <Route path="/em-construcao" element={<Pending />} />
               </Route>
 
@@ -151,27 +138,22 @@ export default function AppRoutes() {
                 path="/primeiro-acesso"
                 element={<Navigate to="/app/primeiro-acesso" replace />}
               />
-
               <Route
                 path="/selecionar-perfil"
                 element={<Navigate to="/app/escolher-funcao" replace />}
               />
-
               <Route
                 path="/app/criar-perfil"
                 element={<Navigate to="/app/completar-perfis" replace />}
               />
-
               <Route
                 path="/app/criar-perfil/:role"
                 element={<Navigate to="/app/completar-perfis" replace />}
               />
-
               <Route
                 path="/community"
                 element={<Navigate to="/app/comunidade" replace />}
               />
-
               <Route
                 path="/dashboard"
                 element={<Navigate to="/app/comunidade" replace />}

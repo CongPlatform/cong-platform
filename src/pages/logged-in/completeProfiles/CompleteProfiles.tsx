@@ -62,7 +62,7 @@ import {
 } from "../../../services/representationService";
 
 import logo from "../../../assets/brand/logo-wordmark-dark.webp";
-import happyCong from "../../../assets/mascot/cong-happy.webp";
+import strongCong from "../../../assets/mascot/cong-muscular-medalist.webp";
 import styles from "./CompleteProfiles.module.css";
 
 type WorkspaceKey =
@@ -1293,7 +1293,7 @@ function CompleteProfilesWorkspace({
         fecharAoClicarFora={false}
         mensagem={
           <div className={styles.welcomeMessage}>
-            <img src={happyCong} alt="Mascote Cong comemorando" />
+            <img src={strongCong} alt="Mascote Cong comemorando" />
             <div>
               <strong>A união faz a força.</strong>
               <p>
