@@ -80,3 +80,4 @@ api-tests.http
 
 # Arquivos exclusivamente locais / nunca versionar
 /local-private/
+.vercel
