@@ -57,6 +57,12 @@ const Account = lazy(() => import("../pages/logged-in/account/Account"));
 const LoggedInCommunity = lazy(
   () => import("../pages/logged-in/community/Community"),
 );
+const CommunityProfile = lazy(
+  () => import("../pages/logged-in/communityProfile/CommunityProfile"),
+);
+const CommunityModerationPage = lazy(
+  () => import("../pages/logged-in/community/CommunityModerationPage"),
+);
 const Pending = lazy(() => import("../pages/pending/Pending"));
 
 export default function AppRoutes() {
@@ -126,6 +132,18 @@ export default function AppRoutes() {
                 }
               >
                 <Route path="/app/comunidade" element={<LoggedInCommunity />} />
+                <Route
+                  path="/app/comunidade/minha-atividade"
+                  element={<LoggedInCommunity />}
+                />
+                <Route
+                  path="/app/comunidade/perfil/:entityType/:entityId"
+                  element={<CommunityProfile />}
+                />
+                <Route
+                  path="/app/moderacao"
+                  element={<CommunityModerationPage />}
+                />
                 <Route path="/app/minha-conta" element={<Account />} />
                 <Route path="/em-construcao" element={<Pending />} />
               </Route>

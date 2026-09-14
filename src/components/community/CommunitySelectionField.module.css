@@ -1,0 +1,138 @@
+.field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.heading > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.heading strong {
+  color: #334155;
+  font-size: var(--font-size-078);
+  font-weight: 750;
+}
+
+.heading em {
+  margin-left: 4px;
+  color: var(--color-slate-400);
+  font-size: 0.69rem;
+  font-style: normal;
+  font-weight: var(--font-semibold);
+}
+
+.heading small {
+  color: #7c8796;
+  font-size: var(--font-size-072);
+  line-height: 1.4;
+}
+
+.heading > button,
+.emptyState {
+  border: 1px solid #dce3eb;
+  background: var(--color-white);
+  color: #315f91;
+  font: inherit;
+  font-size: var(--font-size-073);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.heading > button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 0 10px;
+  border-radius: 9px;
+}
+
+.heading > button svg,
+.emptyState svg {
+  width: 15px;
+  height: 15px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.chip {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 5px 4px 10px;
+  border: 1px solid #d9e2ed;
+  border-radius: 999px;
+  background: #f6f9fc;
+  color: #40536a;
+  font-size: var(--font-size-072);
+  font-weight: var(--font-bold);
+}
+
+.chip button {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #7b8796;
+  cursor: pointer;
+}
+
+.chip button:hover {
+  color: #a33d43;
+  background: #fff0f0;
+}
+
+.chip svg {
+  width: 13px;
+  height: 13px;
+}
+
+.emptyState {
+  min-height: 43px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border-style: dashed;
+  border-radius: 11px;
+  color: #6b7788;
+  background: #fbfcfe;
+}
+
+.compact .heading small {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .heading > button {
+    align-self: flex-start;
+  }
+}

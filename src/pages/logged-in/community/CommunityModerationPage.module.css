@@ -1,0 +1,46 @@
+.page {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  padding: 24px 24px 48px;
+}
+.pageHeader {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 18px;
+  padding: 4px 4px 8px;
+}
+.pageHeader::after {
+  content: "";
+  width: 92px;
+  height: 11px;
+  margin-top: -5px;
+  border-radius: 999px 52% 999px 42%;
+  background: rgb(253 188 53 / 32%);
+  transform: rotate(-1deg);
+}
+.pageHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #3864be;
+  font-size: 0.71rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.pageHeader h1 {
+  margin: 0;
+  color: #15283e;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+}
+.pageHeader p {
+  margin: 0;
+  color: #6c7a8d;
+  font-size: var(--font-process-module);
+}
+@media (max-width: 680px) {
+  .page {
+    padding: 18px 12px 36px;
+  }
+}

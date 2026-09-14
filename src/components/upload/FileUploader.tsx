@@ -72,6 +72,8 @@ export default function FileUploader({
 
   description = "Arraste um arquivo aqui ou escolha do seu computador.",
 
+  disabled = false,
+
   accept = [],
 
   maxSize = DEFAULT_MAX_SIZE,
@@ -182,7 +184,7 @@ export default function FileUploader({
   }
 
   async function beginUpload(item: UploadItem): Promise<void> {
-    if (!onUpload) {
+    if (!onUpload || disabled) {
       return;
     }
     const controller = new AbortController();
@@ -237,6 +239,10 @@ export default function FileUploader({
   }
 
   function addFiles(fileList: FileList | File[]): void {
+    if (disabled) {
+      return;
+    }
+
     const incoming = Array.from(fileList);
 
     if (incoming.length === 0) {
@@ -354,11 +360,17 @@ export default function FileUploader({
 
     setDragging(false);
 
-    addFiles(event.dataTransfer.files);
+    if (!disabled) {
+      addFiles(event.dataTransfer.files);
+    }
   }
 
   function handleDragEnter(event: DragEvent<HTMLDivElement>): void {
     event.preventDefault();
+
+    if (disabled) {
+      return;
+    }
 
     dragDepthRef.current += 1;
 
@@ -378,6 +390,10 @@ export default function FileUploader({
   }
 
   function handlePaste(event: ClipboardEvent<HTMLDivElement>): void {
+    if (disabled) {
+      return;
+    }
+
     const clipboardFiles = event.clipboardData.files;
 
     if (clipboardFiles.length === 0) {
@@ -390,6 +406,10 @@ export default function FileUploader({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (disabled) {
+      return;
+    }
+
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
 
@@ -419,6 +439,7 @@ export default function FileUploader({
         ref={inputRef}
         className={styles.hiddenInput}
         type="file"
+        disabled={disabled}
         accept={accept.length > 0 ? accept.join(",") : undefined}
         multiple={multiple}
         onChange={handleInputChange}
@@ -427,9 +448,13 @@ export default function FileUploader({
       <div
         className={styles.dropzone}
         data-dragging={dragging ? "true" : undefined}
+        data-disabled={disabled ? "true" : undefined}
         role="button"
-        tabIndex={0}
-        onClick={() => inputRef.current?.click()}
+        tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
+        onClick={() => {
+          if (!disabled) inputRef.current?.click();
+        }}
         onKeyDown={handleKeyDown}
         onDragEnter={handleDragEnter}
         onDragOver={(event) => event.preventDefault()}
@@ -541,6 +566,7 @@ export default function FileUploader({
                           <button
                             type="button"
                             className={styles.primaryAction}
+                            disabled={disabled}
                             onClick={() => void beginUpload(item)}
                           >
                             <FiUploadCloud />
@@ -553,6 +579,7 @@ export default function FileUploader({
                           type="button"
                           className={styles.iconButton}
                           title="Cancelar envio"
+                          disabled={disabled}
                           onClick={() => cancelUpload(item)}
                         >
                           <FiX />
@@ -563,6 +590,7 @@ export default function FileUploader({
                         <button
                           type="button"
                           className={styles.retryButton}
+                          disabled={disabled}
                           onClick={() => void beginUpload(item)}
                         >
                           <FiRefreshCw />
@@ -575,6 +603,7 @@ export default function FileUploader({
                           type="button"
                           className={styles.iconButton}
                           title="Remover arquivo"
+                          disabled={disabled}
                           onClick={() => removeItem(item)}
                         >
                           <FiTrash2 />

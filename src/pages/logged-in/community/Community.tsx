@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { IconType } from "react-icons";
 import {
   FiActivity,
+  FiArchive,
   FiArrowRight,
   FiBell,
+  FiBookmark,
   FiBox,
   FiCalendar,
+  FiCheckCircle,
   FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
@@ -14,27 +17,22 @@ import {
   FiCode,
   FiCompass,
   FiFileText,
+  FiFlag,
   FiFolder,
-  FiGitBranch,
   FiGlobe,
-  FiGrid,
   FiHeart,
   FiHelpCircle,
   FiHome,
-  FiImage,
-  FiLayers,
-  FiLink,
   FiLogOut,
   FiMapPin,
   FiMenu,
   FiMessageCircle,
-  FiPaperclip,
   FiPenTool,
   FiPlus,
+  FiRefreshCw,
   FiSearch,
   FiSettings,
-  FiStar,
-  FiTag,
+  FiShield,
   FiUser,
   FiUsers,
   FiX,
@@ -49,61 +47,43 @@ import {
 
 import CommunityPostCard from "../../../components/community/CommunityPostCard";
 import CommunityPostComposer from "../../../components/community/CommunityPostComposer";
+import CommunityNotificationsPanel from "../../../components/community/CommunityNotificationsPanel";
+import CommunityEventModal from "../../../components/community/CommunityEventModal";
+import CommunitySearchPanel from "../../../components/community/CommunitySearchPanel";
 import {
+  followCommunityUser,
+  getCommunityDiscovery,
+  getCommunityHighlights,
+  getCommunityPost,
   getCommunityPosts,
+  getNextCommunityEvent,
+  searchCommunity,
+  type CommunityDiscovery,
+  type CommunityHighlights,
+  type CommunityEvent,
+  type CommunityFeedFilter,
+  type CommunityFeedSort,
+  type CommunityNotificationsPayload,
   type CommunityPost,
+  type CommunitySearchPayload,
+  type CommunitySearchResult,
+  type CommunityPostKind,
 } from "../../../services/communityService";
+
+import { buildDefaultAvatarUrl } from "../../../utils/avatar";
 
 import mascot from "../../../assets/mascot/cong-happy.webp";
 import logoCompact from "../../../assets/brand/logo-mark.webp";
 import logoExtended from "../../../assets/brand/logo-wordmark-dark.webp";
 import styles from "./Community.module.css";
 
-type CommunityRole =
-  | "organization"
-  | "developer"
-  | "designer"
-  | "translator"
-  | "volunteer"
-  | "supporter";
-
 type Tone = "blue" | "green" | "purple" | "yellow" | "pink" | "teal";
-type FeedFilter =
-  "all" | "following" | "projects" | "opportunities" | "discussions";
-
 type NavigationItem = {
   label: string;
   icon: IconType;
   badge?: number;
   active?: boolean;
 };
-
-type RoleOption = {
-  id: CommunityRole;
-  label: string;
-  icon: IconType;
-  tone: Tone;
-  helper: string;
-};
-
-type Opportunity = {
-  organization: string;
-  title: string;
-  skill: string;
-  meta: string;
-  tone: Tone;
-  icon: IconType;
-};
-
-type PersonalizedPanel = {
-  eyebrow: string;
-  title: string;
-  description: string;
-  primaryLabel: string;
-  items: Array<{ label: string; meta: string; icon: IconType }>;
-};
-
-const COMMUNITY_ROLE_STORAGE_KEY = "cong:selected-community-role";
 
 const mainNavigation: NavigationItem[] = [
   { label: "Comunidade", icon: FiHome, active: true },
@@ -114,57 +94,12 @@ const mainNavigation: NavigationItem[] = [
 ];
 
 const accountNavigation: NavigationItem[] = [
-  { label: "Mensagens", icon: FiMessageCircle, badge: 2 },
-  { label: "Notificações", icon: FiBell, badge: 3 },
+  { label: "Mensagens", icon: FiMessageCircle },
+  { label: "Notificações", icon: FiBell },
   { label: "Meu perfil", icon: FiUser },
 ];
 
-const roles: RoleOption[] = [
-  {
-    id: "organization",
-    label: "ONG",
-    icon: FiGrid,
-    tone: "blue",
-    helper: "Necessidades e projetos sociais",
-  },
-  {
-    id: "developer",
-    label: "Desenvolvedor",
-    icon: FiCode,
-    tone: "green",
-    helper: "Issues, módulos e código",
-  },
-  {
-    id: "designer",
-    label: "Designer",
-    icon: FiPenTool,
-    tone: "purple",
-    helper: "Interfaces, fluxos e revisões",
-  },
-  {
-    id: "translator",
-    label: "Tradutor",
-    icon: FiGlobe,
-    tone: "teal",
-    helper: "Conteúdo e internacionalização",
-  },
-  {
-    id: "volunteer",
-    label: "Voluntário",
-    icon: FiHeart,
-    tone: "pink",
-    helper: "Ações e oportunidades abertas",
-  },
-  {
-    id: "supporter",
-    label: "Apoiador",
-    icon: FiStar,
-    tone: "yellow",
-    helper: "Campanhas e projetos para apoiar",
-  },
-];
-
-const feedFilters: readonly [FeedFilter, string][] = [
+const feedFilters: readonly [CommunityFeedFilter, string][] = [
   ["all", "Para você"],
   ["following", "Seguindo"],
   ["projects", "Projetos"],
@@ -172,167 +107,135 @@ const feedFilters: readonly [FeedFilter, string][] = [
   ["discussions", "Discussões"],
 ];
 
-const opportunities: Opportunity[] = [
-  {
-    organization: "ONG Horizonte",
-    title: "Redesenhar o fluxo de cadastro de famílias",
-    skill: "UX e pesquisa",
-    meta: "Remoto · 3 semanas",
-    tone: "purple",
-    icon: FiPenTool,
-  },
-  {
-    organization: "Rede Acolher",
-    title: "Criar painel de acompanhamento de doações",
-    skill: "React e Firebase",
-    meta: "4 vagas · Remoto",
-    tone: "green",
-    icon: FiCode,
-  },
-  {
-    organization: "Instituto Sementes",
-    title: "Traduzir materiais de orientação para espanhol",
-    skill: "Tradução",
-    meta: "12 páginas · Flexível",
-    tone: "teal",
-    icon: FiGlobe,
-  },
-  {
-    organization: "Projeto Viver",
-    title: "Apoiar campanha de arrecadação de inverno",
-    skill: "Comunicação",
-    meta: "Presencial · Campinas",
-    tone: "yellow",
-    icon: FiHeart,
-  },
+const FEED_PAGE_SIZE = 8;
+
+const feedSortLabels: Record<CommunityFeedSort, string> = {
+  recommended: "Recomendado",
+  recent: "Recentes",
+  supported: "Mais apoiadas",
+  discussed: "Mais comentadas",
+};
+
+const areaLabels: Record<CommunityPost["area"], string> = {
+  desenvolvimento: "Desenvolvimento",
+  design: "Design",
+  pesquisa: "Pesquisa",
+  documentacao: "Documentação",
+  voluntariado: "Voluntariado",
+  ongs: "ONGs",
+};
+
+const personalFeedFilters: readonly [CommunityFeedFilter, string][] = [
+  ["mine", "Minhas publicações"],
+  ["saved", "Itens salvos"],
+  ["archived", "Arquivadas"],
 ];
 
-const personalizedPanels: Record<CommunityRole, PersonalizedPanel> = {
-  organization: {
-    eyebrow: "Painel da ONG",
-    title: "Acompanhe o que sua organização publicou",
-    description: "Veja pessoas interessadas, respostas e próximos passos.",
-    primaryLabel: "Ver solicitações",
-    items: [
-      {
-        label: "3 pessoas interessadas",
-        meta: "Comunicação digital",
-        icon: FiUsers,
-      },
-      {
-        label: "2 respostas novas",
-        meta: "Painel de voluntários",
-        icon: FiMessageCircle,
-      },
-      {
-        label: "1 projeto em revisão",
-        meta: "Gestão de doações",
-        icon: FiGitBranch,
-      },
-    ],
-  },
-  developer: {
-    eyebrow: "Para desenvolver",
-    title: "Trabalho técnico que combina com você",
-    description:
-      "Issues abertas, módulos recentes e projetos procurando apoio.",
-    primaryLabel: "Explorar issues",
-    items: [
-      {
-        label: "Issue #42",
-        meta: "Filtros do painel de doações",
-        icon: FiCode,
-      },
-      { label: "Módulo em revisão", meta: "Agenda comunitária", icon: FiBox },
-      {
-        label: "Pull request recente",
-        meta: "Correções de acessibilidade",
-        icon: FiGitBranch,
-      },
-    ],
-  },
-  designer: {
-    eyebrow: "Para criar",
-    title: "Interfaces que precisam de direção visual",
-    description:
-      "Projetos com fluxos incompletos, pesquisas e pedidos de revisão.",
-    primaryLabel: "Ver desafios de design",
-    items: [
-      {
-        label: "Revisão de fluxo",
-        meta: "Cadastro de beneficiários",
-        icon: FiLayers,
-      },
-      {
-        label: "Pesquisa aberta",
-        meta: "Experiência de voluntários",
-        icon: FiUsers,
-      },
-      {
-        label: "UI kit colaborativo",
-        meta: "12 componentes pendentes",
-        icon: FiPenTool,
-      },
-    ],
-  },
-  translator: {
-    eyebrow: "Para traduzir",
-    title: "Conteúdo pronto para alcançar mais pessoas",
-    description: "Materiais, telas e documentos esperando tradução e revisão.",
-    primaryLabel: "Ver traduções",
-    items: [
-      { label: "18 strings novas", meta: "Módulo de eventos", icon: FiGlobe },
-      {
-        label: "Guia em revisão",
-        meta: "Português → Espanhol",
-        icon: FiFileText,
-      },
-      {
-        label: "Glossário comunitário",
-        meta: "6 termos pendentes",
-        icon: FiTag,
-      },
-    ],
-  },
-  volunteer: {
-    eyebrow: "Para participar",
-    title: "Ações rápidas com impacto visível",
-    description: "Oportunidades presenciais e remotas para contribuir agora.",
-    primaryLabel: "Ver oportunidades",
-    items: [
-      {
-        label: "Mutirão neste sábado",
-        meta: "Campinas · 9h",
-        icon: FiCalendar,
-      },
-      { label: "Apoio remoto", meta: "Comunicação e conteúdo", icon: FiGlobe },
-      {
-        label: "3 campanhas próximas",
-        meta: "Até 10 km de você",
-        icon: FiMapPin,
-      },
-    ],
-  },
-  supporter: {
-    eyebrow: "Para apoiar",
-    title: "Projetos que precisam ganhar fôlego",
-    description:
-      "Campanhas, ferramentas e iniciativas abertas a novos apoiadores.",
-    primaryLabel: "Explorar campanhas",
-    items: [
-      {
-        label: "78% financiado",
-        meta: "Biblioteca comunitária",
-        icon: FiActivity,
-      },
-      { label: "Meta até sexta", meta: "Campanha de inverno", icon: FiClock },
-      {
-        label: "Projeto transparente",
-        meta: "Relatório mensal disponível",
-        icon: FiFileText,
-      },
-    ],
-  },
+function isCommunityFeedFilter(
+  value: string | null,
+): value is CommunityFeedFilter {
+  return [
+    "all",
+    "following",
+    "projects",
+    "opportunities",
+    "discussions",
+    "mine",
+    "saved",
+    "archived",
+  ].includes(value ?? "");
+}
+
+function isPersonalFeedFilter(
+  value: string | null,
+): value is "mine" | "saved" | "archived" {
+  return value === "mine" || value === "saved" || value === "archived";
+}
+
+function getInitialFeedFilter(
+  search: string,
+  personalActivityPage: boolean,
+): CommunityFeedFilter {
+  const params = new URLSearchParams(search);
+
+  if (personalActivityPage) {
+    const view = params.get("view");
+    return isPersonalFeedFilter(view) ? view : "mine";
+  }
+
+  const value = params.get("feed");
+  return isCommunityFeedFilter(value) && !isPersonalFeedFilter(value)
+    ? value
+    : "all";
+}
+
+function sortFeedPosts(
+  posts: CommunityPost[],
+  sort: CommunityFeedSort,
+): CommunityPost[] {
+  if (sort === "recommended") return [...posts];
+
+  return [...posts].sort((a, b) => {
+    if (
+      sort === "supported" &&
+      a.engagement.likeCount !== b.engagement.likeCount
+    ) {
+      return b.engagement.likeCount - a.engagement.likeCount;
+    }
+    if (
+      sort === "discussed" &&
+      a.engagement.commentCount !== b.engagement.commentCount
+    ) {
+      return b.engagement.commentCount - a.engagement.commentCount;
+    }
+    const aRank = new Date(a.boostedAt ?? a.publishedAt).getTime();
+    const bRank = new Date(b.boostedAt ?? b.publishedAt).getTime();
+    return bRank - aRank;
+  });
+}
+
+function postMatchesFeed(
+  post: CommunityPost,
+  filter: CommunityFeedFilter,
+  tag: string,
+): boolean {
+  if (tag && !post.tags?.includes(tag)) return false;
+
+  if (filter === "archived") return post.status === "archived";
+  if (post.status !== "published") return false;
+
+  if (filter === "following") return post.author.followedByMe;
+  if (filter === "projects")
+    return post.kind === "update" || post.kind === "resource";
+  if (filter === "opportunities") return post.kind === "request";
+  if (filter === "discussions")
+    return post.kind === "question" || post.kind === "general";
+  if (filter === "saved") return post.engagement.savedByMe;
+
+  return true;
+}
+
+const composerKinds: ReadonlyArray<{
+  kind: CommunityPostKind;
+  label: string;
+  icon: IconType;
+}> = [
+  { kind: "general", label: "Publicação", icon: FiMessageCircle },
+  { kind: "question", label: "Pergunta", icon: FiHelpCircle },
+  { kind: "request", label: "Solicitação", icon: FiHeart },
+  { kind: "research", label: "Pesquisa", icon: FiSearch },
+  { kind: "update", label: "Atualização", icon: FiActivity },
+  { kind: "resource", label: "Recurso", icon: FiBox },
+  { kind: "announcement", label: "Comunicado", icon: FiFlag },
+];
+
+const communityRoleLabels: Record<string, string> = {
+  organization: "ONG",
+  developer: "Desenvolvedor",
+  designer: "Designer",
+  translator: "Tradutor",
+  volunteer: "Voluntário",
+  supporter: "Apoiador",
 };
 
 const profileTypeLabels: Record<ProfileType, string> = {
@@ -342,26 +245,6 @@ const profileTypeLabels: Record<ProfileType, string> = {
   volunteer: "Voluntário",
   organization: "ONG",
 };
-
-function isCommunityRole(value: unknown): value is CommunityRole {
-  return roles.some((role) => role.id === value);
-}
-
-function getInitialCommunityRole(locationState: unknown): CommunityRole {
-  if (
-    locationState &&
-    typeof locationState === "object" &&
-    "selectedCommunityRole" in locationState
-  ) {
-    const role = (locationState as { selectedCommunityRole?: unknown })
-      .selectedCommunityRole;
-
-    if (isCommunityRole(role)) return role;
-  }
-
-  const storedRole = sessionStorage.getItem(COMMUNITY_ROLE_STORAGE_KEY);
-  return isCommunityRole(storedRole) ? storedRole : "organization";
-}
 
 function formatName(value: string) {
   return value
@@ -380,6 +263,63 @@ function getInitials(value: string) {
   return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
 }
 
+function getCommunityRoleLabel(value: string | null) {
+  if (!value) return null;
+  return communityRoleLabels[value] ?? formatName(value);
+}
+
+function getOpportunityPresentation(post: CommunityPost): {
+  icon: IconType;
+  tone: Tone;
+  label: string;
+  meta: string;
+} {
+  const details = post.details as {
+    requestType?: string;
+    engagementMode?: string;
+    peopleNeeded?: number | null;
+    deadline?: string | null;
+  };
+
+  const modeLabels: Record<string, string> = {
+    remote: "Remoto",
+    in_person: "Presencial",
+    hybrid: "Híbrido",
+    flexible: "Flexível",
+  };
+
+  const byType: Record<string, { icon: IconType; tone: Tone; label: string }> =
+    {
+      development: { icon: FiCode, tone: "green", label: "Desenvolvimento" },
+      module: { icon: FiBox, tone: "green", label: "Novo módulo" },
+      design: { icon: FiPenTool, tone: "purple", label: "Design" },
+      translation: { icon: FiGlobe, tone: "teal", label: "Tradução" },
+      marketing: { icon: FiActivity, tone: "yellow", label: "Comunicação" },
+      research_support: { icon: FiSearch, tone: "purple", label: "Pesquisa" },
+      documentation: { icon: FiFileText, tone: "blue", label: "Documentação" },
+      volunteering: { icon: FiHeart, tone: "pink", label: "Voluntariado" },
+      other: { icon: FiUsers, tone: "blue", label: "Colaboração" },
+    };
+
+  const presentation = byType[details.requestType ?? "other"] ?? byType.other;
+  const meta = [
+    details.engagementMode
+      ? (modeLabels[details.engagementMode] ??
+        formatName(details.engagementMode))
+      : null,
+    details.peopleNeeded
+      ? `${details.peopleNeeded} ${details.peopleNeeded === 1 ? "pessoa" : "pessoas"}`
+      : null,
+    details.deadline
+      ? `até ${new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(`${details.deadline}T12:00:00`))}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return { ...presentation, meta: meta || "Oportunidade aberta" };
+}
+
 function getProfileInitials(profile: CongProfile) {
   return getInitials(profile.displayName);
 }
@@ -387,17 +327,31 @@ function getProfileInitials(profile: CongProfile) {
 export default function LoggedCommunity() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isPersonalActivityPage =
+    location.pathname === "/app/comunidade/minha-atividade";
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchFormRef = useRef<HTMLFormElement>(null);
   const profileAreaRef = useRef<HTMLDivElement>(null);
   const opportunityRailRef = useRef<HTMLDivElement>(null);
+  const notificationAreaRef = useRef<HTMLDivElement>(null);
+  const composerAnchorRef = useRef<HTMLDivElement>(null);
+  const revealedPostIdRef = useRef<string | null>(null);
+  const collaborationProfilesRefreshAttemptedRef = useRef(false);
 
   const {
     user,
+    account,
     userData,
     profiles,
     activeProfile,
     profilesLoading,
     switchProfile,
+    collaborationProfiles,
+    activeCollaborationProfile,
+    collaborationProfilesLoading,
+    refreshCollaborationProfiles,
+    activateCollaborationProfile,
+    deactivateCollaborationProfile,
     logout,
   } = useAuth();
 
@@ -407,14 +361,78 @@ export default function LoggedCommunity() {
   const [switchingProfileId, setSwitchingProfileId] = useState<string | null>(
     null,
   );
-  const [selectedRole, setSelectedRole] = useState<CommunityRole>(() =>
-    getInitialCommunityRole(location.state),
+  const [switchingCollaborationProfileId, setSwitchingCollaborationProfileId] =
+    useState<string | null>(null);
+  const feedFilter = useMemo(
+    () => getInitialFeedFilter(location.search, isPersonalActivityPage),
+    [isPersonalActivityPage, location.search],
   );
-  const [feedFilter, setFeedFilter] = useState<FeedFilter>("all");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [feedSort, setFeedSort] = useState<CommunityFeedSort>("recommended");
+  const feedTag = isPersonalActivityPage
+    ? ""
+    : (new URLSearchParams(location.search)
+        .get("tag")
+        ?.trim()
+        .replace(/^#/, "")
+        .toLowerCase()
+        .slice(0, 80) ?? "");
+  const activeFeedKey = `${feedFilter}:${feedSort}:${feedTag}`;
+  const [composerKind, setComposerKind] = useState<CommunityPostKind | null>(
+    null,
+  );
   const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [postsLoading, setPostsLoading] = useState(true);
+  const [loadedFeedKey, setLoadedFeedKey] = useState<string | null>(null);
+  const [postsLoadingMore, setPostsLoadingMore] = useState(false);
+  const [postsRefreshing, setPostsRefreshing] = useState(false);
+  const [postsHasMore, setPostsHasMore] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
+  const [lastFeedSyncAt, setLastFeedSyncAt] = useState<Date | null>(null);
+  const [feedNotice, setFeedNotice] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchPayload, setSearchPayload] =
+    useState<CommunitySearchPayload | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [discovery, setDiscovery] = useState<CommunityDiscovery | null>(null);
+  const [discoveryLoading, setDiscoveryLoading] = useState(true);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
+  const [highlights, setHighlights] = useState<CommunityHighlights | null>(
+    null,
+  );
+  const [highlightsLoading, setHighlightsLoading] = useState(true);
+  const [highlightsError, setHighlightsError] = useState<string | null>(null);
+  const [followBusyUserId, setFollowBusyUserId] = useState<string | null>(null);
+  const [notifications, setNotifications] =
+    useState<CommunityNotificationsPayload>({
+      unreadCount: 0,
+      notifications: [],
+    });
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [nextEvent, setNextEvent] = useState<CommunityEvent | null>(null);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [eventModalMode, setEventModalMode] = useState<
+    "create" | "view" | "list"
+  >("view");
+
+  const postsLoading = loadedFeedKey !== activeFeedKey;
+  const requestedEventId = useMemo(
+    () => new URLSearchParams(location.search).get("event"),
+    [location.search],
+  );
+  const requestedEventList = requestedEventId === "list";
+  const requestedEventOpen = Boolean(requestedEventId);
+  const eventModalVisible = eventModalOpen || requestedEventOpen;
+  const resolvedEventModalMode = requestedEventList
+    ? "list"
+    : requestedEventOpen
+      ? "view"
+      : eventModalMode;
+  const requestedConcreteEventId = requestedEventList
+    ? null
+    : requestedEventId === "next"
+      ? (nextEvent?.id ?? null)
+      : requestedEventId;
 
   const userName =
     userData?.fullName ||
@@ -429,13 +447,253 @@ export default function LoggedCommunity() {
   const activeProfileInitials = activeProfile
     ? getProfileInitials(activeProfile)
     : getInitials(userName);
+  const accountAvatarUrl = account
+    ? account.avatarPath || buildDefaultAvatarUrl(account)
+    : null;
+  const participationName =
+    account?.displayName?.trim() || account?.name || userName;
+  const participationRole = activeCollaborationProfile
+    ? (communityRoleLabels[activeCollaborationProfile.role] ??
+      formatName(activeCollaborationProfile.role))
+    : "Sem função ativa";
+  const participationInitials = getInitials(participationName);
+  const participationProfileOptions = useMemo(() => {
+    const profilesByRole = new Map(
+      collaborationProfiles.map((profile) => [profile.role, profile] as const),
+    );
+    const roles = Array.from(
+      new Set([
+        ...(account?.onboardingRoles ?? []),
+        ...collaborationProfiles.map((profile) => profile.role),
+      ]),
+    );
 
-  const selectedRoleData = useMemo(
-    () => roles.find((role) => role.id === selectedRole) ?? roles[0],
-    [selectedRole],
-  );
+    return roles.map((role) => ({
+      role,
+      profile: profilesByRole.get(role) ?? null,
+    }));
+  }, [account?.onboardingRoles, collaborationProfiles]);
 
-  const personalizedPanel = personalizedPanels[selectedRole];
+  useEffect(() => {
+    if (
+      collaborationProfilesRefreshAttemptedRef.current ||
+      collaborationProfilesLoading ||
+      collaborationProfiles.length ||
+      !account?.onboardingRoles?.length
+    ) {
+      return;
+    }
+
+    collaborationProfilesRefreshAttemptedRef.current = true;
+    void refreshCollaborationProfiles().catch((error) => {
+      console.error(
+        "Não foi possível atualizar os perfis de participação:",
+        error,
+      );
+    });
+  }, [
+    account?.onboardingRoles,
+    collaborationProfiles.length,
+    collaborationProfilesLoading,
+    refreshCollaborationProfiles,
+  ]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const query = searchQuery.trim();
+    let cancelled = false;
+
+    const timer = window.setTimeout(
+      () => {
+        if (query.length < 2) {
+          setSearchPayload(null);
+          setSearchLoading(false);
+          setSearchError(null);
+          return;
+        }
+
+        setSearchLoading(true);
+        setSearchError(null);
+        void searchCommunity(query)
+          .then((payload) => {
+            if (!cancelled) setSearchPayload(payload);
+          })
+          .catch((error) => {
+            if (!cancelled) {
+              setSearchPayload(null);
+              setSearchError(
+                error instanceof Error
+                  ? error.message
+                  : "Não foi possível pesquisar na comunidade.",
+              );
+            }
+          })
+          .finally(() => {
+            if (!cancelled) setSearchLoading(false);
+          });
+      },
+      query.length < 2 ? 0 : 260,
+    );
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [searchOpen, searchQuery]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handlePointer = (event: MouseEvent) => {
+      if (
+        searchFormRef.current &&
+        !searchFormRef.current.contains(event.target as Node)
+      ) {
+        setSearchOpen(false);
+      }
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSearchOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointer);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handlePointer);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!feedNotice) return;
+    const timer = window.setTimeout(() => setFeedNotice(null), 4200);
+    return () => window.clearTimeout(timer);
+  }, [feedNotice]);
+
+  useEffect(() => {
+    if (isPersonalActivityPage) return;
+
+    const legacyFilter = new URLSearchParams(location.search).get("feed");
+    if (!isPersonalFeedFilter(legacyFilter)) return;
+
+    navigate(`/app/comunidade/minha-atividade?view=${legacyFilter}`, {
+      replace: true,
+    });
+  }, [isPersonalActivityPage, location.search, navigate]);
+
+  const refreshDiscovery = useCallback(async () => {
+    try {
+      setDiscoveryLoading(true);
+      setDiscoveryError(null);
+      setDiscovery(await getCommunityDiscovery(true));
+    } catch (error) {
+      setDiscoveryError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar a descoberta da comunidade.",
+      );
+    } finally {
+      setDiscoveryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getCommunityDiscovery()
+      .then((payload) => {
+        if (cancelled) return;
+        setDiscovery(payload);
+        setDiscoveryError(null);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setDiscoveryError(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar a descoberta da comunidade.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setDiscoveryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const refreshHighlights = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setHighlightsLoading(true);
+      setHighlightsError(null);
+      setHighlights(await getCommunityHighlights());
+    } catch (error) {
+      setHighlightsError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar os destaques da comunidade.",
+      );
+    } finally {
+      if (!silent) setHighlightsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getCommunityHighlights()
+      .then((payload) => {
+        if (cancelled) return;
+        setHighlights(payload);
+        setHighlightsError(null);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setHighlightsError(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar os destaques da comunidade.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setHighlightsLoading(false);
+      });
+
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refreshHighlights(true);
+    }, 90_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [refreshHighlights]);
+
+  // As notificações da barra superior pertencem ao LoggedInLayout.
+  // Evitamos um segundo polling invisível dentro da página da Comunidade.
+
+  const refreshNextEvent = useCallback(async () => {
+    try {
+      setNextEvent(await getNextCommunityEvent());
+    } catch (error) {
+      console.error("Não foi possível carregar o próximo evento:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getNextCommunityEvent()
+      .then((event) => {
+        if (!cancelled) setNextEvent(event);
+      })
+      .catch((error) => {
+        console.error("Não foi possível carregar o próximo evento:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -447,7 +705,8 @@ export default function LoggedCommunity() {
       if (event.key === "Escape") {
         setMobileMenuOpen(false);
         setProfileMenuOpen(false);
-        setCreateModalOpen(false);
+        setNotificationsOpen(false);
+        setComposerKind(null);
       }
     };
 
@@ -457,6 +716,12 @@ export default function LoggedCommunity() {
         !profileAreaRef.current.contains(event.target as Node)
       ) {
         setProfileMenuOpen(false);
+      }
+      if (
+        notificationAreaRef.current &&
+        !notificationAreaRef.current.contains(event.target as Node)
+      ) {
+        setNotificationsOpen(false);
       }
     };
 
@@ -469,47 +734,308 @@ export default function LoggedCommunity() {
     };
   }, []);
 
-  useEffect(() => {
-    document.body.style.overflow = createModalOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [createModalOpen]);
+  const refreshFeed = useCallback(
+    async (silent = false) => {
+      if (silent) {
+        setPostsRefreshing(true);
+      } else {
+        setLoadedFeedKey(null);
+      }
+      setPostsError(null);
+
+      try {
+        const page = await getCommunityPosts({
+          tag: feedTag,
+          filter: feedFilter,
+          sort: feedSort,
+          limit: FEED_PAGE_SIZE,
+          offset: 0,
+        });
+
+        setPosts((current) => {
+          if (!silent || current.length <= FEED_PAGE_SIZE) {
+            return sortFeedPosts(page.posts, feedSort);
+          }
+
+          const firstPageIds = new Set(page.posts.map((post) => post.id));
+          const olderLoaded = current
+            .slice(FEED_PAGE_SIZE)
+            .filter((post) => !firstPageIds.has(post.id));
+          return sortFeedPosts([...page.posts, ...olderLoaded], feedSort);
+        });
+        setPostsHasMore(
+          page.hasMore || (silent && posts.length > FEED_PAGE_SIZE),
+        );
+        setLastFeedSyncAt(new Date());
+      } catch (error) {
+        setPostsError(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar as publicações.",
+        );
+      } finally {
+        if (silent) {
+          setPostsRefreshing(false);
+        } else {
+          setLoadedFeedKey(activeFeedKey);
+        }
+      }
+    },
+    [activeFeedKey, feedFilter, feedSort, feedTag, posts.length],
+  );
+
+  const loadMorePosts = useCallback(async () => {
+    if (postsLoadingMore || !postsHasMore) return;
+    setPostsLoadingMore(true);
+    setPostsError(null);
+
+    try {
+      const page = await getCommunityPosts({
+        tag: feedTag,
+        filter: feedFilter,
+        sort: feedSort,
+        limit: FEED_PAGE_SIZE,
+        offset: posts.length,
+      });
+      setPosts((current) => {
+        const ids = new Set(current.map((post) => post.id));
+        const appended = page.posts.filter((post) => !ids.has(post.id));
+        return sortFeedPosts([...current, ...appended], feedSort);
+      });
+      setPostsHasMore(page.hasMore);
+      setLastFeedSyncAt(new Date());
+    } catch (error) {
+      setPostsError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar publicações mais antigas.",
+      );
+    } finally {
+      setPostsLoadingMore(false);
+    }
+  }, [
+    feedFilter,
+    feedSort,
+    feedTag,
+    posts.length,
+    postsHasMore,
+    postsLoadingMore,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadCommunityFeed() {
+    const loadFeed = async () => {
       try {
-        setPostsLoading(true);
+        const page = await getCommunityPosts({
+          tag: feedTag,
+          filter: feedFilter,
+          sort: feedSort,
+          limit: FEED_PAGE_SIZE,
+          offset: 0,
+        });
+
+        if (cancelled) return;
+        setPosts(sortFeedPosts(page.posts, feedSort));
+        setPostsHasMore(page.hasMore);
         setPostsError(null);
-
-        const communityPosts = await getCommunityPosts();
-
-        if (!cancelled) {
-          setPosts(communityPosts);
-        }
+        setLastFeedSyncAt(new Date());
       } catch (error) {
-        if (!cancelled) {
-          setPostsError(
-            error instanceof Error
-              ? error.message
-              : "Não foi possível carregar as publicações.",
-          );
-        }
+        if (cancelled) return;
+        setPosts([]);
+        setPostsHasMore(false);
+        setPostsError(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar as publicações.",
+        );
       } finally {
-        if (!cancelled) {
-          setPostsLoading(false);
-        }
+        if (!cancelled) setLoadedFeedKey(activeFeedKey);
       }
-    }
+    };
 
-    void loadCommunityFeed();
-
+    void loadFeed();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activeFeedKey, feedFilter, feedSort, feedTag]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void refreshFeed(true);
+      }
+    }, 90_000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void refreshFeed(true);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [refreshFeed]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const requestedComposer = params.get("compose");
+
+    if (
+      !requestedComposer ||
+      !composerKinds.some((option) => option.kind === requestedComposer)
+    ) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      setComposerKind(requestedComposer as CommunityPostKind);
+      composerAnchorRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      const nextParams = new URLSearchParams(location.search);
+      nextParams.delete("compose");
+      const search = nextParams.toString();
+      navigate(
+        {
+          pathname: location.pathname,
+          search: search ? `?${search}` : "",
+        },
+        { replace: true },
+      );
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname, location.search, navigate]);
+
+  useEffect(() => {
+    if (postsLoading) return;
+
+    const sharedPostId = new URLSearchParams(location.search).get("post");
+    if (!sharedPostId) {
+      revealedPostIdRef.current = null;
+      return;
+    }
+    if (revealedPostIdRef.current === sharedPostId) return;
+
+    let cancelled = false;
+
+    const revealPost = async () => {
+      let targetExists = posts.some((post) => post.id === sharedPostId);
+      if (!targetExists) {
+        try {
+          const sharedPost = await getCommunityPost(sharedPostId);
+          if (cancelled) return;
+          setPosts((current) =>
+            sortFeedPosts(
+              [
+                sharedPost,
+                ...current.filter((post) => post.id !== sharedPost.id),
+              ],
+              feedSort,
+            ),
+          );
+          targetExists = true;
+        } catch (error) {
+          if (!cancelled) {
+            setPostsError(
+              error instanceof Error
+                ? error.message
+                : "Não foi possível abrir a publicação.",
+            );
+          }
+        }
+      }
+
+      if (!targetExists || cancelled) return;
+      revealedPostIdRef.current = sharedPostId;
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById(`community-post-${sharedPostId}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    };
+
+    void revealPost();
+    return () => {
+      cancelled = true;
+    };
+  }, [feedSort, location.search, posts, postsLoading]);
+
+  const changeFeedFilter = useCallback(
+    (nextFilter: CommunityFeedFilter) => {
+      if (nextFilter === "all" && feedFilter !== "all") {
+        setFeedSort("recommended");
+      } else if (nextFilter !== "all" && feedSort === "recommended") {
+        setFeedSort("recent");
+      }
+
+      const personalFilter = isPersonalFeedFilter(nextFilter);
+      const targetPathname = personalFilter
+        ? "/app/comunidade/minha-atividade"
+        : "/app/comunidade";
+      const params =
+        targetPathname === location.pathname
+          ? new URLSearchParams(location.search)
+          : new URLSearchParams();
+
+      if (personalFilter) {
+        params.delete("feed");
+        params.set("view", nextFilter);
+      } else {
+        params.delete("view");
+        params.set("feed", nextFilter);
+      }
+      params.delete("post");
+      params.delete("compose");
+      const search = params.toString();
+
+      navigate({
+        pathname: targetPathname,
+        search: search ? `?${search}` : "",
+      });
+    },
+    [feedFilter, feedSort, location.pathname, location.search, navigate],
+  );
+
+  const closeEventModal = useCallback(() => {
+    setEventModalOpen(false);
+
+    if (!requestedEventId) return;
+    const params = new URLSearchParams(location.search);
+    params.delete("event");
+    const search = params.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: search ? `?${search}` : "",
+      },
+      { replace: true },
+    );
+  }, [location.pathname, location.search, navigate, requestedEventId]);
+
+  const handleSearchSelect = (result: CommunitySearchResult) => {
+    setSearchOpen(false);
+    setMobileMenuOpen(false);
+    if (result.type === "user") {
+      navigate(`/app/comunidade/perfil/user/${result.id}`);
+      return;
+    }
+    if (result.type === "organization") {
+      navigate(`/app/comunidade/perfil/organization/${result.id}`);
+      return;
+    }
+    if (result.type === "event") {
+      navigate(`/app/comunidade?event=${result.id}`);
+      return;
+    }
+    navigate(`/app/comunidade?post=${result.id}`);
+  };
 
   const navigateToPending = () => {
     setMobileMenuOpen(false);
@@ -517,18 +1043,168 @@ export default function LoggedCommunity() {
     navigate("/em-construcao");
   };
 
-  const openCreateModal = () => {
-    setCreateModalOpen(true);
+  const handleSidebarNavigation = (label: string) => {
+    setMobileMenuOpen(false);
+
+    if (label === "Notificações") {
+      setNotificationsOpen(true);
+      return;
+    }
+
+    if (label === "Meu perfil" && account?.id) {
+      navigate(`/app/comunidade/perfil/user/${account.id}`);
+      return;
+    }
+
+    if (label === "Explorar") {
+      navigate("/em-construcao?feature=explorar");
+      return;
+    }
+
+    if (label === "Projetos") {
+      changeFeedFilter("projects");
+      return;
+    }
+
+    if (label === "Eventos") {
+      setEventModalMode("list");
+      setEventModalOpen(true);
+      return;
+    }
+
+    if (label === "Comunidade") {
+      navigate("/app/comunidade");
+      return;
+    }
+
+    if (label === "Moderação") {
+      navigate("/app/moderacao");
+      return;
+    }
+
+    if (label === "Configurações") {
+      navigate("/app/minha-conta?tab=access");
+      return;
+    }
+
+    navigateToPending();
+  };
+
+  const openComposer = (kind: CommunityPostKind = "general") => {
+    setComposerKind(kind);
+    window.requestAnimationFrame(() => {
+      composerAnchorRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
   };
 
   const handlePostCreated = (post: CommunityPost) => {
-    setPosts((current) => [post, ...current]);
-    setCreateModalOpen(false);
+    if (!postMatchesFeed(post, feedFilter, feedTag)) {
+      setComposerKind(null);
+      if (post.kind === "update" || post.kind === "request")
+        void refreshHighlights();
+      return;
+    }
+    setPosts((current) =>
+      sortFeedPosts(
+        [post, ...current.filter((item) => item.id !== post.id)],
+        feedSort,
+      ),
+    );
+    setComposerKind(null);
+    setLastFeedSyncAt(new Date());
+    if (post.kind === "update" || post.kind === "request")
+      void refreshHighlights();
   };
 
-  const handleCommunityRoleChange = (role: CommunityRole) => {
-    sessionStorage.setItem(COMMUNITY_ROLE_STORAGE_KEY, role);
-    setSelectedRole(role);
+  const handlePostUpdated = (post: CommunityPost) => {
+    setPosts((current) => {
+      const shouldRemain = postMatchesFeed(post, feedFilter, feedTag);
+      const next = shouldRemain
+        ? current.some((item) => item.id === post.id)
+          ? current.map((item) => (item.id === post.id ? post : item))
+          : [post, ...current]
+        : current.filter((item) => item.id !== post.id);
+      return sortFeedPosts(next, feedSort);
+    });
+    setLastFeedSyncAt(new Date());
+    if (post.kind === "update" || post.kind === "request")
+      void refreshHighlights();
+  };
+
+  const handlePostDeleted = (postId: string) => {
+    setPosts((current) => current.filter((item) => item.id !== postId));
+    void refreshHighlights();
+  };
+
+  const handleAuthorFollowChanged = (userId: string, followed: boolean) => {
+    setPosts((current) => {
+      const updated = current.map((post) =>
+        post.author.userId === userId
+          ? {
+              ...post,
+              author: { ...post.author, followedByMe: followed },
+            }
+          : post,
+      );
+      return feedFilter === "following" && !followed
+        ? updated.filter((post) => post.author.userId !== userId)
+        : updated;
+    });
+
+    if (followed) {
+      setDiscovery((current) =>
+        current
+          ? {
+              ...current,
+              peopleToFollow: current.peopleToFollow.filter(
+                (person) => person.userId !== userId,
+              ),
+            }
+          : current,
+      );
+    } else {
+      void refreshDiscovery();
+    }
+  };
+
+  const handleAuthorBlocked = (userId: string) => {
+    setPosts((current) =>
+      current.filter((post) => post.author.userId !== userId),
+    );
+    setDiscovery((current) =>
+      current
+        ? {
+            ...current,
+            peopleToFollow: current.peopleToFollow.filter(
+              (person) => person.userId !== userId,
+            ),
+          }
+        : current,
+    );
+    void refreshHighlights();
+    void refreshNextEvent();
+  };
+
+  const handleFollowSuggestion = async (userId: string) => {
+    if (followBusyUserId) return;
+    setFollowBusyUserId(userId);
+    setDiscoveryError(null);
+
+    try {
+      await followCommunityUser(userId);
+      handleAuthorFollowChanged(userId, true);
+    } catch (error) {
+      setDiscoveryError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível seguir esta pessoa.",
+      );
+    } finally {
+      setFollowBusyUserId(null);
+    }
   };
 
   const handleProfileChange = async (profileId: string) => {
@@ -549,37 +1225,134 @@ export default function LoggedCommunity() {
     }
   };
 
+  const handleCollaborationProfileChange = async (profileId: string) => {
+    if (
+      profileId === activeCollaborationProfile?.id ||
+      switchingCollaborationProfileId
+    )
+      return;
+
+    setSwitchingCollaborationProfileId(profileId);
+    try {
+      await activateCollaborationProfile(profileId);
+      setFeedNotice("Perfil de participação atualizado.");
+    } catch (error) {
+      console.error("Não foi possível trocar o perfil de participação:", error);
+      setFeedNotice("Não foi possível trocar o perfil de participação.");
+    } finally {
+      setSwitchingCollaborationProfileId(null);
+    }
+  };
+
+  const handlePersonalParticipation = async () => {
+    if (!activeCollaborationProfile || switchingCollaborationProfileId) return;
+
+    setSwitchingCollaborationProfileId("personal");
+    try {
+      await deactivateCollaborationProfile();
+      setFeedNotice(
+        "Perfil pessoal ativado. Nenhuma função de colaboração está ativa.",
+      );
+    } catch (error) {
+      console.error("Não foi possível voltar ao perfil pessoal:", error);
+      setFeedNotice("Não foi possível ativar o perfil pessoal.");
+    } finally {
+      setSwitchingCollaborationProfileId(null);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
-      sessionStorage.removeItem(COMMUNITY_ROLE_STORAGE_KEY);
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Não foi possível encerrar a sessão:", error);
     }
   };
 
-  const visibleFeedPosts = useMemo(() => {
-    if (feedFilter === "opportunities") {
-      return posts.filter((post) => post.kind === "request");
-    }
+  const visibleFeedPosts = posts;
 
-    if (feedFilter === "discussions") {
-      return posts.filter(
-        (post) => post.kind === "question" || post.kind === "general",
-      );
-    }
+  const emptyFeedCopy = useMemo(() => {
+    const map: Record<
+      CommunityFeedFilter,
+      {
+        title: string;
+        description: string;
+        action: string;
+        kind: CommunityPostKind;
+      }
+    > = {
+      all: {
+        title: "A comunidade está pronta para a primeira publicação.",
+        description:
+          "Compartilhe uma atualização, pergunta, recurso ou necessidade para começar a conversa.",
+        action: "Criar publicação",
+        kind: "general",
+      },
+      following: {
+        title: "Nada novo de quem você segue.",
+        description:
+          "Siga pessoas na lateral da comunidade ou volte ao feed geral para descobrir novos autores.",
+        action: "Ver feed geral",
+        kind: "general",
+      },
+      projects: {
+        title: "Ainda não há atualizações de projetos.",
+        description:
+          "Atualizações e recursos ligados a projetos aparecem aqui assim que forem publicados.",
+        action: "Publicar atualização",
+        kind: "update",
+      },
+      opportunities: {
+        title: "Nenhuma oportunidade aberta por enquanto.",
+        description:
+          "Solicitações por apoio, voluntariado e colaboração aparecem nesta aba.",
+        action: "Criar solicitação",
+        kind: "request",
+      },
+      discussions: {
+        title: "Nenhuma discussão aberta neste momento.",
+        description:
+          "Faça uma pergunta ou compartilhe uma ideia para iniciar uma conversa.",
+        action: "Fazer pergunta",
+        kind: "question",
+      },
+      mine: {
+        title: "Você ainda não publicou nada.",
+        description:
+          "Suas publicações aparecem aqui para facilitar edição, acompanhamento e organização.",
+        action: "Criar publicação",
+        kind: "general",
+      },
+      saved: {
+        title: "Nenhuma publicação salva.",
+        description:
+          "Use Salvar nos posts que você quer encontrar rapidamente depois.",
+        action: "Explorar comunidade",
+        kind: "general",
+      },
+      archived: {
+        title: "Nenhuma publicação arquivada.",
+        description:
+          "Quando você arquivar um post, ele sai do feed público sem ser excluído e fica guardado aqui.",
+        action: "Ver minhas publicações",
+        kind: "general",
+      },
+    };
+    return map[feedFilter];
+  }, [feedFilter]);
 
-    if (feedFilter === "projects") {
-      return posts.filter(
-        (post) => post.kind === "update" || post.kind === "resource",
-      );
+  const handleEmptyFeedAction = () => {
+    if (feedFilter === "following" || feedFilter === "saved") {
+      changeFeedFilter("all");
+      return;
     }
-
-    // "Seguindo" ainda depende do futuro sistema de follows. Enquanto isso,
-    // preservamos o feed completo em vez de simular um filtro inexistente.
-    return posts;
-  }, [feedFilter, posts]);
+    if (feedFilter === "archived") {
+      changeFeedFilter("mine");
+      return;
+    }
+    openComposer(emptyFeedCopy.kind);
+  };
 
   const scrollOpportunities = (direction: "left" | "right") => {
     opportunityRailRef.current?.scrollBy({
@@ -587,6 +1360,41 @@ export default function LoggedCommunity() {
       behavior: "smooth",
     });
   };
+
+  const featuredProject = highlights?.featuredProject ?? null;
+  const featuredDetails =
+    featuredProject?.kind === "update"
+      ? (featuredProject.details as Extract<
+          CommunityPost["details"],
+          { entityType: string }
+        >)
+      : null;
+  const featuredAuthorName = featuredProject
+    ? (featuredProject.author.organization?.name ??
+      featuredProject.author.displayName)
+    : null;
+  const featuredProgress = Math.max(
+    0,
+    Math.min(100, featuredDetails?.progress ?? 0),
+  );
+  const featuredImage =
+    featuredProject?.media?.find((item) =>
+      item.mimeType.startsWith("image/"),
+    ) ?? null;
+  const featuredMilestoneCount = featuredDetails?.milestones?.length ?? 0;
+  const featuredCompletedMilestones = Math.min(
+    featuredMilestoneCount,
+    featuredDetails?.completedMilestones ?? 0,
+  );
+  const featuredTags = Array.from(
+    new Set(
+      [
+        ...(featuredProject?.tags ?? []),
+        featuredProject ? areaLabels[featuredProject.area] : "",
+        featuredDetails?.version ?? "",
+      ].filter((tag): tag is string => Boolean(tag)),
+    ),
+  ).slice(0, 3);
 
   const renderNavigationItem = ({
     label,
@@ -600,7 +1408,7 @@ export default function LoggedCommunity() {
       className={`${styles.navigationItem} ${
         active ? styles.navigationItemActive : ""
       }`}
-      onClick={active ? () => setMobileMenuOpen(false) : navigateToPending}
+      onClick={() => handleSidebarNavigation(label)}
       title={sidebarCollapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
     >
@@ -667,10 +1475,21 @@ export default function LoggedCommunity() {
         <nav className={styles.sidebarNavigation}>
           <div className={styles.navigationGroup}>
             {mainNavigation.map(renderNavigationItem)}
+            {discovery?.permissions.canModerate
+              ? renderNavigationItem({ label: "Moderação", icon: FiShield })
+              : null}
           </div>
           <div className={styles.navigationDivider} />
           <div className={styles.navigationGroup}>
-            {accountNavigation.map(renderNavigationItem)}
+            {accountNavigation.map((item) =>
+              renderNavigationItem({
+                ...item,
+                badge:
+                  item.label === "Notificações"
+                    ? notifications.unreadCount
+                    : item.badge,
+              }),
+            )}
           </div>
         </nav>
 
@@ -713,20 +1532,37 @@ export default function LoggedCommunity() {
             </button>
 
             <form
+              ref={searchFormRef}
               className={styles.search}
               onSubmit={(event) => {
                 event.preventDefault();
-                navigateToPending();
+                setSearchOpen(true);
               }}
             >
               <FiSearch aria-hidden="true" />
               <input
                 ref={searchInputRef}
                 type="search"
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
                 placeholder="Pesquisar projetos, pessoas e módulos"
                 aria-label="Pesquisar na comunidade"
+                aria-expanded={searchOpen}
               />
               <kbd>Ctrl K</kbd>
+              {searchOpen ? (
+                <CommunitySearchPanel
+                  query={searchQuery}
+                  payload={searchPayload}
+                  loading={searchLoading}
+                  error={searchError}
+                  onSelect={handleSearchSelect}
+                />
+              ) : null}
             </form>
           </div>
 
@@ -734,21 +1570,50 @@ export default function LoggedCommunity() {
             <button
               type="button"
               className={styles.topbarCreateButton}
-              onClick={() => openCreateModal()}
+              onClick={() => openComposer()}
             >
               <FiPlus />
               <span>Criar</span>
             </button>
 
-            <button
-              type="button"
-              className={styles.topbarIconButton}
-              onClick={navigateToPending}
-              aria-label="Notificações"
-            >
-              <FiBell />
-              <span>3</span>
-            </button>
+            <div className={styles.notificationArea} ref={notificationAreaRef}>
+              <button
+                type="button"
+                className={styles.topbarIconButton}
+                onClick={() => setNotificationsOpen((current) => !current)}
+                aria-label="Notificações"
+                aria-expanded={notificationsOpen}
+              >
+                <FiBell />
+                {notifications.unreadCount > 0 ? (
+                  <span>{Math.min(99, notifications.unreadCount)}</span>
+                ) : null}
+              </button>
+              {notificationsOpen ? (
+                <CommunityNotificationsPanel
+                  payload={notifications}
+                  onClose={() => setNotificationsOpen(false)}
+                  onChanged={setNotifications}
+                  onOpenPost={(postId) => {
+                    setNotificationsOpen(false);
+                    navigate(`/app/comunidade?post=${postId}`);
+                  }}
+                  onOpenEvent={(eventId) => {
+                    setNotificationsOpen(false);
+                    const params = new URLSearchParams(location.search);
+                    params.set("event", eventId);
+                    navigate({
+                      pathname: location.pathname,
+                      search: `?${params.toString()}`,
+                    });
+                  }}
+                  onOpenModeration={() => {
+                    setNotificationsOpen(false);
+                    navigate("/app/moderacao");
+                  }}
+                />
+              ) : null}
+            </div>
 
             <button
               type="button"
@@ -767,7 +1632,19 @@ export default function LoggedCommunity() {
                 aria-expanded={profileMenuOpen}
                 aria-haspopup="menu"
               >
-                <span className={styles.avatar}>{activeProfileInitials}</span>
+                <span className={styles.avatar}>
+                  {accountAvatarUrl ? (
+                    <img
+                      className={styles.avatarImage}
+                      src={accountAvatarUrl}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    activeProfileInitials
+                  )}
+                </span>
                 <span className={styles.profileTriggerText}>
                   <strong>{activeProfileName}</strong>
                   <small>{activeProfileLabel}</small>
@@ -826,13 +1703,82 @@ export default function LoggedCommunity() {
                     )}
                   </div>
 
+                  <div className={styles.dropdownAccountActions}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        navigate("/app/minha-conta");
+                      }}
+                    >
+                      <FiUser />
+                      Minha conta
+                    </button>
+                    {account?.id ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          navigate(`/app/comunidade/perfil/user/${account.id}`);
+                        }}
+                      >
+                        <FiUsers />
+                        Perfil na comunidade
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        navigate("/app/comunidade/minha-atividade?view=mine");
+                      }}
+                    >
+                      <FiFileText />
+                      Minhas publicações
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        navigate("/app/comunidade/minha-atividade?view=saved");
+                      }}
+                    >
+                      <FiBookmark />
+                      Itens salvos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        navigate(
+                          "/app/comunidade/minha-atividade?view=archived",
+                        );
+                      }}
+                    >
+                      <FiArchive />
+                      Publicações arquivadas
+                    </button>
+                  </div>
+
                   <button
                     type="button"
                     className={styles.dropdownAction}
-                    onClick={navigateToPending}
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      navigate("/app/minha-conta?tab=profiles");
+                    }}
                   >
                     <FiPlus />
                     Adicionar perfil
+                  </button>
+
+                  <button
+                    type="button"
+                    className={styles.dropdownLogoutAction}
+                    onClick={() => void handleLogout()}
+                  >
+                    <FiLogOut />
+                    Sair
                   </button>
                 </div>
               ) : null}
@@ -841,216 +1787,418 @@ export default function LoggedCommunity() {
         </header>
 
         <main className={styles.page}>
-          <div className={styles.pageGrid}>
+          <div
+            className={`${styles.pageGrid} ${
+              isPersonalActivityPage ? styles.pageGridSingle : ""
+            }`}
+          >
             <div className={styles.mainColumn}>
               <header className={styles.communityHeader}>
                 <div>
-                  <h1>Comunidade</h1>
-                  <span className={styles.onlineStatus}>
-                    <i aria-hidden="true" />
-                    42 pessoas colaborando agora
-                  </span>
+                  <h1>
+                    {isPersonalActivityPage ? "Minha atividade" : "Comunidade"}
+                  </h1>
+                  {isPersonalActivityPage ? (
+                    <span className={styles.headerSubtitle}>
+                      Organize suas publicações, itens salvos e arquivados.
+                    </span>
+                  ) : (
+                    <span className={styles.onlineStatus}>
+                      <i aria-hidden="true" />
+                      {discoveryLoading
+                        ? "Atualizando comunidade..."
+                        : `${discovery?.stats.members ?? 0} membros na comunidade`}
+                    </span>
+                  )}
                 </div>
-                <button type="button" onClick={() => openCreateModal()}>
+                <button type="button" onClick={() => openComposer()}>
                   <FiPlus />
                   Nova publicação
                 </button>
               </header>
 
-              <section className={styles.featuredProject}>
-                <span className={styles.featureTape} aria-hidden="true" />
-                <div className={styles.featureProjectCopy}>
-                  <span className={styles.featureEyebrow}>
-                    <FiZap /> Projeto em destaque
-                  </span>
-                  <div className={styles.featureOrganization}>
-                    <span>RA</span>
-                    <div>
-                      <strong>Rede Acolher</strong>
-                      <small>Projeto aberto · atualizado hoje</small>
-                    </div>
-                  </div>
-                  <h2>Painel único para acompanhar famílias atendidas</h2>
-                  <p>
-                    Uma ferramenta colaborativa para organizar cadastros,
-                    atendimentos e encaminhamentos sem depender de várias
-                    planilhas.
-                  </p>
-                  <div className={styles.featureTags}>
-                    <span>React</span>
-                    <span>Firebase</span>
-                    <span>UX Research</span>
-                  </div>
-                  <div className={styles.featureProgress}>
-                    <div>
-                      <span>Progresso do projeto</span>
-                      <strong>68%</strong>
-                    </div>
-                    <i>
-                      <b />
-                    </i>
-                  </div>
-                  <div className={styles.featureFooter}>
-                    <div className={styles.avatarStack}>
-                      <span>KM</span>
-                      <span>AO</span>
-                      <span>JS</span>
-                      <span>+8</span>
-                    </div>
-                    <button type="button" onClick={navigateToPending}>
-                      Ver projeto
-                      <FiArrowRight />
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  className={styles.featureProjectVisual}
-                  aria-label="Prévia automática do projeto"
-                >
-                  <div className={styles.autoCoverLabel}>Capa automática</div>
-                  <div className={styles.mockWindow}>
-                    <div className={styles.mockWindowBar}>
-                      <i />
-                      <i />
-                      <i />
-                      <span>painel.redeacolher.org</span>
-                    </div>
-                    <div className={styles.mockWindowBody}>
-                      <aside>
-                        <b />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                      </aside>
-                      <div className={styles.mockDashboard}>
-                        <div className={styles.mockGreeting}>
-                          <span />
-                          <b />
-                        </div>
-                        <div className={styles.mockMetrics}>
-                          <span />
-                          <span />
-                          <span />
-                        </div>
-                        <div className={styles.mockChart}>
-                          <i />
-                          <i />
-                          <i />
-                          <i />
-                          <i />
-                        </div>
-                        <div className={styles.mockRows}>
-                          <span />
-                          <span />
-                          <span />
-                        </div>
+              {!isPersonalActivityPage ? (
+                <>
+                  <section className={styles.featuredProject}>
+                    {highlightsLoading ? (
+                      <div className={styles.highlightLoading}>
+                        Carregando projeto em destaque...
                       </div>
-                    </div>
-                  </div>
-                  <div className={styles.featureNote}>
-                    <FiPaperclip />6 issues abertas
-                  </div>
-                </div>
-              </section>
-
-              <section className={styles.opportunitySection}>
-                <header className={styles.sectionHeader}>
-                  <div>
-                    <span>Oportunidades para você</span>
-                    <small>
-                      Escolhidas a partir do seu perfil e das suas habilidades
-                    </small>
-                  </div>
-                  <div className={styles.railControls}>
-                    <button
-                      type="button"
-                      onClick={() => scrollOpportunities("left")}
-                      aria-label="Ver oportunidades anteriores"
-                    >
-                      <FiChevronLeft />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => scrollOpportunities("right")}
-                      aria-label="Ver próximas oportunidades"
-                    >
-                      <FiChevronRight />
-                    </button>
-                  </div>
-                </header>
-
-                <div
-                  className={styles.opportunityRail}
-                  ref={opportunityRailRef}
-                >
-                  {opportunities.map((opportunity, index) => {
-                    const Icon = opportunity.icon;
-                    return (
-                      <article
-                        key={opportunity.title}
-                        className={styles.opportunityCard}
-                        data-tone={opportunity.tone}
-                      >
-                        {index === 0 ? (
-                          <FiPaperclip
-                            className={styles.opportunityClip}
-                            aria-hidden="true"
-                          />
-                        ) : null}
-                        <div className={styles.opportunityCardTop}>
-                          <span className={styles.opportunityIcon}>
-                            <Icon />
+                    ) : featuredProject && featuredDetails ? (
+                      <>
+                        <div className={styles.featureProjectCopy}>
+                          <span className={styles.featureEyebrow}>
+                            <FiZap /> Projeto em destaque
                           </span>
-                          <small>{opportunity.organization}</small>
-                        </div>
-                        <h3>{opportunity.title}</h3>
-                        <div className={styles.opportunitySkill}>
-                          {opportunity.skill}
-                        </div>
-                        <footer>
-                          <span>{opportunity.meta}</span>
                           <button
                             type="button"
-                            onClick={navigateToPending}
-                            aria-label="Abrir oportunidade"
+                            className={styles.featureOrganizationButton}
+                            onClick={() =>
+                              navigate(
+                                featuredProject.author.organization
+                                  ? `/app/comunidade/perfil/organization/${featuredProject.author.organization.id}`
+                                  : `/app/comunidade/perfil/user/${featuredProject.author.userId}`,
+                              )
+                            }
                           >
-                            <FiArrowRight />
+                            <span>
+                              {getInitials(featuredAuthorName ?? "CONG")}
+                            </span>
+                            <div>
+                              <strong>{featuredAuthorName}</strong>
+                              <small>
+                                {featuredDetails.entityLabel || "Projeto"} ·
+                                atualização real da comunidade
+                              </small>
+                            </div>
                           </button>
-                        </footer>
-                      </article>
-                    );
-                  })}
-                </div>
-              </section>
+                          <h2>{featuredProject.title}</h2>
+                          <p>
+                            {featuredProject.summary || featuredProject.content}
+                          </p>
+                          {featuredTags.length ? (
+                            <div className={styles.featureTags}>
+                              {featuredTags.map((tag) => (
+                                <span key={tag}>{tag}</span>
+                              ))}
+                            </div>
+                          ) : null}
+                          <div className={styles.featureProgress}>
+                            <div>
+                              <span>Progresso do projeto</span>
+                              <strong>{featuredProgress}%</strong>
+                            </div>
+                            <i>
+                              <b style={{ width: `${featuredProgress}%` }} />
+                            </i>
+                          </div>
+                          <div className={styles.featureFooter}>
+                            <div className={styles.featurePeople}>
+                              <div className={styles.avatarStack}>
+                                <span>
+                                  {getInitials(featuredAuthorName ?? "CONG")}
+                                </span>
+                              </div>
+                              <small>
+                                {featuredProject.engagement.likeCount} apoios ·{" "}
+                                {featuredProject.engagement.commentCount}{" "}
+                                comentários
+                              </small>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigate(
+                                  `/app/comunidade?post=${featuredProject.id}`,
+                                )
+                              }
+                            >
+                              Ver projeto <FiArrowRight />
+                            </button>
+                          </div>
+                        </div>
 
-              <button
-                type="button"
-                className={styles.compactComposer}
-                onClick={() => openCreateModal()}
-              >
-                <span className={styles.composerAvatar}>
-                  {activeProfileInitials}
-                </span>
-                <span className={styles.composerPrompt}>
-                  <strong>Compartilhe algo com a comunidade</strong>
-                  <small>
-                    Atualização, necessidade, projeto, módulo ou discussão
-                  </small>
-                </span>
-                <span className={styles.composerQuickActions}>
-                  <i>
-                    <FiImage />
-                  </i>
-                  <i>
-                    <FiLink />
-                  </i>
-                  <b>
-                    <FiPlus /> Criar
-                  </b>
-                </span>
-              </button>
+                        <div
+                          className={styles.featureProjectVisual}
+                          aria-label="Resumo visual com dados reais do projeto em destaque"
+                        >
+                          <div className={styles.featureProjectDesk}>
+                            <article className={styles.featureProjectSheet}>
+                              <header>
+                                <div>
+                                  <small>
+                                    {featuredDetails.entityLabel || "Projeto"}
+                                  </small>
+                                  <strong>{featuredProject.title}</strong>
+                                </div>
+                                {featuredDetails.version ? (
+                                  <span>{featuredDetails.version}</span>
+                                ) : null}
+                              </header>
+                              {featuredImage ? (
+                                <figure className={styles.featureSheetImage}>
+                                  <img
+                                    src={featuredImage.url}
+                                    alt={
+                                      featuredImage.name ||
+                                      featuredProject.title
+                                    }
+                                    decoding="async"
+                                  />
+                                </figure>
+                              ) : null}
+                              <div className={styles.featureSheetProgress}>
+                                <div>
+                                  <span>Andamento</span>
+                                  <strong>{featuredProgress}%</strong>
+                                </div>
+                                <i>
+                                  <b
+                                    style={{ width: `${featuredProgress}%` }}
+                                  />
+                                </i>
+                              </div>
+                              {featuredMilestoneCount ? (
+                                <div className={styles.featureSheetMilestones}>
+                                  {featuredDetails.milestones
+                                    .slice(0, 4)
+                                    .map((milestone, index) => (
+                                      <span
+                                        key={`${milestone}-${index}`}
+                                        data-complete={
+                                          index < featuredCompletedMilestones
+                                        }
+                                      >
+                                        {index < featuredCompletedMilestones ? (
+                                          <FiCheckCircle />
+                                        ) : (
+                                          <i aria-hidden="true" />
+                                        )}
+                                        <b>{milestone}</b>
+                                      </span>
+                                    ))}
+                                  {featuredMilestoneCount > 4 ? (
+                                    <small>
+                                      + {featuredMilestoneCount - 4} etapa
+                                      {featuredMilestoneCount - 4 === 1
+                                        ? ""
+                                        : "s"}
+                                    </small>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <p className={styles.featureSheetExcerpt}>
+                                  {featuredProject.content.slice(0, 220)}
+                                  {featuredProject.content.length > 220
+                                    ? "…"
+                                    : ""}
+                                </p>
+                              )}
+                              <footer>
+                                <span>
+                                  {featuredProject.engagement.likeCount} apoios
+                                </span>
+                                <span>
+                                  {featuredProject.engagement.commentCount}{" "}
+                                  comentários
+                                </span>
+                              </footer>
+                            </article>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className={styles.featureEmpty}>
+                        <div>
+                          <span className={styles.featureEyebrow}>
+                            <FiZap /> Projeto em destaque
+                          </span>
+                          <h2>
+                            Ainda não há uma atualização de projeto para
+                            destacar.
+                          </h2>
+                          <p>
+                            Quando alguém publicar uma atualização do tipo
+                            Projeto, esta área passa a usar os dados reais dessa
+                            publicação.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openComposer("update")}
+                        >
+                          <FiPlus /> Publicar atualização de projeto
+                        </button>
+                      </div>
+                    )}
+                    {highlightsError ? (
+                      <p className={styles.highlightError}>{highlightsError}</p>
+                    ) : null}
+                  </section>
+
+                  <section className={styles.opportunitySection}>
+                    <header className={styles.sectionHeader}>
+                      <div>
+                        <span>Oportunidades para você</span>
+                        <small>
+                          Solicitações abertas, priorizadas pelo seu perfil e
+                          habilidades reais.
+                        </small>
+                      </div>
+                      <div className={styles.railControls}>
+                        <button
+                          type="button"
+                          onClick={() => scrollOpportunities("left")}
+                          aria-label="Ver oportunidades anteriores"
+                        >
+                          <FiChevronLeft />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollOpportunities("right")}
+                          aria-label="Ver próximas oportunidades"
+                        >
+                          <FiChevronRight />
+                        </button>
+                      </div>
+                    </header>
+
+                    <div
+                      className={styles.opportunityRail}
+                      ref={opportunityRailRef}
+                    >
+                      {highlightsLoading ? (
+                        <div className={styles.opportunityEmpty}>
+                          Buscando oportunidades compatíveis...
+                        </div>
+                      ) : null}
+                      {!highlightsLoading && highlights?.opportunities.length
+                        ? highlights.opportunities.map(
+                            ({ post, matchLabels }) => {
+                              const presentation =
+                                getOpportunityPresentation(post);
+                              const Icon = presentation.icon;
+                              const details = post.details as {
+                                skills?: string[];
+                              };
+                              const author =
+                                post.author.organization?.name ??
+                                post.author.displayName;
+                              return (
+                                <article
+                                  key={post.id}
+                                  className={styles.opportunityCard}
+                                  data-tone={presentation.tone}
+                                  data-request-type={
+                                    (post.details as { requestType?: string })
+                                      .requestType
+                                  }
+                                >
+                                  <span
+                                    className={styles.opportunityDecoration}
+                                    aria-hidden="true"
+                                  />
+                                  <div className={styles.opportunityCardTop}>
+                                    <span className={styles.opportunityIcon}>
+                                      <Icon />
+                                    </span>
+                                    <div>
+                                      <strong
+                                        className={styles.opportunityType}
+                                      >
+                                        {presentation.label}
+                                      </strong>
+                                      <small>{author}</small>
+                                    </div>
+                                  </div>
+                                  <h3>{post.title}</h3>
+                                  <div className={styles.opportunitySkill}>
+                                    {matchLabels[0] ??
+                                      details.skills?.[0] ??
+                                      areaLabels[post.area]}
+                                  </div>
+                                  {matchLabels.length > 1 ? (
+                                    <div className={styles.matchTags}>
+                                      {matchLabels.slice(1).map((label) => (
+                                        <span key={label}>{label}</span>
+                                      ))}
+                                    </div>
+                                  ) : null}
+                                  <footer>
+                                    <span>{presentation.meta}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        navigate(
+                                          `/app/comunidade?post=${post.id}`,
+                                        )
+                                      }
+                                      aria-label={`Abrir ${post.title}`}
+                                    >
+                                      <FiArrowRight />
+                                    </button>
+                                  </footer>
+                                </article>
+                              );
+                            },
+                          )
+                        : null}
+                      {!highlightsLoading &&
+                      !highlights?.opportunities.length ? (
+                        <div className={styles.opportunityEmpty}>
+                          <strong>
+                            Nenhuma solicitação aberta no momento.
+                          </strong>
+                          <span>
+                            Quando a comunidade publicar novas necessidades,
+                            elas aparecerão aqui.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => openComposer("request")}
+                          >
+                            Criar solicitação
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </section>
+                </>
+              ) : null}
+
+              <div ref={composerAnchorRef} className={styles.composerAnchor}>
+                {composerKind ? (
+                  <CommunityPostComposer
+                    initialKind={composerKind}
+                    onClose={() => setComposerKind(null)}
+                    onCreated={handlePostCreated}
+                  />
+                ) : !isPersonalActivityPage ? (
+                  <section
+                    className={styles.communityComposerLauncher}
+                    aria-label="Criar publicação"
+                  >
+                    <div className={styles.launcherTop}>
+                      <span className={styles.composerAvatar}>
+                        {accountAvatarUrl ? (
+                          <img
+                            className={styles.composerAvatarImage}
+                            src={accountAvatarUrl}
+                            alt=""
+                          />
+                        ) : (
+                          activeProfileInitials
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.launcherInput}
+                        onClick={() => openComposer("general")}
+                      >
+                        Compartilhe algo com a comunidade...
+                      </button>
+                    </div>
+
+                    <div
+                      className={styles.launcherKinds}
+                      aria-label="Tipo de publicação"
+                    >
+                      {composerKinds.map(({ kind, label, icon: Icon }) => (
+                        <button
+                          key={kind}
+                          type="button"
+                          className={styles.launcherKind}
+                          data-kind={kind}
+                          onClick={() => openComposer(kind)}
+                        >
+                          <Icon aria-hidden="true" />
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+              </div>
 
               <section className={styles.feedSection}>
                 <div className={styles.feedToolbar}>
@@ -1058,187 +2206,627 @@ export default function LoggedCommunity() {
                     className={styles.feedTabs}
                     aria-label="Filtrar publicações"
                   >
-                    {feedFilters.map(([id, label]) => (
+                    {feedTag ? (
+                      <button
+                        type="button"
+                        className={styles.feedTabActive}
+                        onClick={() => {
+                          const params = new URLSearchParams(location.search);
+                          params.delete("tag");
+                          navigate({
+                            pathname: location.pathname,
+                            search: params.toString(),
+                          });
+                        }}
+                        aria-label={`Remover filtro #${feedTag}`}
+                      >
+                        #{feedTag} ×
+                      </button>
+                    ) : null}
+                    {(isPersonalActivityPage
+                      ? personalFeedFilters
+                      : feedFilters
+                    ).map(([id, label]) => (
                       <button
                         key={id}
                         type="button"
                         className={
                           feedFilter === id ? styles.feedTabActive : ""
                         }
-                        onClick={() => setFeedFilter(id)}
+                        onClick={() => changeFeedFilter(id)}
                         aria-pressed={feedFilter === id}
                       >
                         {label}
                       </button>
                     ))}
                   </div>
-                  <button
-                    type="button"
-                    className={styles.sortButton}
-                    onClick={navigateToPending}
-                  >
-                    Recentes
-                    <FiChevronDown />
-                  </button>
+
+                  <div className={styles.feedToolbarActions}>
+                    <span
+                      className={styles.liveStatus}
+                      title="O feed verifica novidades automaticamente enquanto a página está ativa."
+                    >
+                      <i />
+                      {postsRefreshing
+                        ? "Atualizando..."
+                        : lastFeedSyncAt
+                          ? "Atualização automática"
+                          : "Conectando..."}
+                    </span>
+                    <button
+                      type="button"
+                      className={`${styles.feedRefreshButton} ${postsRefreshing ? styles.feedRefreshButtonSpinning : ""}`}
+                      onClick={() => void refreshFeed(true)}
+                      disabled={postsRefreshing}
+                      aria-label="Atualizar publicações agora"
+                      title="Atualizar agora"
+                    >
+                      <FiRefreshCw />
+                    </button>
+                    <label className={styles.sortSelect}>
+                      <span className={styles.srOnly}>Ordenar publicações</span>
+                      <select
+                        value={feedSort}
+                        onChange={(event) =>
+                          setFeedSort(event.target.value as CommunityFeedSort)
+                        }
+                      >
+                        {Object.entries(feedSortLabels)
+                          .filter(([value]) =>
+                            feedFilter === "all"
+                              ? true
+                              : value !== "recommended",
+                          )
+                          .map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                      </select>
+                      <FiChevronDown aria-hidden="true" />
+                    </label>
+                  </div>
                 </div>
 
-                <div className={styles.feedList}>
+                {feedNotice ? (
+                  <div className={styles.feedNotice} role="status">
+                    <FiCheckCircle />
+                    <span>{feedNotice}</span>
+                    <button
+                      type="button"
+                      onClick={() => setFeedNotice(null)}
+                      aria-label="Fechar aviso"
+                    >
+                      <FiX />
+                    </button>
+                  </div>
+                ) : null}
+
+                <div className={styles.feedList} aria-live="polite">
                   {postsLoading ? (
-                    <article className={styles.post}>
-                      <p aria-live="polite">Carregando publicações...</p>
-                    </article>
+                    <div
+                      className={styles.feedSkeleton}
+                      aria-label="Carregando publicações"
+                    >
+                      <span />
+                      <span />
+                      <span />
+                    </div>
                   ) : null}
 
-                  {postsError ? (
-                    <article className={styles.post}>
-                      <p role="alert">{postsError}</p>
-                    </article>
-                  ) : null}
-
-                  {!postsLoading && !postsError && visibleFeedPosts.length === 0 ? (
-                    <article className={styles.post}>
-                      <p>
-                        {posts.length === 0
-                          ? "Ainda não existem publicações na comunidade."
-                          : "Nenhuma publicação corresponde a este filtro."}
-                      </p>
+                  {!postsLoading && postsError && posts.length === 0 ? (
+                    <article
+                      className={styles.feedStateCard}
+                      data-state="error"
+                    >
+                      <span className={styles.feedStateIcon}>
+                        <FiActivity />
+                      </span>
+                      <div>
+                        <strong>Não conseguimos atualizar o feed.</strong>
+                        <p>{postsError}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void refreshFeed(false)}
+                      >
+                        Tentar novamente
+                      </button>
                     </article>
                   ) : null}
 
                   {!postsLoading &&
-                    !postsError &&
+                  !postsError &&
+                  visibleFeedPosts.length === 0 ? (
+                    <article className={styles.feedStateCard}>
+                      <span className={styles.feedStateIcon}>
+                        {feedFilter === "archived" ? (
+                          <FiArchive />
+                        ) : feedFilter === "saved" ? (
+                          <FiBookmark />
+                        ) : (
+                          <FiMessageCircle />
+                        )}
+                      </span>
+                      <div>
+                        <strong>{emptyFeedCopy.title}</strong>
+                        <p>{emptyFeedCopy.description}</p>
+                      </div>
+                      <button type="button" onClick={handleEmptyFeedAction}>
+                        {emptyFeedCopy.action}
+                      </button>
+                    </article>
+                  ) : null}
+
+                  {!postsLoading &&
                     visibleFeedPosts.map((post) => (
                       <CommunityPostCard
                         key={post.id}
                         post={post}
-                        onPendingAction={navigateToPending}
+                        onUpdated={handlePostUpdated}
+                        onDeleted={handlePostDeleted}
+                        onRelatedPostCreated={handlePostCreated}
+                        onAuthorFollowChanged={handleAuthorFollowChanged}
+                        onAuthorBlocked={handleAuthorBlocked}
+                        onNotice={setFeedNotice}
                       />
                     ))}
+
+                  {postsError && posts.length > 0 ? (
+                    <div className={styles.feedInlineNotice} role="status">
+                      <span>{postsError}</span>
+                      <button
+                        type="button"
+                        onClick={() => void refreshFeed(true)}
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {!postsLoading && postsHasMore ? (
+                    <button
+                      type="button"
+                      className={styles.loadMoreButton}
+                      onClick={() => void loadMorePosts()}
+                      disabled={postsLoadingMore}
+                    >
+                      {postsLoadingMore
+                        ? "Carregando..."
+                        : "Ver publicações mais antigas"}
+                      {!postsLoadingMore ? <FiChevronDown /> : null}
+                    </button>
+                  ) : null}
+
+                  {!postsLoading && posts.length > 0 && !postsHasMore ? (
+                    <p className={styles.feedEndMessage}>
+                      Você chegou ao fim das publicações carregadas.
+                    </p>
+                  ) : null}
                 </div>
               </section>
             </div>
 
-            <aside className={styles.rightRail}>
-              <section className={styles.rolePanel}>
-                <header>
-                  <div>
-                    <small>Seu modo de participação</small>
-                    <strong>{selectedRoleData.label}</strong>
+            {!isPersonalActivityPage ? (
+              <aside className={styles.rightRail}>
+                <section className={styles.personalizedPanel}>
+                  <div className={styles.panelHeading}>
+                    <span>Sua atividade</span>
+                    <h2>Continue de onde parou</h2>
+                    <p>
+                      Publicações, itens salvos e arquivados ficam reunidos em
+                      uma área própria.
+                    </p>
                   </div>
-                  <span data-tone={selectedRoleData.tone}>
-                    <selectedRoleData.icon />
-                  </span>
-                </header>
-                <div className={styles.roleSelector}>
-                  {roles.map((role) => {
-                    const Icon = role.icon;
-                    return (
-                      <button
-                        key={role.id}
-                        type="button"
-                        className={
-                          selectedRole === role.id ? styles.roleSelected : ""
-                        }
-                        onClick={() => handleCommunityRoleChange(role.id)}
-                        title={`${role.label}: ${role.helper}`}
-                      >
-                        <Icon />
-                        <span>{role.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
+                  <div className={styles.panelItems}>
+                    <button
+                      type="button"
+                      onClick={() => changeFeedFilter("mine")}
+                    >
+                      <span>
+                        <FiFileText />
+                      </span>
+                      <div>
+                        <strong>Minhas publicações</strong>
+                        <small>Editar e acompanhar o que você publicou</small>
+                      </div>
+                      <FiChevronRight />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => changeFeedFilter("saved")}
+                    >
+                      <span>
+                        <FiBookmark />
+                      </span>
+                      <div>
+                        <strong>Itens salvos</strong>
+                        <small>Rever publicações guardadas para depois</small>
+                      </div>
+                      <FiChevronRight />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => changeFeedFilter("archived")}
+                    >
+                      <span>
+                        <FiArchive />
+                      </span>
+                      <div>
+                        <strong>Arquivadas</strong>
+                        <small>
+                          Restaurar ou revisar publicações retiradas
+                        </small>
+                      </div>
+                      <FiChevronRight />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.panelPrimaryAction}
+                    onClick={() => changeFeedFilter("mine")}
+                  >
+                    Abrir minha atividade
+                    <FiArrowRight />
+                  </button>
+                </section>
 
-              <section className={styles.personalizedPanel}>
-                <div className={styles.panelHeading}>
-                  <span>{personalizedPanel.eyebrow}</span>
-                  <h2>{personalizedPanel.title}</h2>
-                  <p>{personalizedPanel.description}</p>
-                </div>
-                <div className={styles.panelItems}>
-                  {personalizedPanel.items.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.label}
-                        type="button"
-                        onClick={navigateToPending}
-                      >
-                        <span>
-                          <Icon />
-                        </span>
-                        <div>
-                          <strong>{item.label}</strong>
-                          <small>{item.meta}</small>
+                <section className={styles.profileSwitchPanel}>
+                  <header className={styles.discoveryPanelHeader}>
+                    <div>
+                      <small>Perfil ativo</small>
+                      <h2>Como você está participando</h2>
+                    </div>
+                  </header>
+                  <div className={styles.activeProfileSummary}>
+                    {accountAvatarUrl ? (
+                      <img
+                        className={styles.activeProfileImage}
+                        src={accountAvatarUrl}
+                        alt=""
+                      />
+                    ) : (
+                      <span className={styles.activeProfileAvatar}>
+                        {participationInitials}
+                      </span>
+                    )}
+                    <div>
+                      <strong>{participationName}</strong>
+                      <small>{participationRole}</small>
+                    </div>
+                    <FiCheckCircle />
+                  </div>
+                  <div className={styles.quickProfiles}>
+                    <button
+                      type="button"
+                      className={styles.personalProfileOption}
+                      data-active={!activeCollaborationProfile}
+                      disabled={Boolean(switchingCollaborationProfileId)}
+                      onClick={() => void handlePersonalParticipation()}
+                    >
+                      <span>{participationInitials}</span>
+                      <div>
+                        <strong>Pessoal</strong>
+                        <small>
+                          {!activeCollaborationProfile
+                            ? "Ativo · sem função de colaboração"
+                            : "Usar a CONG sem função ativa"}
+                        </small>
+                      </div>
+                    </button>
+                    {participationProfileOptions.map(({ role, profile }) => {
+                      const roleLabel =
+                        communityRoleLabels[role] ?? formatName(role);
+                      const isActive =
+                        profile?.id === activeCollaborationProfile?.id;
+                      return (
+                        <button
+                          key={role}
+                          type="button"
+                          data-active={isActive}
+                          disabled={Boolean(switchingCollaborationProfileId)}
+                          onClick={() => {
+                            if (profile) {
+                              void handleCollaborationProfileChange(profile.id);
+                              return;
+                            }
+                            navigate("/app/minha-conta?tab=profiles");
+                          }}
+                        >
+                          <span>{getInitials(roleLabel)}</span>
+                          <div>
+                            <strong>{roleLabel}</strong>
+                            <small>
+                              {isActive
+                                ? "Ativo"
+                                : profile
+                                  ? "Alternar para este perfil"
+                                  : "Abrir configuração do perfil"}
+                            </small>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {collaborationProfilesLoading &&
+                  !participationProfileOptions.length ? (
+                    <p className={styles.profileSwitchHelp}>
+                      Carregando seus perfis de participação...
+                    </p>
+                  ) : !collaborationProfilesLoading &&
+                    !participationProfileOptions.length ? (
+                    <p className={styles.profileSwitchHelp}>
+                      Nenhuma função está configurada ainda. O perfil Pessoal
+                      continua disponível normalmente.
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={styles.manageProfilesButton}
+                    onClick={() => navigate("/app/minha-conta?tab=profiles")}
+                  >
+                    Gerenciar perfis <FiChevronRight />
+                  </button>
+                </section>
+
+                <section className={styles.peoplePanel}>
+                  <header className={styles.discoveryPanelHeader}>
+                    <div>
+                      <small>Descoberta</small>
+                      <h2>Pessoas para seguir</h2>
+                    </div>
+                  </header>
+                  {discovery?.peopleToFollow.length ? (
+                    <div className={styles.peopleList}>
+                      {discovery.peopleToFollow.map((person) => (
+                        <div key={person.userId} className={styles.personRow}>
+                          {person.avatarUrl ? (
+                            <img
+                              src={person.avatarUrl}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <span className={styles.personAvatar}>
+                              {getInitials(person.displayName)}
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            className={styles.personProfileLink}
+                            onClick={() =>
+                              navigate(
+                                `/app/comunidade/perfil/user/${person.userId}`,
+                              )
+                            }
+                          >
+                            <span className={styles.personIdentity}>
+                              <strong>{person.displayName}</strong>
+                              <small>
+                                {person.username
+                                  ? `@${person.username}`
+                                  : "Membro da comunidade"}
+                                {person.collaborationRole
+                                  ? ` · ${getCommunityRoleLabel(person.collaborationRole)}`
+                                  : ""}
+                              </small>
+                              <span>
+                                {person.postCount}{" "}
+                                {person.postCount === 1
+                                  ? "publicação"
+                                  : "publicações"}
+                              </span>
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleFollowSuggestion(person.userId)
+                            }
+                            disabled={followBusyUserId === person.userId}
+                          >
+                            {followBusyUserId === person.userId
+                              ? "..."
+                              : "Seguir"}
+                          </button>
                         </div>
-                        <FiChevronRight />
+                      ))}
+                    </div>
+                  ) : !discoveryLoading ? (
+                    <p className={styles.discoveryStatus}>
+                      Nenhuma nova sugestão por enquanto.
+                    </p>
+                  ) : null}
+                </section>
+
+                <section className={styles.topicsPanel}>
+                  <header className={styles.discoveryPanelHeader}>
+                    <div>
+                      <small>Últimos 30 dias</small>
+                      <h2>Tópicos em alta</h2>
+                    </div>
+                  </header>
+                  {discovery?.trendingTopics.length ? (
+                    <div className={styles.topicList}>
+                      {discovery.trendingTopics.map((topic) => (
+                        <button
+                          type="button"
+                          key={topic.label}
+                          className={styles.topicRow}
+                          onClick={() =>
+                            navigate(
+                              `/app/comunidade?tag=${encodeURIComponent(topic.label.replace(/^#/, "").toLowerCase())}`,
+                            )
+                          }
+                        >
+                          <span>#</span>
+                          <div>
+                            <strong>{topic.label}</strong>
+                            <small>
+                              {topic.postCount}{" "}
+                              {topic.postCount === 1
+                                ? "publicação"
+                                : "publicações"}
+                            </small>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : !discoveryLoading ? (
+                    <p className={styles.discoveryStatus}>
+                      Os tópicos aparecem conforme a comunidade publica tags e
+                      habilidades.
+                    </p>
+                  ) : null}
+                  {discoveryError ? (
+                    <p className={styles.discoveryError} role="status">
+                      {discoveryError}
+                    </p>
+                  ) : null}
+                </section>
+
+                <section className={styles.eventPanel}>
+                  {nextEvent ? (
+                    <>
+                      <header>
+                        <div>
+                          <small>Próximo evento</small>
+                          <h2>{nextEvent.title}</h2>
+                        </div>
+                        <span className={styles.eventDate}>
+                          <b>
+                            {new Intl.DateTimeFormat("pt-BR", {
+                              day: "2-digit",
+                            }).format(new Date(nextEvent.startsAt))}
+                          </b>
+                          {new Intl.DateTimeFormat("pt-BR", { month: "short" })
+                            .format(new Date(nextEvent.startsAt))
+                            .replace(".", "")
+                            .toUpperCase()}
+                        </span>
+                      </header>
+                      <div className={styles.eventMeta}>
+                        <span>
+                          <FiClock />{" "}
+                          {new Intl.DateTimeFormat("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(nextEvent.startsAt))}
+                        </span>
+                        <span>
+                          {nextEvent.mode === "online" ? (
+                            <FiGlobe />
+                          ) : (
+                            <FiMapPin />
+                          )}{" "}
+                          {nextEvent.mode === "online"
+                            ? "Online"
+                            : nextEvent.mode === "hybrid"
+                              ? "Híbrido"
+                              : (nextEvent.location ?? "Presencial")}
+                        </span>
+                      </div>
+                      <div className={styles.eventPeople}>
+                        <div className={styles.eventParticipantCount}>
+                          <FiUsers /> {nextEvent.participantCount}{" "}
+                          {nextEvent.participantCount === 1
+                            ? "participante"
+                            : "participantes"}
+                        </div>
+                        <div className={styles.eventActions}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEventModalMode("create");
+                              setEventModalOpen(true);
+                            }}
+                          >
+                            Novo evento
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEventModalMode("view");
+                              setEventModalOpen(true);
+                            }}
+                          >
+                            Ver evento
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className={styles.eventEmpty}>
+                      <span>
+                        <FiCalendar />
+                      </span>
+                      <div>
+                        <small>Próximo evento</small>
+                        <h2>Nenhum evento agendado</h2>
+                        <p>
+                          Crie um encontro real da comunidade para ele aparecer
+                          aqui.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEventModalMode("create");
+                          setEventModalOpen(true);
+                        }}
+                      >
+                        <FiPlus /> Criar evento
                       </button>
-                    );
-                  })}
-                </div>
-                <button
-                  type="button"
-                  className={styles.panelPrimaryAction}
-                  onClick={navigateToPending}
-                >
-                  {personalizedPanel.primaryLabel}
-                  <FiArrowRight />
-                </button>
-              </section>
+                    </div>
+                  )}
+                </section>
 
-              <section className={styles.eventPanel}>
-                <header>
+                <section className={styles.mascotTip}>
+                  <img
+                    src={mascot}
+                    alt="Mascote da CONG"
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <div>
-                    <small>Próximo evento</small>
-                    <h2>Oficina: projetos que começam pequenos</h2>
+                    <strong>Uma dica do CONG</strong>
+                    <p>
+                      Salve publicações importantes para encontrá-las depois sem
+                      precisar procurar no feed.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => changeFeedFilter("saved")}
+                    >
+                      Ver itens salvos
+                    </button>
                   </div>
-                  <span className={styles.eventDate}>
-                    <b>24</b> MAI
-                  </span>
-                </header>
-                <div className={styles.eventMeta}>
-                  <span>
-                    <FiClock /> 19:00
-                  </span>
-                  <span>
-                    <FiGlobe /> Online
-                  </span>
-                </div>
-                <div className={styles.eventPeople}>
-                  <div className={styles.avatarStack}>
-                    <span>KS</span>
-                    <span>AP</span>
-                    <span>MO</span>
-                    <span>+37</span>
-                  </div>
-                  <button type="button" onClick={navigateToPending}>
-                    Ver evento
-                  </button>
-                </div>
-              </section>
-
-              <section className={styles.mascotTip}>
-                <img src={mascot} alt="Mascote da CONG" />
-                <div>
-                  <strong>Uma dica do CONG</strong>
-                  <p>
-                    Seguir projetos deixa o seu feed mais útil e menos genérico.
-                  </p>
-                  <button type="button" onClick={navigateToPending}>
-                    Encontrar projetos
-                  </button>
-                </div>
-              </section>
-            </aside>
+                </section>
+              </aside>
+            ) : null}
           </div>
         </main>
       </section>
-
-      {createModalOpen ? (
-        <CommunityPostComposer
-          onClose={() => setCreateModalOpen(false)}
-          onCreated={handlePostCreated}
+      {eventModalVisible ? (
+        <CommunityEventModal
+          event={
+            resolvedEventModalMode === "view" &&
+            (!requestedConcreteEventId ||
+              requestedConcreteEventId === nextEvent?.id)
+              ? nextEvent
+              : null
+          }
+          eventId={requestedConcreteEventId}
+          mode={resolvedEventModalMode}
+          onClose={closeEventModal}
+          onChanged={(event) => {
+            if (event.id === nextEvent?.id && event.status === "published") {
+              setNextEvent(event);
+            }
+            void refreshNextEvent();
+            setEventModalMode("view");
+          }}
         />
       ) : null}
     </div>

@@ -14,7 +14,7 @@
   overflow: auto;
   border: 1px solid rgb(17 45 78 / 14%);
   border-radius: 22px;
-  background: #fff;
+  background: var(--color-white);
   box-shadow: 0 28px 80px rgb(10 30 52 / 25%);
 }
 .header {
@@ -27,12 +27,12 @@
 .header h3 {
   margin: 0;
   color: #10243c;
-  font-size: 1.18rem;
+  font-size: var(--font-process-card-title-mobile);
 }
 .header p {
   margin: 5px 0 0;
   color: #687382;
-  font-size: 0.86rem;
+  font-size: var(--font-process-module);
   line-height: 1.45;
 }
 .closeButton {
@@ -43,7 +43,7 @@
   flex: 0 0 auto;
   border: 1px solid #e2e7ed;
   border-radius: 10px;
-  background: #fff;
+  background: var(--color-white);
   color: #536174;
   cursor: pointer;
 }
@@ -92,8 +92,8 @@
 .content legend,
 .frequencyField label {
   color: #33465f;
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: var(--font-size-082);
+  font-weight: var(--font-extrabold);
 }
 .weekRow {
   display: grid;
@@ -105,11 +105,11 @@
   min-height: 40px;
   border: 1px solid #dbe2eb;
   border-radius: 10px;
-  background: #fff;
+  background: var(--color-white);
   color: #30435d;
   font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: var(--font-paper-tag);
+  font-weight: var(--font-bold);
   cursor: pointer;
 }
 .periodRow {
@@ -132,7 +132,7 @@
   min-height: 44px;
   border: 1px solid #d7dee8;
   border-radius: 11px;
-  background: #fff;
+  background: var(--color-white);
   padding: 0 11px;
   color: #223247;
   font: inherit;
@@ -154,7 +154,7 @@
   color: #1f2d3f;
   padding: 0 17px;
   font: inherit;
-  font-weight: 800;
+  font-weight: var(--font-extrabold);
   cursor: pointer;
 }
 .footer svg {

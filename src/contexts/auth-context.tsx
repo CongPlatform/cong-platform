@@ -124,6 +124,8 @@ export interface AuthContextValue {
     profileId: string,
   ) => Promise<CollaborationProfile>;
 
+  deactivateCollaborationProfile: () => Promise<void>;
+
   userData: CongUserData | null;
 
   profiles: CongProfile[];

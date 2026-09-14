@@ -37,6 +37,7 @@ import {
 
 import {
   activateMyCollaborationProfile,
+  deactivateMyCollaborationProfile,
   createMyCollaborationProfile,
   deleteMyCollaborationProfile,
   getMyCollaborationProfiles,
@@ -439,6 +440,23 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     [],
   );
 
+  const deactivateCollaborationProfile =
+    useCallback(async (): Promise<void> => {
+      setCollaborationProfilesLoading(true);
+
+      try {
+        await deactivateMyCollaborationProfile();
+        setCollaborationProfiles((currentProfiles) =>
+          currentProfiles.map((currentProfile) => ({
+            ...currentProfile,
+            isActive: false,
+          })),
+        );
+      } finally {
+        setCollaborationProfilesLoading(false);
+      }
+    }, []);
+
   const updateAccount = useCallback(
     async (input: UpdateAccountInput): Promise<UserAccount> => {
       setError("");
@@ -835,6 +853,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     updateCollaborationProfile,
     deleteCollaborationProfile,
     activateCollaborationProfile,
+    deactivateCollaborationProfile,
 
     createRepresentation,
     requestRepresentation,

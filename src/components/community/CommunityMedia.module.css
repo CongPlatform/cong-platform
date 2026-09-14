@@ -1,0 +1,552 @@
+.editor {
+  margin: 0 20px 18px;
+  color: #435269;
+}
+.tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tools button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid #dfe5ec;
+  background: var(--composer-soft, #edf4fb);
+  color: var(--composer-accent, #315f91);
+  border-radius: 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.tools small {
+  font-size: var(--font-label-small);
+  color: #68758a;
+  margin-left: auto;
+}
+.editor button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+.editor button:focus-visible,
+.suggestions button:focus-visible,
+.inlineLink:focus-visible {
+  outline: 2px solid #315f91;
+  outline-offset: 3px;
+}
+.editGrid,
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.editAttachment {
+  position: relative;
+  min-width: 0;
+  border: 1px solid #dfe5ec;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-surface-muted);
+}
+.editAttachment > img {
+  width: 100%;
+  height: 125px;
+  object-fit: contain;
+  display: block;
+}
+.editAttachment > svg {
+  display: block;
+  height: 85px;
+  width: 28px;
+  margin: auto;
+  color: #315f91;
+}
+.editAttachment > span {
+  display: block;
+  padding: 8px 12px;
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.editAttachment button,
+.previewWrapper > button {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dfe5ec;
+  border-radius: 50%;
+  background: var(--color-white);
+  color: #435269;
+  cursor: pointer;
+}
+.editAttachment progress {
+  width: calc(100% - 24px);
+  margin: 0 12px 10px;
+  accent-color: #315f91;
+}
+.urlField {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+.urlField input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dfe5ec;
+  border-radius: 9px;
+  font: inherit;
+}
+.urlField span {
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+.linkPreview {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid #dfe5ec;
+  border-radius: 12px;
+  background: #f6f8fb;
+  color: #273c56;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.linkPreview small {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--font-label-small);
+  color: #65748a;
+}
+.linkPreview strong {
+  font-size: var(--font-sm);
+  line-height: 1.4;
+}
+.linkPreview p {
+  margin: 0;
+  font-size: var(--font-xs);
+  line-height: 1.6;
+  color: #59687b;
+}
+.previewWrapper {
+  position: relative;
+  margin-top: 12px;
+}
+.previewWrapper .linkPreview {
+  padding-right: 45px;
+}
+.postMedia {
+  margin: 12px 20px 18px;
+  display: grid;
+  gap: 12px;
+}
+.postMedia .mediaGrid {
+  margin: 0;
+}
+.mediaGrid:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+.image {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f3f5f8;
+  border: 1px solid #e1e6ed;
+}
+.image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 460px;
+  object-fit: contain;
+}
+.document {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dfe5ec;
+  border-radius: 12px;
+  color: #315f91;
+  text-decoration: none;
+  min-width: 0;
+}
+.document > svg {
+  flex-shrink: 0;
+}
+.document span {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.document strong {
+  overflow-wrap: anywhere;
+  font-size: var(--font-footer-body);
+}
+.document small {
+  color: #68758a;
+  font-size: var(--font-label-small);
+}
+.inlineLink {
+  color: #315f91;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.inlineLink:hover {
+  text-decoration: underline;
+}
+.mentionInput {
+  position: relative;
+  width: 100%;
+}
+.mentionInput textarea {
+  width: 100%;
+}
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 260px;
+  overflow: auto;
+  background: var(--color-white);
+  border: 1px solid #dfe5ec;
+  border-radius: 12px;
+  box-shadow: 0 12px 25px #273c561a;
+}
+.suggestions button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: var(--color-white);
+  text-align: left;
+  cursor: pointer;
+  color: #273c56;
+}
+.suggestions button[aria-selected="true"],
+.suggestions button:hover {
+  background: #edf4fb;
+}
+.suggestions small {
+  color: #68758a;
+}
+.error {
+  font-size: var(--font-xs);
+  color: #984342;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+@media (max-width: 480px) {
+  .tools small {
+    width: 100%;
+    margin: 2px 0 0;
+  }
+  .postMedia {
+    margin-right: 14px;
+    margin-left: 14px;
+  }
+  .document {
+    gap: 8px;
+    padding: 10px;
+  }
+}
+
+/* Community V3.0 — marcações visuais durante a escrita */
+.suggestions button {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+}
+.suggestions button[data-suggestion-kind="tag"] {
+  background: linear-gradient(90deg, #fffbef, var(--color-white));
+}
+.suggestionAvatar,
+.liveTokenAvatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #edf3fd;
+  color: #315f91;
+  font-size: var(--font-size-068);
+  font-weight: 850;
+}
+.suggestionAvatar {
+  width: 36px;
+  height: 36px;
+}
+.suggestionAvatar img,
+.liveTokenAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.suggestionCopy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.suggestionCopy strong,
+.suggestionCopy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tagSuggestionMark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: #fff0b8;
+  color: #95680e;
+  font-size: var(--font-md);
+  font-weight: var(--font-black);
+}
+.liveTokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+.liveMention,
+.liveTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 9px 4px 5px;
+  border: 1px solid #d9e5f5;
+  border-radius: 10px;
+  background: #f1f6fd;
+  color: #315f91;
+  font-size: var(--font-pending-small);
+}
+.liveMention small {
+  color: #70839d;
+  font-size: var(--font-pending-caption);
+}
+.liveTokenAvatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  font-size: var(--font-size-052);
+}
+.liveTag {
+  padding-left: 9px;
+  border-color: #f0dfaa;
+  background: #fff8df;
+  color: #8e6415;
+  text-transform: lowercase;
+}
+
+/* Community V3.0 — marcações inline no conteúdo publicado */
+.inlineMention,
+.inlineTag {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.inlineMention {
+  gap: 5px;
+  margin: 0 2px;
+  padding: 2px 7px 2px 3px;
+  border: 1px solid var(--color-primary-200);
+  border-radius: 999px;
+  color: var(--color-primary-800);
+  background: var(--color-primary-50);
+  font-size: 0.92em;
+  font-weight: var(--font-semibold);
+}
+
+.inlineMentionAvatar {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  color: var(--color-primary-800);
+  background: var(--color-primary-100);
+  font-size: var(--font-size-050);
+  font-weight: var(--font-bold);
+}
+
+.inlineMentionAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inlineTag {
+  gap: 2px;
+  margin: 0 2px;
+  padding: 2px 7px;
+  border-radius: 7px;
+  color: var(--color-accent-900);
+  background: var(--color-accent-100);
+  font-size: 0.92em;
+  font-weight: var(--font-semibold);
+}
+
+.inlineTag > span {
+  color: var(--color-accent-700);
+  font-weight: var(--font-bold);
+}
+
+.inlineMention:hover,
+.inlineTag:hover {
+  text-decoration: none;
+  filter: brightness(0.98);
+}
+
+.suggestions {
+  border-color: var(--color-border-medium);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.suggestions button {
+  color: var(--color-slate-800);
+  background: var(--color-surface);
+}
+
+.suggestions button[aria-selected="true"],
+.suggestions button:hover {
+  background: var(--color-primary-50);
+}
+
+.suggestions button[data-suggestion-kind="tag"] {
+  background: var(--color-accent-50);
+}
+
+.suggestionAvatar {
+  color: var(--color-primary-800);
+  background: var(--color-primary-100);
+  font-size: var(--font-label-small);
+  font-weight: var(--font-bold);
+}
+
+.tagSuggestionMark {
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+  font-size: var(--font-md);
+  font-weight: var(--font-black);
+}
+
+/* V3.0 final — marcações ficam dentro do campo de conteúdo, não abaixo dele. */
+.mentionEditorSurface {
+  overflow: hidden;
+  border: 1px solid var(--color-border-medium);
+  border-radius: 12px;
+  background: var(--color-surface);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.mentionEditorSurface:focus-within {
+  border-color: var(--color-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.mentionEditorTokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+
+.mentionEditorSurface textarea,
+.mentionEditorSurface textarea:focus {
+  width: 100%;
+  min-height: 122px;
+  padding: 12px;
+  border: 0 !important;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none !important;
+  color: var(--color-ink);
+  background: transparent;
+  font-family: var(--font-interface);
+  font-size: var(--font-body-normal);
+  line-height: var(--line-readable);
+  resize: vertical;
+}
+
+.mentionEditorSurface .liveMention,
+.mentionEditorSurface .liveTag {
+  margin: 0;
+}
+
+/* Community V3.0 — marcações realmente integradas à linha de texto. */
+.inlineMention,
+.inlineTag {
+  min-height: 1.7em;
+  max-width: 100%;
+  margin: 0 0.12em;
+  padding-block: 0.08em;
+  line-height: 1.25;
+  vertical-align: -0.22em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.inlineMention {
+  gap: 0.35em;
+  padding-inline: 0.22em 0.55em;
+  border: 1px solid var(--color-primary-200);
+  border-radius: 0.55em;
+  color: var(--color-primary-800);
+  background: var(--color-primary-50);
+  font-size: 0.94em;
+}
+
+.inlineMentionAvatar {
+  width: 1.35em;
+  height: 1.35em;
+  border-radius: 0.4em;
+  font-size: 0.46em;
+}
+
+.inlineMention > span:last-child {
+  display: inline-block;
+  padding-inline: 0.02em;
+  white-space: nowrap;
+}
+
+.inlineTag {
+  gap: 0;
+  padding-inline: 0.42em 0.5em;
+  border: 0;
+  border-radius: 0.4em;
+  color: var(--color-accent-900);
+  background: linear-gradient(
+    transparent 7%,
+    var(--color-accent-100) 7% 92%,
+    transparent 92%
+  );
+  font-size: 0.94em;
+  font-weight: var(--font-semibold);
+}
+
+.inlineTag > span {
+  margin-right: 0.02em;
+  color: var(--color-accent-800);
+}

@@ -10,6 +10,8 @@ export interface FileUploaderProps {
   title?: string;
   description?: string;
 
+  disabled?: boolean;
+
   accept?: string[];
 
   maxSize?: number;

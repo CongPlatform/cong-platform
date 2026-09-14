@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
   activateMyCollaborationProfile,
+  deactivateMyCollaborationProfile,
   createMyCollaborationProfile,
   deleteMyCollaborationProfile,
   listMyCollaborationProfiles,
@@ -43,6 +44,8 @@ collaborationProfileRouter.patch(
   validateBody(activateCollaborationProfileSchema),
   activateMyCollaborationProfile,
 );
+
+collaborationProfileRouter.delete("/active", deactivateMyCollaborationProfile);
 
 /* ==================================================
    UPDATE

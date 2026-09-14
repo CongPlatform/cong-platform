@@ -1,0 +1,289 @@
+.page {
+  width: min(1040px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 34px 0 64px;
+  color: #10233f;
+}
+.backButton {
+  border: 0;
+  background: transparent;
+  color: #41607f;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  cursor: pointer;
+  margin-bottom: 18px;
+}
+.profileCard,
+.organizations,
+.postsSection {
+  background: #fff;
+  border: 1px solid #dce5ef;
+  border-radius: 22px;
+  box-shadow: 0 14px 40px rgba(36, 69, 108, 0.06);
+}
+.profileCard {
+  padding: 30px;
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  gap: 24px;
+}
+.avatarWrap img,
+.avatarWrap span {
+  width: 104px;
+  height: 104px;
+  border-radius: 28px;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: #edf4ff;
+  color: #2f62a8;
+  font-weight: 800;
+  font-size: 28px;
+}
+.identityTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.identity h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.08;
+}
+.identity p {
+  margin: 5px 0 0;
+  color: #748399;
+}
+.bio {
+  max-width: 720px;
+  line-height: 1.65;
+  color: #4a5e74 !important;
+  margin-top: 18px !important;
+}
+.followButton,
+.followingButton {
+  border-radius: 12px;
+  min-height: 42px;
+  padding: 0 20px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.followButton {
+  background: #2868c7;
+  color: #fff;
+  border: 1px solid #2868c7;
+}
+.followingButton {
+  background: #f5f8fb;
+  color: #294a70;
+  border: 1px solid #ced9e6;
+}
+.roleList,
+.skillList,
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 17px;
+}
+.roleList span {
+  background: #eaf2ff;
+  color: #245fae;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.skillList span {
+  background: #f4f7fa;
+  color: #52657a;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.stats {
+  gap: 24px;
+  color: #66788d;
+  margin-top: 22px;
+}
+.stats strong {
+  color: #10233f;
+  margin-right: 4px;
+}
+.organizations,
+.postsSection {
+  margin-top: 18px;
+  padding: 22px;
+}
+.organizations > header,
+.postsSection > header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.organizations > header svg,
+.postsSection > header svg {
+  color: #356fc3;
+  font-size: 20px;
+}
+.organizations > header div,
+.postsSection > header div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.organizations > header span,
+.postsSection > header span {
+  color: #8190a3;
+  font-size: 12px;
+}
+.organizations > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.organizations button {
+  border: 1px solid #e0e7ef;
+  background: #fbfcfe;
+  border-radius: 14px;
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+.organizations button > span {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: #eef4fc;
+  color: #315d96;
+  font-weight: 800;
+}
+.organizations button div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.organizations button small {
+  color: #8795a7;
+}
+.postList {
+  display: grid;
+  gap: 14px;
+}
+.loading,
+.empty,
+.emptyPosts {
+  border: 1px solid #dfe7ef;
+  background: #fff;
+  border-radius: 18px;
+  padding: 28px;
+  color: #63768d;
+}
+.empty,
+.emptyPosts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.empty strong,
+.emptyPosts strong {
+  color: #18324f;
+}
+.emptyPosts svg {
+  font-size: 24px;
+  color: #5b7da4;
+}
+@media (max-width: 720px) {
+  .page {
+    width: min(100% - 24px, 1040px);
+    padding-top: 20px;
+  }
+  .profileCard {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+  .avatarWrap img,
+  .avatarWrap span {
+    width: 82px;
+    height: 82px;
+    border-radius: 22px;
+  }
+  .identityTop {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .followButton,
+  .followingButton {
+    width: 100%;
+  }
+}
+
+.profileActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.secondaryAction,
+.blockAction,
+.unblockAction {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.secondaryAction {
+  border: 1px solid #d7dde6;
+  background: #fff;
+  color: #536177;
+}
+
+.blockAction {
+  border: 1px solid #ead2d4;
+  background: #fff7f7;
+  color: #a34850;
+}
+
+.unblockAction {
+  border: 1px solid #d4dce8;
+  background: #f5f8fb;
+  color: #3d5876;
+}
+
+.profileActions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 680px) {
+  .profileActions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .secondaryAction,
+  .blockAction,
+  .unblockAction {
+    width: 100%;
+  }
+}

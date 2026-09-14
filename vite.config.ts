@@ -1,9 +1,12 @@
 import { defineConfig } from "vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import babel from "@rolldown/plugin-babel";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+  // React Compiler is an optimization, not a runtime requirement. Keeping the
+  // dev transform on Vite's standard React/Oxc path avoids an extra
+  // @rolldown/plugin-babel worker in development, which has shown instability
+  // on some Windows + Vite 8 setups.
+  plugins: [react()],
 
   server: {
     host: "127.0.0.1",

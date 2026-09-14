@@ -4,6 +4,7 @@ import * as z from "zod";
 
 import {
   activateCollaborationProfile,
+  deactivateCollaborationProfile,
   createCollaborationProfile,
   deleteCollaborationProfile,
   getCollaborationProfiles,
@@ -198,6 +199,23 @@ export async function activateMyCollaborationProfile(
     res.status(200).json({
       profile,
     });
+  } catch (error) {
+    sendControllerError(res, error);
+  }
+}
+
+/* ==================================================
+   DEACTIVATE / PERSONAL MODE
+   ================================================== */
+
+export async function deactivateMyCollaborationProfile(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const authUser = res.locals.authUser;
+    await deactivateCollaborationProfile(authUser.id);
+    res.status(204).end();
   } catch (error) {
     sendControllerError(res, error);
   }
