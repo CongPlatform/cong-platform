@@ -17,7 +17,7 @@
   flex-direction: column;
   border: 1px solid rgb(17 45 78 / 14%);
   border-radius: 22px;
-  background: #fff;
+  background: var(--color-white);
   box-shadow: 0 28px 80px rgb(10 30 52 / 25%);
 }
 
@@ -32,7 +32,7 @@
 .header h3 {
   margin: 0;
   color: #10243c;
-  font-size: 1.18rem;
+  font-size: var(--font-process-card-title-mobile);
 }
 
 .header p {
@@ -50,7 +50,7 @@
   place-items: center;
   border: 1px solid #e3e7eb;
   border-radius: 10px;
-  background: #fff;
+  background: var(--color-white);
   color: #526173;
   cursor: pointer;
 }
@@ -69,7 +69,7 @@
   padding: 0 13px;
   border: 1px solid #d7dde5;
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-white);
 }
 
 .searchBox:focus-within {
@@ -98,7 +98,7 @@
   gap: 12px;
   padding: 9px 24px 7px;
   color: #7b8490;
-  font-size: 0.76rem;
+  font-size: var(--font-size-076);
 }
 
 .optionList {
@@ -117,9 +117,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid #e5e9ef;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-white);
   color: #20334b;
   text-align: left;
   cursor: pointer;
@@ -149,12 +149,12 @@
   display: block;
 }
 .option strong {
-  font-size: 0.9rem;
+  font-size: var(--font-collaboration-post-body);
 }
 .option small {
   margin-top: 2px;
   color: #76808c;
-  font-size: 0.76rem;
+  font-size: var(--font-size-076);
 }
 
 .codeBadge {
@@ -166,7 +166,7 @@
   border-radius: 9px;
   background: #edf3fb;
   color: #285fa8;
-  font-size: 0.72rem;
+  font-size: var(--font-size-072);
   font-weight: 850;
 }
 
@@ -180,8 +180,8 @@
   border-radius: 999px;
   color: #7a5b20;
   background: #fffaf0;
-  font-size: 0.68rem;
-  font-weight: 800;
+  font-size: var(--font-size-068);
+  font-weight: var(--font-extrabold);
   white-space: nowrap;
 }
 .featuredBadge svg {
@@ -197,12 +197,12 @@
   place-items: center;
   border: 1px solid #cbd3dd;
   border-radius: 999px;
-  background: #fff;
+  background: var(--color-white);
 }
 .optionSelected .check {
   border-color: #2e68c6;
   background: #2e68c6;
-  color: #fff;
+  color: var(--color-white);
 }
 .check svg {
   width: 13px;
@@ -236,7 +236,7 @@
   padding: 0 12px;
   border: 1px solid #d7dde5;
   border-radius: 11px;
-  background: #fff;
+  background: var(--color-white);
 }
 .customRow button,
 .footer button {
@@ -245,7 +245,7 @@
   border-radius: 11px;
   background: #e6a423;
   color: #1f2d3f;
-  font-weight: 800;
+  font-weight: var(--font-extrabold);
   padding: 0 17px;
   cursor: pointer;
 }
@@ -254,7 +254,7 @@
   margin: 0;
   padding: 0 22px 8px;
   color: #a53b35;
-  font-size: 0.82rem;
+  font-size: var(--font-size-082);
 }
 .empty {
   margin: 24px 0;
@@ -294,4 +294,36 @@
   .featuredBadge {
     display: none;
   }
+}
+
+/* V3.0 — um único contorno para a busca do seletor */
+.searchBox {
+  border-color: var(--color-border-medium);
+  background: var(--color-surface);
+}
+
+.searchBox:focus-within {
+  border-color: var(--color-primary-500);
+  box-shadow: var(--shadow-focus);
+}
+
+.searchBox input {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--color-ink-strong);
+  font-family: var(--font-interface);
+  font-size: var(--font-sm);
+  appearance: none;
+}
+
+.searchBox input:focus,
+.searchBox input:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
 }

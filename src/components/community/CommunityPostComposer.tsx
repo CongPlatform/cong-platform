@@ -1,9 +1,15 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import CommunityMediaEditor from "./CommunityMediaEditor";
+import CommunityMentionInput from "./CommunityMentionInput";
+import {
+  getCommunityPublishingOrganizations,
+  type CommunityMedia,
+  type CommunityMention,
+  type CommunityLinkPreview,
+} from "../../services/communityService";
 import type { IconType } from "react-icons";
 import {
   FiActivity,
-  FiArrowLeft,
-  FiArrowRight,
   FiBox,
   FiBriefcase,
   FiCheck,
@@ -15,43 +21,62 @@ import {
   FiHelpCircle,
   FiMessageCircle,
   FiPenTool,
+  FiPlus,
   FiSearch,
   FiSend,
+  FiSliders,
+  FiTrash2,
   FiUser,
   FiUsers,
   FiX,
 } from "react-icons/fi";
 
 import { useAuth } from "../../contexts/auth-context";
+import { buildDefaultAvatarUrl } from "../../utils/avatar";
 import {
   createCommunityPost,
+  updateCommunityPost,
   type CommunityArea,
   type CommunityPost,
   type CommunityPostKind,
   type CommunityTargetRole,
+  type CreateCommunityPostInput,
   type EngagementMode,
+  type RequestDetails,
   type RequestType,
   type ResourceType,
+  type ResearchParticipationMode,
   type ResearchType,
+  type CommunitySurveyQuestionDraft,
+  type CommunitySurveyQuestionType,
   type UpdateEntityType,
 } from "../../services/communityService";
+import {
+  LANGUAGE_OPTIONS,
+  TECHNOLOGY_OPTIONS,
+} from "../../data/profileCatalog";
+import CommunitySelectionField from "./CommunitySelectionField";
+import {
+  communitySkillOptions,
+  communityTagOptions,
+} from "./communitySelectionOptions";
 
 import styles from "./CommunityPostComposer.module.css";
 
 interface CommunityPostComposerProps {
+  initialKind?: CommunityPostKind;
+  initialPost?: CommunityPost | null;
   onClose: () => void;
-  onCreated: (post: CommunityPost) => void;
+  onCreated?: (post: CommunityPost) => void;
+  onUpdated?: (post: CommunityPost) => void;
 }
 
 type IdentityValue =
-  | "personal"
-  | `profile:${string}`
-  | `organization:${string}`;
+  "personal" | `profile:${string}` | `organization:${string}`;
 
-type IntentOption = {
+type KindOption = {
   id: CommunityPostKind;
   label: string;
-  description: string;
   helper: string;
   icon: IconType;
 };
@@ -59,69 +84,121 @@ type IntentOption = {
 type RequestOption = {
   id: RequestType;
   label: string;
-  description: string;
   icon: IconType;
   area: CommunityArea;
   targetRoles: CommunityTargetRole[];
 };
 
-const intents: IntentOption[] = [
+type ComposerState = {
+  title: string;
+  summary: string;
+  content: string;
+  generalType: "comment" | "idea" | "experience";
+  generalTags: string[];
+  questionTopic: string;
+  requestType: RequestType;
+  deadline: string;
+  engagementMode: EngagementMode;
+  peopleNeeded: string;
+  skills: string[];
+  moduleProblem: string;
+  moduleUsers: string;
+  moduleFeatures: string;
+  moduleCurrentProcess: string;
+  developmentScope: string;
+  developmentStack: string[];
+  repositoryUrl: string;
+  designNeed: string;
+  designDeliverables: string;
+  existingMaterialUrl: string;
+  marketingObjective: string;
+  marketingChannels: string;
+  marketingAudience: string;
+  sourceLanguage: string;
+  targetLanguages: string[];
+  translationContentType: string;
+  translationVolume: string;
+  documentationType: string;
+  documentationAudience: string;
+  researchSupportGoal: string;
+  researchSupportMethod: string;
+  researchSupportAudience: string;
+  volunteeringActivity: string;
+  volunteeringLocation: string;
+  volunteeringSchedule: string;
+  otherRequestContext: string;
+  researchType: ResearchType;
+  researchParticipationMode: ResearchParticipationMode;
+  researchAnonymous: boolean;
+  surveyQuestions: CommunitySurveyQuestionDraft[];
+  estimatedMinutes: string;
+  researchResponseUrl: string;
+  researchCriteria: string;
+  entityType: UpdateEntityType;
+  entityLabel: string;
+  updateVersion: string;
+  updateProgress: string;
+  updateReferenceUrl: string;
+  updateMilestones: string;
+  updateTotalMilestones: string;
+  updateCompletedMilestones: string;
+  resourceType: ResourceType;
+  resourceUrl: string;
+  resourceVersion: string;
+  resourceLicense: string;
+  resourceTags: string[];
+  announcementPriority: "normal" | "important";
+};
+
+const kindOptions: KindOption[] = [
   {
-    id: "request",
-    label: "Pedir ajuda",
-    description: "Encontre pessoas para uma necessidade concreta.",
-    helper: "Módulo, código, design, marketing, tradução e mais",
-    icon: FiUsers,
-  },
-  {
-    id: "research",
-    label: "Lançar uma pesquisa",
-    description: "Convide um público específico para responder ou participar.",
-    helper: "Questionário, entrevista, teste ou validação",
-    icon: FiSearch,
+    id: "general",
+    label: "Publicação",
+    helper: "Ideia, relato ou atualização livre",
+    icon: FiMessageCircle,
   },
   {
     id: "question",
-    label: "Fazer uma pergunta",
-    description: "Abra uma dúvida para pessoas que realmente podem ajudar.",
-    helper: "Técnica, gestão, design, pesquisa ou comunidade",
+    label: "Pergunta",
+    helper: "Abra uma discussão objetiva",
     icon: FiHelpCircle,
   },
   {
+    id: "request",
+    label: "Solicitação",
+    helper: "Peça ajuda à comunidade",
+    icon: FiHeart,
+  },
+  {
+    id: "research",
+    label: "Pesquisa",
+    helper: "Convide pessoas para participar",
+    icon: FiSearch,
+  },
+  {
     id: "update",
-    label: "Atualizar algo",
-    description: "Mostre a evolução de um projeto, módulo ou organização.",
-    helper: "Progresso, versão, mudanças e referência",
+    label: "Atualização",
+    helper: "Mostre o avanço de algo",
     icon: FiActivity,
   },
   {
     id: "resource",
-    label: "Compartilhar um recurso",
-    description: "Publique algo reutilizável pela comunidade.",
-    helper: "Template, guia, documento, código ou ferramenta",
+    label: "Recurso",
+    helper: "Compartilhe algo reutilizável",
     icon: FiBox,
   },
   {
     id: "announcement",
-    label: "Fazer um comunicado",
-    description: "Divulgue uma informação importante para um público definido.",
-    helper: "Organização, projeto ou comunidade",
+    label: "Comunicado",
+    helper: "Divulgue uma informação importante",
     icon: FiFlag,
-  },
-  {
-    id: "general",
-    label: "Compartilhar algo",
-    description: "Publique uma ideia, comentário ou relato sem criar uma demanda.",
-    helper: "Conversa leve, experiência e conhecimento",
-    icon: FiMessageCircle,
   },
 ];
 
 const requestOptions: RequestOption[] = [
   {
     id: "module",
-    label: "Solicitar módulo",
-    description: "Transformar um processo real em uma solução reutilizável.",
+    label: "Módulo",
     icon: FiBox,
     area: "desenvolvimento",
     targetRoles: ["developer"],
@@ -129,7 +206,6 @@ const requestOptions: RequestOption[] = [
   {
     id: "development",
     label: "Desenvolvimento",
-    description: "Pedir ajuda com código, integração, bug ou implementação.",
     icon: FiCode,
     area: "desenvolvimento",
     targetRoles: ["developer"],
@@ -137,7 +213,6 @@ const requestOptions: RequestOption[] = [
   {
     id: "design",
     label: "Design",
-    description: "UX, interface, identidade, protótipo ou revisão visual.",
     icon: FiPenTool,
     area: "design",
     targetRoles: ["designer"],
@@ -145,7 +220,6 @@ const requestOptions: RequestOption[] = [
   {
     id: "marketing",
     label: "Marketing",
-    description: "Campanha, comunicação, conteúdo, captação ou divulgação.",
     icon: FiBriefcase,
     area: "ongs",
     targetRoles: ["all"],
@@ -153,7 +227,6 @@ const requestOptions: RequestOption[] = [
   {
     id: "translation",
     label: "Tradução",
-    description: "Solicitar tradução ou adaptação de conteúdo.",
     icon: FiGlobe,
     area: "documentacao",
     targetRoles: ["translator"],
@@ -161,7 +234,6 @@ const requestOptions: RequestOption[] = [
   {
     id: "documentation",
     label: "Documentação",
-    description: "Guias, manuais, processos e materiais de apoio.",
     icon: FiFileText,
     area: "documentacao",
     targetRoles: ["all"],
@@ -169,7 +241,6 @@ const requestOptions: RequestOption[] = [
   {
     id: "research_support",
     label: "Apoio em pesquisa",
-    description: "Planejamento, coleta, análise ou validação de pesquisa.",
     icon: FiSearch,
     area: "pesquisa",
     targetRoles: ["all"],
@@ -177,16 +248,14 @@ const requestOptions: RequestOption[] = [
   {
     id: "volunteering",
     label: "Voluntariado",
-    description: "Solicitar apoio presencial ou remoto para uma atividade.",
-    icon: FiHeart,
+    icon: FiUsers,
     area: "voluntariado",
     targetRoles: ["volunteer"],
   },
   {
     id: "other",
-    label: "Outro tipo de ajuda",
-    description: "Uma necessidade que não cabe nas opções anteriores.",
-    icon: FiUsers,
+    label: "Outro",
+    icon: FiHeart,
     area: "ongs",
     targetRoles: ["all"],
   },
@@ -203,7 +272,7 @@ const areaLabels: Record<CommunityArea, string> = {
 
 const roleLabels: Record<CommunityTargetRole, string> = {
   all: "Toda a comunidade",
-  organization: "ONGs e organizações",
+  organization: "ONGs",
   developer: "Desenvolvedores",
   designer: "Designers",
   translator: "Tradutores",
@@ -222,7 +291,7 @@ const researchLabels: Record<ResearchType, string> = {
   questionnaire: "Questionário",
   interview: "Entrevista",
   usability_test: "Teste de usabilidade",
-  validation: "Validação de ideia",
+  validation: "Validação",
   field_research: "Pesquisa de campo",
 };
 
@@ -236,6 +305,40 @@ const resourceLabels: Record<ResourceType, string> = {
   other: "Outro recurso",
 };
 
+const surveyQuestionTypeLabels: Record<CommunitySurveyQuestionType, string> = {
+  short_text: "Resposta curta",
+  long_text: "Resposta longa",
+  single_choice: "Escolha única",
+  multiple_choice: "Múltipla escolha",
+  scale: "Escala",
+};
+
+const languageSelectionOptions = LANGUAGE_OPTIONS.map((language) => ({
+  value: language.value,
+  label: language.label,
+  code: language.code,
+}));
+
+function newSurveyQuestion(
+  type: CommunitySurveyQuestionType = "short_text",
+): CommunitySurveyQuestionDraft {
+  return {
+    clientId:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `question-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    type,
+    prompt: "",
+    required: true,
+    options:
+      type === "single_choice" || type === "multiple_choice"
+        ? ["Opção 1", "Opção 2"]
+        : [],
+    scaleMin: type === "scale" ? 1 : undefined,
+    scaleMax: type === "scale" ? 5 : undefined,
+  };
+}
+
 function listFromText(value: string): string[] {
   return value
     .split(/[\n,;]+/)
@@ -244,162 +347,400 @@ function listFromText(value: string): string[] {
     .filter((item, index, values) => values.indexOf(item) === index);
 }
 
-function OptionalNumberInput({
-  value,
-  onChange,
-  min,
-  max,
-  placeholder,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  min: number;
-  max: number;
-  placeholder?: string;
-}) {
-  return (
-    <input
-      type="number"
-      min={min}
-      max={max}
-      value={value}
-      placeholder={placeholder}
-      onChange={(event) => onChange(event.target.value)}
-    />
+function listToText(value?: string[]): string {
+  return value?.join(", ") ?? "";
+}
+
+function buildUpdateMilestones(
+  labelsText: string,
+  totalText: string,
+): string[] {
+  const labels = listFromText(labelsText).slice(0, 12);
+  const parsedTotal = Number(totalText || 0);
+  const requestedTotal = Number.isFinite(parsedTotal)
+    ? Math.max(0, Math.min(12, Math.trunc(parsedTotal)))
+    : 0;
+  const total = Math.max(labels.length, requestedTotal);
+
+  return Array.from(
+    { length: total },
+    (_, index) => labels[index] || `Etapa ${index + 1}`,
   );
 }
 
+function initialIdentity(post?: CommunityPost | null): IdentityValue {
+  if (post?.author.organization)
+    return `organization:${post.author.organization.id}`;
+  if (post?.author.collaborationProfile)
+    return `profile:${post.author.collaborationProfile.id}`;
+  return "personal";
+}
+
+function createInitialState(post?: CommunityPost | null): ComposerState {
+  const state: ComposerState = {
+    title: post?.title ?? "",
+    summary: post?.summary ?? "",
+    content: post?.content ?? "",
+    generalType: "comment",
+    generalTags: [],
+    questionTopic: "",
+    requestType: "module",
+    deadline: "",
+    engagementMode: "flexible",
+    peopleNeeded: "",
+    skills: [],
+    moduleProblem: "",
+    moduleUsers: "",
+    moduleFeatures: "",
+    moduleCurrentProcess: "",
+    developmentScope: "",
+    developmentStack: [],
+    repositoryUrl: "",
+    designNeed: "",
+    designDeliverables: "",
+    existingMaterialUrl: "",
+    marketingObjective: "",
+    marketingChannels: "",
+    marketingAudience: "",
+    sourceLanguage: "Português",
+    targetLanguages: [],
+    translationContentType: "",
+    translationVolume: "",
+    documentationType: "",
+    documentationAudience: "",
+    researchSupportGoal: "",
+    researchSupportMethod: "",
+    researchSupportAudience: "",
+    volunteeringActivity: "",
+    volunteeringLocation: "",
+    volunteeringSchedule: "",
+    otherRequestContext: "",
+    researchType: "questionnaire",
+    researchParticipationMode: "external",
+    researchAnonymous: true,
+    surveyQuestions: [],
+    estimatedMinutes: "",
+    researchResponseUrl: "",
+    researchCriteria: "",
+    entityType: "project",
+    entityLabel: "",
+    updateVersion: "",
+    updateProgress: "",
+    updateReferenceUrl: "",
+    updateMilestones: "",
+    updateTotalMilestones: "0",
+    updateCompletedMilestones: "0",
+    resourceType: "template",
+    resourceUrl: "",
+    resourceVersion: "",
+    resourceLicense: "",
+    resourceTags: [],
+    announcementPriority: "normal",
+  };
+
+  if (!post) return state;
+
+  if (post.kind === "general") {
+    const details = post.details as Extract<
+      CommunityPost["details"],
+      { generalType: string }
+    >;
+    state.generalType = details.generalType;
+    state.generalTags = details.tags;
+  }
+
+  if (post.kind === "question") {
+    const details = post.details as Extract<
+      CommunityPost["details"],
+      { topic: string }
+    >;
+    state.questionTopic = details.topic;
+  }
+
+  if (post.kind === "request") {
+    const details = post.details as RequestDetails;
+    state.requestType = details.requestType;
+    state.deadline = details.deadline ?? "";
+    state.engagementMode = details.engagementMode;
+    state.peopleNeeded = details.peopleNeeded
+      ? String(details.peopleNeeded)
+      : "";
+    state.skills = details.skills;
+
+    switch (details.requestType) {
+      case "module":
+        state.moduleProblem = details.problem;
+        state.moduleUsers = details.users;
+        state.moduleFeatures = listToText(details.essentialFeatures);
+        state.moduleCurrentProcess = details.currentProcess;
+        break;
+      case "development":
+        state.developmentScope = details.scope;
+        state.developmentStack = details.stack;
+        state.repositoryUrl = details.repositoryUrl ?? "";
+        break;
+      case "design":
+        state.designNeed = details.designNeed;
+        state.designDeliverables = listToText(details.deliverables);
+        state.existingMaterialUrl = details.existingMaterialUrl ?? "";
+        break;
+      case "marketing":
+        state.marketingObjective = details.objective;
+        state.marketingChannels = listToText(details.channels);
+        state.marketingAudience = details.audience;
+        break;
+      case "translation":
+        state.sourceLanguage = details.sourceLanguage;
+        state.targetLanguages = details.targetLanguages;
+        state.translationContentType = details.contentType;
+        state.translationVolume = details.approximateVolume;
+        break;
+      case "documentation":
+        state.documentationType = details.documentationType;
+        state.documentationAudience = details.audience;
+        state.existingMaterialUrl = details.existingMaterialUrl ?? "";
+        break;
+      case "research_support":
+        state.researchSupportGoal = details.researchGoal;
+        state.researchSupportMethod = details.method;
+        state.researchSupportAudience = details.targetAudience;
+        break;
+      case "volunteering":
+        state.volunteeringActivity = details.activity;
+        state.volunteeringLocation = details.location;
+        state.volunteeringSchedule = details.schedule;
+        break;
+      case "other":
+        state.otherRequestContext = details.context;
+        break;
+    }
+  }
+
+  if (post.kind === "research") {
+    const details = post.details as Extract<
+      CommunityPost["details"],
+      { researchType: ResearchType }
+    >;
+    state.researchType = details.researchType;
+    state.researchParticipationMode = details.participationMode ?? "external";
+    state.researchAnonymous = details.survey?.anonymous ?? true;
+    state.surveyQuestions = details.survey?.questions ?? [];
+    state.estimatedMinutes = details.estimatedMinutes
+      ? String(details.estimatedMinutes)
+      : "";
+    state.deadline = details.deadline ?? "";
+    state.researchResponseUrl = details.responseUrl ?? "";
+    state.researchCriteria = details.criteria;
+  }
+
+  if (post.kind === "update") {
+    const details = post.details as Extract<
+      CommunityPost["details"],
+      { entityType: UpdateEntityType }
+    >;
+    state.entityType = details.entityType;
+    state.entityLabel = details.entityLabel;
+    state.updateVersion = details.version;
+    state.updateProgress =
+      details.progress !== null && details.progress !== undefined
+        ? String(details.progress)
+        : "";
+    state.updateReferenceUrl = details.referenceUrl ?? "";
+    state.updateMilestones = listToText(details.milestones);
+    state.updateTotalMilestones = String(details.milestones.length);
+    state.updateCompletedMilestones = String(details.completedMilestones ?? 0);
+  }
+
+  if (post.kind === "resource") {
+    const details = post.details as Extract<
+      CommunityPost["details"],
+      { resourceType: ResourceType }
+    >;
+    state.resourceType = details.resourceType;
+    state.resourceUrl = details.resourceUrl ?? "";
+    state.resourceVersion = details.version;
+    state.resourceLicense = details.license;
+    state.resourceTags = details.tags;
+  }
+
+  if (post.kind === "announcement") {
+    const details = post.details as Extract<
+      CommunityPost["details"],
+      { priority: string }
+    >;
+    state.announcementPriority = details.priority;
+  }
+
+  return state;
+}
+
+function buildAutomaticSummary(content: string, title: string): string {
+  const normalized = content.replace(/\s+/g, " ").trim();
+  const source = normalized || title.trim();
+  if (source.length <= 240) return source;
+  return `${source.slice(0, 237).trimEnd()}...`;
+}
+
 export default function CommunityPostComposer({
+  initialKind,
+  initialPost,
   onClose,
   onCreated,
+  onUpdated,
 }: CommunityPostComposerProps) {
-  const {
-    account,
-    collaborationProfiles,
-    collaborationProfilesLoading,
-    representations,
-    representationsLoading,
-  } = useAuth();
+  const { account, collaborationProfiles, collaborationProfilesLoading } =
+    useAuth();
 
-  const [kind, setKind] = useState<CommunityPostKind | null>(null);
-  const [identity, setIdentity] = useState<IdentityValue>("personal");
-  const [area, setArea] = useState<CommunityArea>("ongs");
-  const [targetRoles, setTargetRoles] = useState<CommunityTargetRole[]>(["all"]);
+  const composerAvatarUrl = account
+    ? account.avatarPath || buildDefaultAvatarUrl(account)
+    : null;
 
-  const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
-  const [content, setContent] = useState("");
-
-  const [requestType, setRequestType] = useState<RequestType>("module");
-  const [deadline, setDeadline] = useState("");
-  const [engagementMode, setEngagementMode] =
-    useState<EngagementMode>("flexible");
-  const [peopleNeeded, setPeopleNeeded] = useState("");
-  const [skills, setSkills] = useState("");
-
-  const [moduleProblem, setModuleProblem] = useState("");
-  const [moduleUsers, setModuleUsers] = useState("");
-  const [moduleFeatures, setModuleFeatures] = useState("");
-  const [moduleCurrentProcess, setModuleCurrentProcess] = useState("");
-
-  const [developmentScope, setDevelopmentScope] = useState("");
-  const [developmentStack, setDevelopmentStack] = useState("");
-  const [repositoryUrl, setRepositoryUrl] = useState("");
-
-  const [designNeed, setDesignNeed] = useState("");
-  const [designDeliverables, setDesignDeliverables] = useState("");
-  const [existingMaterialUrl, setExistingMaterialUrl] = useState("");
-
-  const [marketingObjective, setMarketingObjective] = useState("");
-  const [marketingChannels, setMarketingChannels] = useState("");
-  const [marketingAudience, setMarketingAudience] = useState("");
-
-  const [sourceLanguage, setSourceLanguage] = useState("Português");
-  const [targetLanguages, setTargetLanguages] = useState("");
-  const [translationContentType, setTranslationContentType] = useState("");
-  const [translationVolume, setTranslationVolume] = useState("");
-
-  const [documentationType, setDocumentationType] = useState("");
-  const [documentationAudience, setDocumentationAudience] = useState("");
-
-  const [researchSupportGoal, setResearchSupportGoal] = useState("");
-  const [researchSupportMethod, setResearchSupportMethod] = useState("");
-  const [researchSupportAudience, setResearchSupportAudience] = useState("");
-
-  const [volunteeringActivity, setVolunteeringActivity] = useState("");
-  const [volunteeringLocation, setVolunteeringLocation] = useState("");
-  const [volunteeringSchedule, setVolunteeringSchedule] = useState("");
-  const [otherRequestContext, setOtherRequestContext] = useState("");
-
-  const [researchType, setResearchType] =
-    useState<ResearchType>("questionnaire");
-  const [estimatedMinutes, setEstimatedMinutes] = useState("");
-  const [researchResponseUrl, setResearchResponseUrl] = useState("");
-  const [researchCriteria, setResearchCriteria] = useState("");
-
-  const [questionTopic, setQuestionTopic] = useState("");
-
-  const [entityType, setEntityType] = useState<UpdateEntityType>("project");
-  const [entityLabel, setEntityLabel] = useState("");
-  const [updateVersion, setUpdateVersion] = useState("");
-  const [updateProgress, setUpdateProgress] = useState("");
-  const [updateReferenceUrl, setUpdateReferenceUrl] = useState("");
-
-  const [resourceType, setResourceType] = useState<ResourceType>("template");
-  const [resourceUrl, setResourceUrl] = useState("");
-  const [resourceVersion, setResourceVersion] = useState("");
-  const [resourceLicense, setResourceLicense] = useState("");
-  const [resourceTags, setResourceTags] = useState("");
-
-  const [announcementPriority, setAnnouncementPriority] =
-    useState<"normal" | "important">("normal");
-
-  const [generalType, setGeneralType] =
-    useState<"comment" | "idea" | "experience">("comment");
-  const [generalTags, setGeneralTags] = useState("");
-
+  const editing = Boolean(initialPost);
+  const [kind, setKind] = useState<CommunityPostKind>(
+    initialPost?.kind ?? initialKind ?? "general",
+  );
+  const [identity, setIdentity] = useState<IdentityValue>(() =>
+    initialIdentity(initialPost),
+  );
+  const [area, setArea] = useState<CommunityArea>(initialPost?.area ?? "ongs");
+  const [targetRoles, setTargetRoles] = useState<CommunityTargetRole[]>(
+    initialPost?.targetRoles ?? ["all"],
+  );
+  const [form, setForm] = useState<ComposerState>(() =>
+    createInitialState(initialPost),
+  );
+  const [advancedOpen, setAdvancedOpen] = useState(editing);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const activeRepresentations = useMemo(
-    () => representations.filter((representation) => representation.status === "active"),
-    [representations],
+  const [media, setMedia] = useState<CommunityMedia[]>(
+    initialPost?.media ?? [],
   );
-
-  const selectedIntent = intents.find((item) => item.id === kind) ?? null;
-  const selectedRequest =
-    requestOptions.find((item) => item.id === requestType) ?? requestOptions[0];
+  const [linkPreview, setLinkPreview] = useState<CommunityLinkPreview | null>(
+    initialPost?.linkPreview ?? null,
+  );
+  const [mentions, setMentions] = useState<CommunityMention[]>(
+    initialPost?.mentions ?? [],
+  );
+  const [mediaBusy, setMediaBusy] = useState(false);
+  const [publishingOrganizations, setPublishingOrganizations] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [organizationsLoading, setOrganizationsLoading] = useState(true);
+  const [organizationsError, setOrganizationsError] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    void getCommunityPublishingOrganizations()
+      .then((items) => {
+        if (!cancelled) setPublishingOrganizations(items);
+      })
+      .catch(() => {
+        if (!cancelled)
+          setOrganizationsError(
+            "Não foi possível carregar suas organizações. Reabra o editor para tentar novamente.",
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setOrganizationsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const personalName =
     account?.displayName?.trim() || account?.name || "Perfil pessoal";
+  const selectedKind =
+    kindOptions.find((item) => item.id === kind) ?? kindOptions[0];
+  const selectedRequest =
+    requestOptions.find((item) => item.id === form.requestType) ??
+    requestOptions[0];
 
-  const selectedIdentityLabel = (() => {
-    if (identity === "personal") {
-      return personalName;
-    }
+  const patch = <K extends keyof ComposerState>(
+    key: K,
+    value: ComposerState[K],
+  ) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
 
-    if (identity.startsWith("profile:")) {
-      const profileId = identity.slice("profile:".length);
-      const profile = collaborationProfiles.find((item) => item.id === profileId);
+  const addSurveyQuestion = (
+    type: CommunitySurveyQuestionType = "short_text",
+  ) => {
+    patch("surveyQuestions", [
+      ...form.surveyQuestions,
+      newSurveyQuestion(type),
+    ]);
+  };
 
-      return profile
-        ? collaborationRoleLabels[profile.role]
-        : personalName;
-    }
+  const updateSurveyQuestion = (
+    clientId: string,
+    changes: Partial<CommunitySurveyQuestionDraft>,
+  ) => {
+    patch(
+      "surveyQuestions",
+      form.surveyQuestions.map((question) =>
+        question.clientId === clientId ? { ...question, ...changes } : question,
+      ),
+    );
+  };
 
-    if (identity.startsWith("organization:")) {
-      const organizationId = identity.slice("organization:".length);
-      const representation = activeRepresentations.find(
-        (item) => item.organizationId === organizationId,
-      );
+  const changeSurveyQuestionType = (
+    clientId: string,
+    type: CommunitySurveyQuestionType,
+  ) => {
+    const choice = type === "single_choice" || type === "multiple_choice";
+    updateSurveyQuestion(clientId, {
+      type,
+      options: choice ? ["Opção 1", "Opção 2"] : [],
+      scaleMin: type === "scale" ? 1 : undefined,
+      scaleMax: type === "scale" ? 5 : undefined,
+    });
+  };
 
-      return representation?.organizationName ?? personalName;
-    }
+  const removeSurveyQuestion = (clientId: string) => {
+    patch(
+      "surveyQuestions",
+      form.surveyQuestions.filter((question) => question.clientId !== clientId),
+    );
+  };
 
-    return personalName;
-  })();
+  const updateSurveyOption = (
+    clientId: string,
+    index: number,
+    value: string,
+  ) => {
+    const question = form.surveyQuestions.find(
+      (item) => item.clientId === clientId,
+    );
+    if (!question) return;
+    const options = [...question.options];
+    options[index] = value;
+    updateSurveyQuestion(clientId, { options });
+  };
 
-  const selectIntent = (nextKind: CommunityPostKind) => {
+  const addSurveyOption = (clientId: string) => {
+    const question = form.surveyQuestions.find(
+      (item) => item.clientId === clientId,
+    );
+    if (!question || question.options.length >= 12) return;
+    updateSurveyQuestion(clientId, {
+      options: [...question.options, `Opção ${question.options.length + 1}`],
+    });
+  };
+
+  const removeSurveyOption = (clientId: string, index: number) => {
+    const question = form.surveyQuestions.find(
+      (item) => item.clientId === clientId,
+    );
+    if (!question || question.options.length <= 2) return;
+    updateSurveyQuestion(clientId, {
+      options: question.options.filter(
+        (_, optionIndex) => optionIndex !== index,
+      ),
+    });
+  };
+
+  const selectKind = (nextKind: CommunityPostKind) => {
+    if (editing || nextKind === kind) return;
     setKind(nextKind);
     setError(null);
 
@@ -407,45 +748,27 @@ export default function CommunityPostComposer({
       const request = requestOptions[0];
       setArea(request.area);
       setTargetRoles(request.targetRoles);
-      return;
-    }
-
-    if (nextKind === "research") {
+    } else if (nextKind === "research") {
       setArea("pesquisa");
       setTargetRoles(["organization"]);
-      return;
-    }
-
-    if (nextKind === "question") {
-      setArea("ongs");
-      setTargetRoles(["all"]);
-      return;
-    }
-
-    if (nextKind === "update") {
+    } else if (nextKind === "update") {
       setArea("desenvolvimento");
       setTargetRoles(["all"]);
-      return;
-    }
-
-    if (nextKind === "resource") {
+    } else if (nextKind === "resource") {
       setArea("documentacao");
       setTargetRoles(["all"]);
-      return;
+    } else {
+      setArea("ongs");
+      setTargetRoles(["all"]);
     }
-
-    setArea("ongs");
-    setTargetRoles(["all"]);
   };
 
   const selectRequestType = (nextType: RequestType) => {
     const option = requestOptions.find((item) => item.id === nextType);
     if (!option) return;
-
-    setRequestType(nextType);
+    patch("requestType", nextType);
     setArea(option.area);
     setTargetRoles(option.targetRoles);
-    setError(null);
   };
 
   const toggleTargetRole = (role: CommunityTargetRole) => {
@@ -456,515 +779,1436 @@ export default function CommunityPostComposer({
 
     setTargetRoles((current) => {
       const withoutAll = current.filter((item) => item !== "all");
-      const exists = withoutAll.includes(role);
-      const next = exists
+      const next = withoutAll.includes(role)
         ? withoutAll.filter((item) => item !== role)
         : [...withoutAll, role];
-
       return next.length > 0 ? next : ["all"];
     });
   };
 
-  const buildRequestDetails = () => {
+  const buildRequestDetails = (): RequestDetails => {
     const common = {
-      deadline: deadline || null,
-      engagementMode,
-      peopleNeeded: peopleNeeded ? Number(peopleNeeded) : null,
-      skills: listFromText(skills),
+      deadline: form.deadline || null,
+      engagementMode: form.engagementMode,
+      peopleNeeded: form.peopleNeeded ? Number(form.peopleNeeded) : null,
+      skills: form.skills,
     };
 
-    switch (requestType) {
+    switch (form.requestType) {
       case "module":
         return {
-          requestType,
+          requestType: "module",
           ...common,
-          problem: moduleProblem.trim(),
-          users: moduleUsers.trim(),
-          essentialFeatures: listFromText(moduleFeatures),
-          currentProcess: moduleCurrentProcess.trim(),
-        } as const;
+          problem: form.moduleProblem.trim(),
+          users: form.moduleUsers.trim(),
+          essentialFeatures: listFromText(form.moduleFeatures),
+          currentProcess: form.moduleCurrentProcess.trim(),
+        };
       case "development":
         return {
-          requestType,
+          requestType: "development",
           ...common,
-          scope: developmentScope.trim(),
-          stack: listFromText(developmentStack),
-          repositoryUrl: repositoryUrl.trim() || null,
-        } as const;
+          scope: form.developmentScope.trim(),
+          stack: form.developmentStack,
+          repositoryUrl: form.repositoryUrl.trim() || null,
+        };
       case "design":
         return {
-          requestType,
+          requestType: "design",
           ...common,
-          designNeed: designNeed.trim(),
-          deliverables: listFromText(designDeliverables),
-          existingMaterialUrl: existingMaterialUrl.trim() || null,
-        } as const;
+          designNeed: form.designNeed.trim(),
+          deliverables: listFromText(form.designDeliverables),
+          existingMaterialUrl: form.existingMaterialUrl.trim() || null,
+        };
       case "marketing":
         return {
-          requestType,
+          requestType: "marketing",
           ...common,
-          objective: marketingObjective.trim(),
-          channels: listFromText(marketingChannels),
-          audience: marketingAudience.trim(),
-        } as const;
+          objective: form.marketingObjective.trim(),
+          channels: listFromText(form.marketingChannels),
+          audience: form.marketingAudience.trim(),
+        };
       case "translation":
         return {
-          requestType,
+          requestType: "translation",
           ...common,
-          sourceLanguage: sourceLanguage.trim(),
-          targetLanguages: listFromText(targetLanguages),
-          contentType: translationContentType.trim(),
-          approximateVolume: translationVolume.trim(),
-        } as const;
+          sourceLanguage: form.sourceLanguage.trim(),
+          targetLanguages: form.targetLanguages,
+          contentType: form.translationContentType.trim(),
+          approximateVolume: form.translationVolume.trim(),
+        };
       case "documentation":
         return {
-          requestType,
+          requestType: "documentation",
           ...common,
-          documentationType: documentationType.trim(),
-          audience: documentationAudience.trim(),
-          existingMaterialUrl: existingMaterialUrl.trim() || null,
-        } as const;
+          documentationType: form.documentationType.trim(),
+          audience: form.documentationAudience.trim(),
+          existingMaterialUrl: form.existingMaterialUrl.trim() || null,
+        };
       case "research_support":
         return {
-          requestType,
+          requestType: "research_support",
           ...common,
-          researchGoal: researchSupportGoal.trim(),
-          method: researchSupportMethod.trim(),
-          targetAudience: researchSupportAudience.trim(),
-        } as const;
+          researchGoal: form.researchSupportGoal.trim(),
+          method: form.researchSupportMethod.trim(),
+          targetAudience: form.researchSupportAudience.trim(),
+        };
       case "volunteering":
         return {
-          requestType,
+          requestType: "volunteering",
           ...common,
-          activity: volunteeringActivity.trim(),
-          location: volunteeringLocation.trim(),
-          schedule: volunteeringSchedule.trim(),
-        } as const;
+          activity: form.volunteeringActivity.trim(),
+          location: form.volunteeringLocation.trim(),
+          schedule: form.volunteeringSchedule.trim(),
+        };
       case "other":
         return {
-          requestType,
+          requestType: "other",
           ...common,
-          context: otherRequestContext.trim(),
-        } as const;
+          context: form.otherRequestContext.trim(),
+        };
     }
   };
 
-  const validateDynamicFields = (): string | null => {
-    if (!kind) return "Escolha o que você quer fazer na comunidade.";
-    if (!title.trim() || !summary.trim()) {
-      return "Preencha o título e o resumo antes de publicar.";
-    }
+  const validate = (): string | null => {
+    if (!form.title.trim()) return "Escreva um título para a publicação.";
+    if (!form.content.trim()) return "Adicione o conteúdo da publicação.";
 
-    if (kind === "general" && !content.trim()) {
-      return "Conte um pouco mais sobre o que você quer compartilhar.";
+    if (kind === "question" && !form.questionTopic.trim())
+      return "Informe o assunto da pergunta.";
+    if (kind === "research") {
+      if (!form.researchCriteria.trim())
+        return "Explique quem pode participar da pesquisa.";
+      if (
+        form.researchParticipationMode === "external" &&
+        !form.researchResponseUrl.trim()
+      ) {
+        return "Informe o link externo da pesquisa.";
+      }
+      if (form.researchParticipationMode === "internal") {
+        if (form.surveyQuestions.length === 0)
+          return "Adicione pelo menos uma pergunta à pesquisa.";
+        for (const question of form.surveyQuestions) {
+          if (!question.prompt.trim())
+            return "Todas as perguntas precisam de um enunciado.";
+          if (
+            (question.type === "single_choice" ||
+              question.type === "multiple_choice") &&
+            question.options.filter((option) => option.trim()).length < 2
+          ) {
+            return "Perguntas de escolha precisam de pelo menos duas opções.";
+          }
+        }
+      }
     }
-
-    if (targetRoles.length === 0) {
-      return "Escolha quem deve receber esta publicação.";
+    if (kind === "update") {
+      if (!form.entityLabel.trim())
+        return "Informe o projeto, módulo ou iniciativa atualizada.";
+      const milestones = buildUpdateMilestones(
+        form.updateMilestones,
+        form.updateTotalMilestones,
+      );
+      const completedMilestones = Number(form.updateCompletedMilestones || 0);
+      if (completedMilestones > milestones.length)
+        return "As etapas concluídas não podem ser maiores que a quantidade total de etapas.";
     }
 
     if (kind === "request") {
-      switch (requestType) {
+      switch (form.requestType) {
         case "module":
-          if (!moduleProblem.trim() || !moduleUsers.trim() || listFromText(moduleFeatures).length === 0) {
-            return "Para solicitar um módulo, informe o problema, quem vai usar e pelo menos uma funcionalidade essencial.";
-          }
+          if (
+            !form.moduleProblem.trim() ||
+            !form.moduleUsers.trim() ||
+            listFromText(form.moduleFeatures).length === 0
+          )
+            return "Informe o problema, quem usa a solução e pelo menos uma funcionalidade essencial.";
           break;
         case "development":
-          if (!developmentScope.trim()) return "Explique o escopo técnico da ajuda.";
+          if (!form.developmentScope.trim())
+            return "Explique o escopo técnico da solicitação.";
           break;
         case "design":
-          if (!designNeed.trim() || listFromText(designDeliverables).length === 0) {
-            return "Explique a necessidade de design e pelo menos uma entrega esperada.";
-          }
+          if (
+            !form.designNeed.trim() ||
+            listFromText(form.designDeliverables).length === 0
+          )
+            return "Informe a necessidade de design e pelo menos uma entrega.";
           break;
         case "marketing":
-          if (!marketingObjective.trim() || listFromText(marketingChannels).length === 0) {
-            return "Informe o objetivo e pelo menos um canal da ação de marketing.";
-          }
+          if (
+            !form.marketingObjective.trim() ||
+            listFromText(form.marketingChannels).length === 0
+          )
+            return "Informe o objetivo e pelo menos um canal.";
           break;
         case "translation":
           if (
-            !sourceLanguage.trim() ||
-            listFromText(targetLanguages).length === 0 ||
-            !translationContentType.trim() ||
-            !translationVolume.trim()
-          ) {
-            return "Informe idioma de origem, destino, tipo e volume aproximado do conteúdo.";
-          }
+            !form.sourceLanguage.trim() ||
+            form.targetLanguages.length === 0 ||
+            !form.translationContentType.trim() ||
+            !form.translationVolume.trim()
+          )
+            return "Informe origem, destino, tipo e volume da tradução.";
           break;
         case "documentation":
-          if (!documentationType.trim() || !documentationAudience.trim()) {
-            return "Informe o tipo de documentação e para quem ela será feita.";
-          }
+          if (
+            !form.documentationType.trim() ||
+            !form.documentationAudience.trim()
+          )
+            return "Informe o tipo de documentação e seu público.";
           break;
         case "research_support":
-          if (!researchSupportGoal.trim()) return "Informe o objetivo da pesquisa.";
+          if (!form.researchSupportGoal.trim())
+            return "Informe o objetivo da pesquisa.";
           break;
         case "volunteering":
-          if (!volunteeringActivity.trim()) return "Descreva a atividade voluntária.";
+          if (!form.volunteeringActivity.trim())
+            return "Descreva a atividade voluntária.";
           break;
         case "other":
-          if (!otherRequestContext.trim()) return "Explique que tipo de ajuda você precisa.";
+          if (!form.otherRequestContext.trim())
+            return "Explique a necessidade.";
           break;
       }
-    }
-
-    if (kind === "research" && !researchCriteria.trim()) {
-      return "Explique quem pode participar da pesquisa.";
-    }
-
-    if (kind === "question" && !questionTopic.trim()) {
-      return "Informe o assunto da pergunta.";
-    }
-
-    if (kind === "update" && !entityLabel.trim()) {
-      return "Informe qual projeto, módulo ou iniciativa está sendo atualizado.";
     }
 
     return null;
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (submitting || !kind) return;
-
-    const validationError = validateDynamicFields();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
+  const buildPayload = (): CreateCommunityPostInput => {
     let authorCollaborationProfileId: string | null = null;
     let authorOrganizationId: string | null = null;
 
-    if (identity.startsWith("profile:")) {
+    if (identity.startsWith("profile:"))
       authorCollaborationProfileId = identity.slice("profile:".length);
-    }
-
-    if (identity.startsWith("organization:")) {
+    if (identity.startsWith("organization:"))
       authorOrganizationId = identity.slice("organization:".length);
-    }
 
     const base = {
+      mediaIds: media.map((item) => item.id),
+      linkPreviewId: linkPreview?.id ?? null,
+      mentions: mentions
+        .filter((mention) =>
+          form.content
+            .toLocaleLowerCase("pt-BR")
+            .includes(mention.token.toLocaleLowerCase("pt-BR")),
+        )
+        .map(({ entityType, entityId }) => ({ entityType, entityId })),
       area,
-      title: title.trim(),
-      summary: summary.trim(),
-      content: content.trim() || summary.trim(),
+      title: form.title.trim(),
+      summary: buildAutomaticSummary(form.content, form.title),
+      content: form.content.trim(),
       targetRoles,
       authorCollaborationProfileId,
       authorOrganizationId,
     };
 
+    switch (kind) {
+      case "general":
+        return {
+          ...base,
+          kind,
+          details: { generalType: form.generalType, tags: form.generalTags },
+        };
+      case "question":
+        return { ...base, kind, details: { topic: form.questionTopic.trim() } };
+      case "request":
+        return { ...base, kind, details: buildRequestDetails() };
+      case "research":
+        return {
+          ...base,
+          kind,
+          details: {
+            researchType: form.researchType,
+            participationMode: form.researchParticipationMode,
+            phase: "collecting",
+            estimatedMinutes: form.estimatedMinutes
+              ? Number(form.estimatedMinutes)
+              : null,
+            deadline: form.deadline || null,
+            responseUrl:
+              form.researchParticipationMode === "external"
+                ? form.researchResponseUrl.trim() || null
+                : null,
+            criteria: form.researchCriteria.trim(),
+            survey:
+              form.researchParticipationMode === "internal"
+                ? {
+                    anonymous: form.researchAnonymous,
+                    questions: form.surveyQuestions,
+                  }
+                : null,
+          },
+        };
+      case "update":
+        return {
+          ...base,
+          kind,
+          details: {
+            entityType: form.entityType,
+            entityLabel: form.entityLabel.trim(),
+            version: form.updateVersion.trim(),
+            progress: form.updateProgress ? Number(form.updateProgress) : null,
+            referenceUrl: form.updateReferenceUrl.trim() || null,
+            milestones: buildUpdateMilestones(
+              form.updateMilestones,
+              form.updateTotalMilestones,
+            ),
+            completedMilestones: Number(form.updateCompletedMilestones || 0),
+          },
+        };
+      case "resource":
+        return {
+          ...base,
+          kind,
+          details: {
+            resourceType: form.resourceType,
+            resourceUrl: form.resourceUrl.trim() || null,
+            version: form.resourceVersion.trim(),
+            license: form.resourceLicense.trim(),
+            tags: form.resourceTags,
+          },
+        };
+      case "announcement":
+        return {
+          ...base,
+          kind,
+          details: { priority: form.announcementPriority },
+        };
+    }
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting || mediaBusy) return;
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
       setSubmitting(true);
       setError(null);
+      const payload = buildPayload();
 
-      let post: CommunityPost;
-
-      switch (kind) {
-        case "general":
-          post = await createCommunityPost({
-            ...base,
-            kind,
-            details: {
-              generalType,
-              tags: listFromText(generalTags),
-            },
-          });
-          break;
-        case "question":
-          post = await createCommunityPost({
-            ...base,
-            kind,
-            details: {
-              topic: questionTopic.trim(),
-            },
-          });
-          break;
-        case "request":
-          post = await createCommunityPost({
-            ...base,
-            kind,
-            details: buildRequestDetails(),
-          });
-          break;
-        case "research":
-          post = await createCommunityPost({
-            ...base,
-            kind,
-            details: {
-              researchType,
-              estimatedMinutes: estimatedMinutes ? Number(estimatedMinutes) : null,
-              deadline: deadline || null,
-              responseUrl: researchResponseUrl.trim() || null,
-              criteria: researchCriteria.trim(),
-            },
-          });
-          break;
-        case "update":
-          post = await createCommunityPost({
-            ...base,
-            kind,
-            details: {
-              entityType,
-              entityLabel: entityLabel.trim(),
-              version: updateVersion.trim(),
-              progress: updateProgress ? Number(updateProgress) : null,
-              referenceUrl: updateReferenceUrl.trim() || null,
-            },
-          });
-          break;
-        case "resource":
-          post = await createCommunityPost({
-            ...base,
-            kind,
-            details: {
-              resourceType,
-              resourceUrl: resourceUrl.trim() || null,
-              version: resourceVersion.trim(),
-              license: resourceLicense.trim(),
-              tags: listFromText(resourceTags),
-            },
-          });
-          break;
-        case "announcement":
-          post = await createCommunityPost({
-            ...base,
-            kind,
-            details: {
-              priority: announcementPriority,
-            },
-          });
-          break;
+      if (initialPost) {
+        const updated = await updateCommunityPost(initialPost.id, payload);
+        onUpdated?.(updated);
+      } else {
+        const created = await createCommunityPost(payload);
+        onCreated?.(created);
       }
-
-      onCreated(post);
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Não foi possível publicar. Tente novamente.",
+          : "Não foi possível salvar a publicação.",
       );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const commonCopy = useMemo(() => {
-    if (kind === "question") {
-      return {
-        title: "Sua pergunta",
-        titlePlaceholder: "Qual dúvida você quer colocar para a comunidade?",
-        summary: "Contexto rápido",
-        summaryPlaceholder: "Por que essa dúvida surgiu?",
-        content: "Detalhes úteis",
-      };
+  const renderRequestFields = () => {
+    switch (form.requestType) {
+      case "module":
+        return (
+          <>
+            <label className={styles.fieldWide}>
+              <span>Problema que o módulo precisa resolver</span>
+              <textarea
+                rows={3}
+                value={form.moduleProblem}
+                onChange={(e) => patch("moduleProblem", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>Quem vai usar?</span>
+              <input
+                value={form.moduleUsers}
+                onChange={(e) => patch("moduleUsers", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>Funcionalidades essenciais</span>
+              <input
+                value={form.moduleFeatures}
+                onChange={(e) => patch("moduleFeatures", e.target.value)}
+                placeholder="Uma por vírgula"
+              />
+            </label>
+            <label className={styles.fieldWide}>
+              <span>
+                Como isso é feito hoje? <em>Opcional</em>
+              </span>
+              <textarea
+                rows={2}
+                value={form.moduleCurrentProcess}
+                onChange={(e) => patch("moduleCurrentProcess", e.target.value)}
+              />
+            </label>
+          </>
+        );
+      case "development":
+        return (
+          <>
+            <label className={styles.fieldWide}>
+              <span>Escopo técnico</span>
+              <textarea
+                rows={3}
+                value={form.developmentScope}
+                onChange={(e) => patch("developmentScope", e.target.value)}
+              />
+            </label>
+            <CommunitySelectionField
+              label="Stack"
+              values={form.developmentStack}
+              onChange={(value) => patch("developmentStack", value)}
+              options={TECHNOLOGY_OPTIONS}
+              optional
+              maxSelected={12}
+              buttonLabel="Adicionar tecnologias"
+              customLabel="Adicionar outra tecnologia"
+            />
+            <label>
+              <span>
+                Repositório <em>Opcional</em>
+              </span>
+              <input
+                type="url"
+                value={form.repositoryUrl}
+                onChange={(e) => patch("repositoryUrl", e.target.value)}
+                placeholder="https://"
+              />
+            </label>
+          </>
+        );
+      case "design":
+        return (
+          <>
+            <label className={styles.fieldWide}>
+              <span>O que precisa ser desenhado ou revisado?</span>
+              <textarea
+                rows={3}
+                value={form.designNeed}
+                onChange={(e) => patch("designNeed", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>Entregas esperadas</span>
+              <input
+                value={form.designDeliverables}
+                onChange={(e) => patch("designDeliverables", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>
+                Material existente <em>Opcional</em>
+              </span>
+              <input
+                type="url"
+                value={form.existingMaterialUrl}
+                onChange={(e) => patch("existingMaterialUrl", e.target.value)}
+              />
+            </label>
+          </>
+        );
+      case "marketing":
+        return (
+          <>
+            <label className={styles.fieldWide}>
+              <span>Objetivo</span>
+              <textarea
+                rows={3}
+                value={form.marketingObjective}
+                onChange={(e) => patch("marketingObjective", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>Canais</span>
+              <input
+                value={form.marketingChannels}
+                onChange={(e) => patch("marketingChannels", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>
+                Público <em>Opcional</em>
+              </span>
+              <input
+                value={form.marketingAudience}
+                onChange={(e) => patch("marketingAudience", e.target.value)}
+              />
+            </label>
+          </>
+        );
+      case "translation":
+        return (
+          <>
+            <label>
+              <span>Idioma de origem</span>
+              <input
+                value={form.sourceLanguage}
+                onChange={(e) => patch("sourceLanguage", e.target.value)}
+              />
+            </label>
+            <CommunitySelectionField
+              label="Traduzir para"
+              values={form.targetLanguages}
+              onChange={(value) => patch("targetLanguages", value)}
+              options={languageSelectionOptions}
+              maxSelected={8}
+              buttonLabel="Adicionar idiomas"
+              customLabel="Adicionar outro idioma"
+            />
+            <label>
+              <span>Tipo de conteúdo</span>
+              <input
+                value={form.translationContentType}
+                onChange={(e) =>
+                  patch("translationContentType", e.target.value)
+                }
+              />
+            </label>
+            <label>
+              <span>Volume aproximado</span>
+              <input
+                value={form.translationVolume}
+                onChange={(e) => patch("translationVolume", e.target.value)}
+              />
+            </label>
+          </>
+        );
+      case "documentation":
+        return (
+          <>
+            <label>
+              <span>Tipo de documentação</span>
+              <input
+                value={form.documentationType}
+                onChange={(e) => patch("documentationType", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>Público</span>
+              <input
+                value={form.documentationAudience}
+                onChange={(e) => patch("documentationAudience", e.target.value)}
+              />
+            </label>
+            <label className={styles.fieldWide}>
+              <span>
+                Material existente <em>Opcional</em>
+              </span>
+              <input
+                type="url"
+                value={form.existingMaterialUrl}
+                onChange={(e) => patch("existingMaterialUrl", e.target.value)}
+              />
+            </label>
+          </>
+        );
+      case "research_support":
+        return (
+          <>
+            <label className={styles.fieldWide}>
+              <span>Objetivo da pesquisa</span>
+              <textarea
+                rows={3}
+                value={form.researchSupportGoal}
+                onChange={(e) => patch("researchSupportGoal", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>
+                Método <em>Opcional</em>
+              </span>
+              <input
+                value={form.researchSupportMethod}
+                onChange={(e) => patch("researchSupportMethod", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>
+                Público-alvo <em>Opcional</em>
+              </span>
+              <input
+                value={form.researchSupportAudience}
+                onChange={(e) =>
+                  patch("researchSupportAudience", e.target.value)
+                }
+              />
+            </label>
+          </>
+        );
+      case "volunteering":
+        return (
+          <>
+            <label className={styles.fieldWide}>
+              <span>Atividade</span>
+              <textarea
+                rows={3}
+                value={form.volunteeringActivity}
+                onChange={(e) => patch("volunteeringActivity", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>
+                Local <em>Opcional</em>
+              </span>
+              <input
+                value={form.volunteeringLocation}
+                onChange={(e) => patch("volunteeringLocation", e.target.value)}
+              />
+            </label>
+            <label>
+              <span>
+                Horário / frequência <em>Opcional</em>
+              </span>
+              <input
+                value={form.volunteeringSchedule}
+                onChange={(e) => patch("volunteeringSchedule", e.target.value)}
+              />
+            </label>
+          </>
+        );
+      case "other":
+        return (
+          <label className={styles.fieldWide}>
+            <span>Explique a necessidade</span>
+            <textarea
+              rows={3}
+              value={form.otherRequestContext}
+              onChange={(e) => patch("otherRequestContext", e.target.value)}
+            />
+          </label>
+        );
     }
-
-    if (kind === "research") {
-      return {
-        title: "Título da pesquisa",
-        titlePlaceholder: "Ex.: Como ONGs organizam voluntários hoje?",
-        summary: "Objetivo em uma frase",
-        summaryPlaceholder: "O que você pretende entender ou validar?",
-        content: "Apresentação da pesquisa",
-      };
-    }
-
-    if (kind === "request") {
-      return {
-        title: "Como essa necessidade deve aparecer no feed?",
-        titlePlaceholder: `Ex.: ${selectedRequest.label} para organizar nosso atendimento`,
-        summary: "Resumo para quem pode ajudar",
-        summaryPlaceholder: "Em uma frase, o que precisa acontecer?",
-        content: "Contexto adicional (opcional)",
-      };
-    }
-
-    if (kind === "update") {
-      return {
-        title: "Título da atualização",
-        titlePlaceholder: "O que mudou?",
-        summary: "Resumo da mudança",
-        summaryPlaceholder: "Qual é a principal novidade?",
-        content: "Detalhes da atualização (opcional)",
-      };
-    }
-
-    if (kind === "resource") {
-      return {
-        title: "Nome do recurso",
-        titlePlaceholder: "Como a comunidade deve identificar esse recurso?",
-        summary: "Para que ele serve?",
-        summaryPlaceholder: "Explique rapidamente por que esse recurso é útil.",
-        content: "Instruções ou contexto adicional (opcional)",
-      };
-    }
-
-    if (kind === "announcement") {
-      return {
-        title: "Título do comunicado",
-        titlePlaceholder: "Qual informação precisa chamar atenção?",
-        summary: "Mensagem principal",
-        summaryPlaceholder: "Resuma o comunicado em uma frase.",
-        content: "Informações adicionais (opcional)",
-      };
-    }
-
-    return {
-      title: "Título",
-      titlePlaceholder: "Dê um título claro para a publicação",
-      summary: "Resumo",
-      summaryPlaceholder: "Explique rapidamente o que as pessoas precisam saber",
-      content: kind === "general" ? "O que você quer compartilhar?" : "Contexto adicional (opcional)",
-    };
-  }, [kind, selectedRequest.label]);
+  };
 
   return (
-    <div className={styles.backdrop} role="presentation" onMouseDown={onClose}>
-      <section
-        className={styles.composer}
-        data-kind={kind ?? "chooser"}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="community-composer-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <header className={styles.header}>
+    <section className={styles.composer} data-kind={kind}>
+      <header className={styles.header}>
+        <div className={styles.headerIdentity}>
+          <span className={styles.avatar}>
+            {composerAvatarUrl ? (
+              <img
+                className={styles.avatarImage}
+                src={composerAvatarUrl}
+                alt=""
+              />
+            ) : (
+              <FiUser />
+            )}
+          </span>
           <div>
-            {kind ? (
+            <strong>
+              {editing ? "Editar publicação" : "Criar publicação"}
+            </strong>
+            <small>{selectedKind.helper}</small>
+          </div>
+        </div>
+        <button
+          type="button"
+          className={styles.closeButton}
+          onClick={onClose}
+          aria-label="Fechar publicação"
+        >
+          <FiX />
+        </button>
+      </header>
+
+      <div className={styles.kindTabs} aria-label="Tipo de publicação">
+        {kindOptions.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            className={kind === id ? styles.kindTabActive : styles.kindTab}
+            onClick={() => selectKind(id)}
+            disabled={editing}
+            aria-pressed={kind === id}
+          >
+            <Icon />
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.primaryFields}>
+          <label className={styles.titleField}>
+            <span>
+              {kind === "question"
+                ? "Pergunta"
+                : kind === "request"
+                  ? "Título da solicitação"
+                  : kind === "research"
+                    ? "Título da pesquisa"
+                    : "Título"}
+            </span>
+            <input
+              maxLength={160}
+              value={form.title}
+              onChange={(e) => patch("title", e.target.value)}
+              placeholder={
+                kind === "question"
+                  ? "O que você quer perguntar à comunidade?"
+                  : "Dê um título claro para a publicação"
+              }
+            />
+          </label>
+
+          <div className={styles.contentField}>
+            <span>Conteúdo</span>
+            <CommunityMentionInput
+              value={form.content}
+              mentions={mentions}
+              disabled={submitting}
+              onChange={(value) => {
+                patch("content", value);
+                setMentions((current) =>
+                  current.filter((mention) =>
+                    value
+                      .toLocaleLowerCase("pt-BR")
+                      .includes(mention.token.toLocaleLowerCase("pt-BR")),
+                  ),
+                );
+              }}
+              onMention={(mention) =>
+                setMentions((current) =>
+                  [
+                    ...current.filter(
+                      (m) =>
+                        m.entityId !== mention.entityId &&
+                        m.token.toLowerCase() !== mention.token.toLowerCase(),
+                    ),
+                    mention,
+                  ].slice(-20),
+                )
+              }
+            />
+          </div>
+        </div>
+
+        <CommunityMediaEditor
+          media={media}
+          onMedia={setMedia}
+          link={linkPreview}
+          onLink={setLinkPreview}
+          text={form.content}
+          disabled={submitting}
+          onBusy={setMediaBusy}
+        />
+
+        {kind === "general" ? (
+          <div className={styles.templatePanel}>
+            <div className={styles.compactGrid}>
+              <label>
+                <span>Formato</span>
+                <select
+                  value={form.generalType}
+                  onChange={(e) =>
+                    patch(
+                      "generalType",
+                      e.target.value as ComposerState["generalType"],
+                    )
+                  }
+                >
+                  <option value="comment">Publicação</option>
+                  <option value="idea">Ideia</option>
+                  <option value="experience">Relato / experiência</option>
+                </select>
+              </label>
+              <CommunitySelectionField
+                label="Tags"
+                values={form.generalTags}
+                onChange={(value) => patch("generalTags", value)}
+                options={communityTagOptions}
+                optional
+                buttonLabel="Adicionar tags"
+                customLabel="Criar nova tag"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {kind === "question" ? (
+          <div className={styles.templatePanel}>
+            <label>
+              <span>Assunto da discussão</span>
+              <input
+                value={form.questionTopic}
+                onChange={(e) => patch("questionTopic", e.target.value)}
+                placeholder="Ex.: captação recorrente"
+              />
+            </label>
+          </div>
+        ) : null}
+
+        {kind === "request" ? (
+          <div className={styles.templatePanel}>
+            <div className={styles.panelHeading}>
+              <div>
+                <strong>Que tipo de ajuda você precisa?</strong>
+                <small>
+                  O template muda para organizar só as informações relevantes.
+                </small>
+              </div>
+            </div>
+            <div className={styles.requestTabs}>
+              {requestOptions.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={
+                    form.requestType === id
+                      ? styles.requestTabActive
+                      : styles.requestTab
+                  }
+                  onClick={() => selectRequestType(id)}
+                >
+                  <Icon />
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className={styles.dynamicGrid}>{renderRequestFields()}</div>
+            <div className={styles.compactGridThree}>
+              <label>
+                <span>Modalidade</span>
+                <select
+                  value={form.engagementMode}
+                  onChange={(e) =>
+                    patch("engagementMode", e.target.value as EngagementMode)
+                  }
+                >
+                  <option value="flexible">Flexível</option>
+                  <option value="remote">Remoto</option>
+                  <option value="in_person">Presencial</option>
+                  <option value="hybrid">Híbrido</option>
+                </select>
+              </label>
+              <label>
+                <span>
+                  Pessoas <em>Opcional</em>
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={form.peopleNeeded}
+                  onChange={(e) => patch("peopleNeeded", e.target.value)}
+                />
+              </label>
+              <label>
+                <span>
+                  Prazo <em>Opcional</em>
+                </span>
+                <input
+                  type="date"
+                  value={form.deadline}
+                  onChange={(e) => patch("deadline", e.target.value)}
+                />
+              </label>
+            </div>
+            <CommunitySelectionField
+              label="Habilidades úteis"
+              values={form.skills}
+              onChange={(value) => patch("skills", value)}
+              options={communitySkillOptions}
+              optional
+              buttonLabel="Adicionar habilidades"
+              customLabel="Criar outra habilidade"
+            />
+          </div>
+        ) : null}
+
+        {kind === "research" ? (
+          <div className={styles.templatePanel}>
+            <div className={styles.panelHeading}>
+              <div>
+                <strong>Como as pessoas vão responder?</strong>
+                <small>
+                  Use um formulário externo ou monte a pesquisa dentro da
+                  própria CONG.
+                </small>
+              </div>
+            </div>
+
+            <div className={styles.researchModeSelector}>
               <button
                 type="button"
-                className={styles.backButton}
+                className={
+                  form.researchParticipationMode === "internal"
+                    ? styles.researchModeActive
+                    : styles.researchMode
+                }
                 onClick={() => {
-                  setKind(null);
-                  setError(null);
+                  patch("researchParticipationMode", "internal");
+                  if (form.surveyQuestions.length === 0) addSurveyQuestion();
                 }}
               >
-                <FiArrowLeft aria-hidden="true" />
-                Trocar intenção
+                <FiFileText />
+                <span>
+                  <strong>Criar na CONG</strong>
+                  <small>Formulário integrado e resultados no painel</small>
+                </span>
               </button>
-            ) : (
-              <span className={styles.eyebrow}>Comunidade CONG</span>
-            )}
+              <button
+                type="button"
+                className={
+                  form.researchParticipationMode === "external"
+                    ? styles.researchModeActive
+                    : styles.researchMode
+                }
+                onClick={() => patch("researchParticipationMode", "external")}
+              >
+                <FiGlobe />
+                <span>
+                  <strong>Link externo</strong>
+                  <small>Google Forms, Microsoft Forms, Typeform...</small>
+                </span>
+              </button>
+            </div>
 
-            <h2 id="community-composer-title">
-              {kind && selectedIntent
-                ? selectedIntent.label
-                : "O que você quer fazer na comunidade?"}
-            </h2>
-            <p>
-              {kind && selectedIntent
-                ? selectedIntent.description
-                : "A CONG adapta o formulário, o card e o público conforme sua intenção."}
-            </p>
+            <div className={styles.compactGrid}>
+              <label>
+                <span>Formato</span>
+                <select
+                  value={form.researchType}
+                  onChange={(e) =>
+                    patch("researchType", e.target.value as ResearchType)
+                  }
+                >
+                  {Object.entries(researchLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>
+                  Tempo estimado <em>Opcional</em>
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  max={240}
+                  value={form.estimatedMinutes}
+                  onChange={(e) => patch("estimatedMinutes", e.target.value)}
+                  placeholder="minutos"
+                />
+              </label>
+              <label>
+                <span>
+                  Prazo <em>Opcional</em>
+                </span>
+                <input
+                  type="date"
+                  value={form.deadline}
+                  onChange={(e) => patch("deadline", e.target.value)}
+                />
+              </label>
+              {form.researchParticipationMode === "external" ? (
+                <label>
+                  <span>Link de participação</span>
+                  <input
+                    type="url"
+                    value={form.researchResponseUrl}
+                    onChange={(e) =>
+                      patch("researchResponseUrl", e.target.value)
+                    }
+                    placeholder="https://"
+                  />
+                </label>
+              ) : (
+                <label className={styles.inlineCheckLabel}>
+                  <span>Privacidade</span>
+                  <button
+                    type="button"
+                    className={
+                      form.researchAnonymous
+                        ? styles.toggleActive
+                        : styles.toggle
+                    }
+                    onClick={() =>
+                      patch("researchAnonymous", !form.researchAnonymous)
+                    }
+                    aria-pressed={form.researchAnonymous}
+                  >
+                    <i />
+                    {form.researchAnonymous
+                      ? "Respostas anônimas"
+                      : "Identificar participantes"}
+                  </button>
+                </label>
+              )}
+            </div>
 
-            {kind ? (
-              <div className={styles.flowIndicator} aria-label="Etapas da publicação">
-                <span className={styles.flowStepDone}>
-                  <b>1</b> Intenção
-                </span>
-                <i aria-hidden="true" />
-                <span className={styles.flowStepActive}>
-                  <b>2</b> Detalhes
-                </span>
-                <i aria-hidden="true" />
-                <span className={styles.flowStep}>
-                  <b>3</b> Público e revisão
-                </span>
+            <label>
+              <span>Quem pode participar?</span>
+              <textarea
+                rows={2}
+                value={form.researchCriteria}
+                onChange={(e) => patch("researchCriteria", e.target.value)}
+                placeholder="Descreva o perfil de quem você quer ouvir."
+              />
+            </label>
+
+            {form.researchParticipationMode === "internal" ? (
+              <div className={styles.surveyBuilder}>
+                <div className={styles.surveyBuilderHeader}>
+                  <div>
+                    <strong>Formulário da pesquisa</strong>
+                    <small>
+                      {form.surveyQuestions.length} pergunta
+                      {form.surveyQuestions.length === 1 ? "" : "s"}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => addSurveyQuestion()}
+                    disabled={form.surveyQuestions.length >= 30}
+                  >
+                    <FiPlus /> Adicionar pergunta
+                  </button>
+                </div>
+
+                <div className={styles.surveyQuestionList}>
+                  {form.surveyQuestions.map((question, questionIndex) => {
+                    const choice =
+                      question.type === "single_choice" ||
+                      question.type === "multiple_choice";
+                    return (
+                      <article
+                        className={styles.surveyQuestionCard}
+                        key={question.clientId}
+                      >
+                        <header>
+                          <span>{questionIndex + 1}</span>
+                          <select
+                            value={question.type}
+                            onChange={(event) =>
+                              changeSurveyQuestionType(
+                                question.clientId,
+                                event.target
+                                  .value as CommunitySurveyQuestionType,
+                              )
+                            }
+                          >
+                            {Object.entries(surveyQuestionTypeLabels).map(
+                              ([value, label]) => (
+                                <option key={value} value={value}>
+                                  {label}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                          <label className={styles.requiredToggle}>
+                            <input
+                              type="checkbox"
+                              checked={question.required}
+                              onChange={(event) =>
+                                updateSurveyQuestion(question.clientId, {
+                                  required: event.target.checked,
+                                })
+                              }
+                            />{" "}
+                            Obrigatória
+                          </label>
+                          <button
+                            type="button"
+                            className={styles.removeQuestionButton}
+                            onClick={() =>
+                              removeSurveyQuestion(question.clientId)
+                            }
+                            aria-label="Remover pergunta"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </header>
+
+                        <input
+                          className={styles.questionPromptInput}
+                          value={question.prompt}
+                          onChange={(event) =>
+                            updateSurveyQuestion(question.clientId, {
+                              prompt: event.target.value,
+                            })
+                          }
+                          maxLength={500}
+                          placeholder="Digite a pergunta"
+                        />
+
+                        {choice ? (
+                          <div className={styles.surveyOptions}>
+                            {question.options.map((option, optionIndex) => (
+                              <div key={`${question.clientId}-${optionIndex}`}>
+                                <i aria-hidden="true" />
+                                <input
+                                  value={option}
+                                  onChange={(event) =>
+                                    updateSurveyOption(
+                                      question.clientId,
+                                      optionIndex,
+                                      event.target.value,
+                                    )
+                                  }
+                                  maxLength={200}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeSurveyOption(
+                                      question.clientId,
+                                      optionIndex,
+                                    )
+                                  }
+                                  disabled={question.options.length <= 2}
+                                  aria-label="Remover opção"
+                                >
+                                  <FiX />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              className={styles.addOptionButton}
+                              onClick={() => addSurveyOption(question.clientId)}
+                              disabled={question.options.length >= 12}
+                            >
+                              <FiPlus /> Adicionar opção
+                            </button>
+                          </div>
+                        ) : null}
+
+                        {question.type === "scale" ? (
+                          <div className={styles.scaleConfig}>
+                            <label>
+                              <span>De</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={9}
+                                value={question.scaleMin ?? 1}
+                                onChange={(event) =>
+                                  updateSurveyQuestion(question.clientId, {
+                                    scaleMin: Number(event.target.value),
+                                  })
+                                }
+                              />
+                            </label>
+                            <label>
+                              <span>Até</span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={10}
+                                value={question.scaleMax ?? 5}
+                                onChange={(event) =>
+                                  updateSurveyQuestion(question.clientId, {
+                                    scaleMax: Number(event.target.value),
+                                  })
+                                }
+                              />
+                            </label>
+                            <small>
+                              A pessoa escolhe um valor dentro da escala.
+                            </small>
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {form.surveyQuestions.length === 0 ? (
+                  <button
+                    type="button"
+                    className={styles.emptySurveyBuilder}
+                    onClick={() => addSurveyQuestion()}
+                  >
+                    <FiPlus /> Criar primeira pergunta
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>
+        ) : null}
 
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={onClose}
-            aria-label="Fechar criação de publicação"
-          >
-            <FiX aria-hidden="true" />
-          </button>
-        </header>
-
-        {!kind ? (
-          <div className={styles.intentGrid}>
-            {intents.map(({ id, label, description, helper, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                className={styles.intentCard}
-                data-intent={id}
-                onClick={() => selectIntent(id)}
-              >
-                <span className={styles.intentIcon}>
-                  <Icon aria-hidden="true" />
-                </span>
-                <div>
-                  <strong>{label}</strong>
-                  <p>{description}</p>
-                  <small>{helper}</small>
-                </div>
-                <FiArrowRight className={styles.intentArrow} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        ) : (
-          <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.contextBar}>
-              <div className={styles.contextControl}>
-                <span className={styles.contextLabel}>Publicar como</span>
-                <label className={styles.identitySelect}>
-                  <FiUser aria-hidden="true" />
-                  <select
-                    value={identity}
-                    onChange={(event) =>
-                      setIdentity(event.target.value as IdentityValue)
-                    }
-                  >
-                    <option value="personal">
-                      {personalName}
-                      {account?.username ? ` (@${account.username})` : ""}
-                    </option>
-                    {collaborationProfiles.length > 0 ? (
-                      <optgroup label="Perfis de colaboração">
-                        {collaborationProfiles.map((profile) => (
-                          <option key={profile.id} value={`profile:${profile.id}`}>
-                            {collaborationRoleLabels[profile.role]}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ) : null}
-                    {activeRepresentations.length > 0 ? (
-                      <optgroup label="Organizações que você representa">
-                        {activeRepresentations.map((representation) => (
-                          <option
-                            key={representation.id}
-                            value={`organization:${representation.organizationId}`}
-                          >
-                            {representation.organizationName}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ) : null}
-                  </select>
-                </label>
-                {collaborationProfilesLoading || representationsLoading ? (
-                  <small className={styles.loadingIdentity}>
-                    Carregando identidades disponíveis...
-                  </small>
-                ) : null}
-              </div>
-
-              <div className={styles.contextControl}>
-                <span className={styles.contextLabel}>Área principal</span>
+        {kind === "update" ? (
+          <div className={styles.templatePanel}>
+            <div className={styles.compactGrid}>
+              <label>
+                <span>O que está sendo atualizado?</span>
                 <select
-                  className={styles.areaSelect}
-                  value={area}
-                  onChange={(event) =>
-                    setArea(event.target.value as CommunityArea)
+                  value={form.entityType}
+                  onChange={(e) =>
+                    patch("entityType", e.target.value as UpdateEntityType)
                   }
+                >
+                  <option value="project">Projeto</option>
+                  <option value="module">Módulo</option>
+                  <option value="organization">Organização</option>
+                  <option value="other">Outro</option>
+                </select>
+              </label>
+              <label>
+                <span>Nome</span>
+                <input
+                  value={form.entityLabel}
+                  onChange={(e) => patch("entityLabel", e.target.value)}
+                />
+              </label>
+              <label>
+                <span>
+                  Versão <em>Opcional</em>
+                </span>
+                <input
+                  value={form.updateVersion}
+                  onChange={(e) => patch("updateVersion", e.target.value)}
+                  placeholder="v0.8.0"
+                />
+              </label>
+              <label>
+                <span>
+                  Progresso <em>Opcional</em>
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.updateProgress}
+                  onChange={(e) => patch("updateProgress", e.target.value)}
+                  placeholder="%"
+                />
+              </label>
+            </div>
+            <div className={styles.compactGrid}>
+              <label>
+                <span>Quantidade de etapas</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={12}
+                  value={form.updateTotalMilestones}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const nextTotal = Math.max(
+                      0,
+                      Math.min(12, Number(raw || 0)),
+                    );
+                    setForm((current) => ({
+                      ...current,
+                      updateTotalMilestones: raw,
+                      updateCompletedMilestones: String(
+                        Math.min(
+                          Number(current.updateCompletedMilestones || 0),
+                          nextTotal,
+                        ),
+                      ),
+                    }));
+                  }}
+                />
+              </label>
+              <label>
+                <span>Etapas concluídas</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={Math.max(
+                    0,
+                    Number(form.updateTotalMilestones || 0),
+                    listFromText(form.updateMilestones).length,
+                  )}
+                  value={form.updateCompletedMilestones}
+                  onChange={(e) =>
+                    patch("updateCompletedMilestones", e.target.value)
+                  }
+                />
+              </label>
+              <label className={styles.fieldWide}>
+                <span>
+                  Nome das etapas <em>Opcional</em>
+                </span>
+                <input
+                  value={form.updateMilestones}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const namedCount = listFromText(value).length;
+                    setForm((current) => ({
+                      ...current,
+                      updateMilestones: value,
+                      updateTotalMilestones: String(
+                        Math.max(
+                          Number(current.updateTotalMilestones || 0),
+                          namedCount,
+                        ),
+                      ),
+                    }));
+                  }}
+                  placeholder="Ex.: Cadastro, Testes com usuários, Ajustes finais"
+                />
+              </label>
+              <label>
+                <span>
+                  Referência <em>Opcional</em>
+                </span>
+                <input
+                  type="url"
+                  value={form.updateReferenceUrl}
+                  onChange={(e) => patch("updateReferenceUrl", e.target.value)}
+                  placeholder="https://"
+                />
+              </label>
+            </div>
+          </div>
+        ) : null}
+
+        {kind === "resource" ? (
+          <div className={styles.templatePanel}>
+            <div className={styles.compactGrid}>
+              <label>
+                <span>Tipo de recurso</span>
+                <select
+                  value={form.resourceType}
+                  onChange={(e) =>
+                    patch("resourceType", e.target.value as ResourceType)
+                  }
+                >
+                  {Object.entries(resourceLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>
+                  Link <em>Opcional</em>
+                </span>
+                <input
+                  type="url"
+                  value={form.resourceUrl}
+                  onChange={(e) => patch("resourceUrl", e.target.value)}
+                  placeholder="https://"
+                />
+              </label>
+              <label>
+                <span>
+                  Versão <em>Opcional</em>
+                </span>
+                <input
+                  value={form.resourceVersion}
+                  onChange={(e) => patch("resourceVersion", e.target.value)}
+                />
+              </label>
+              <label>
+                <span>
+                  Licença <em>Opcional</em>
+                </span>
+                <input
+                  value={form.resourceLicense}
+                  onChange={(e) => patch("resourceLicense", e.target.value)}
+                />
+              </label>
+            </div>
+            <CommunitySelectionField
+              label="Tags"
+              values={form.resourceTags}
+              onChange={(value) => patch("resourceTags", value)}
+              options={communityTagOptions}
+              optional
+              buttonLabel="Adicionar tags"
+              customLabel="Criar nova tag"
+            />
+          </div>
+        ) : null}
+
+        {kind === "announcement" ? (
+          <div className={styles.templatePanel}>
+            <label className={styles.priorityControl}>
+              <span>Prioridade</span>
+              <select
+                value={form.announcementPriority}
+                onChange={(e) =>
+                  patch(
+                    "announcementPriority",
+                    e.target.value as ComposerState["announcementPriority"],
+                  )
+                }
+              >
+                <option value="normal">Comunicado normal</option>
+                <option value="important">Importante</option>
+              </select>
+            </label>
+          </div>
+        ) : null}
+
+        <button
+          type="button"
+          className={styles.advancedToggle}
+          onClick={() => setAdvancedOpen((current) => !current)}
+          aria-expanded={advancedOpen}
+        >
+          <FiSliders />
+          Autoria, área e público
+          <span>{advancedOpen ? "Ocultar" : "Ajustar"}</span>
+        </button>
+
+        {advancedOpen ? (
+          <div className={styles.advancedPanel}>
+            <div className={styles.compactGrid}>
+              <label>
+                <span>Publicar como</span>
+                <select
+                  value={identity}
+                  onChange={(e) => setIdentity(e.target.value as IdentityValue)}
+                >
+                  <option value="personal">
+                    {personalName}
+                    {account?.username ? ` (@${account.username})` : ""}
+                  </option>
+                  {collaborationProfiles.length ? (
+                    <optgroup label="Perfis de colaboração">
+                      {collaborationProfiles.map((profile) => (
+                        <option
+                          key={profile.id}
+                          value={`profile:${profile.id}`}
+                        >
+                          {collaborationRoleLabels[profile.role]}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null}
+                  {publishingOrganizations.length ? (
+                    <optgroup label="Organizações">
+                      {publishingOrganizations.map((representation) => (
+                        <option
+                          key={representation.id}
+                          value={`organization:${representation.id}`}
+                        >
+                          {representation.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null}
+                </select>
+                {collaborationProfilesLoading || organizationsLoading ? (
+                  <small>Carregando identidades...</small>
+                ) : null}
+              </label>
+              {organizationsError ? (
+                <p role="status">{organizationsError}</p>
+              ) : null}
+              <label>
+                <span>Área principal</span>
+                <select
+                  value={area}
+                  onChange={(e) => setArea(e.target.value as CommunityArea)}
                 >
                   {Object.entries(areaLabels).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -972,535 +2216,72 @@ export default function CommunityPostComposer({
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className={styles.contextAudience}>
-                <div className={styles.audienceHeading}>
-                  <span className={styles.contextLabel}>Priorizar para</span>
-                  <small>Isso orienta filtros e futuras notificações.</small>
-                </div>
-
-                <div className={styles.roleGrid}>
-                  {(Object.keys(roleLabels) as CommunityTargetRole[]).map(
-                    (role) => {
-                      const selected = targetRoles.includes(role);
-
-                      return (
-                        <button
-                          key={role}
-                          type="button"
-                          className={
-                            selected ? styles.roleSelected : styles.roleButton
-                          }
-                          onClick={() => toggleTargetRole(role)}
-                          aria-pressed={selected}
-                        >
-                          {selected ? <FiCheck aria-hidden="true" /> : <span />}
-                          {roleLabels[role]}
-                        </button>
-                      );
-                    },
-                  )}
-                </div>
+              </label>
+            </div>
+            <div className={styles.audienceBlock}>
+              <span>Priorizar para</span>
+              <div className={styles.roleChips}>
+                {(Object.keys(roleLabels) as CommunityTargetRole[]).map(
+                  (role) => {
+                    const selected = targetRoles.includes(role);
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        className={
+                          selected ? styles.roleChipActive : styles.roleChip
+                        }
+                        onClick={() => toggleTargetRole(role)}
+                      >
+                        {selected ? <FiCheck /> : null}
+                        {roleLabels[role]}
+                      </button>
+                    );
+                  },
+                )}
               </div>
             </div>
+          </div>
+        ) : null}
 
-            <div className={styles.formLayout}>
-              <div className={styles.mainFields}>
-                {kind === "request" ? (
-                  <fieldset className={styles.sectionBlock}>
-                    <legend>Que tipo de ajuda você precisa?</legend>
-                    <div className={styles.requestGrid}>
-                      {requestOptions.map(({ id, label, description, icon: Icon }) => (
-                        <button
-                          key={id}
-                          type="button"
-                          className={
-                            requestType === id
-                              ? styles.requestCardActive
-                              : styles.requestCard
-                          }
-                          onClick={() => selectRequestType(id)}
-                          aria-pressed={requestType === id}
-                        >
-                          <Icon aria-hidden="true" />
-                          <span>
-                            <strong>{label}</strong>
-                            <small>{description}</small>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-                ) : null}
+        {error ? (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        ) : null}
 
-
-                {kind === "request" ? (
-                  <section className={styles.sectionBlock}>
-                    <div className={styles.sectionTitle}>
-                      <span>{selectedRequest.label}</span>
-                      <small>Responda apenas o que ajuda a CONG a entender a demanda e encontrar as pessoas certas.</small>
-                    </div>
-
-                    {requestType === "module" ? (
-                      <>
-                        <label className={styles.field}>
-                          <span>Qual problema o módulo precisa resolver?</span>
-                          <textarea rows={4} value={moduleProblem} onChange={(event) => setModuleProblem(event.target.value)} />
-                        </label>
-                        <label className={styles.field}>
-                          <span>Quem vai usar essa solução?</span>
-                          <textarea rows={2} value={moduleUsers} onChange={(event) => setModuleUsers(event.target.value)} />
-                        </label>
-                        <label className={styles.field}>
-                          <span>Funcionalidades essenciais</span>
-                          <textarea rows={3} value={moduleFeatures} onChange={(event) => setModuleFeatures(event.target.value)} placeholder="Uma por linha ou separadas por vírgula" />
-                        </label>
-                        <label className={styles.field}>
-                          <span>Como isso é feito hoje? <em>Opcional</em></span>
-                          <textarea rows={3} value={moduleCurrentProcess} onChange={(event) => setModuleCurrentProcess(event.target.value)} />
-                        </label>
-                      </>
-                    ) : null}
-
-                    {requestType === "development" ? (
-                      <>
-                        <label className={styles.field}>
-                          <span>Escopo técnico</span>
-                          <textarea rows={4} value={developmentScope} onChange={(event) => setDevelopmentScope(event.target.value)} placeholder="O que precisa ser implementado, corrigido ou integrado?" />
-                        </label>
-                        <div className={styles.twoColumns}>
-                          <label className={styles.field}>
-                            <span>Stack / tecnologias <em>Opcional</em></span>
-                            <input value={developmentStack} onChange={(event) => setDevelopmentStack(event.target.value)} placeholder="React, Node, PostgreSQL..." />
-                          </label>
-                          <label className={styles.field}>
-                            <span>Repositório <em>Opcional</em></span>
-                            <input type="url" value={repositoryUrl} onChange={(event) => setRepositoryUrl(event.target.value)} placeholder="https://..." />
-                          </label>
-                        </div>
-                      </>
-                    ) : null}
-
-                    {requestType === "design" ? (
-                      <>
-                        <label className={styles.field}>
-                          <span>O que precisa ser desenhado ou revisado?</span>
-                          <textarea rows={4} value={designNeed} onChange={(event) => setDesignNeed(event.target.value)} />
-                        </label>
-                        <label className={styles.field}>
-                          <span>Entregas esperadas</span>
-                          <input value={designDeliverables} onChange={(event) => setDesignDeliverables(event.target.value)} placeholder="Wireframe, protótipo, revisão de acessibilidade..." />
-                        </label>
-                        <label className={styles.field}>
-                          <span>Material existente <em>Opcional</em></span>
-                          <input type="url" value={existingMaterialUrl} onChange={(event) => setExistingMaterialUrl(event.target.value)} placeholder="https://..." />
-                        </label>
-                      </>
-                    ) : null}
-
-                    {requestType === "marketing" ? (
-                      <>
-                        <label className={styles.field}>
-                          <span>Qual é o objetivo?</span>
-                          <textarea rows={3} value={marketingObjective} onChange={(event) => setMarketingObjective(event.target.value)} placeholder="Atrair voluntários, melhorar presença digital, divulgar campanha..." />
-                        </label>
-                        <label className={styles.field}>
-                          <span>Canais envolvidos</span>
-                          <input value={marketingChannels} onChange={(event) => setMarketingChannels(event.target.value)} placeholder="Instagram, e-mail, site, imprensa..." />
-                        </label>
-                        <label className={styles.field}>
-                          <span>Público que deseja alcançar <em>Opcional</em></span>
-                          <input value={marketingAudience} onChange={(event) => setMarketingAudience(event.target.value)} />
-                        </label>
-                      </>
-                    ) : null}
-
-                    {requestType === "translation" ? (
-                      <div className={styles.translationPanel}>
-                        <div className={styles.twoColumns}>
-                          <label className={styles.field}>
-                            <span>Idioma de origem</span>
-                            <input value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)} />
-                          </label>
-                          <label className={styles.field}>
-                            <span>Traduzir para</span>
-                            <input value={targetLanguages} onChange={(event) => setTargetLanguages(event.target.value)} placeholder="Espanhol, Inglês..." />
-                          </label>
-                        </div>
-                        <div className={styles.twoColumns}>
-                          <label className={styles.field}>
-                            <span>Tipo de conteúdo</span>
-                            <input value={translationContentType} onChange={(event) => setTranslationContentType(event.target.value)} placeholder="Documento, site, vídeo, interface..." />
-                          </label>
-                          <label className={styles.field}>
-                            <span>Volume aproximado</span>
-                            <input value={translationVolume} onChange={(event) => setTranslationVolume(event.target.value)} placeholder="12 páginas, 800 palavras..." />
-                          </label>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {requestType === "documentation" ? (
-                      <>
-                        <div className={styles.twoColumns}>
-                          <label className={styles.field}>
-                            <span>Tipo de documentação</span>
-                            <input value={documentationType} onChange={(event) => setDocumentationType(event.target.value)} placeholder="Manual, guia, API, processo..." />
-                          </label>
-                          <label className={styles.field}>
-                            <span>Para quem será feita?</span>
-                            <input value={documentationAudience} onChange={(event) => setDocumentationAudience(event.target.value)} />
-                          </label>
-                        </div>
-                        <label className={styles.field}>
-                          <span>Material existente <em>Opcional</em></span>
-                          <input type="url" value={existingMaterialUrl} onChange={(event) => setExistingMaterialUrl(event.target.value)} />
-                        </label>
-                      </>
-                    ) : null}
-
-                    {requestType === "research_support" ? (
-                      <>
-                        <label className={styles.field}>
-                          <span>Objetivo da pesquisa</span>
-                          <textarea rows={3} value={researchSupportGoal} onChange={(event) => setResearchSupportGoal(event.target.value)} />
-                        </label>
-                        <div className={styles.twoColumns}>
-                          <label className={styles.field}>
-                            <span>Método pensado <em>Opcional</em></span>
-                            <input value={researchSupportMethod} onChange={(event) => setResearchSupportMethod(event.target.value)} />
-                          </label>
-                          <label className={styles.field}>
-                            <span>Público-alvo <em>Opcional</em></span>
-                            <input value={researchSupportAudience} onChange={(event) => setResearchSupportAudience(event.target.value)} />
-                          </label>
-                        </div>
-                      </>
-                    ) : null}
-
-                    {requestType === "volunteering" ? (
-                      <>
-                        <label className={styles.field}>
-                          <span>Qual atividade precisa de apoio?</span>
-                          <textarea rows={3} value={volunteeringActivity} onChange={(event) => setVolunteeringActivity(event.target.value)} />
-                        </label>
-                        <div className={styles.twoColumns}>
-                          <label className={styles.field}>
-                            <span>Local <em>Opcional</em></span>
-                            <input value={volunteeringLocation} onChange={(event) => setVolunteeringLocation(event.target.value)} />
-                          </label>
-                          <label className={styles.field}>
-                            <span>Horário / frequência <em>Opcional</em></span>
-                            <input value={volunteeringSchedule} onChange={(event) => setVolunteeringSchedule(event.target.value)} />
-                          </label>
-                        </div>
-                      </>
-                    ) : null}
-
-                    {requestType === "other" ? (
-                      <label className={styles.field}>
-                        <span>Explique a necessidade</span>
-                        <textarea rows={4} value={otherRequestContext} onChange={(event) => setOtherRequestContext(event.target.value)} />
-                      </label>
-                    ) : null}
-
-                    <div className={styles.threeColumns}>
-                      <label className={styles.field}>
-                        <span>Formato</span>
-                        <select value={engagementMode} onChange={(event) => setEngagementMode(event.target.value as EngagementMode)}>
-                          <option value="flexible">Flexível</option>
-                          <option value="remote">Remoto</option>
-                          <option value="in_person">Presencial</option>
-                          <option value="hybrid">Híbrido</option>
-                        </select>
-                      </label>
-                      <label className={styles.field}>
-                        <span>Pessoas necessárias <em>Opcional</em></span>
-                        <OptionalNumberInput value={peopleNeeded} onChange={setPeopleNeeded} min={1} max={50} />
-                      </label>
-                      <label className={styles.field}>
-                        <span>Prazo <em>Opcional</em></span>
-                        <input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} />
-                      </label>
-                    </div>
-
-                    <label className={styles.field}>
-                      <span>Habilidades úteis <em>Opcional</em></span>
-                      <input value={skills} onChange={(event) => setSkills(event.target.value)} placeholder="Uma por vírgula" />
-                    </label>
-                  </section>
-                ) : null}
-
-                {kind === "research" ? (
-                  <section className={styles.sectionBlock}>
-                    <div className={styles.sectionTitle}>
-                      <span>Configuração da pesquisa</span>
-                      <small>A publicação saberá quem deve responder e como participar.</small>
-                    </div>
-                    <div className={styles.twoColumns}>
-                      <label className={styles.field}>
-                        <span>Formato da pesquisa</span>
-                        <select value={researchType} onChange={(event) => setResearchType(event.target.value as ResearchType)}>
-                          {Object.entries(researchLabels).map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={styles.field}>
-                        <span>Tempo estimado <em>Opcional</em></span>
-                        <OptionalNumberInput value={estimatedMinutes} onChange={setEstimatedMinutes} min={1} max={240} placeholder="minutos" />
-                      </label>
-                    </div>
-                    <div className={styles.twoColumns}>
-                      <label className={styles.field}>
-                        <span>Respostas até <em>Opcional</em></span>
-                        <input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} />
-                      </label>
-                      <label className={styles.field}>
-                        <span>Link para responder <em>Opcional</em></span>
-                        <input type="url" value={researchResponseUrl} onChange={(event) => setResearchResponseUrl(event.target.value)} placeholder="Google Forms ou formulário externo" />
-                      </label>
-                    </div>
-                    <label className={styles.field}>
-                      <span>Quem pode participar?</span>
-                      <textarea rows={3} value={researchCriteria} onChange={(event) => setResearchCriteria(event.target.value)} placeholder="Ex.: representantes de OSCs que coordenam voluntários há pelo menos 6 meses." />
-                    </label>
-                  </section>
-                ) : null}
-
-                {kind === "question" ? (
-                  <section className={styles.sectionBlock}>
-                    <label className={styles.field}>
-                      <span>Assunto da pergunta</span>
-                      <input value={questionTopic} onChange={(event) => setQuestionTopic(event.target.value)} placeholder="Ex.: banco de dados, captação, UX, voluntariado..." />
-                    </label>
-                  </section>
-                ) : null}
-
-                {kind === "update" ? (
-                  <section className={styles.sectionBlock}>
-                    <div className={styles.twoColumns}>
-                      <label className={styles.field}>
-                        <span>O que está sendo atualizado?</span>
-                        <select value={entityType} onChange={(event) => setEntityType(event.target.value as UpdateEntityType)}>
-                          <option value="project">Projeto</option>
-                          <option value="module">Módulo</option>
-                          <option value="organization">Organização</option>
-                          <option value="other">Outro</option>
-                        </select>
-                      </label>
-                      <label className={styles.field}>
-                        <span>Nome</span>
-                        <input value={entityLabel} onChange={(event) => setEntityLabel(event.target.value)} />
-                      </label>
-                    </div>
-                    <div className={styles.threeColumns}>
-                      <label className={styles.field}>
-                        <span>Versão <em>Opcional</em></span>
-                        <input value={updateVersion} onChange={(event) => setUpdateVersion(event.target.value)} placeholder="1.4.0" />
-                      </label>
-                      <label className={styles.field}>
-                        <span>Progresso <em>Opcional</em></span>
-                        <OptionalNumberInput value={updateProgress} onChange={setUpdateProgress} min={0} max={100} placeholder="%" />
-                      </label>
-                      <label className={styles.field}>
-                        <span>Referência <em>Opcional</em></span>
-                        <input type="url" value={updateReferenceUrl} onChange={(event) => setUpdateReferenceUrl(event.target.value)} />
-                      </label>
-                    </div>
-                  </section>
-                ) : null}
-
-                {kind === "resource" ? (
-                  <section className={styles.sectionBlock}>
-                    <div className={styles.twoColumns}>
-                      <label className={styles.field}>
-                        <span>Tipo de recurso</span>
-                        <select value={resourceType} onChange={(event) => setResourceType(event.target.value as ResourceType)}>
-                          {Object.entries(resourceLabels).map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={styles.field}>
-                        <span>Link <em>Opcional</em></span>
-                        <input type="url" value={resourceUrl} onChange={(event) => setResourceUrl(event.target.value)} />
-                      </label>
-                    </div>
-                    <div className={styles.twoColumns}>
-                      <label className={styles.field}>
-                        <span>Versão <em>Opcional</em></span>
-                        <input value={resourceVersion} onChange={(event) => setResourceVersion(event.target.value)} />
-                      </label>
-                      <label className={styles.field}>
-                        <span>Licença <em>Opcional</em></span>
-                        <input value={resourceLicense} onChange={(event) => setResourceLicense(event.target.value)} placeholder="MIT, CC BY..." />
-                      </label>
-                    </div>
-                    <label className={styles.field}>
-                      <span>Tags <em>Opcional</em></span>
-                      <input value={resourceTags} onChange={(event) => setResourceTags(event.target.value)} placeholder="template, voluntários, planilha..." />
-                    </label>
-                  </section>
-                ) : null}
-
-                {kind === "announcement" ? (
-                  <section className={styles.sectionBlock}>
-                    <label className={styles.field}>
-                      <span>Prioridade</span>
-                      <select value={announcementPriority} onChange={(event) => setAnnouncementPriority(event.target.value as "normal" | "important")}>
-                        <option value="normal">Comunicado normal</option>
-                        <option value="important">Importante</option>
-                      </select>
-                    </label>
-                  </section>
-                ) : null}
-
-                {kind === "general" ? (
-                  <section className={styles.sectionBlock}>
-                    <div className={styles.twoColumns}>
-                      <label className={styles.field}>
-                        <span>Tipo</span>
-                        <select value={generalType} onChange={(event) => setGeneralType(event.target.value as "comment" | "idea" | "experience")}>
-                          <option value="comment">Comentário</option>
-                          <option value="idea">Ideia</option>
-                          <option value="experience">Relato / experiência</option>
-                        </select>
-                      </label>
-                      <label className={styles.field}>
-                        <span>Tags <em>Opcional</em></span>
-                        <input value={generalTags} onChange={(event) => setGeneralTags(event.target.value)} />
-                      </label>
-                    </div>
-                  </section>
-                ) : null}
-
-                <section className={styles.sectionBlock}>
-                  <div className={styles.sectionTitle}>
-                    <span>Como isso vai aparecer na comunidade</span>
-                    <small>A CONG usa os dados acima para estruturar a publicação. Aqui você controla a forma como ela será apresentada.</small>
-                  </div>
-
-                  <label className={styles.field}>
-                    <span>{commonCopy.title}</span>
-                    <input
-                      type="text"
-                      maxLength={160}
-                      value={title}
-                      placeholder={commonCopy.titlePlaceholder}
-                      onChange={(event) => setTitle(event.target.value)}
-                      required
-                    />
-                    <small>{title.length}/160</small>
-                  </label>
-
-                  <label className={styles.field}>
-                    <span>{commonCopy.summary}</span>
-                    <textarea
-                      rows={3}
-                      maxLength={500}
-                      value={summary}
-                      placeholder={commonCopy.summaryPlaceholder}
-                      onChange={(event) => setSummary(event.target.value)}
-                      required
-                    />
-                    <small>{summary.length}/500</small>
-                  </label>
-
-                  <label className={styles.field}>
-                    <span>{commonCopy.content}</span>
-                    <textarea
-                      rows={6}
-                      maxLength={5000}
-                      value={content}
-                      placeholder={
-                        kind === "general"
-                          ? "Desenvolva o que você quer compartilhar com a comunidade."
-                          : "Opcional: acrescente contexto, restrições, exemplos ou qualquer informação que ajude as pessoas a entender melhor."
-                      }
-                      onChange={(event) => setContent(event.target.value)}
-                      required={kind === "general"}
-                    />
-                    <small>{content.length}/5000</small>
-                  </label>
-                </section>
-              </div>
-
-              <aside className={styles.previewPanel}>
-                <div className={styles.previewSticky}>
-                  <div className={styles.previewHeading}>
-                    <span>Prévia no feed</span>
-                    <small>Atualiza enquanto você preenche</small>
-                  </div>
-
-                  <article className={styles.livePreview} data-kind={kind}>
-                    <header className={styles.previewAuthorRow}>
-                      <span className={styles.previewAvatar}>
-                        <FiUser aria-hidden="true" />
-                      </span>
-                      <div>
-                        <strong>{selectedIdentityLabel}</strong>
-                        <small>{areaLabels[area]} · nova publicação</small>
-                      </div>
-                    </header>
-
-                    <span className={styles.previewKind}>
-                      {selectedIntent?.label}
-                      {kind === "request" ? ` · ${selectedRequest.label}` : ""}
-                    </span>
-
-                    <h3>
-                      {title.trim() || "Seu título vai aparecer aqui"}
-                    </h3>
-
-                    <p className={styles.previewSummary}>
-                      {summary.trim() ||
-                        "O resumo da publicação aparece aqui para mostrar rapidamente o que você precisa ou quer compartilhar."}
-                    </p>
-
-                    <div className={styles.previewMeta}>
-                      <span>{areaLabels[area]}</span>
-                      {targetRoles.slice(0, 2).map((role) => (
-                        <span key={role}>{roleLabels[role]}</span>
-                      ))}
-                      {targetRoles.length > 2 ? (
-                        <span>+{targetRoles.length - 2}</span>
-                      ) : null}
-                    </div>
-
-                    <footer className={styles.previewFooter}>
-                      <span>Aparência aproximada da publicação</span>
-                      <FiArrowRight aria-hidden="true" />
-                    </footer>
-                  </article>
-
-                  <div className={styles.previewExplanation}>
-                    <strong>Por que esses campos existem?</strong>
-                    <p>
-                      A CONG transforma suas respostas em dados úteis para
-                      direcionar a publicação, criar filtros e conectar a demanda
-                      às pessoas certas.
-                    </p>
-                  </div>
-                </div>
-              </aside>
-            </div>
-
-            {error ? <p className={styles.error} role="alert">{error}</p> : null}
-
-            <footer className={styles.footer}>
-              <button type="button" className={styles.cancelButton} onClick={onClose} disabled={submitting}>
-                Cancelar
-              </button>
-              <button type="submit" className={styles.publishButton} disabled={submitting}>
-                <FiSend aria-hidden="true" />
-                {submitting ? "Publicando..." : "Publicar"}
-              </button>
-            </footer>
-          </form>
-        )}
-      </section>
-    </div>
+        <footer className={styles.footer}>
+          <div className={styles.footerKind}>
+            <selectedKind.icon />
+            <span>{selectedKind.label}</span>
+            {kind === "request" ? (
+              <small>· {selectedRequest.label}</small>
+            ) : null}
+          </div>
+          <div className={styles.footerActions}>
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onClose}
+              disabled={submitting || mediaBusy}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={styles.publishButton}
+              disabled={submitting || mediaBusy}
+            >
+              <FiSend />
+              {submitting
+                ? "Salvando..."
+                : editing
+                  ? "Salvar alterações"
+                  : "Publicar"}
+            </button>
+          </div>
+        </footer>
+      </form>
+    </section>
   );
 }

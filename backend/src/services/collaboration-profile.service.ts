@@ -488,3 +488,38 @@ export async function activateCollaborationProfile(
     client.release();
   }
 }
+
+/* ==================================================
+   DEACTIVATE / PERSONAL MODE
+   ================================================== */
+
+export async function deactivateCollaborationProfile(
+  authUserId: string,
+): Promise<void> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+
+    const user = await getUserByAuthIdForUpdate(client, authUserId);
+
+    await client.query(
+      `
+        update public.collaboration_profiles
+        set
+          is_active = false,
+          updated_at = now()
+        where user_id = $1
+          and is_active = true
+      `,
+      [user.id],
+    );
+
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+}

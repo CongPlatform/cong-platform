@@ -116,3 +116,7 @@ export async function activateMyCollaborationProfile(
   );
   return response.profile;
 }
+
+export async function deactivateMyCollaborationProfile(): Promise<void> {
+  await apiDelete<void>("/account/me/collaboration-profiles/active");
+}

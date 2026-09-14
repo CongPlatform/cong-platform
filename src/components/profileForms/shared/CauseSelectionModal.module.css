@@ -15,7 +15,7 @@
   overflow: hidden;
   border: 1px solid #dce3ec;
   border-radius: 18px;
-  background: #fff;
+  background: var(--color-white);
   box-shadow: 0 28px 70px rgb(20 40 66 / 24%);
   display: flex;
   flex-direction: column;
@@ -44,7 +44,7 @@
 .header p {
   margin: 0;
   color: #6d798a;
-  font-size: 0.84rem;
+  font-size: var(--font-results-body-small);
   line-height: 1.45;
 }
 
@@ -87,7 +87,7 @@
   padding: 0 12px;
   border: 1px solid #d9e0e9;
   border-radius: 11px;
-  background: #fff;
+  background: var(--color-white);
 }
 
 .searchBox:focus-within {
@@ -117,7 +117,7 @@
   gap: 10px;
   padding: 10px 20px 8px;
   color: #788497;
-  font-size: 0.74rem;
+  font-size: var(--font-process-preview-value);
 }
 
 .selectedSummary {
@@ -134,8 +134,8 @@
   border-radius: 999px;
   background: #f6f9fd;
   color: #315d9a;
-  font-size: 0.73rem;
-  font-weight: 700;
+  font-size: var(--font-size-073);
+  font-weight: var(--font-bold);
 }
 
 .list {
@@ -157,7 +157,7 @@
   height: auto;
   border: 1px solid #e0e5ec;
   border-radius: 13px;
-  background: #fff;
+  background: var(--color-white);
   overflow: hidden;
 }
 
@@ -202,7 +202,7 @@
   border-radius: 7px;
   display: grid;
   place-items: center;
-  color: #fff;
+  color: var(--color-white);
 }
 
 .causeCardSelected .checkBox {
@@ -229,7 +229,7 @@
 
 .causeCopy small {
   color: #7a8696;
-  font-size: 0.73rem;
+  font-size: var(--font-size-073);
 }
 
 .featuredBadge {
@@ -240,7 +240,7 @@
   border-radius: 999px;
   background: #fff7e8;
   color: #8a6218;
-  font-size: 0.68rem;
+  font-size: var(--font-size-068);
   font-weight: 780;
 }
 
@@ -268,13 +268,13 @@
   padding: 5px 8px;
   border: 1px solid #dbe3ed;
   border-radius: 999px;
-  background: #fff;
+  background: var(--color-white);
   color: #4b5d74;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--font-xs);
   cursor: pointer;
 }
 
@@ -307,7 +307,7 @@
 
 .error {
   color: #a23f3f;
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 
 .footer {
@@ -316,7 +316,7 @@
   display: flex;
   justify-content: flex-end;
   border-top: 1px solid #edf0f4;
-  background: #fff;
+  background: var(--color-white);
 }
 
 .footer button {
@@ -325,9 +325,9 @@
   border: 0;
   border-radius: 10px;
   background: #2f68b7;
-  color: #fff;
+  color: var(--color-white);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: var(--font-size-082);
   font-weight: 730;
   cursor: pointer;
 }
