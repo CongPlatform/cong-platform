@@ -1,12 +1,34 @@
 # CONG — Operational Builder for NGOs
 
-[Versão em português](./README.md)
+[Versão em português](https://github.com/CongPlatform/cong-platform/blob/dev/README.md)
 
-**CONG** is an open-source platform under active development designed to help non-governmental organizations build and operate digital environments adapted to their own needs.
+**CONG** is an open-source platform under development designed to allow non-governmental organizations to build and operate digital environments adapted to their own needs.
 
-The project combines a **multi-tenant SaaS architecture**, reusable modules, and an experience intended to remain accessible to people without technical backgrounds, reducing dependence on spreadsheets, disconnected tools, and systems that are difficult to adapt.
+The proposal combines a **multi-tenant SaaS architecture**, reusable modules, and an experience also designed for people without technical knowledge, reducing dependence on spreadsheets, disconnected tools, and systems that are difficult to adapt.
 
-> CONG is still under active development and has not yet reached a stable 1.0 release.
+> CONG is still under active development and does not have a stable 1.0 release yet.
+
+---
+
+## Table of Contents
+
+* [Project status](#project-status)
+* [Product vision](#product-vision)
+* [Architecture](#architecture)
+* [Technologies](#technologies)
+* [Repository structure](#repository-structure)
+* [Running the project](#running-the-project)
+* [Environment variables](#environment-variables)
+* [Database](#database)
+* [Mobile app](#mobile-app)
+* [Development](#development)
+* [Pre-contribution validation](#pre-contribution-validation)
+* [Contributing](#contributing)
+* [Security](#security)
+* [Licensing](#licensing)
+* [Code of Conduct](#code-of-conduct)
+* [Team](#team)
+* [Development status](#development-status)
 
 ---
 
@@ -14,64 +36,78 @@ The project combines a **multi-tenant SaaS architecture**, reusable modules, and
 
 CONG already has a functional development foundation, including:
 
-- a React and TypeScript web frontend;
-- a Node.js, TypeScript, and Express backend;
-- PostgreSQL and Supabase;
-- email and password authentication;
-- email confirmation;
-- session renewal through refresh tokens;
-- account and profile management;
-- avatar upload and removal;
-- initial creation and management of collaboration profiles;
-- public institutional pages;
-- an initial community structure;
-- versioned database migrations.
+* web frontend built with React and TypeScript;
+* backend built with Node.js, TypeScript, and Express, served as a serverless function on Vercel;
+* PostgreSQL and Supabase as the data and authentication layer;
+* email and password authentication;
+* email confirmation;
+* session renewal through refresh tokens;
+* account and profile management;
+* avatar upload and removal;
+* initial creation and management of collaboration profiles;
+* public institutional pages;
+* initial community structure;
+* versioned database migrations;
+* a companion mobile application (Expo/React Native), which consumes the same API — see [Mobile app](#mobile-app).
 
-The modular builder core, community features, and the complete multi-tenant architecture are still being implemented.
+The modular builder core, community evolution, and complete multi-tenant architecture are still under implementation.
 
 ---
 
 ## Product vision
 
-Each organization is expected to have its own isolated environment inside the platform and to activate and configure resources according to its needs.
+Each organization is expected to have its own isolated environment within the platform, being able to enable and configure features according to its own reality.
 
-Planned operational domains include:
+Planned domains include:
 
-- beneficiaries;
-- volunteers;
-- donations;
-- inventory;
-- projects;
-- scheduling;
-- communication;
-- forms;
-- documents;
-- reports;
-- routes and deliveries.
+* beneficiaries;
+* volunteers;
+* donations;
+* inventory;
+* projects;
+* scheduling;
+* communication;
+* forms;
+* documents;
+* reports;
+* routes and deliveries.
 
-These modules are implemented incrementally. A module being listed here does not necessarily mean that it is already available in the current version.
+These modules are being implemented incrementally. The presence of a module in this list does not necessarily mean that it is already available in the current version.
 
 ---
 
 ## Architecture
 
-CONG follows a web architecture that separates the frontend, API, and data persistence layers.
+CONG follows an architecture that separates the frontend, API, and data persistence, with a single API access point shared by all clients (web and mobile):
 
 ```text
-User
-  ↓
-Web Frontend
-React + TypeScript + Vite
-  ↓
-API
-Node.js + TypeScript + Express
-  ↓
-Services and business rules
-  ↓
-PostgreSQL / Supabase
+                     User
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+     Web Frontend              Mobile App
+  React + TS + Vite       Expo + React Native
+          │                         │
+          └────────────┬────────────┘
+                       │ HTTPS (/api/*)
+                       ▼
+             API (serverless function)
+          Node.js + TypeScript + Express
+           hosted on Vercel (api/index.ts)
+                       │
+                       ▼
+             Services and business rules
+                       │
+                       ▼
+               PostgreSQL / Supabase
 ```
 
-The architecture is designed to evolve toward a multi-tenant SaaS model in which multiple organizations use the same platform while maintaining isolation of data, users, permissions, and settings.
+Important points about this architecture:
+
+* **The API is the only component that communicates with the database.** Neither the web frontend nor the mobile app has direct access to the production PostgreSQL database.
+* **The mobile app does not include the Supabase SDK.** All authentication and data persistence from the mobile app goes through the Express API — the mobile app only knows the public API URL. See [Mobile app](#mobile-app) for the full details.
+* **The web frontend may use the `@supabase/supabase-js` client** with the publishable key (`VITE_SUPABASE_PUBLISHABLE_KEY`) for operations that rely on Row Level Security (RLS) in Supabase, in addition to communicating with the Express API for other operations.
+* The architecture is designed to evolve toward a multi-tenant SaaS model in which different organizations use the same platform while maintaining isolation of data, users, permissions, and configurations.
 
 ---
 
@@ -79,29 +115,30 @@ The architecture is designed to evolve toward a multi-tenant SaaS model in which
 
 ### Frontend
 
-- React
-- TypeScript
-- Vite
-- React Router
-- CSS Modules
-- Lucide React
-- React Icons
+* React
+* TypeScript
+* Vite
+* React Router
+* CSS Modules
+* Lucide React
+* React Icons
+* `@supabase/supabase-js` (publishable client, subject to RLS)
 
 ### Backend
 
-- Node.js
-- TypeScript
-- Express
-- Zod
-- PostgreSQL
-- Supabase
+* Node.js
+* TypeScript
+* Express (packaged as a serverless function in `api/index.ts`)
+* Zod
+* PostgreSQL
+* Supabase (Auth + Database)
 
 ### Infrastructure and development
 
-- Git
-- GitHub
-- Supabase
-- Vercel
+* Git
+* GitHub
+* Supabase
+* Vercel
 
 ---
 
@@ -110,21 +147,18 @@ The architecture is designed to evolve toward a multi-tenant SaaS model in which
 ```text
 cong-platform/
 ├── api/
-│   └── index.ts
+│   └── index.ts              # Serverless function entry point (Vercel)
 ├── backend/
-│   ├── certs/
-│   ├── src/
+│   ├── certs/                # Certificate used for the Postgres connection
+│   ├── src/                  # Express API source code
 │   ├── supabase/
 │   │   ├── config.toml
-│   │   └── migrations/
+│   │   └── migrations/       # Versioned database migrations
 │   ├── .env.example
 │   └── package.json
 ├── public/
 ├── src/
 │   ├── assets/
-│   │   ├── brand/
-│   │   ├── mascot/
-│   │   └── team/
 │   ├── components/
 │   ├── contexts/
 │   ├── layouts/
@@ -133,31 +167,33 @@ cong-platform/
 │   ├── services/
 │   └── utils/
 ├── .env.example
+├── vercel.json                # Rewrites and serverless function configuration
 ├── BRAND.md
 ├── CODE_OF_CONDUCT.md
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── MEDIA_RIGHTS.md
 ├── SECURITY.md
-├── package.json
-└── vercel.json
+└── package.json
 ```
+
+The mobile app repository is separate: [`cong-platform-mobile`](https://github.com/CongPlatform/cong-platform-mobile).
 
 ---
 
 ## Running the project
 
-### Requirements
+### Prerequisites
 
 You will need:
 
-- Node.js;
-- npm;
-- Git;
-- your own Supabase project or a local Supabase environment;
-- the Supabase CLI if you intend to apply or develop migrations.
+* Node.js;
+* npm;
+* Git;
+* your own Supabase project or a local Supabase environment;
+* Supabase CLI, if you want to apply or develop migrations.
 
-Never use CONG production credentials in a personal development environment.
+> Never use CONG production credentials in personal development environments.
 
 ### 1. Clone the repository
 
@@ -172,11 +208,11 @@ cd cong-platform
 npm ci
 ```
 
-The root installation process also installs backend dependencies.
+Installing the root project also installs the backend dependencies through the `postinstall` script.
 
 ### 3. Configure the frontend
 
-Create a `.env` file based on `.env.example`.
+Create a `.env` file in the root directory based on `.env.example`:
 
 ```env
 VITE_API_URL=/api
@@ -186,7 +222,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 
 ### 4. Configure the backend
 
-Create `backend/.env` using `backend/.env.example` as a reference.
+Create `backend/.env` based on `backend/.env.example`:
 
 ```env
 PORT=3000
@@ -200,19 +236,51 @@ SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 SUPABASE_SECRET_KEY=your_supabase_secret_key
 ```
 
-`SUPABASE_SECRET_KEY` is server-only and must never be exposed in frontend code or in any `VITE_*` variable.
+---
+
+## Environment variables
+
+This section exists to make explicit **what each variable does, who should know it, and why** — avoiding both accidental leaks and unnecessary friction for people who simply want to contribute.
+
+### Web frontend (`.env`, `VITE_*` prefix)
+
+| **Variable**                    | **Purpose**                                                                                                                                                                         | **Visibility**                                                                                       |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `VITE_API_URL`                  | Base path for API calls. `/api` when frontend and backend are part of the same deployment.                                                                                          | Public — it is included in the JS bundle and visible to anyone inspecting the website's source code. |
+| `VITE_SUPABASE_URL`             | URL of the Supabase project used by the `@supabase/supabase-js` client in the browser.                                                                                              | Public.                                                                                              |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key. Allows the browser to make direct calls to the Supabase REST API, **always subject to the Row Level Security (RLS) policies** configured in the database. | Public by design — its name does not indicate that it should be secret.                              |
+
+> Any variable with the `VITE_` prefix is embedded into the JavaScript bundle during the build and becomes visible to anyone who inspects the website's code. **Never put a secret value behind this prefix.**
+
+### Backend (`backend/.env`, without a public prefix)
+
+| **Variable**               | **Purpose**                                                                                                      | **Visibility**                                                                                                               |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                     | Port on which Express listens locally.                                                                           | Not sensitive.                                                                                                               |
+| `FRONTEND_URL`             | Origin allowed for CORS.                                                                                         | Not sensitive.                                                                                                               |
+| `DATABASE_URL`             | Direct PostgreSQL connection string.                                                                             | **Secret — must never leave the server environment.**                                                                        |
+| `DATABASE_CA_CERT_PATH`    | Path to the certificate used for the TLS database connection.                                                    | Not secret (it is a file path versioned in `backend/certs/`).                                                                |
+| `SUPABASE_URL`             | Supabase project URL used by the backend.                                                                        | Public (it is the same URL used by the frontend).                                                                            |
+| `SUPABASE_PUBLISHABLE_KEY` | Publishable key used by the backend when applicable.                                                             | Public.                                                                                                                      |
+| `SUPABASE_SECRET_KEY`      | Privileged Supabase key (service role). Bypasses RLS. Used only for operations requiring server-side privileges. | **Secret — exclusive to the backend and must never reach the frontend, mobile app, or a `VITE_*`/`EXPO_PUBLIC_*` variable.** |
+
+### General rule
+
+* A public prefix (`VITE_*` on the web, `EXPO_PUBLIC_*` on mobile) means "this value will be sent to the client and will be publicly visible" — never put secrets there, regardless of the variable name.
+* A variable without such a prefix, defined only in the backend/infrastructure (Vercel), is never delivered to the client and exists only within the serverless function's execution environment.
+* Calling a variable "secret" (`SUPABASE_SECRET_KEY`) is not merely decorative: it grants privileged access to the database and must never be copied to the frontend, mobile app, logs, or any externally accessible location.
 
 ---
 
 ## Database
 
-CONG database migrations are versioned under:
+CONG migrations are versioned in:
 
 ```text
 backend/supabase/migrations/
 ```
 
-When contributing with a hosted Supabase project, use **your own development project**.
+When contributing using a hosted Supabase project, use **your own development project** — never the production project.
 
 From the `backend` directory:
 
@@ -223,38 +291,55 @@ supabase db push --dry-run
 supabase db push
 ```
 
-Always confirm which project is linked before running destructive commands. Never run resets or destructive tests against production infrastructure.
+Before running destructive commands, always confirm which project is linked. **Never run resets or destructive tests against production infrastructure.**
+
+---
+
+## Mobile app
+
+The mobile app (repository [`cong-platform-mobile`](https://github.com/CongPlatform/cong-platform-mobile)) is an independent client that **does not access Supabase directly**. It:
+
+* does not include the `@supabase/supabase-js` SDK among its dependencies;
+* does not know `DATABASE_URL` or `SUPABASE_SECRET_KEY`;
+* communicates exclusively with the same Express API used by the web frontend, authenticating through Supabase Auth behind the API.
+
+The only environment variable the mobile app needs is:
+
+```env
+EXPO_PUBLIC_API_URL=https://YOUR-HOSTED-DOMAIN
+```
+
+This means anyone can develop and test the mobile app without ever having access to a production credential — the only information they need is the public API address, which is public by nature.
+
+> **Important:** when configuring `EXPO_PUBLIC_API_URL`, use the development/staging environment indicated in the mobile repository's `CONTRIBUTING.md` — do not point it to the production domain. Network details and physical-device testing are documented in `CONEXAO.md` in the mobile repository.
 
 ---
 
 ## Development
 
-Start the frontend and backend together with:
+To start the frontend and backend together:
 
 ```bash
 npm run dev
 ```
 
-Default local addresses:
+By default:
 
 ```text
 Frontend: http://localhost:5173
-Backend:  http://localhost:3000
+Backend: http://localhost:3000
 ```
 
-You can also run them separately:
+They can also be run separately:
 
 ```bash
 npm run frontend
-```
-
-```bash
 npm run backend
 ```
 
 ---
 
-## Validation before contributing
+## Pre-contribution validation
 
 Before opening a Pull Request, run:
 
@@ -264,7 +349,7 @@ npm run build
 npm --prefix backend run build
 ```
 
-Do not submit changes with known compilation errors.
+An alteration should not be submitted with known compilation errors.
 
 ---
 
@@ -272,79 +357,65 @@ Do not submit changes with known compilation errors.
 
 Contributions are welcome in areas such as:
 
-- code;
-- bug fixes;
-- tests;
-- documentation;
-- accessibility;
-- design;
-- translations;
-- research;
-- proposals for new modules.
+* code;
+* bug fixes;
+* tests;
+* documentation;
+* accessibility;
+* design;
+* translations;
+* research;
+* proposals for new modules.
 
-Read [CONTRIBUTING.md](./CONTRIBUTING.md).
+Read first: [CONTRIBUTING.md](https://github.com/CongPlatform/cong-platform/blob/dev/CONTRIBUTING.md)
 
 The general workflow is:
 
 ```text
-Fork
- ↓
-Branch
- ↓
-Changes
- ↓
-Local validation
- ↓
-Pull Request
- ↓
-Review
- ↓
-Merge
+Fork → Branch → Changes → Local validation → Pull Request → Review → Merge
 ```
 
-Large changes, new modules, and architectural decisions should be discussed in an Issue before implementation.
+Large changes, new modules, or architectural decisions should be discussed in an Issue before implementation.
 
-External contributors do not need and should not receive access to CONG production credentials, production databases, production Supabase projects, production Vercel projects, or other private infrastructure.
+**External contributors do not need and should not have access to CONG production credentials, production database, production Supabase project, production Vercel environment, or other private CONG infrastructure** — the project architecture (with the API centralizing database access and public variables separated from secrets) was designed precisely to make this possible.
 
 ---
 
 ## Security
 
-Do not disclose sensitive vulnerabilities in public Issues or Pull Requests.
+Do not publish sensitive vulnerabilities in public Issues or Pull Requests.
 
-See [SECURITY.md](./SECURITY.md).
+See [SECURITY.md](https://github.com/CongPlatform/cong-platform/blob/dev/SECURITY.md).
 
-Real credentials, tokens, passwords, private keys, and `.env` files must never be committed.
+Credentials, tokens, passwords, private keys, and real `.env` files must never be committed to the repository.
+
+> This section will be expanded with additional hardening details (mobile development environment isolation, RLS policies, etc.) in a future update.
 
 ---
 
 ## Licensing
 
-The **CONG source code** is distributed under the [MIT License](./LICENSE).
+The **CONG source code** is distributed under the [MIT License](https://github.com/CongPlatform/cong-platform/blob/dev/LICENSE).
 
-The MIT License does not automatically apply to every asset in this repository.
+The MIT License does not automatically apply to all materials present in the repository.
 
 ### Brand and visual identity
 
-The CONG name, logos, Cong mascot, and other visual identity elements are governed separately:
+The CONG name, logos, Cong mascot, and other visual identity elements have their own rules: [BRAND.md](https://github.com/CongPlatform/cong-platform/blob/dev/BRAND.md).
 
-[BRAND.md](./BRAND.md)
+### Photographs and portraits
 
-### Team photographs and likeness
+Team photographs and portraits are not licensed under the MIT License: [MEDIA_RIGHTS.md](https://github.com/CongPlatform/cong-platform/blob/dev/MEDIA_RIGHTS.md).
 
-Team photographs and portraits are not licensed under the MIT License:
-
-[MEDIA_RIGHTS.md](./MEDIA_RIGHTS.md)
-
-Their presence in a public repository does not grant general permission to reuse them.
+The presence of these files in a public repository does not represent general authorization to reuse the images.
 
 ---
 
 ## Code of Conduct
 
-Community participation is governed by [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
+Community participation is subject to the [CODE_OF_CONDUCT.md](https://github.com/CongPlatform/cong-platform/blob/dev/CODE_OF_CONDUCT.md).
 
-We aim to maintain a respectful, constructive, and accessible environment for both experienced contributors and people who are just getting started.
+We aim to maintain a respectful, constructive, and accessible environment for both experienced contributors and those who are just getting started.
 
 ---
 
@@ -352,20 +423,18 @@ We aim to maintain a respectful, constructive, and accessible environment for bo
 
 CONG is initially developed by:
 
-- André Mendes — Web Development;
-- João Palumbo — Documentation and Research;
-- Kelvin Palka — Leadership and Development.
+* André Mendes — Mobile Development;
+* João Palumbo — Documentation and Research;
+* Kelvin Palka — Web Development.
 
-The project originated as a Final Course Project for the Integrated High School and Technical Program in Systems Development at ETEC de Hortolândia, Brazil.
-
-Future contributions become part of the project's collective evolution and are recognized through the Git and GitHub history.
+The project originated as a Final Course Project for the Integrated High School and Technical Program in Systems Development at ETEC Hortolândia.
 
 ---
 
-## Development state
+## Development status
 
-CONG is evolving actively.
+CONG is under active development.
 
-Interfaces, architecture, modules, database structures, and documentation may change significantly while the project approaches its first stable versions.
+Interfaces, architecture, modules, database, and documentation may undergo significant changes as the project moves toward its first stable releases.
 
-Issues and Pull Requests are welcome to help make the platform safer, more accessible, more sustainable, and more useful to social organizations.
+Issues and Pull Requests are welcome to help make the platform more secure, accessible, sustainable, and useful for social organizations.
