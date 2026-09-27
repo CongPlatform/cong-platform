@@ -123,16 +123,20 @@ export default function Home() {
           <div className={styles.heroVisual}>
             <div className={styles.browserSketch} aria-hidden="true">
               <div className={styles.browserSketchBar}>
-             
+                <span />
+                <span />
+                <span />
               </div>
 
               <div className={styles.browserSketchContent}>
                 <div className={styles.browserSketchLines}>
-                
+                  <span />
+                  <span />
                 </div>
 
                 <div className={styles.browserSketchBoxes}>
-                
+                  <span>×</span>
+                  <span>×</span>
                 </div>
               </div>
             </div>
