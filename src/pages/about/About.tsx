@@ -151,8 +151,8 @@ const teamMembers: TeamMember[] = [
       "Mesmo desejando seguir uma área diferente no futuro, encontrou no desenvolvimento web uma forma de contribuir agora com causas sociais.",
     interests: [
       { label: "Futebol", icon: Goal },
-      { label: "Brawl Stars", icon: Gamepad2 },
-      { label: "Animes", icon: Sparkles },
+      { label: "Jogos", icon: Gamepad2 },
+      { label: "Música", icon: Music2 },
     ],
     tone: "memberBlue",
     links: {
