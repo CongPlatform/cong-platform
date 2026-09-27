@@ -39,6 +39,12 @@ const AuthConfirm = lazy(() => import("../pages/auth-confirm/AuthConfirm"));
 const OAuthCallback = lazy(
   () => import("../pages/oauth-callback/OAuthCallback"),
 );
+const RecoverPassword = lazy(
+  () => import("../pages/recoverPassword/RecoverPassword"),
+);
+const ResetPassword = lazy(
+  () => import("../pages/resetPassword/ResetPassword"),
+);
 
 // ==================================================
 // ÁREA AUTENTICADA
@@ -91,16 +97,12 @@ export default function AppRoutes() {
 
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Register />} />
-
-            {/*
-              O cadastro navega explicitamente para esta rota depois de criar
-              a conta. Sem ela, o fallback "*" redireciona para a Home.
-            */}
+            <Route path="/recuperar-senha" element={<RecoverPassword />} />
+            <Route path="/redefinir-senha" element={<ResetPassword />} />
+            
             <Route path="/verifique-seu-email" element={<VerifyEmail />} />
-
             <Route path="/auth/confirm" element={<AuthConfirm />} />
 
-            {/* Rota atual + alias para redirects OAuth antigos/configurados. */}
             <Route path="/auth/oauth/callback" element={<OAuthCallback />} />
             <Route path="/oauth-callback" element={<OAuthCallback />} />
 

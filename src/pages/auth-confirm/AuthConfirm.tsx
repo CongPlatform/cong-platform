@@ -53,13 +53,6 @@ export default function AuthConfirm() {
 
       const type = searchParams.get("type");
 
-      /*
-       * Fluxo principal.
-       *
-       * Nosso template de e-mail envia
-       * TokenHash diretamente para esta
-       * página.
-       */
       if (tokenHash) {
         const { data, error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
@@ -429,9 +422,9 @@ export default function AuthConfirm() {
           <span className={styles.sun} />
 
           <div className={styles.note}>
-            <span>identidade</span>
+            <span>Sucesso</span>
 
-            <strong>confirmada ✓</strong>
+            <strong>identidade confirmada</strong>
           </div>
 
           <div className={styles.mascotArea}>
@@ -442,11 +435,6 @@ export default function AuthConfirm() {
             <span className={styles.shadow} />
           </div>
 
-          <div className={styles.scribble}>
-            <span />
-            <span />
-            <span />
-          </div>
         </aside>
       </section>
 
