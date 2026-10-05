@@ -1,0 +1,32 @@
+.viewport {
+  position: relative;
+  height: 94px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--color-slate-50);
+}
+
+.scaled {
+  width: 650px;
+  min-height: 420px;
+  transform: scale(0.225);
+  transform-origin: top left;
+  background: var(--color-white);
+}
+
+.guard {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.fallback {
+  height: 94px;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  color: var(--color-slate-400);
+  background: var(--color-slate-50);
+  font-size: 10px;
+  text-align: center;
+}

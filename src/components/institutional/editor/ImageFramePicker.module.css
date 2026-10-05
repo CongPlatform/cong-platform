@@ -1,0 +1,23 @@
+.wrap { display: grid; gap: 12px; }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.option {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 5px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 10px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+}
+.option:hover { border-color: var(--color-primary-200); background: var(--color-primary-50); }
+.option[data-active="true"] { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgb(var(--color-primary-rgb) / .12); color: var(--color-primary-dark); background: var(--color-primary-50); }
+.preview { width: 44px; height: 34px; display: block; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); }
+.option small { max-width: 100%; overflow: hidden; font-size: 9px; font-weight: var(--font-semibold); text-overflow: ellipsis; white-space: nowrap; }
+.communityBlock { display: grid; gap: 7px; padding-top: 10px; border-top: 1px solid var(--color-slate-200); }
+.communityBlock > span { color: var(--color-slate-500); font-size: var(--font-2xs); font-weight: var(--font-semibold); }
+
+@media (max-width: 420px) {
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

@@ -155,6 +155,11 @@ export default function ModalMensagem({
   const descriptionId = useId();
 
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onFechar);
+
+  useEffect(() => {
+    onCloseRef.current = onFechar;
+  }, [onFechar]);
 
   useEffect(() => {
     if (!aberto) {
@@ -173,7 +178,7 @@ export default function ModalMensagem({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onFechar();
+        onCloseRef.current();
       }
     };
 
@@ -188,7 +193,7 @@ export default function ModalMensagem({
 
       elementoAnterior?.focus();
     };
-  }, [aberto, onFechar]);
+  }, [aberto]);
 
   if (!aberto || typeof document === "undefined") {
     return null;
@@ -269,12 +274,11 @@ export default function ModalMensagem({
             )}
           </div>
 
-          <footer className={styles.footer}>
-            <span className={styles.footerNote}>
-              Confira as informações antes de continuar.
-            </span>
-
-            {mostrarBotaoOk && (
+          {mostrarBotaoOk ? (
+            <footer className={styles.footer}>
+              <span className={styles.footerNote}>
+                Confira as informações antes de continuar.
+              </span>
               <button
                 type="button"
                 className={styles.okButton}
@@ -283,8 +287,8 @@ export default function ModalMensagem({
                 <FiCheck aria-hidden="true" />
                 {textoBotaoOk}
               </button>
-            )}
-          </footer>
+            </footer>
+          ) : null}
         </section>
       </div>
     </div>,

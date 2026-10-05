@@ -299,6 +299,8 @@ interface ApiUploadOptions {
   authenticated?: boolean;
 
   retryOnUnauthorized?: boolean;
+
+  organizationScoped?: boolean;
 }
 
 interface UploadResponse {
@@ -339,6 +341,7 @@ function sendUploadRequest(
       onProgress,
       signal,
       authenticated = true,
+      organizationScoped = false,
     } = options;
 
     if (signal?.aborted) {
@@ -417,6 +420,24 @@ function sendUploadRequest(
       if (token) {
         xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       }
+    }
+
+    if (organizationScoped) {
+      const organizationId = getStoredActiveOrganizationId();
+
+      if (!organizationId) {
+        cleanup();
+        reject(
+          new ApiError(
+            "Nenhuma organização ativa foi selecionada.",
+            400,
+            "ORGANIZATION_CONTEXT_REQUIRED",
+          ),
+        );
+        return;
+      }
+
+      xhr.setRequestHeader("X-Organization-Id", organizationId);
     }
 
     signal?.addEventListener("abort", abortUpload, {
@@ -530,6 +551,18 @@ export function apiTenantPatch<T>(
 export function apiTenantDelete<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, {
     method: "DELETE",
+    organizationScoped: true,
+  });
+}
+
+
+export function apiTenantUpload<T>(
+  endpoint: string,
+  file: File,
+  options: ApiUploadOptions = {},
+): Promise<T> {
+  return apiUpload<T>(endpoint, file, {
+    ...options,
     organizationScoped: true,
   });
 }

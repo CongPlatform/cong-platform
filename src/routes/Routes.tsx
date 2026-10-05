@@ -2,10 +2,13 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "../components/ProtectedRoute";
+import WorkspaceRoute from "../components/WorkspaceRoute";
 import RouteSeo from "../components/seo/RouteSeo";
 import { PageTransitionProvider } from "../components/pageTransitionProvider/PageTransitionProvider";
 
 import OrganizationProvider from "../contexts/OrganizationProvider";
+import WorkspaceProvider from "../contexts/WorkspaceProvider";
+import { institutionalSlugFromHostname } from "../utils/institutionalDomain";
 
 // ==================================================
 // LAYOUTS
@@ -27,6 +30,9 @@ const InstitutionalCommunity = lazy(
   () => import("../pages/community/Community"),
 );
 const About = lazy(() => import("../pages/about/About"));
+const PublicInstitutionalSite = lazy(
+  () => import("../pages/publicInstitutional/PublicInstitutionalSite"),
+);
 
 // ==================================================
 // AUTENTICAÇÃO
@@ -70,8 +76,40 @@ const CommunityModerationPage = lazy(
   () => import("../pages/logged-in/community/CommunityModerationPage"),
 );
 const Pending = lazy(() => import("../pages/pending/Pending"));
+const InstitutionalHome = lazy(
+  () => import("../pages/logged-in/institutional/InstitutionalHome"),
+);
+const InstitutionalEditor = lazy(
+  () => import("../pages/logged-in/institutional/InstitutionalEditor"),
+);
+const DesignerTemplates = lazy(
+  () => import("../pages/logged-in/designerTemplates/DesignerTemplates"),
+);
+const DesignerTemplateEditor = lazy(
+  () => import("../pages/logged-in/designerTemplates/DesignerTemplateEditor"),
+);
+const DesignerVariants = lazy(
+  () => import("../pages/logged-in/designerVariants/DesignerVariants"),
+);
+const DesignerAssets = lazy(
+  () => import("../pages/logged-in/designerAssets/DesignerAssets"),
+);
 
 export default function AppRoutes() {
+  const publicSiteSlug = institutionalSlugFromHostname(window.location.hostname);
+
+  if (publicSiteSlug) {
+    return (
+      <BrowserRouter>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="*" element={<PublicInstitutionalSite slugOverride={publicSiteSlug} />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    );
+  }
+
   return (
     <BrowserRouter>
       <RouteSeo />
@@ -106,6 +144,8 @@ export default function AppRoutes() {
             <Route path="/auth/oauth/callback" element={<OAuthCallback />} />
             <Route path="/oauth-callback" element={<OAuthCallback />} />
 
+            <Route path="/o/:slug" element={<PublicInstitutionalSite />} />
+
             {/* ==================================================
                 ÁREA AUTENTICADA
                 ================================================== */}
@@ -129,7 +169,9 @@ export default function AppRoutes() {
               <Route
                 element={
                   <OrganizationProvider>
-                    <LoggedInLayout />
+                    <WorkspaceProvider>
+                      <LoggedInLayout />
+                    </WorkspaceProvider>
                   </OrganizationProvider>
                 }
               >
@@ -147,6 +189,54 @@ export default function AppRoutes() {
                   element={<CommunityModerationPage />}
                 />
                 <Route path="/app/minha-conta" element={<Account />} />
+                <Route
+                  path="/app/site-institucional"
+                  element={
+                    <WorkspaceRoute kind="organization" organizationType="ngo">
+                      <InstitutionalHome />
+                    </WorkspaceRoute>
+                  }
+                />
+                <Route
+                  path="/app/site-institucional/:siteId/editor"
+                  element={
+                    <WorkspaceRoute kind="organization" organizationType="ngo">
+                      <InstitutionalEditor />
+                    </WorkspaceRoute>
+                  }
+                />
+                <Route
+                  path="/app/design/templates"
+                  element={
+                    <WorkspaceRoute kind="collaboration" collaborationRole="designer">
+                      <DesignerTemplates />
+                    </WorkspaceRoute>
+                  }
+                />
+                <Route
+                  path="/app/design/templates/:templateId"
+                  element={
+                    <WorkspaceRoute kind="collaboration" collaborationRole="designer">
+                      <DesignerTemplateEditor />
+                    </WorkspaceRoute>
+                  }
+                />
+                <Route
+                  path="/app/design/variantes"
+                  element={
+                    <WorkspaceRoute kind="collaboration" collaborationRole="designer">
+                      <DesignerVariants />
+                    </WorkspaceRoute>
+                  }
+                />
+                <Route
+                  path="/app/design/recursos"
+                  element={
+                    <WorkspaceRoute kind="collaboration" collaborationRole="designer">
+                      <DesignerAssets />
+                    </WorkspaceRoute>
+                  }
+                />
                 <Route path="/em-construcao" element={<Pending />} />
               </Route>
 

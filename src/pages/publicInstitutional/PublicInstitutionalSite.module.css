@@ -1,0 +1,28 @@
+.state {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--color-slate-600);
+  background: var(--color-slate-50);
+  font-family: var(--font-interface);
+}
+
+.state > div {
+  width: min(460px, 100%);
+  padding: 24px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 16px;
+  background: var(--color-white);
+  text-align: center;
+}
+
+.state strong {
+  color: var(--color-navy);
+  font-size: var(--font-lg);
+}
+
+.state p {
+  margin: 8px 0 0;
+  line-height: var(--line-readable);
+}

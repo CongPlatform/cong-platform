@@ -1,0 +1,75 @@
+.site {
+  container-type: inline-size;
+  container-name: institutional-site;
+  min-height: 100%;
+  overflow: hidden;
+  color: var(--org-text, var(--color-navy));
+  background: var(--org-background, var(--color-white));
+  font-family: var(--org-body-font, var(--font-body));
+}
+
+.header {
+  position: relative;
+  z-index: 4;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px clamp(24px, 5vw, 72px);
+  border-bottom: 1px solid color-mix(in srgb, var(--org-text, var(--color-navy)) 10%, transparent);
+  background: color-mix(in srgb, var(--org-background, var(--color-white)) 96%, transparent);
+}
+
+.brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--org-text, var(--color-navy));
+}
+
+.brand img,
+.brandMark {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.brandMark {
+  display: grid;
+  place-items: center;
+  color: var(--org-background, var(--color-white));
+  background: var(--org-primary, var(--color-primary));
+  font-family: var(--org-heading-font, var(--font-brand));
+  font-weight: var(--font-bold);
+}
+
+.brand strong {
+  overflow: hidden;
+  font-family: var(--org-heading-font, var(--font-brand));
+  font-size: var(--font-lg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+}
+
+.navigation a {
+  color: color-mix(in srgb, var(--org-text, var(--color-navy)) 78%, transparent);
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+}
+
+@container institutional-site (max-width: 860px) {
+  .navigation {
+    display: none;
+  }
+}

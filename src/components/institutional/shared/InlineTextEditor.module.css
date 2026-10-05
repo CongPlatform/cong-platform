@@ -1,0 +1,22 @@
+.editor {
+  display: inline-block;
+  min-width: 1ch;
+  border-radius: 6px;
+  outline: none;
+  cursor: text;
+  transition: box-shadow 150ms ease, background 150ms ease;
+}
+
+.editor:hover {
+  box-shadow: 0 0 0 2px rgb(var(--color-primary-rgb) / 0.16);
+}
+
+.editor:focus {
+  background: rgb(var(--color-white-rgb) / 0.9);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-slate-400);
+}

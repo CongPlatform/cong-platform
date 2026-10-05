@@ -10,14 +10,18 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiCompass,
+  FiDroplet,
   FiFileText,
   FiFolder,
+  FiGlobe,
   FiHelpCircle,
   FiHome,
+  FiLayers,
   FiLogOut,
   FiMenu,
   FiMessageCircle,
   FiPlus,
+  FiPenTool,
   FiSearch,
   FiSettings,
   FiShield,
@@ -30,6 +34,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import CommunityNotificationsPanel from "../components/community/CommunityNotificationsPanel";
 import CommunitySearchPanel from "../components/community/CommunitySearchPanel";
+import WorkspaceSelector from "../components/workspace/WorkspaceSelector";
 import {
   getCommunityDiscovery,
   getCommunityNotifications,
@@ -43,6 +48,7 @@ import logoCompact from "../assets/brand/logo-mark.webp";
 import logoExtended from "../assets/brand/logo-wordmark-dark.webp";
 
 import { useAuth } from "../contexts/auth-context";
+import { useWorkspace } from "../contexts/workspace-context";
 
 import { buildDefaultAvatarUrl } from "../utils/avatar";
 
@@ -56,51 +62,12 @@ type NavItem = {
   action?: "notifications";
 };
 
-const MAIN_NAVIGATION: NavItem[] = [
-  {
-    label: "Comunidade",
-    icon: FiHome,
-    to: "/app/comunidade",
-  },
-  {
-    label: "Explorar",
-    icon: FiCompass,
-    to: "/em-construcao?feature=explorar",
-  },
-  {
-    label: "Projetos",
-    icon: FiFolder,
-    to: "/em-construcao?feature=projetos",
-  },
-  {
-    label: "Módulos",
-    icon: FiBox,
-    to: "/em-construcao",
-  },
-  {
-    label: "Eventos",
-    icon: FiCalendar,
-    to: "/em-construcao?feature=eventos",
-  },
-];
+const COMMUNITY_ITEM: NavItem = {
+  label: "Comunidade",
+  icon: FiHome,
+  to: "/app/comunidade",
+};
 
-const ACCOUNT_NAVIGATION: NavItem[] = [
-  {
-    label: "Mensagens",
-    icon: FiMessageCircle,
-    to: "/em-construcao",
-  },
-  {
-    label: "Notificações",
-    icon: FiBell,
-    to: "/em-construcao?feature=notificacoes",
-  },
-  {
-    label: "Meu perfil",
-    icon: FiUser,
-    to: "/app/minha-conta",
-  },
-];
 
 function NavEntry({
   item,
@@ -189,6 +156,7 @@ export default function LoggedInLayout() {
   const location = useLocation();
 
   const { account, logout } = useAuth();
+  const { workspace } = useWorkspace();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -211,6 +179,10 @@ export default function LoggedInLayout() {
   const searchAreaRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
+
   const displayName = account?.displayName || account?.name || "Minha conta";
 
   const avatarUrl = account
@@ -219,6 +191,49 @@ export default function LoggedInLayout() {
   const username = account?.username
     ? `@${account.username}`
     : (account?.authentication.email ?? "Minha conta");
+
+  const mainNavigation: NavItem[] = (() => {
+    if (workspace.kind === "organization") {
+      if (workspace.organization.organizationType === "ngo") {
+        return [
+          COMMUNITY_ITEM,
+          { label: "Sites", icon: FiGlobe, to: "/app/site-institucional" },
+          { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
+          { label: "Módulos", icon: FiBox, to: "/em-construcao?feature=modulos" },
+          { label: "Eventos", icon: FiCalendar, to: "/em-construcao?feature=eventos" },
+        ];
+      }
+
+      return [
+        COMMUNITY_ITEM,
+        { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
+      ];
+    }
+
+    if (workspace.kind === "collaboration") {
+      if (workspace.profile.role === "designer") {
+        return [
+          COMMUNITY_ITEM,
+          { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
+          { label: "Templates", icon: FiLayers, to: "/app/design/templates" },
+          { label: "Variações", icon: FiPenTool, to: "/app/design/variantes" },
+          { label: "Recursos visuais", icon: FiDroplet, to: "/app/design/recursos" },
+        ];
+      }
+
+      return [
+        COMMUNITY_ITEM,
+        { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
+        { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
+        { label: "Eventos", icon: FiCalendar, to: "/em-construcao?feature=eventos" },
+      ];
+    }
+
+    return [
+      COMMUNITY_ITEM,
+      { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
+    ];
+  })();
 
   useEffect(() => {
     let cancelled = false;
@@ -360,6 +375,18 @@ export default function LoggedInLayout() {
       return location.pathname === "/app/moderacao";
     }
 
+    if (item.to === "/app/site-institucional") {
+      return location.pathname.startsWith("/app/site-institucional");
+    }
+
+    if (item.to === "/app/design/templates") {
+      return location.pathname.startsWith("/app/design/templates");
+    }
+
+    if (item.to === "/app/design/variantes") {
+      return location.pathname.startsWith("/app/design/variantes");
+    }
+
     if (item.to.startsWith("/em-construcao")) {
       const expected = new URLSearchParams(item.to.split("?")[1] ?? "").get(
         "feature",
@@ -475,9 +502,17 @@ export default function LoggedInLayout() {
           </button>
         </div>
 
+        <WorkspaceSelector
+          collapsed={sidebarCollapsed}
+          onChanged={() => {
+            closeMobileMenu();
+            navigate("/app/comunidade");
+          }}
+        />
+
         <nav className={styles.sidebarNavigation}>
           <div className={styles.navigationGroup}>
-            {MAIN_NAVIGATION.map((item) => (
+            {mainNavigation.map((item) => (
               <NavEntry
                 key={item.label}
                 item={item}
@@ -504,21 +539,6 @@ export default function LoggedInLayout() {
             ) : null}
           </div>
 
-          <div className={styles.navigationDivider} />
-
-          <div className={styles.navigationGroup}>
-            {ACCOUNT_NAVIGATION.map((item) => (
-              <NavEntry
-                key={item.label}
-                item={item}
-                collapsed={sidebarCollapsed}
-                onNavigate={closeMobileMenu}
-                onNotifications={() => setNotificationsOpen(true)}
-                notificationCount={notifications.unreadCount}
-                activeOverride={navigationActive(item)}
-              />
-            ))}
-          </div>
         </nav>
 
         <div className={styles.sidebarFooter}>
@@ -641,11 +661,26 @@ export default function LoggedInLayout() {
             <button
               type="button"
               className={styles.topbarCreateButton}
-              onClick={() => navigate("/app/comunidade?compose=general")}
+              onClick={() => {
+                if (workspace.kind === "organization" && workspace.organization.organizationType === "ngo") {
+                  navigate("/app/site-institucional?create=1");
+                  return;
+                }
+                if (workspace.kind === "collaboration" && workspace.profile.role === "designer") {
+                  navigate("/app/design/templates?create=1");
+                  return;
+                }
+                navigate("/app/comunidade?compose=general");
+              }}
             >
               <FiPlus aria-hidden="true" />
-
-              <span>Criar</span>
+              <span>
+                {workspace.kind === "organization" && workspace.organization.organizationType === "ngo"
+                  ? "Criar site"
+                  : workspace.kind === "collaboration" && workspace.profile.role === "designer"
+                    ? "Criar template"
+                    : "Criar"}
+              </span>
             </button>
 
             <div className={styles.notificationArea} ref={notificationAreaRef}>

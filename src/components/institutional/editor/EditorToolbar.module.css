@@ -1,0 +1,145 @@
+.toolbar {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(360px, 1fr);
+  align-items: center;
+  gap: 20px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-slate-200);
+  background: var(--color-white);
+}
+
+.start,
+.end,
+.devices {
+  display: flex;
+  align-items: center;
+}
+
+.start {
+  gap: 10px;
+}
+
+.end {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.title {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.title strong {
+  color: var(--color-navy);
+  font-size: var(--font-sm);
+}
+
+.title span,
+.saveState {
+  color: var(--color-slate-500);
+  font-size: var(--font-xs);
+}
+
+.iconButton,
+.devices button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--color-slate-600);
+}
+
+.iconButton:hover,
+.devices button:hover,
+.devices .active {
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.devices {
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 12px;
+}
+
+.textButton,
+.publishButton {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+}
+
+.textButton {
+  color: var(--color-slate-700);
+}
+
+.textButton:hover {
+  background: var(--color-slate-100);
+}
+
+.publishButton {
+  color: var(--color-white);
+  background: var(--color-primary);
+}
+
+.publishButton:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.publishButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.saveError {
+  color: var(--color-danger);
+}
+
+@media (max-width: 1180px) {
+  .toolbar {
+    grid-template-columns: minmax(200px, 1fr) auto;
+  }
+
+  .devices {
+    display: none;
+  }
+}
+
+
+.historyButtons {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  background: var(--color-slate-50);
+}
+
+.historyButtons button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--color-slate-600);
+}
+
+.historyButtons button:hover:not(:disabled) {
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.historyButtons button:disabled {
+  cursor: default;
+  opacity: 0.34;
+}
