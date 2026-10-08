@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 
+import { useAuth } from "../contexts/auth-context";
+import { useOrganization } from "../contexts/organization-context";
 import { useWorkspace } from "../contexts/workspace-context";
 import type { CollaborationRole } from "../services/collaborationProfileService";
 
@@ -16,8 +18,15 @@ export default function WorkspaceRoute({
   organizationType?: "ngo" | "company";
 }) {
   const { workspace, switchingWorkspace } = useWorkspace();
+  const { collaborationProfilesLoading } = useAuth();
+  const { loadingOrganizations } = useOrganization();
 
-  if (switchingWorkspace) {
+  const hydratingWorkspace =
+    switchingWorkspace ||
+    (kind === "organization" && loadingOrganizations) ||
+    (kind === "collaboration" && collaborationProfilesLoading);
+
+  if (hydratingWorkspace) {
     return null;
   }
 

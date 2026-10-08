@@ -12,6 +12,7 @@ import {
 import { prepareInstitutionalImage } from "../utils/institutionalImage";
 
 export const institutionalSectionTypes = [
+  "site_header",
   "organization_intro",
   "organization_about",
   "projects_showcase",
@@ -23,7 +24,8 @@ export const institutionalSectionTypes = [
   "site_footer",
 ] as const;
 
-export type InstitutionalSectionType = (typeof institutionalSectionTypes)[number];
+export type InstitutionalSectionType =
+  (typeof institutionalSectionTypes)[number];
 export type InstitutionalFontKey = "brand" | "interface" | "system";
 export type LayoutGap = "none" | "small" | "medium" | "large";
 export type LayoutAlign = "start" | "center" | "end" | "stretch";
@@ -36,22 +38,28 @@ export const institutionalElementTypes = [
   "image",
   "button",
   "icon",
+  "shape",
   "metric",
   "quote",
   "divider",
   "spacer",
 ] as const;
 
-export type InstitutionalElementType = (typeof institutionalElementTypes)[number];
-export type InstitutionalElementSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
-export type InstitutionalElementWidth = "auto" | "25" | "33" | "50" | "66" | "75" | "100";
+export type InstitutionalElementType =
+  (typeof institutionalElementTypes)[number];
+export type InstitutionalElementSize =
+  "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+export type InstitutionalElementWidth =
+  "auto" | "25" | "33" | "50" | "66" | "75" | "100";
+export type InstitutionalColorRole =
+  "text" | "primary" | "secondary" | "accent" | "background";
+export type InstitutionalColorTone =
+  "soft" | "light" | "base" | "strong" | "deep";
+export type InstitutionalSemanticColorValue =
+  | InstitutionalColorRole
+  | `${InstitutionalColorRole}.${InstitutionalColorTone}`;
 export type InstitutionalColorValue =
-  | "text"
-  | "primary"
-  | "secondary"
-  | "accent"
-  | "background"
-  | `#${string}`;
+  InstitutionalSemanticColorValue | `#${string}`;
 
 export type InstitutionalImageFit = "cover" | "contain";
 export type InstitutionalImageFrame =
@@ -63,7 +71,8 @@ export type InstitutionalImageFrame =
   | "diagonal-left"
   | "diagonal-right"
   | "custom";
-export type InstitutionalImageAspect = "auto" | "square" | "4:3" | "16:9" | "portrait";
+export type InstitutionalImageAspect =
+  "auto" | "square" | "4:3" | "16:9" | "portrait";
 
 export interface InstitutionalElementStyle {
   size?: InstitutionalElementSize;
@@ -93,8 +102,10 @@ export interface InstitutionalElementStyle {
   hidden?: boolean;
   locked?: boolean;
   zIndex?: number;
+  strokeWidth?: number;
+  groupId?: string;
+  groupKind?: "manual" | "native";
 }
-
 
 export interface InstitutionalEditorConstraints {
   mode: "free" | "guided";
@@ -105,14 +116,27 @@ export interface InstitutionalEditorConstraints {
   maxOffset: number;
 }
 
+export interface InstitutionalElementConstraints {
+  minWidthPercent?: number;
+  maxWidthPercent?: number;
+  minHeightPx?: number;
+  maxHeightPx?: number;
+  minFontSize?: number;
+  maxFontSize?: number;
+}
+
 export interface InstitutionalSectionStyle {
   backgroundColor?: InstitutionalColorValue;
   backgroundImage?: InstitutionalImageValue | null;
-  backgroundTreatment?: "original" | "soft" | "dark" | "light" | "brand" | "gradient";
+  backgroundTreatment?:
+    "original" | "soft" | "dark" | "light" | "brand" | "gradient";
   backgroundPositionX?: number;
   backgroundPositionY?: number;
-  backgroundDecor?: "template" | "none" | "soft-glow" | "corner-glow" | "rings" | "wash";
+  backgroundDecor?:
+    "template" | "none" | "soft-glow" | "corner-glow" | "rings" | "wash";
   backgroundDecorTone?: "primary" | "secondary" | "accent" | "mixed";
+  backgroundDecorIntensity?: number;
+  backgroundDecorScale?: number;
   spacing?: "compact" | "normal" | "comfortable" | "generous";
   contentWidth?: "normal" | "wide" | "full";
 }
@@ -149,6 +173,7 @@ export type InstitutionalLayoutNode =
       slot: string;
       presentation?: string;
       style?: InstitutionalElementStyle;
+      constraints?: InstitutionalElementConstraints;
     }
   | {
       type: "element";
@@ -157,6 +182,7 @@ export type InstitutionalLayoutNode =
       value: InstitutionalElementValue;
       presentation?: string;
       style?: InstitutionalElementStyle;
+      constraints?: InstitutionalElementConstraints;
       semanticRole?: string;
     }
   | {
@@ -185,7 +211,6 @@ export type InstitutionalElementValue =
   | InstitutionalImageValue
   | { value: string; label: string }
   | null;
-
 
 export interface InstitutionalDesignPalette {
   id: string;
@@ -362,6 +387,10 @@ interface VariantResponse {
   variant: InstitutionalVariant;
 }
 
+interface NativeDesignAccessResponse {
+  canManageNativeDesigns: boolean;
+}
+
 interface DesignPalettesResponse {
   palettes: InstitutionalDesignPalette[];
 }
@@ -392,10 +421,12 @@ export function listInstitutionalSites(): Promise<InstitutionalSiteSummary[]> {
   );
 }
 
-export function getInstitutionalSite(siteId: string): Promise<InstitutionalSite> {
-  return apiTenantGet<RequiredSiteResponse>(`/institutional/sites/${siteId}`).then(
-    (response) => response.site,
-  );
+export function getInstitutionalSite(
+  siteId: string,
+): Promise<InstitutionalSite> {
+  return apiTenantGet<RequiredSiteResponse>(
+    `/institutional/sites/${siteId}`,
+  ).then((response) => response.site);
 }
 
 export function createInstitutionalSite(input: {
@@ -412,9 +443,12 @@ export function renameInstitutionalSite(
   siteId: string,
   name: string,
 ): Promise<InstitutionalSite> {
-  return apiTenantPatch<RequiredSiteResponse>(`/institutional/sites/${siteId}`, {
-    name,
-  }).then((response) => response.site);
+  return apiTenantPatch<RequiredSiteResponse>(
+    `/institutional/sites/${siteId}`,
+    {
+      name,
+    },
+  ).then((response) => response.site);
 }
 
 export function getInstitutionalTemplates(): Promise<InstitutionalTemplate[]> {
@@ -423,10 +457,18 @@ export function getInstitutionalTemplates(): Promise<InstitutionalTemplate[]> {
   );
 }
 
-export function listDesignerTemplates(): Promise<DesignerInstitutionalTemplate[]> {
-  return apiGet<DesignerTemplatesResponse>("/institutional/designer/templates").then(
-    (response) => response.templates,
-  );
+export function getNativeDesignAccess(): Promise<boolean> {
+  return apiGet<NativeDesignAccessResponse>(
+    "/institutional/native-design-access",
+  ).then((response) => response.canManageNativeDesigns);
+}
+
+export function listDesignerTemplates(): Promise<
+  DesignerInstitutionalTemplate[]
+> {
+  return apiGet<DesignerTemplatesResponse>(
+    "/institutional/designer/templates",
+  ).then((response) => response.templates);
 }
 
 export function getDesignerTemplate(
@@ -442,10 +484,12 @@ export function createDesignerTemplate(input: {
   description: string;
   category: string;
   definition: InstitutionalTemplateDefinition;
+  isSystem?: boolean;
 }): Promise<DesignerInstitutionalTemplate> {
-  return apiPost<DesignerTemplateResponse>("/institutional/designer/templates", input).then(
-    (response) => response.template,
-  );
+  return apiPost<DesignerTemplateResponse>(
+    "/institutional/designer/templates",
+    input,
+  ).then((response) => response.template);
 }
 
 export function updateDesignerTemplate(
@@ -543,7 +587,10 @@ export function reorderInstitutionalSections(
 }
 
 export function updateInstitutionalBrand(
-  brand: Omit<InstitutionalBrand, "organizationId" | "publicSlug" | "logoAsset">,
+  brand: Omit<
+    InstitutionalBrand,
+    "organizationId" | "publicSlug" | "logoAsset"
+  >,
 ): Promise<InstitutionalBrand> {
   return apiTenantPatch<BrandResponse>("/institutional/brand", brand).then(
     (response) => response.brand,
@@ -578,7 +625,9 @@ export function publishInstitutionalSite(siteId: string): Promise<{
   );
 }
 
-export async function unpublishInstitutionalSite(siteId: string): Promise<void> {
+export async function unpublishInstitutionalSite(
+  siteId: string,
+): Promise<void> {
   await apiTenantPost<void>(`/institutional/sites/${siteId}/unpublish`);
 }
 
@@ -591,6 +640,7 @@ export function createInstitutionalVariant(input: {
   name: string;
   description: string;
   layout: InstitutionalLayoutNode;
+  isSystem?: boolean;
 }): Promise<InstitutionalVariant> {
   return apiPost<VariantResponse>("/institutional/variants", input).then(
     (response) => response.variant,
@@ -649,12 +699,13 @@ export function getPublicInstitutionalSite(
   ).then((response) => response.site);
 }
 
-
-export function getInstitutionalDesignPalettes(includeOwnedDrafts = false): Promise<InstitutionalDesignPalette[]> {
+export function getInstitutionalDesignPalettes(
+  includeOwnedDrafts = false,
+): Promise<InstitutionalDesignPalette[]> {
   const suffix = includeOwnedDrafts ? "?includeOwnedDrafts=true" : "";
-  return apiGet<DesignPalettesResponse>(`/institutional/design/palettes${suffix}`).then(
-    (response) => response.palettes,
-  );
+  return apiGet<DesignPalettesResponse>(
+    `/institutional/design/palettes${suffix}`,
+  ).then((response) => response.palettes);
 }
 
 export function createInstitutionalDesignPalette(input: {
@@ -662,31 +713,37 @@ export function createInstitutionalDesignPalette(input: {
   description: string;
   colors: string[];
 }): Promise<InstitutionalDesignPalette> {
-  return apiPost<DesignPaletteResponse>("/institutional/design/palettes", input).then(
-    (response) => response.palette,
-  );
+  return apiPost<DesignPaletteResponse>(
+    "/institutional/design/palettes",
+    input,
+  ).then((response) => response.palette);
 }
 
 export function updateInstitutionalDesignPalette(
   paletteId: string,
   input: { name: string; description: string; colors: string[] },
 ): Promise<InstitutionalDesignPalette> {
-  return apiPatch<DesignPaletteResponse>(`/institutional/design/palettes/${paletteId}`, input).then(
-    (response) => response.palette,
-  );
+  return apiPatch<DesignPaletteResponse>(
+    `/institutional/design/palettes/${paletteId}`,
+    input,
+  ).then((response) => response.palette);
 }
 
-export function publishInstitutionalDesignPalette(paletteId: string): Promise<InstitutionalDesignPalette> {
-  return apiPost<DesignPaletteResponse>(`/institutional/design/palettes/${paletteId}/publish`).then(
-    (response) => response.palette,
-  );
+export function publishInstitutionalDesignPalette(
+  paletteId: string,
+): Promise<InstitutionalDesignPalette> {
+  return apiPost<DesignPaletteResponse>(
+    `/institutional/design/palettes/${paletteId}/publish`,
+  ).then((response) => response.palette);
 }
 
-export function getInstitutionalImageFrames(includeOwnedDrafts = false): Promise<InstitutionalImageFrameResource[]> {
+export function getInstitutionalImageFrames(
+  includeOwnedDrafts = false,
+): Promise<InstitutionalImageFrameResource[]> {
   const suffix = includeOwnedDrafts ? "?includeOwnedDrafts=true" : "";
-  return apiGet<ImageFramesResponse>(`/institutional/design/frames${suffix}`).then(
-    (response) => response.frames,
-  );
+  return apiGet<ImageFramesResponse>(
+    `/institutional/design/frames${suffix}`,
+  ).then((response) => response.frames);
 }
 
 export function createInstitutionalImageFrame(input: {
@@ -694,22 +751,26 @@ export function createInstitutionalImageFrame(input: {
   description: string;
   clipPath: string;
 }): Promise<InstitutionalImageFrameResource> {
-  return apiPost<ImageFrameResponse>("/institutional/design/frames", input).then(
-    (response) => response.frame,
-  );
+  return apiPost<ImageFrameResponse>(
+    "/institutional/design/frames",
+    input,
+  ).then((response) => response.frame);
 }
 
 export function updateInstitutionalImageFrame(
   frameId: string,
   input: { name: string; description: string; clipPath: string },
 ): Promise<InstitutionalImageFrameResource> {
-  return apiPatch<ImageFrameResponse>(`/institutional/design/frames/${frameId}`, input).then(
-    (response) => response.frame,
-  );
+  return apiPatch<ImageFrameResponse>(
+    `/institutional/design/frames/${frameId}`,
+    input,
+  ).then((response) => response.frame);
 }
 
-export function publishInstitutionalImageFrame(frameId: string): Promise<InstitutionalImageFrameResource> {
-  return apiPost<ImageFrameResponse>(`/institutional/design/frames/${frameId}/publish`).then(
-    (response) => response.frame,
-  );
+export function publishInstitutionalImageFrame(
+  frameId: string,
+): Promise<InstitutionalImageFrameResource> {
+  return apiPost<ImageFrameResponse>(
+    `/institutional/design/frames/${frameId}/publish`,
+  ).then((response) => response.frame);
 }

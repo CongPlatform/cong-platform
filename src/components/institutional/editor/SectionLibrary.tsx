@@ -1,10 +1,11 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   FiActivity,
   FiAlignLeft,
   FiArrowDown,
   FiArrowUp,
   FiBox,
+  FiCircle,
   FiChevronLeft,
   FiChevronRight,
   FiEye,
@@ -17,11 +18,16 @@ import {
   FiLink,
   FiLock,
   FiMinus,
+  FiMove,
+  FiPlus,
   FiSearch,
   FiStar,
+  FiSquare,
+  FiTriangle,
   FiSun,
   FiTrash2,
   FiType,
+  FiZap,
   FiUnlock,
   FiUpload,
 } from "react-icons/fi";
@@ -44,10 +50,27 @@ import {
   getSectionStyle,
 } from "../../../utils/institutionalLayout";
 import LiveSectionThumbnail from "../preview/LiveSectionThumbnail";
+import ColorPickerControl from "./ColorPickerControl";
 
 import styles from "./SectionLibrary.module.css";
 
-type LibraryCategory = "structure" | "sections" | "backgrounds" | "text" | "media" | "actions" | "information" | "layout";
+type LibraryCategory = "structure" | "sections" | "backgrounds" | "text" | "media" | "actions" | "shapes" | "information" | "layout";
+type SectionGroup = "all" | "presentation" | "action" | "trust" | "structure";
+
+const sectionGroups: Array<{ id: SectionGroup; name: string }> = [
+  { id: "all", name: "Todas" },
+  { id: "presentation", name: "Apresentação" },
+  { id: "action", name: "Atuação e impacto" },
+  { id: "trust", name: "Confiança" },
+  { id: "structure", name: "Estrutura" },
+];
+
+function sectionGroupFor(type: InstitutionalSectionType): Exclude<SectionGroup, "all"> {
+  if (["organization_intro", "organization_about"].includes(type)) return "presentation";
+  if (["projects_showcase", "impact_metrics", "support_actions"].includes(type)) return "action";
+  if (["transparency", "organization_contact"].includes(type)) return "trust";
+  return "structure";
+}
 
 const categories: Array<{
   id: LibraryCategory;
@@ -61,6 +84,7 @@ const categories: Array<{
   { id: "text", name: "Texto", icon: FiType, tone: "violet" },
   { id: "media", name: "Mídia", icon: FiImage, tone: "green" },
   { id: "actions", name: "Ações", icon: FiLink, tone: "yellow" },
+  { id: "shapes", name: "Formas", icon: FiCircle, tone: "violet" },
   { id: "information", name: "Dados", icon: FiActivity, tone: "cyan" },
   { id: "layout", name: "Organizar", icon: FiGrid, tone: "coral" },
 ];
@@ -71,14 +95,22 @@ const elementItems: Array<{
   description: string;
   category: Exclude<LibraryCategory, "structure" | "sections" | "backgrounds">;
   icon: typeof FiType;
+  value?: string;
 }> = [
   { type: "heading", name: "Título", description: "Uma chamada principal ou subtítulo", category: "text", icon: FiType },
   { type: "text", name: "Texto", description: "Um bloco de texto para explicar uma ideia", category: "text", icon: FiAlignLeft },
   { type: "quote", name: "Destaque", description: "Uma frase ou relato importante", category: "text", icon: FiHeart },
   { type: "image", name: "Imagem", description: "Uma foto que se adapta à página", category: "media", icon: FiImage },
   { type: "button", name: "Botão", description: "Uma ação para o visitante", category: "actions", icon: FiLink },
-  { type: "icon", name: "Ícone", description: "Um apoio visual curto", category: "actions", icon: FiStar },
-  { type: "metric", name: "Número em destaque", description: "Um resultado ou indicador com legenda", category: "information", icon: FiActivity },
+  { type: "icon", name: "Ícone", description: "SVG puro, sem fundo automático", category: "actions", icon: FiStar },
+  { type: "shape", value: "circle", name: "Círculo", description: "Forma geométrica independente", category: "shapes", icon: FiCircle },
+  { type: "shape", value: "square", name: "Quadrado", description: "Forma geométrica independente", category: "shapes", icon: FiSquare },
+  { type: "shape", value: "rectangle", name: "Retângulo", description: "Forma geométrica independente", category: "shapes", icon: FiBox },
+  { type: "shape", value: "triangle", name: "Triângulo", description: "Forma geométrica independente", category: "shapes", icon: FiTriangle },
+  { type: "shape", value: "diamond", name: "Losango", description: "Forma geométrica independente", category: "shapes", icon: FiSquare },
+  { type: "shape", value: "star", name: "Estrela", description: "Forma geométrica independente", category: "shapes", icon: FiStar },
+  { type: "shape", value: "line", name: "Linha", description: "Linha decorativa independente", category: "shapes", icon: FiMinus },
+  { type: "metric", name: "Número em destaque", description: "Um número importante com uma explicação curta", category: "information", icon: FiActivity },
   { type: "divider", name: "Linha divisória", description: "Uma separação visual sutil", category: "layout", icon: FiMinus },
   { type: "spacer", name: "Espaço", description: "Mais respiro entre conteúdos", category: "layout", icon: FiBox },
 ];
@@ -111,6 +143,7 @@ function layerLabel(node: Extract<InstitutionalLayoutNode, { type: "slot" | "ele
     image: "Imagem",
     button: "Botão",
     icon: "Ícone",
+    shape: "Forma",
     metric: "Número em destaque",
     quote: "Destaque",
     divider: "Linha divisória",
@@ -127,6 +160,7 @@ export default function SectionLibrary({
   sections = [],
   selectedSectionId,
   selectedElementId,
+  selectedElementIds = [],
   collapsed,
   onToggleCollapsed,
   onAddSection,
@@ -136,9 +170,11 @@ export default function SectionLibrary({
   onMoveSection,
   onToggleSectionVisibility,
   onElementStyleChange,
+  onReorderLayers,
   onSectionStyleChange,
   onApplySectionStyleToAll,
   onUploadSectionBackground,
+  onAutoOrganizeSection,
 }: {
   disabled?: boolean;
   brand?: InstitutionalBrand;
@@ -147,41 +183,63 @@ export default function SectionLibrary({
   sections?: InstitutionalSection[];
   selectedSectionId?: string | null;
   selectedElementId?: string | null;
+  selectedElementIds?: string[];
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onAddSection: (sectionType: InstitutionalSectionType, variantVersionId?: string) => void;
-  onAddElement: (elementType: InstitutionalElementType) => void;
+  onAddElement: (elementType: InstitutionalElementType, initialValue?: string) => void;
   onSelectSection?: (sectionId: string) => void;
-  onSelectElement?: (sectionId: string, elementId: string) => void;
+  onSelectElement?: (sectionId: string, elementId: string, additive?: boolean) => void;
   onMoveSection?: (sectionId: string, direction: -1 | 1) => void;
   onToggleSectionVisibility?: (sectionId: string) => void;
   onElementStyleChange?: (sectionId: string, elementId: string, style: Partial<InstitutionalElementStyle>) => void;
+  onReorderLayers?: (sectionId: string, orderedElementIds: string[]) => void;
   onSectionStyleChange?: (sectionId: string, style: Partial<InstitutionalSectionStyle>) => void;
   onApplySectionStyleToAll?: (style: Partial<InstitutionalSectionStyle>) => void;
   onUploadSectionBackground?: (sectionId: string, file: File, applyToAll: boolean) => void;
+  onAutoOrganizeSection?: (sectionId: string) => void;
 }) {
   const [category, setCategory] = useState<LibraryCategory>("structure");
+  const [sectionGroup, setSectionGroup] = useState<SectionGroup>("all");
   const [backgroundScope, setBackgroundScope] = useState<"section" | "all">("section");
   const [query, setQuery] = useState("");
   const [sectionType, setSectionType] = useState<InstitutionalSectionType>("organization_intro");
+  const [draggedLayer, setDraggedLayer] = useState<{ sectionId: string; layerId: string } | null>(null);
 
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
   const filteredSections = sectionCatalog.filter((definition) => {
+    if (sectionGroup !== "all" && sectionGroupFor(definition.type) !== sectionGroup) return false;
     if (!normalizedQuery) return true;
-    return `${definition.name} ${definition.shortDescription}`.toLocaleLowerCase("pt-BR").includes(normalizedQuery);
+    const variantTerms = variants
+      .filter((variant) => variant.sectionType === definition.type && (variant.isSystem || variant.status === "published"))
+      .map((variant) => `${variant.name} ${variant.description}`)
+      .join(" ");
+    return `${definition.name} ${definition.shortDescription} ${definition.purpose} ${variantTerms}`
+      .toLocaleLowerCase("pt-BR")
+      .includes(normalizedQuery);
   });
   const filteredElements = elementItems.filter((item) => {
     if (item.category !== category) return false;
     if (!normalizedQuery) return true;
     return `${item.name} ${item.description}`.toLocaleLowerCase("pt-BR").includes(normalizedQuery);
   });
-  const selectedDefinition = getSectionDefinition(sectionType);
-  const sectionVariants = useMemo(
-    () => variants.filter((variant) => variant.sectionType === sectionType && (variant.isSystem || variant.status === "published")),
-    [sectionType, variants],
+  const activeSectionType = filteredSections.some((definition) => definition.type === sectionType)
+    ? sectionType
+    : filteredSections[0]?.type ?? sectionType;
+  const selectedDefinition = getSectionDefinition(activeSectionType);
+  const sectionVariants = variants.filter(
+    (variant) => variant.sectionType === activeSectionType && (variant.isSystem || variant.status === "published"),
   );
 
   const selectedSectionStyle = selectedSection ? getSectionStyle(selectedSection.settings) : {};
+  const firstMovableIndex = sections.findIndex(
+    (section) => !["site_header", "site_footer"].includes(section.sectionType),
+  );
+  const lastMovableIndex = sections.reduce(
+    (last, section, index) =>
+      !["site_header", "site_footer"].includes(section.sectionType) ? index : last,
+    -1,
+  );
   const applyBackgroundStyle = (style: Partial<InstitutionalSectionStyle>) => {
     if (!selectedSection) return;
     if (backgroundScope === "all") onApplySectionStyleToAll?.(style);
@@ -252,7 +310,7 @@ export default function SectionLibrary({
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={category === "sections" ? "Buscar tipo de seção" : "Buscar peça"}
+                placeholder={category === "sections" ? "Buscar seção ou estilo" : "Buscar peça"}
               />
             </label>
           ) : null}
@@ -267,9 +325,17 @@ export default function SectionLibrary({
                 {sections.map((section, index) => {
                   const label = getSectionDefinition(section.sectionType).name;
                   const selected = section.id === selectedSectionId;
+                  const header = section.sectionType === "site_header";
                   const footer = section.sectionType === "site_footer";
+                  const fixed = header || footer;
                   const layout = ensureLayoutNodeIds(effectiveSectionLayout(section.layout, section.settings));
                   const layers = collectInstitutionalLayers(layout);
+                  const visualLayers = [...layers].sort((a, b) => {
+                    const zA = a.node.style?.zIndex ?? 0;
+                    const zB = b.node.style?.zIndex ?? 0;
+                    if (zA !== zB) return zB - zA;
+                    return layers.findIndex((item) => item.id === b.id) - layers.findIndex((item) => item.id === a.id);
+                  });
                   return (
                     <div key={section.id} className={styles.structureItem} data-selected={selected} data-hidden={!section.visible}>
                       <div className={styles.structureRow}>
@@ -278,39 +344,69 @@ export default function SectionLibrary({
                           <span><strong>{label}</strong><small>{section.variantName}</small></span>
                         </button>
                         <div className={styles.structureActions}>
-                          {!footer ? (
+                          {!fixed ? (
                             <>
-                              <button type="button" aria-label={`Mover ${label} para cima`} disabled={index === 0 || disabled} onClick={() => onMoveSection?.(section.id, -1)}><FiArrowUp /></button>
-                              <button type="button" aria-label={`Mover ${label} para baixo`} disabled={index >= sections.length - (sections.at(-1)?.sectionType === "site_footer" ? 2 : 1) || disabled} onClick={() => onMoveSection?.(section.id, 1)}><FiArrowDown /></button>
+                              <button type="button" aria-label={`Mover ${label} para cima`} disabled={index <= firstMovableIndex || disabled} onClick={() => onMoveSection?.(section.id, -1)}><FiArrowUp /></button>
+                              <button type="button" aria-label={`Mover ${label} para baixo`} disabled={index >= lastMovableIndex || disabled} onClick={() => onMoveSection?.(section.id, 1)}><FiArrowDown /></button>
                             </>
                           ) : null}
-                          <button type="button" aria-label={section.visible ? `Ocultar ${label}` : `Mostrar ${label}`} disabled={disabled} onClick={() => onToggleSectionVisibility?.(section.id)}>
-                            {section.visible ? <FiEye /> : <FiEyeOff />}
-                          </button>
+                          {!header ? (
+                            <button type="button" aria-label={section.visible ? `Ocultar ${label}` : `Mostrar ${label}`} disabled={disabled} onClick={() => onToggleSectionVisibility?.(section.id)}>
+                              {section.visible ? <FiEye /> : <FiEyeOff />}
+                            </button>
+                          ) : null}
                         </div>
                       </div>
 
                       {selected ? (
                         <div className={styles.layerList}>
                           <div className={styles.layerHeading}>Elementos</div>
-                          {layers.map((layer, layerIndex) => {
+                          {visualLayers.map((layer, layerIndex) => {
                             const itemStyle = layer.node.style ?? {};
-                            const active = layer.id === selectedElementId;
+                            const active = selectedElementIds.includes(layer.id) || layer.id === selectedElementId;
                             return (
                               <div
                                 className={styles.layerItem}
                                 data-active={active}
                                 data-hidden={Boolean(itemStyle.hidden)}
+                                data-locked={Boolean(itemStyle.locked)}
+                                data-dragging={draggedLayer?.layerId === layer.id}
+                                data-grouped={Boolean(itemStyle.groupId)}
                                 key={layer.id}
+                                draggable={!disabled}
+                                onDragStart={(event) => {
+                                  event.dataTransfer.effectAllowed = "move";
+                                  event.dataTransfer.setData("application/x-cong-layer", layer.id);
+                                  setDraggedLayer({ sectionId: section.id, layerId: layer.id });
+                                }}
+                                onDragEnd={() => setDraggedLayer(null)}
+                                onDragOver={(event) => {
+                                  if (draggedLayer?.sectionId === section.id) event.preventDefault();
+                                }}
+                                onDrop={(event) => {
+                                  event.preventDefault();
+                                  if (!draggedLayer || draggedLayer.sectionId !== section.id || draggedLayer.layerId === layer.id) return;
+                                  const ordered = visualLayers.map((item) => item.id);
+                                  const from = ordered.indexOf(draggedLayer.layerId);
+                                  const to = ordered.indexOf(layer.id);
+                                  if (from < 0 || to < 0) return;
+                                  const [moved] = ordered.splice(from, 1);
+                                  ordered.splice(to, 0, moved);
+                                  onReorderLayers?.(section.id, ordered);
+                                  setDraggedLayer(null);
+                                }}
                                 style={{ "--layer-depth": Math.min(layer.depth, 3) } as CSSProperties}
                               >
-                                <button type="button" className={styles.layerMain} onClick={() => onSelectElement?.(section.id, layer.id)}>
+                                <span className={styles.layerDragHandle} title="Arraste para mudar a ordem" aria-hidden="true"><FiMove /></span>
+                                <button type="button" className={styles.layerMain} onClick={(event) => onSelectElement?.(section.id, layer.id, event.shiftKey || event.ctrlKey || event.metaKey)}>
                                   <span>{layerIndex + 1}</span>
                                   <strong>{layerLabel(layer.node)}</strong>
+                                  {itemStyle.groupId ? <em className={styles.layerGroupBadge}>{itemStyle.groupKind === "native" ? "Grupo do design" : "Grupo"}</em> : null}
+                                  {itemStyle.hidden ? <small>Oculto</small> : itemStyle.locked ? <small>Travado</small> : null}
                                 </button>
                                 <div className={styles.layerActions}>
-                                  <button type="button" title="Trazer para frente" aria-label="Trazer para frente" onClick={() => onElementStyleChange?.(section.id, layer.id, { zIndex: Math.min(50, (itemStyle.zIndex ?? 0) + 10) })}><FiArrowUp /></button>
-                                  <button type="button" title="Enviar para trás" aria-label="Enviar para trás" onClick={() => onElementStyleChange?.(section.id, layer.id, { zIndex: Math.max(-20, (itemStyle.zIndex ?? 0) - 10) })}><FiArrowDown /></button>
+                                  <button type="button" title="Trazer para frente" aria-label="Trazer para frente" onClick={() => onElementStyleChange?.(section.id, layer.id, { zIndex: 50 })}><FiArrowUp /></button>
+                                  <button type="button" title="Enviar para trás" aria-label="Enviar para trás" onClick={() => onElementStyleChange?.(section.id, layer.id, { zIndex: -20 })}><FiArrowDown /></button>
                                   <button
                                     type="button"
                                     title={itemStyle.hidden ? "Mostrar" : "Ocultar"}
@@ -354,7 +450,7 @@ export default function SectionLibrary({
                     <span>Aplicar em</span>
                     <div>
                       <button type="button" data-active={backgroundScope === "section"} onClick={() => setBackgroundScope("section")}>Esta seção</button>
-                      <button type="button" data-active={backgroundScope === "all"} onClick={() => setBackgroundScope("all")}>Todas as seções</button>
+                      <button type="button" data-active={backgroundScope === "all"} onClick={() => setBackgroundScope("all")}>Toda a página</button>
                     </div>
                   </div>
 
@@ -362,16 +458,38 @@ export default function SectionLibrary({
                     <div className={styles.backgroundGroupTitle}><strong>Cor do fundo</strong><span>As cores da identidade vêm primeiro, mas você pode escolher outra.</span></div>
                     <div className={styles.backgroundColorGrid}>
                       {([
-                        ["background", "Fundo"], ["primary", "Principal"], ["secondary", "Secundária"], ["accent", "Destaque"],
-                      ] as const).map(([value, label]) => (
+                        ["background", "Fundo", brand?.backgroundColor],
+                        ["primary", "Principal", brand?.primaryColor],
+                        ["secondary", "Secundária", brand?.secondaryColor],
+                        ["accent", "Destaque", brand?.accentColor],
+                      ] as const).map(([value, label, hex]) => (
                         <button type="button" key={value} data-color={value} data-active={selectedSectionStyle.backgroundColor === value} onClick={() => applyBackgroundStyle({ backgroundColor: value })}>
-                          <i /><span>{label}</span>
+                          <i style={hex ? { background: hex } : undefined} /><span>{label}</span>
                         </button>
                       ))}
-                      <label className={styles.backgroundCustomColor}>
-                        <input type="color" value={selectedSectionStyle.backgroundColor?.startsWith("#") ? selectedSectionStyle.backgroundColor : "#ffffff"} onChange={(event) => applyBackgroundStyle({ backgroundColor: event.target.value as `#${string}` })} />
-                        <i>+</i><span>Outra cor</span>
-                      </label>
+                      {["#ffffff", "#f4f6fa", "#091c30", "#1366c4", "#6f35c5", "#f6c445"].map((hex) => (
+                        <button type="button" key={hex} className={styles.backgroundHexSwatch} data-active={selectedSectionStyle.backgroundColor === hex} onClick={() => applyBackgroundStyle({ backgroundColor: hex as `#${string}` })}>
+                          <i style={{ background: hex }} /><span>{hex.toUpperCase()}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className={styles.backgroundCustomColor}>
+                      <span>Outra cor</span>
+                      <ColorPickerControl
+                        value={
+                          selectedSectionStyle.backgroundColor?.startsWith("#")
+                            ? selectedSectionStyle.backgroundColor
+                            : selectedSectionStyle.backgroundColor === "primary"
+                              ? brand?.primaryColor ?? "#1366C4"
+                              : selectedSectionStyle.backgroundColor === "secondary"
+                                ? brand?.secondaryColor ?? "#04523C"
+                                : selectedSectionStyle.backgroundColor === "accent"
+                                  ? brand?.accentColor ?? "#F7B534"
+                                  : brand?.backgroundColor ?? "#FFFFFF"
+                        }
+                        onChange={(hex) => applyBackgroundStyle({ backgroundColor: hex })}
+                        label="Cor do fundo"
+                      />
                     </div>
                   </div>
 
@@ -398,6 +516,12 @@ export default function SectionLibrary({
                         </div>
                       </div>
                     ) : null}
+                    {(selectedSectionStyle.backgroundDecor ?? "template") !== "none" && (selectedSectionStyle.backgroundDecor ?? "template") !== "template" ? (
+                      <div className={styles.backgroundAdjustments}>
+                        <label><span>Intensidade</span><input type="range" min="0" max="100" step="5" value={selectedSectionStyle.backgroundDecorIntensity ?? 55} onChange={(event) => applyBackgroundStyle({ backgroundDecorIntensity: Number(event.target.value) })} /><strong>{selectedSectionStyle.backgroundDecorIntensity ?? 55}%</strong></label>
+                        {(selectedSectionStyle.backgroundDecor ?? "template") === "rings" ? <label><span>Tamanho</span><input type="range" min="60" max="160" step="5" value={selectedSectionStyle.backgroundDecorScale ?? 100} onChange={(event) => applyBackgroundStyle({ backgroundDecorScale: Number(event.target.value) })} /><strong>{selectedSectionStyle.backgroundDecorScale ?? 100}%</strong></label> : null}
+                      </div>
+                    ) : (selectedSectionStyle.backgroundDecor ?? "template") === "template" ? <p className={styles.backgroundControlHint}>Escolha um estilo acima para ajustar intensidade e aparência.</p> : null}
                   </div>
 
                   {onUploadSectionBackground ? (
@@ -446,58 +570,122 @@ export default function SectionLibrary({
 
           {category === "sections" ? (
             <div className={styles.scrollContent}>
-              <div className={styles.sectionTypeTabs}>
-                {filteredSections.map((definition) => (
+              <div className={styles.sectionDiscovery}>
+                <div className={styles.sectionDiscoveryHeading}>
+                  <strong>Adicionar uma seção</strong>
+                  <span>Escolha primeiro o que ela comunica. Depois compare os designs disponíveis.</span>
+                </div>
+
+                <div className={styles.sectionFilterFields}>
+                  <label>
+                    <span>Categoria</span>
+                    <select
+                      value={sectionGroup}
+                      onChange={(event) => setSectionGroup(event.target.value as SectionGroup)}
+                    >
+                      {sectionGroups.map((group) => (
+                        <option key={group.id} value={group.id}>{group.name}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Tipo de seção</span>
+                    <select
+                      value={activeSectionType}
+                      onChange={(event) => setSectionType(event.target.value as InstitutionalSectionType)}
+                      disabled={filteredSections.length === 0}
+                    >
+                      {filteredSections.map((definition) => {
+                        const count = variants.filter((variant) =>
+                          variant.sectionType === definition.type && (variant.isSystem || variant.status === "published"),
+                        ).length;
+                        return (
+                          <option key={definition.type} value={definition.type}>
+                            {definition.name} · {count} {count === 1 ? "design" : "designs"}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </label>
+                </div>
+
+                {(query || sectionGroup !== "all") ? (
                   <button
                     type="button"
-                    key={definition.type}
-                    data-active={definition.type === sectionType}
-                    onClick={() => setSectionType(definition.type)}
+                    className={styles.clearSectionFilters}
+                    onClick={() => { setQuery(""); setSectionGroup("all"); }}
                   >
-                    <strong>{definition.name}</strong>
-                    <span>{definition.shortDescription}</span>
+                    Limpar filtros
                   </button>
-                ))}
+                ) : null}
               </div>
 
-              <div className={styles.sectionVariantHeader}>
-                <div>
-                  <strong>{selectedDefinition.name}</strong>
-                  <span>{selectedDefinition.purpose}</span>
+              {filteredSections.length > 0 ? (
+                <>
+                  <div className={styles.sectionVariantHeader}>
+                    <div>
+                      <strong>{selectedDefinition.name}</strong>
+                      <span>{selectedDefinition.purpose}</span>
+                    </div>
+                    <small>{sectionVariants.length} {sectionVariants.length === 1 ? "design" : "designs"}</small>
+                  </div>
+
+                  <div className={styles.variantGallery}>
+                    {sectionVariants.map((variant) => (
+                      <article
+                        key={variant.versionId}
+                        className={styles.variantCard}
+                        draggable={!disabled}
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = "copy";
+                          event.dataTransfer.setData("application/x-cong-section-type", activeSectionType);
+                          event.dataTransfer.setData("application/x-cong-variant-version", variant.versionId);
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className={styles.variantPreviewButton}
+                          onClick={() => onAddSection(activeSectionType, variant.versionId)}
+                          disabled={disabled}
+                          aria-label={`Adicionar ${variant.name}`}
+                        >
+                          <LiveSectionThumbnail sectionType={activeSectionType} variants={variants} preferredVariant={variant} size="large" />
+                        </button>
+                        <div className={styles.variantMeta}>
+                          <div>
+                            <strong>{variant.name}</strong>
+                            <small>{variant.description || "Um ponto de partida que pode ser personalizado."}</small>
+                            {variant.isSystem ? <em>Design CONG</em> : null}
+                          </div>
+                          <button
+                            type="button"
+                            className={styles.variantAddButton}
+                            onClick={() => onAddSection(activeSectionType, variant.versionId)}
+                            disabled={disabled}
+                          >
+                            <FiPlus aria-hidden="true" /> Adicionar
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+
+                  {sectionVariants.length === 0 ? (
+                    <div className={styles.selectionHint}>
+                      <FiLayout aria-hidden="true" />
+                      <div><strong>Nenhum design disponível</strong><span>Escolha outro tipo de seção ou publique uma variação como Designer.</span></div>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className={styles.sectionEmptyState}>
+                  <FiSearch aria-hidden="true" />
+                  <strong>Nenhuma seção encontrada</strong>
+                  <span>Limpe a busca ou escolha outro filtro.</span>
+                  <button type="button" onClick={() => { setQuery(""); setSectionGroup("all"); }}>Mostrar todas</button>
                 </div>
-                <small>{sectionVariants.length} estilo(s)</small>
-              </div>
-
-              <div className={styles.variantGallery}>
-                {sectionVariants.map((variant) => (
-                  <button
-                    type="button"
-                    key={variant.versionId}
-                    className={styles.variantCard}
-                    onClick={() => onAddSection(sectionType, variant.versionId)}
-                    disabled={disabled}
-                    draggable={!disabled}
-                    onDragStart={(event) => {
-                      event.dataTransfer.effectAllowed = "copy";
-                      event.dataTransfer.setData("application/x-cong-section-type", sectionType);
-                      event.dataTransfer.setData("application/x-cong-variant-version", variant.versionId);
-                    }}
-                  >
-                    <LiveSectionThumbnail sectionType={sectionType} variants={variants} preferredVariant={variant} />
-                    <span>
-                      <strong>{variant.name}</strong>
-                      <small>{variant.description || "Um ponto de partida que pode ser personalizado."}</small>
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {sectionVariants.length === 0 ? (
-                <div className={styles.selectionHint}>
-                  <FiLayout aria-hidden="true" />
-                  <div><strong>Nenhum estilo disponível</strong><span>Escolha outro tipo de seção ou publique uma variação como Designer.</span></div>
-                </div>
-              ) : null}
+              )}
             </div>
           ) : null}
 
@@ -510,21 +698,33 @@ export default function SectionLibrary({
                 </div>
               ) : null}
 
+              {category === "layout" && selectedSection ? (
+                <div className={styles.autoOrganizeCard}>
+                  <span><FiZap aria-hidden="true" /></span>
+                  <div>
+                    <strong>Auto-organizar esta seção</strong>
+                    <small>Recoloca elementos no fluxo responsivo mais provável, removendo deslocamentos manuais sem apagar conteúdo nem tamanhos.</small>
+                  </div>
+                  <button type="button" onClick={() => onAutoOrganizeSection?.(selectedSection.id)} disabled={disabled || !onAutoOrganizeSection}>Organizar</button>
+                </div>
+              ) : null}
+
               <div className={styles.elementList}>
                 {filteredElements.map((item) => {
                   const Icon = item.icon;
                   return (
                     <button
                       type="button"
-                      key={item.type}
+                      key={`${item.type}-${item.value ?? item.name}`}
                       className={styles.elementPiece}
                       data-category={item.category}
-                      onClick={() => onAddElement(item.type)}
+                      onClick={() => onAddElement(item.type, item.value)}
                       disabled={disabled || !selectedSection}
                       draggable={!disabled && Boolean(selectedSection)}
                       onDragStart={(event) => {
                         event.dataTransfer.effectAllowed = "copy";
                         event.dataTransfer.setData("application/x-cong-element", item.type);
+                        if (item.value) event.dataTransfer.setData("application/x-cong-element-value", item.value);
                       }}
                       title={item.description}
                     >

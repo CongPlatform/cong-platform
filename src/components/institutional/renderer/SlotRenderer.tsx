@@ -1,5 +1,18 @@
-import type { MouseEvent } from "react";
-import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import { useRef, type MouseEvent, type RefObject } from "react";
+import {
+  FiActivity,
+  FiAlertCircle,
+  FiBox,
+  FiCheckCircle,
+  FiHeart,
+  FiLink2,
+  FiMapPin,
+  FiPackage,
+  FiShare2,
+  FiStar,
+  FiTrendingUp,
+  FiUsers,
+} from "react-icons/fi";
 
 import type { InstitutionalFieldDefinition } from "../../../data/institutional/sectionCatalog";
 import type {
@@ -8,6 +21,7 @@ import type {
   InstitutionalImageValue,
 } from "../../../services/institutionalService";
 import InlineTextEditor from "../shared/InlineTextEditor";
+import FloatingCanvasHint from "./FloatingCanvasHint";
 import ImageMedia from "./ImageMedia";
 
 import styles from "./InstitutionalRenderer.module.css";
@@ -49,12 +63,94 @@ function contactHref(slot: string, value: string): string | undefined {
   return undefined;
 }
 
+
+const semanticSectionByAnchor: Record<string, string> = {
+  "#inicio": "organization_intro",
+  "#sobre": "organization_about",
+  "#impacto": "impact_metrics",
+  "#projetos": "projects_showcase",
+  "#como-ajudar": "support_actions",
+  "#contato": "organization_contact",
+};
+
+function handleSemanticNavigation(
+  event: MouseEvent<HTMLAnchorElement>,
+  href: string,
+  editable: boolean,
+): void {
+  if (editable) {
+    event.preventDefault();
+    return;
+  }
+
+  const sectionType = semanticSectionByAnchor[href];
+  if (!sectionType) return;
+
+  const target = document.querySelector<HTMLElement>(
+    `[data-section-type="${sectionType}"]`,
+  );
+  if (!target) return;
+
+  event.preventDefault();
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function normalizedLabel(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function MetricContextIcon({ label }: { label: string }) {
+  const normalized = normalizedLabel(label);
+  const Icon =
+    /bairro|cidade|territorio|regiao|local/.test(normalized)
+      ? FiMapPin
+      : /pessoa|famil|estud|alun|voluntar|profissional|crianca|adolesc/.test(normalized)
+        ? FiUsers
+        : /alimento|cesta|refeic|material|muda|quilo|tonelada/.test(normalized)
+          ? FiBox
+          : /%|percent|permanencia|crescimento|evolucao/.test(normalized)
+            ? FiTrendingUp
+            : FiActivity;
+
+  return (
+    <span className={styles.metricIconBadge} aria-hidden="true">
+      <Icon />
+    </span>
+  );
+}
+
+function SupportContextIcon({ kind }: { kind: string }) {
+  const Icon =
+    kind === "donate"
+      ? FiHeart
+      : kind === "volunteer"
+        ? FiUsers
+        : kind === "partner"
+          ? FiLink2
+          : kind === "materials"
+            ? FiPackage
+            : kind === "share"
+              ? FiShare2
+              : FiStar;
+
+  return (
+    <span className={styles.supportIconBadge} aria-hidden="true">
+      <Icon />
+    </span>
+  );
+}
+
 function TextGuidance({
   value,
   field,
+  anchorRef,
 }: {
   value: string;
   field: InstitutionalFieldDefinition;
+  anchorRef: RefObject<HTMLElement | null>;
 }) {
   const length = value.length;
   const tooShort = typeof field.recommendedMin === "number" && length < field.recommendedMin;
@@ -72,14 +168,14 @@ function TextGuidance({
         : "";
 
   return (
-    <div className={styles.inlineGuidance} data-warning={outside}>
+    <FloatingCanvasHint anchorRef={anchorRef} className={styles.inlineGuidance} preferredWidth={520} dataWarning={outside}>
       <span className={styles.inlineGuidanceCount}>
         {outside ? <FiAlertCircle /> : <FiCheckCircle />}
         {field.recommendedMax ? `${length} / ${field.recommendedMax}` : `${length} caracteres`}
       </span>
       {recommendation ? <span>{recommendation}</span> : null}
       {field.help ? <small>{field.help}</small> : null}
-    </div>
+    </FloatingCanvasHint>
   );
 }
 
@@ -116,13 +212,28 @@ export default function SlotRenderer({
 }) {
   const value = data[slot];
   const valuePath = [...path, slot];
+  const textAnchorRef = useRef<HTMLDivElement>(null);
+
+  if (presentation === "brandLogo") {
+    const image = asImage(value);
+    if (!image?.url) return null;
+    return <img className={styles.brandLogo} src={image.url} alt="" />;
+  }
+
+  if (presentation === "metricIcon") {
+    return <MetricContextIcon label={asString(value)} />;
+  }
+
+  if (presentation === "supportIcon") {
+    return <SupportContextIcon kind={asString(value)} />;
+  }
 
   if (["primaryAction", "secondaryAction"].includes(presentation)) {
     const action = asAction(value);
     if (!action) return null;
 
     const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-      if (editable) event.preventDefault();
+      handleSemanticNavigation(event, action.href, editable);
     };
 
     return (
@@ -175,6 +286,22 @@ export default function SlotRenderer({
     return url ? <a className={styles.socialLink} href={url} target="_blank" rel="noreferrer">{label}</a> : null;
   }
 
+  if (presentation === "navLink") {
+    const href = asString(value);
+    const label = asString(data.label) || "Link";
+    if (!href) return null;
+
+    const handleNavigation = (event: MouseEvent<HTMLAnchorElement>) => {
+      handleSemanticNavigation(event, href, editable);
+    };
+
+    return (
+      <a className={styles.navLink} href={href} onClick={handleNavigation}>
+        {label}
+      </a>
+    );
+  }
+
   if (presentation === "contactLink") {
     const text = asString(value);
     const href = contactHref(slot, text);
@@ -190,7 +317,7 @@ export default function SlotRenderer({
 
   if (editable && onValueChange) {
     return (
-      <div className={styles.editableText}>
+      <div ref={textAnchorRef} className={styles.editableText}>
         <InlineTextEditor
           value={text}
           multiline={multiline}
@@ -199,7 +326,7 @@ export default function SlotRenderer({
           onChange={(nextValue) => onValueChange(valuePath, nextValue)}
           onCommit={(nextValue) => onValueChange(valuePath, nextValue)}
         />
-        {showGuidance && fieldDefinition ? <TextGuidance value={text} field={fieldDefinition} /> : null}
+        {showGuidance && fieldDefinition ? <TextGuidance value={text} field={fieldDefinition} anchorRef={textAnchorRef} /> : null}
       </div>
     );
   }

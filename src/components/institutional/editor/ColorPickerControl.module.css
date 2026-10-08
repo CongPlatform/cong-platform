@@ -1,0 +1,231 @@
+.root {
+  position: relative;
+  min-width: 0;
+}
+
+.trigger {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+  font-family: var(--font-interface);
+  font-size: 10px;
+  font-weight: var(--font-semibold);
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+}
+
+.triggerSwatch {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: 2px solid var(--color-white);
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px rgb(var(--color-navy-rgb) / .13);
+}
+
+.triggerText {
+  min-width: 62px;
+  color: var(--color-navy);
+  letter-spacing: .02em;
+}
+
+.trigger svg {
+  width: 14px;
+  height: 14px;
+}
+
+.root[data-compact="true"] .trigger {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 4px;
+  justify-content: center;
+}
+.root[data-compact="true"] .triggerSwatch { width: 22px; height: 22px; border-radius: 50%; }
+.root[data-compact="true"] .trigger > svg { display: none; }
+
+.popover {
+  position: fixed;
+  z-index: 2200;
+  width: 264px;
+  display: grid;
+  gap: 11px;
+  padding: 11px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 14px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+  box-shadow: 0 18px 46px rgb(var(--color-navy-rgb) / .18);
+  font-family: var(--font-interface);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.header > div { display: inline-flex; align-items: center; gap: 7px; }
+.header strong { color: var(--color-navy); font-size: 11px; }
+.header svg { width: 15px; height: 15px; }
+.header > button { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; color: var(--color-slate-500); }
+.header > button:hover { color: var(--color-primary); background: var(--color-primary-50); }
+
+.sv {
+  --picker-hue: #f00;
+  position: relative;
+  height: 154px;
+  overflow: hidden;
+  border-radius: 10px;
+  cursor: crosshair;
+  touch-action: none;
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, var(--picker-hue));
+  box-shadow: inset 0 0 0 1px rgb(var(--color-navy-rgb) / .12);
+}
+
+.svThumb {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .45), 0 2px 6px rgb(0 0 0 / .2);
+  pointer-events: none;
+}
+
+.hueRow {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.hueRow > span,
+.valueRow label > span { color: var(--color-slate-500); font-size: 8px; font-weight: var(--font-semibold); }
+.hueRow input {
+  width: 100%;
+  height: 12px;
+  margin: 0;
+  border-radius: 999px;
+  appearance: none;
+  background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  cursor: pointer;
+}
+.hueRow input::-webkit-slider-thumb {
+  width: 15px;
+  height: 15px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  appearance: none;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .35), 0 2px 5px rgb(0 0 0 / .18);
+}
+.hueRow input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .35);
+}
+
+.valueRow {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  align-items: end;
+  gap: 8px;
+}
+.largeSwatch {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgb(var(--color-navy-rgb) / .12);
+  border-radius: 9px;
+}
+.valueRow label { min-width: 0; display: grid; gap: 4px; }
+.valueRow label input {
+  width: 100%;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  outline: 0;
+  color: var(--color-navy);
+  background: var(--color-slate-50);
+  font: 600 10px var(--font-interface);
+  text-transform: uppercase;
+}
+.valueRow label input:focus { border-color: var(--color-primary-300); background: var(--color-white); box-shadow: 0 0 0 3px var(--color-primary-50); }
+.eyeDropper {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  color: var(--color-primary);
+  background: var(--color-white);
+}
+.eyeDropper:hover { border-color: var(--color-primary-200); background: var(--color-primary-50); }
+.eyeDropper svg { width: 16px; height: 16px; }
+
+.hint {
+  color: var(--color-slate-500);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+@media (max-width: 520px) {
+  .popover { width: min(264px, calc(100vw - 20px)); }
+}
+
+/* Universal "this can become any color" affordance. The rainbow marker is
+   intentionally independent from the currently selected color. */
+.spectrumMark {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-block;
+  border: 2px solid var(--color-white);
+  border-radius: 7px;
+  background: conic-gradient(
+    #ff3b30,
+    #ffcc00,
+    #34c759,
+    #00c7be,
+    #0a84ff,
+    #5e5ce6,
+    #bf5af2,
+    #ff375f,
+    #ff3b30
+  );
+  box-shadow: 0 0 0 1px rgb(var(--color-navy-rgb) / .14), 0 2px 5px rgb(var(--color-navy-rgb) / .08);
+}
+
+.root[data-compact="true"] .spectrumMark {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.root[data-compact="true"] .triggerSwatch {
+  display: none;
+}
+
+.header .spectrumMark {
+  width: 16px;
+  height: 16px;
+  border-width: 1px;
+  border-radius: 50%;
+}

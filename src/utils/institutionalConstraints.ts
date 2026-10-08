@@ -1,12 +1,13 @@
 import type {
   InstitutionalEditorConstraints,
+  InstitutionalElementConstraints,
   InstitutionalElementStyle,
 } from "../services/institutionalService";
 
 export const FREE_EDITOR_CONSTRAINTS: InstitutionalEditorConstraints = {
   mode: "free",
-  minWidthPercent: 15,
-  maxWidthPercent: 100,
+  minWidthPercent: 8,
+  maxWidthPercent: 240,
   minFontSize: 10,
   maxFontSize: 96,
   maxOffset: 100,
@@ -25,6 +26,7 @@ export function exceedsEditorConstraints(
   current: InstitutionalElementStyle,
   patch: Partial<InstitutionalElementStyle>,
   constraints: InstitutionalEditorConstraints,
+  elementConstraints?: InstitutionalElementConstraints,
 ): boolean {
   if (constraints.mode === "free") return false;
 
@@ -34,15 +36,28 @@ export function exceedsEditorConstraints(
   const offsetX = next.offsetX ?? 0;
   const offsetY = next.offsetY ?? 0;
 
-  if (width !== undefined && (width < constraints.minWidthPercent || width > constraints.maxWidthPercent)) {
+  const minWidth = elementConstraints?.minWidthPercent ?? constraints.minWidthPercent;
+  const maxWidth = elementConstraints?.maxWidthPercent ?? constraints.maxWidthPercent;
+  const minFont = elementConstraints?.minFontSize ?? constraints.minFontSize;
+  const maxFont = elementConstraints?.maxFontSize ?? constraints.maxFontSize;
+
+  if (width !== undefined && (width < minWidth || width > maxWidth)) {
     return true;
   }
-  if (fontSize !== undefined && (fontSize < constraints.minFontSize || fontSize > constraints.maxFontSize)) {
+  if (fontSize !== undefined && (fontSize < minFont || fontSize > maxFont)) {
     return true;
+  }
+
+  if (next.heightPx !== undefined) {
+    if (elementConstraints?.minHeightPx !== undefined && next.heightPx < elementConstraints.minHeightPx) return true;
+    if (elementConstraints?.maxHeightPx !== undefined && next.heightPx > elementConstraints.maxHeightPx) return true;
   }
   // Movimentos que permanecem dentro da seção são controlados visualmente pelo canvas.
   // O limite do modelo só volta a participar quando a pessoa escolhe, de forma explícita,
   // permitir que o elemento ultrapasse a área segura da seção.
-  return Boolean(next.allowOverflow) &&
-    (Math.abs(offsetX) > constraints.maxOffset || Math.abs(offsetY) > constraints.maxOffset);
+  return (
+    Boolean(next.allowOverflow) &&
+    (Math.abs(offsetX) > constraints.maxOffset ||
+      Math.abs(offsetY) > constraints.maxOffset)
+  );
 }

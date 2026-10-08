@@ -1,6 +1,7 @@
 import * as z from "zod";
 
 export const institutionalSectionTypes = [
+  "site_header",
   "organization_intro",
   "organization_about",
   "projects_showcase",
@@ -99,7 +100,22 @@ const socialLinkSchema = z
   })
   .strict();
 
+const navigationLinkSchema = z
+  .object({
+    id: z.string().uuid(),
+    label: z.string().trim().min(1).max(60),
+    href: z.string().trim().min(1).max(500),
+  })
+  .strict();
+
 const sectionContentSchemas: Record<InstitutionalSectionType, z.ZodType> = {
+  site_header: z
+    .object({
+      brandLabel: optionalText(120),
+      links: z.array(navigationLinkSchema).max(8).default([]),
+      primaryAction: nullableActionSchema,
+    })
+    .strict(),
   organization_intro: z
     .object({
       eyebrow: optionalText(100),
@@ -204,6 +220,10 @@ const presentationSchema = z.enum([
   "contactLink",
   "documentLink",
   "socialLink",
+  "navLink",
+  "brandLogo",
+  "metricIcon",
+  "supportIcon",
 ]);
 const elementTypeSchema = z.enum([
   "heading",
@@ -211,6 +231,7 @@ const elementTypeSchema = z.enum([
   "image",
   "button",
   "icon",
+  "shape",
   "metric",
   "quote",
   "divider",
@@ -219,15 +240,46 @@ const elementTypeSchema = z.enum([
 
 const elementSizeSchema = z.enum(["xs", "sm", "md", "lg", "xl", "2xl", "3xl"]);
 const elementWidthSchema = z.enum(["auto", "25", "33", "50", "66", "75", "100"]);
-const semanticColorSchema = z.enum(["text", "primary", "secondary", "accent", "background"]);
+const semanticColorSchema = z.enum([
+  "text",
+  "primary",
+  "secondary",
+  "accent",
+  "background",
+  "text.soft",
+  "text.light",
+  "text.base",
+  "text.strong",
+  "text.deep",
+  "primary.soft",
+  "primary.light",
+  "primary.base",
+  "primary.strong",
+  "primary.deep",
+  "secondary.soft",
+  "secondary.light",
+  "secondary.base",
+  "secondary.strong",
+  "secondary.deep",
+  "accent.soft",
+  "accent.light",
+  "accent.base",
+  "accent.strong",
+  "accent.deep",
+  "background.soft",
+  "background.light",
+  "background.base",
+  "background.strong",
+  "background.deep",
+]);
 const elementColorSchema = z.union([semanticColorSchema, colorSchema]);
 const elementStyleSchema = z
   .object({
     size: elementSizeSchema.optional(),
     width: elementWidthSchema.optional(),
     fontSize: z.number().min(10).max(160).optional(),
-    widthPercent: z.number().min(8).max(100).optional(),
-    heightPx: z.number().min(80).max(1400).optional(),
+    widthPercent: z.number().min(8).max(240).optional(),
+    heightPx: z.number().min(24).max(1400).optional(),
     offsetX: z.number().min(-1200).max(1200).optional(),
     offsetY: z.number().min(-1200).max(1200).optional(),
     rotation: z.number().min(-30).max(30).optional(),
@@ -259,8 +311,43 @@ const elementStyleSchema = z
     hidden: z.boolean().optional(),
     locked: z.boolean().optional(),
     zIndex: z.number().int().min(-20).max(50).optional(),
+    strokeWidth: z.number().min(0).max(20).optional(),
+    groupId: z.string().uuid().optional(),
+    groupKind: z.enum(["manual", "native"]).optional(),
   })
   .strict();
+
+const elementConstraintsSchema = z
+  .object({
+    minWidthPercent: z.number().min(8).max(100).optional(),
+    maxWidthPercent: z.number().min(8).max(100).optional(),
+    minHeightPx: z.number().min(24).max(1400).optional(),
+    maxHeightPx: z.number().min(24).max(1400).optional(),
+    minFontSize: z.number().min(10).max(160).optional(),
+    maxFontSize: z.number().min(10).max(160).optional(),
+  })
+  .strict()
+  .refine(
+    (value) =>
+      value.minWidthPercent === undefined ||
+      value.maxWidthPercent === undefined ||
+      value.minWidthPercent <= value.maxWidthPercent,
+    { message: "Minimum element width cannot be greater than maximum", path: ["minWidthPercent"] },
+  )
+  .refine(
+    (value) =>
+      value.minHeightPx === undefined ||
+      value.maxHeightPx === undefined ||
+      value.minHeightPx <= value.maxHeightPx,
+    { message: "Minimum element height cannot be greater than maximum", path: ["minHeightPx"] },
+  )
+  .refine(
+    (value) =>
+      value.minFontSize === undefined ||
+      value.maxFontSize === undefined ||
+      value.minFontSize <= value.maxFontSize,
+    { message: "Minimum element font size cannot be greater than maximum", path: ["minFontSize"] },
+  );
 
 export const institutionalEditorConstraintsSchema = z
   .object({
@@ -290,6 +377,8 @@ const sectionStyleSchema = z
     backgroundPositionY: z.number().min(0).max(100).optional(),
     backgroundDecor: z.enum(["template", "none", "soft-glow", "corner-glow", "rings", "wash"]).optional(),
     backgroundDecorTone: z.enum(["primary", "secondary", "accent", "mixed"]).optional(),
+    backgroundDecorIntensity: z.number().min(0).max(100).optional(),
+    backgroundDecorScale: z.number().min(60).max(160).optional(),
     spacing: z.enum(["compact", "normal", "comfortable", "generous"]).optional(),
     contentWidth: z.enum(["normal", "wide", "full"]).optional(),
   })
@@ -342,6 +431,7 @@ export type InstitutionalLayoutNode =
       slot: string;
       presentation?: z.infer<typeof presentationSchema> | undefined;
       style?: z.infer<typeof elementStyleSchema> | undefined;
+      constraints?: z.infer<typeof elementConstraintsSchema> | undefined;
     }
   | {
       type: "element";
@@ -350,6 +440,7 @@ export type InstitutionalLayoutNode =
       value: z.infer<typeof elementValueSchema>;
       presentation?: z.infer<typeof presentationSchema> | undefined;
       style?: z.infer<typeof elementStyleSchema> | undefined;
+      constraints?: z.infer<typeof elementConstraintsSchema> | undefined;
       semanticRole?: string | undefined;
     }
   | {
@@ -401,6 +492,7 @@ export const institutionalLayoutSchema: z.ZodType<InstitutionalLayoutNode> = z.l
         slot: z.string().trim().min(1).max(60),
         presentation: presentationSchema.optional(),
         style: elementStyleSchema.optional(),
+        constraints: elementConstraintsSchema.optional(),
       })
       .strict(),
     z
@@ -411,6 +503,7 @@ export const institutionalLayoutSchema: z.ZodType<InstitutionalLayoutNode> = z.l
         value: elementValueSchema,
         presentation: presentationSchema.optional(),
         style: elementStyleSchema.optional(),
+        constraints: elementConstraintsSchema.optional(),
         semanticRole: z.string().trim().max(80).optional(),
       })
       .strict(),
@@ -509,6 +602,7 @@ export const createVariantSchema = z
     name: z.string().trim().min(2).max(100),
     description: z.string().trim().max(500).default(""),
     layout: institutionalLayoutSchema,
+    isSystem: z.boolean().optional(),
   })
   .strict();
 
@@ -552,6 +646,7 @@ export const createDesignerTemplateSchema = z
     description: z.string().trim().max(500).default(""),
     category: z.string().trim().min(1).max(80).default("generic"),
     definition: institutionalTemplateDefinitionSchema,
+    isSystem: z.boolean().optional(),
   })
   .strict();
 

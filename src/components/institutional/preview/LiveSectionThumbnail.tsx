@@ -3,8 +3,14 @@ import type {
   InstitutionalSectionType,
   InstitutionalVariant,
 } from "../../../services/institutionalService";
-import { previewBrandForCategory, previewContentForSection } from "../../../utils/institutionalPreview";
-import { defaultSettingsForVariant, findRecommendedVariant } from "../../../utils/institutionalVariants";
+import {
+  previewBrandForCategory,
+  previewContentForSection,
+} from "../../../utils/institutionalPreview";
+import {
+  defaultSettingsForVariant,
+  findRecommendedVariant,
+} from "../../../utils/institutionalVariants";
 import SectionRenderer from "../renderer/SectionRenderer";
 
 import styles from "./LiveSectionThumbnail.module.css";
@@ -13,15 +19,22 @@ export default function LiveSectionThumbnail({
   sectionType,
   variants,
   preferredVariant,
+  size = "compact",
 }: {
   sectionType: InstitutionalSectionType;
   variants: InstitutionalVariant[];
   preferredVariant?: InstitutionalVariant;
+  size?: "compact" | "large";
 }) {
-  const variant = preferredVariant ?? findRecommendedVariant(variants, sectionType);
+  const variant =
+    preferredVariant ?? findRecommendedVariant(variants, sectionType);
 
   if (!variant) {
-    return <div className={styles.fallback}>Prévia disponível ao abrir</div>;
+    return (
+      <div className={styles.fallback} data-size={size}>
+        Prévia disponível ao abrir
+      </div>
+    );
   }
 
   const brand = previewBrandForCategory("humano");
@@ -32,7 +45,10 @@ export default function LiveSectionThumbnail({
     variantVersionId: variant.versionId,
     position: 0,
     visible: true,
-    content: previewContentForSection(sectionType, createDefaultSectionContent(sectionType)),
+    content: previewContentForSection(
+      sectionType,
+      createDefaultSectionContent(sectionType),
+    ),
     settings: defaultSettingsForVariant(variant),
     variantId: variant.id,
     variantName: variant.name,
@@ -41,7 +57,7 @@ export default function LiveSectionThumbnail({
   };
 
   return (
-    <div className={styles.viewport} aria-hidden="true">
+    <div className={styles.viewport} data-size={size} aria-hidden="true">
       <div className={styles.scaled}>
         <SectionRenderer section={section} brand={brand} />
       </div>

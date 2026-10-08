@@ -1,4 +1,4 @@
-import { useRef, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import {
   FiAlignCenter,
   FiAlignJustify,
@@ -26,14 +26,19 @@ import type {
   InstitutionalImageValue,
   InstitutionalLayoutNode,
   InstitutionalElementStyle,
+  InstitutionalElementConstraints,
   InstitutionalDesignFrame,
   InstitutionalSection,
   InstitutionalSectionStyle,
   InstitutionalVariant,
+  InstitutionalColorRole,
+  InstitutionalColorValue,
 } from "../../../services/institutionalService";
 import { contrastRatio } from "../../../utils/institutionalPalette";
-import { createInstitutionalCollectionItem } from "../../../utils/institutionalCollections";
+import { brandRoleHex, deriveColorTone, institutionalColorRoles, institutionalColorTones, parseSemanticColor, resolveInstitutionalColor } from "../../../utils/institutionalColors";
+import { collectionItemLabel, createInstitutionalCollectionItem } from "../../../utils/institutionalCollections";
 
+import ColorPickerControl from "./ColorPickerControl";
 import ImageFramePicker from "./ImageFramePicker";
 import styles from "./PropertiesPanel.module.css";
 
@@ -415,6 +420,19 @@ function CollectionEditor({
               </label>
             </>
           ) : null}
+
+          {itemType === "navigation" ? (
+            <>
+              <label className={styles.field}>
+                <span>Texto no menu</span>
+                <input value={String(item.label ?? "")} onChange={(event) => updateItem(index, "label", event.target.value)} placeholder="Ex.: Projetos" />
+              </label>
+              <label className={styles.field}>
+                <span>Destino</span>
+                <input value={String(item.href ?? "")} onChange={(event) => updateItem(index, "href", event.target.value)} placeholder="#projetos ou https://..." />
+              </label>
+            </>
+          ) : null}
         </div>
       ))}
 
@@ -423,7 +441,7 @@ function CollectionEditor({
         className={styles.addItemButton}
         onClick={() => onChange([field.key], [...items, createInstitutionalCollectionItem(itemType)])}
       >
-        <FiPlus /> Adicionar item
+        <FiPlus /> Adicionar {collectionItemLabel(itemType)}
       </button>
     </div>
   );
@@ -434,14 +452,77 @@ function resolveElementColor(
   value: InstitutionalElementStyle["color"] | InstitutionalElementStyle["backgroundColor"],
   brand: InstitutionalBrand | undefined,
 ): string | null {
-  if (!value) return null;
-  if (value.startsWith("#")) return value;
+  return resolveInstitutionalColor(value, brand) ?? null;
+}
+
+
+function SemanticColorChoices({
+  value,
+  brand,
+  onChange,
+  roles = institutionalColorRoles,
+}: {
+  value?: InstitutionalColorValue;
+  brand?: InstitutionalBrand;
+  onChange: (value: InstitutionalColorValue) => void;
+  roles?: InstitutionalColorRole[];
+}) {
+  const parsed = value && !value.startsWith("#") ? parseSemanticColor(value) : null;
+  const [activeRole, setActiveRole] = useState<InstitutionalColorRole>(parsed?.role ?? roles[0] ?? "primary");
   if (!brand) return null;
-  if (value === "text") return brand.textColor;
-  if (value === "primary") return brand.primaryColor;
-  if (value === "secondary") return brand.secondaryColor;
-  if (value === "accent") return brand.accentColor;
-  return brand.backgroundColor;
+
+  return (
+    <div className={styles.semanticColorChoices}>
+      <div className={styles.semanticRoleRow} aria-label="Cores da identidade">
+        {roles.map((role) => {
+          const hex = brandRoleHex(brand, role);
+          return (
+            <button
+              type="button"
+              key={role}
+              data-active={parsed?.role === role && parsed.tone === "base"}
+              onClick={() => { setActiveRole(role); onChange(role); }}
+              title={role === "primary" ? "Principal" : role === "secondary" ? "Secundária" : role === "accent" ? "Destaque" : role === "background" ? "Fundo" : "Texto"}
+              aria-label={`Usar ${role}`}
+            ><span style={{ background: hex }} /></button>
+          );
+        })}
+      </div>
+      <div className={styles.semanticToneRow}>
+        <span>Variação</span>
+        <div>
+          {institutionalColorTones.map((tone) => {
+            const token = `${activeRole}.${tone}` as InstitutionalColorValue;
+            const hex = deriveColorTone(brandRoleHex(brand, activeRole), tone);
+            return (
+              <button
+                type="button"
+                key={tone}
+                data-active={value === token || (tone === "base" && value === activeRole)}
+                onClick={() => onChange(token)}
+                title={tone === "soft" ? "Suave" : tone === "light" ? "Clara" : tone === "base" ? "Original" : tone === "strong" ? "Forte" : "Profunda"}
+                aria-label={`Usar variação ${tone}`}
+              ><span style={{ background: hex }} /></button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function effectiveFontSize(style: InstitutionalElementStyle): number {
+  if (style.fontSize !== undefined) return style.fontSize;
+  const fallback: Record<NonNullable<InstitutionalElementStyle["size"]>, number> = {
+    xs: 12, sm: 14, md: 16, lg: 20, xl: 26, "2xl": 38, "3xl": 56,
+  };
+  return style.size ? fallback[style.size] : 16;
+}
+
+function isTextBoxNode(node: Extract<InstitutionalLayoutNode, { type: "slot" | "element" }>): boolean {
+  if (node.type === "element") return ["heading", "text", "quote"].includes(node.elementType);
+  const presentation = node.presentation ?? "body";
+  return ["display", "heading", "lead", "body", "caption", "itemTitle", "itemBody", "contactLine", "eyebrow", "metricValue", "metricLabel"].includes(presentation);
 }
 
 function bestReadableElementColor(
@@ -466,6 +547,9 @@ function ElementOptions({
   brand,
   sectionBackground,
   designFrames,
+  previewImageUrl,
+  designerMode = false,
+  onConstraintsChange,
   onStyleChange,
   onValueChange,
   onRemove,
@@ -474,6 +558,9 @@ function ElementOptions({
   brand?: InstitutionalBrand;
   sectionBackground?: InstitutionalSectionStyle["backgroundColor"];
   designFrames?: InstitutionalDesignFrame[];
+  previewImageUrl?: string;
+  designerMode?: boolean;
+  onConstraintsChange?: (constraints: InstitutionalElementConstraints) => void;
   onStyleChange: (style: Partial<InstitutionalElementStyle>) => void;
   onValueChange: (value: unknown) => void;
   onRemove: () => void;
@@ -484,9 +571,18 @@ function ElementOptions({
   const custom = node.type === "element";
   const imageNode =
     (node.type === "element" && node.elementType === "image") ||
-    (node.type === "slot" && ["image", "heroImage", "wideImage", "cardImage"].includes(node.presentation ?? ""));
+    (node.type === "slot" && ["image", "heroImage", "wideImage", "cardImage", "brandLogo"].includes(node.presentation ?? ""));
+  const textBoxNode = isTextBoxNode(node);
+  const shapeNode = custom && node.elementType === "shape";
+  const buttonNode =
+    (custom && node.elementType === "button") ||
+    (node.type === "slot" && ["primaryAction", "secondaryAction"].includes(node.presentation ?? ""));
+  const currentFontSize = effectiveFontSize(style);
+  const currentBoxWidth = style.widthPercent ?? (style.width && style.width !== "auto" ? Number(style.width) : undefined);
+  const actionBackground = buttonNode ? brand?.accentColor ?? null : null;
   const effectiveBackground =
     resolveElementColor(style.backgroundColor, brand) ??
+    actionBackground ??
     resolveElementColor(sectionBackground, brand) ??
     brand?.backgroundColor ??
     null;
@@ -496,6 +592,66 @@ function ElementOptions({
       ? contrastRatio(effectiveText, effectiveBackground)
       : null;
   const contrastPass = contrast === null || contrast >= 4.5;
+  const constraints = node.constraints ?? {};
+  const widthDefault = currentBoxWidth;
+  const fontDefault = currentFontSize;
+  const heightDefault = style.heightPx;
+
+  function changeConstraints(patch: Partial<InstitutionalElementConstraints>): void {
+    if (!onConstraintsChange) return;
+    const next = { ...constraints, ...patch };
+    if (next.minWidthPercent !== undefined && next.maxWidthPercent !== undefined && next.minWidthPercent > next.maxWidthPercent) {
+      if (patch.minWidthPercent !== undefined) next.maxWidthPercent = next.minWidthPercent;
+      else next.minWidthPercent = next.maxWidthPercent;
+    }
+    if (next.minHeightPx !== undefined && next.maxHeightPx !== undefined && next.minHeightPx > next.maxHeightPx) {
+      if (patch.minHeightPx !== undefined) next.maxHeightPx = next.minHeightPx;
+      else next.minHeightPx = next.maxHeightPx;
+    }
+    if (next.minFontSize !== undefined && next.maxFontSize !== undefined && next.minFontSize > next.maxFontSize) {
+      if (patch.minFontSize !== undefined) next.maxFontSize = next.minFontSize;
+      else next.minFontSize = next.maxFontSize;
+    }
+    onConstraintsChange(next);
+  }
+
+  function alignCurrentElement(axis: "horizontal" | "vertical", value: "start" | "center" | "end"): void {
+    if (!node.id || typeof document === "undefined") return;
+    const element = Array.from(document.querySelectorAll<HTMLElement>("[data-cong-node-id]"))
+      .find((candidate) => candidate.dataset.congNodeId === node.id);
+    if (!element) return;
+    const container = element.parentElement?.closest<HTMLElement>("[data-layout-container='true']") ?? element.parentElement;
+    if (!container) return;
+
+    const elementRect = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const computed = window.getComputedStyle(container);
+    const paddingLeft = Number.parseFloat(computed.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(computed.paddingRight) || 0;
+    const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
+    const paddingBottom = Number.parseFloat(computed.paddingBottom) || 0;
+    const innerLeft = containerRect.left + paddingLeft;
+    const innerTop = containerRect.top + paddingTop;
+    const innerWidth = Math.max(0, containerRect.width - paddingLeft - paddingRight);
+    const innerHeight = Math.max(0, containerRect.height - paddingTop - paddingBottom);
+
+    if (axis === "horizontal") {
+      const targetLeft = value === "start"
+        ? innerLeft
+        : value === "center"
+          ? innerLeft + (innerWidth - elementRect.width) / 2
+          : innerLeft + innerWidth - elementRect.width;
+      onStyleChange({ offsetX: Math.round((style.offsetX ?? 0) + (targetLeft - elementRect.left)) });
+      return;
+    }
+
+    const targetTop = value === "start"
+      ? innerTop
+      : value === "center"
+        ? innerTop + (innerHeight - elementRect.height) / 2
+        : innerTop + innerHeight - elementRect.height;
+    onStyleChange({ offsetY: Math.round((style.offsetY ?? 0) + (targetTop - elementRect.top)) });
+  }
 
   return (
     <div className={styles.elementOptions}>
@@ -545,6 +701,53 @@ function ElementOptions({
         </>
       ) : null}
 
+      {buttonNode ? (
+        <>
+          <div className={styles.visualOptionGroup}>
+            <span className={styles.visualOptionTitle}>Formato do botão</span>
+            <div className={styles.buttonShapePicker}>
+              {([
+                ["none", "Reto"],
+                ["small", "Suave"],
+                ["medium", "Arredondado"],
+                ["large", "Curvo"],
+                ["pill", "Pílula"],
+              ] as const).map(([radius, label]) => (
+                <button type="button" key={radius} data-active={(style.radius ?? "pill") === radius} onClick={() => onStyleChange({ radius })}>
+                  <i data-radius={radius} aria-hidden="true" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <small className={styles.humanHint}>Arraste por praticamente toda a área do botão. As alças mudam largura e altura em qualquer direção.</small>
+          </div>
+          <div className={styles.compactGrid}>
+            <label className={styles.field}>
+              <span>Largura</span>
+              <div className={styles.unitInput}>
+                <input type="number" min="8" max="240" value={currentBoxWidth ?? ""} placeholder="Auto" onChange={(event) => {
+                  if (event.target.value === "") { onStyleChange({ widthPercent: undefined, width: "auto" }); return; }
+                  const next = Number(event.target.value);
+                  if (Number.isFinite(next)) onStyleChange({ widthPercent: Math.min(240, Math.max(8, next)), width: undefined });
+                }} />
+                <span>%</span>
+              </div>
+            </label>
+            <label className={styles.field}>
+              <span>Altura</span>
+              <div className={styles.unitInput}>
+                <input type="number" min="32" max="420" value={style.heightPx ?? ""} placeholder="Auto" onChange={(event) => {
+                  if (event.target.value === "") { onStyleChange({ heightPx: undefined }); return; }
+                  const next = Number(event.target.value);
+                  if (Number.isFinite(next)) onStyleChange({ heightPx: Math.min(420, Math.max(32, next)) });
+                }} />
+                <span>px</span>
+              </div>
+            </label>
+          </div>
+        </>
+      ) : null}
+
       {custom && node.elementType === "metric" ? (
         <>
           <label className={styles.field}>
@@ -553,7 +756,7 @@ function ElementOptions({
               value={node.value && typeof node.value === "object" ? String((node.value as { value?: string }).value ?? "") : ""}
               onChange={(event) => onValueChange({
                 value: event.target.value,
-                label: node.value && typeof node.value === "object" ? String((node.value as { label?: string }).label ?? "Indicador") : "Indicador",
+                label: node.value && typeof node.value === "object" ? String((node.value as { label?: string }).label ?? "Resultado") : "Resultado",
               })}
             />
           </label>
@@ -583,8 +786,180 @@ function ElementOptions({
         </label>
       ) : null}
 
-      <div className={styles.compactGrid}>
-        {!imageNode ? (
+      {shapeNode ? (
+        <div className={styles.visualOptionGroup}>
+          <span className={styles.visualOptionTitle}>Forma</span>
+          <div className={styles.shapePicker}>
+            {[
+              ["circle", "Círculo"],
+              ["square", "Quadrado"],
+              ["rectangle", "Retângulo"],
+              ["triangle", "Triângulo"],
+              ["diamond", "Losango"],
+              ["star", "Estrela"],
+              ["line", "Linha"],
+            ].map(([value, label]) => (
+              <button type="button" key={value} data-active={node.value === value} onClick={() => onValueChange(value)}>
+                <i data-shape={value} aria-hidden="true" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+
+      {shapeNode ? (
+        <div className={styles.shapeColorControls}>
+          <div className={styles.colorOptions}>
+            <span>Preenchimento</span>
+            <div>
+              {(["primary", "secondary", "accent", "background"] as const).map((color) => (
+                <button type="button" key={color} data-active={style.backgroundColor === color} onClick={() => onStyleChange({ backgroundColor: color })} aria-label={`Usar preenchimento ${color}`} style={{ background: resolveElementColor(color, brand) ?? undefined }} />
+              ))}
+              <ColorPickerControl value={resolveElementColor(style.backgroundColor, brand) ?? brand?.accentColor ?? "#F7B534"} onChange={(hex) => onStyleChange({ backgroundColor: hex })} label="Preenchimento personalizado" compact />
+            </div>
+            <SemanticColorChoices value={style.backgroundColor} brand={brand} onChange={(backgroundColor) => onStyleChange({ backgroundColor })} roles={["primary", "secondary", "accent", "background"]} />
+          </div>
+          <div className={styles.colorOptions}>
+            <span>Contorno</span>
+            <div>
+              {(["text", "primary", "secondary", "accent"] as const).map((color) => (
+                <button type="button" key={color} data-active={style.color === color} onClick={() => onStyleChange({ color })} aria-label={`Usar contorno ${color}`} style={{ background: resolveElementColor(color, brand) ?? undefined }} />
+              ))}
+              <ColorPickerControl value={resolveElementColor(style.color, brand) ?? brand?.primaryColor ?? "#3864BE"} onChange={(hex) => onStyleChange({ color: hex })} label="Contorno personalizado" compact />
+            </div>
+            <SemanticColorChoices value={style.color} brand={brand} onChange={(color) => onStyleChange({ color })} roles={["text", "primary", "secondary", "accent"]} />
+          </div>
+          <label className={styles.field}>
+            <span>Espessura do contorno</span>
+            <div className={styles.unitInput}><input type="number" min="0" max="20" step="1" value={style.strokeWidth ?? 0} onChange={(event) => onStyleChange({ strokeWidth: Math.max(0, Math.min(20, Number(event.target.value) || 0)) })} /><span>px</span></div>
+          </label>
+        </div>
+      ) : null}
+
+      {textBoxNode ? (
+        <div className={styles.textBoxControls}>
+          <div className={styles.compactGrid}>
+            <label className={styles.field}>
+              <span>Tamanho do texto</span>
+              <div className={styles.unitInput}>
+                <input
+                  type="number"
+                  min="10"
+                  max="96"
+                  step="1"
+                  value={currentFontSize}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    if (Number.isFinite(value)) onStyleChange({ fontSize: Math.min(96, Math.max(10, value)) });
+                  }}
+                />
+                <span>px</span>
+              </div>
+            </label>
+
+            <label className={styles.field}>
+              <span>Largura da caixa</span>
+              <div className={styles.unitInput}>
+                <input
+                  type="number"
+                  min="8"
+                  max="240"
+                  step="1"
+                  value={currentBoxWidth ?? ""}
+                  placeholder="Auto"
+                  onChange={(event) => {
+                    if (event.target.value === "") {
+                      onStyleChange({ widthPercent: undefined, width: "auto" });
+                      return;
+                    }
+                    const value = Number(event.target.value);
+                    if (Number.isFinite(value)) onStyleChange({ widthPercent: Math.min(240, Math.max(8, value)), width: undefined });
+                  }}
+                />
+                <span>%</span>
+              </div>
+            </label>
+          </div>
+
+          <div className={styles.textBoxPresets} aria-label="Larguras rápidas da caixa de texto">
+            <button type="button" data-active={currentBoxWidth === undefined} onClick={() => onStyleChange({ widthPercent: undefined, width: "auto" })}>Auto</button>
+            {[25, 50, 75, 100, 150].map((width) => (
+              <button type="button" key={width} data-active={Math.round(currentBoxWidth ?? -1) === width} onClick={() => onStyleChange({ widthPercent: width, width: undefined })}>{width}%</button>
+            ))}
+          </div>
+
+          <div className={styles.textBoxHelp}>
+            <strong>Fonte e caixa são independentes.</strong>
+            <span>Arraste as alças laterais para mudar somente a largura e a quebra das linhas. No modo livre a caixa pode ultrapassar a coluna original.</span>
+            {style.fontSize !== undefined ? <button type="button" onClick={() => onStyleChange({ fontSize: undefined })}>Usar tamanho do design</button> : null}
+          </div>
+        </div>
+      ) : imageNode ? (
+        <div className={styles.imageSizeControls}>
+          <div className={styles.compactGrid}>
+            <label className={styles.field}>
+              <span>Largura da moldura</span>
+              <div className={styles.unitInput}>
+                <input
+                  type="number"
+                  min="10"
+                  max="100"
+                  step="1"
+                  value={currentBoxWidth ?? ""}
+                  placeholder="Auto"
+                  onChange={(event) => {
+                    if (event.target.value === "") {
+                      onStyleChange({ widthPercent: undefined, width: "auto" });
+                      return;
+                    }
+                    const value = Number(event.target.value);
+                    if (Number.isFinite(value)) onStyleChange({ widthPercent: Math.min(100, Math.max(10, value)), width: undefined });
+                  }}
+                />
+                <span>%</span>
+              </div>
+            </label>
+
+            <label className={styles.field}>
+              <span>Altura da moldura</span>
+              <div className={styles.unitInput}>
+                <input
+                  type="number"
+                  min="80"
+                  max="1400"
+                  step="1"
+                  value={style.heightPx ?? ""}
+                  placeholder="Auto"
+                  onChange={(event) => {
+                    if (event.target.value === "") {
+                      onStyleChange({ heightPx: undefined });
+                      return;
+                    }
+                    const value = Number(event.target.value);
+                    if (Number.isFinite(value)) onStyleChange({ heightPx: Math.min(1400, Math.max(80, value)) });
+                  }}
+                />
+                <span>px</span>
+              </div>
+            </label>
+          </div>
+
+          <div className={styles.textBoxPresets} aria-label="Larguras rápidas da moldura">
+            {[25, 50, 75, 100].map((width) => (
+              <button type="button" key={width} data-active={Math.round(currentBoxWidth ?? -1) === width} onClick={() => onStyleChange({ widthPercent: width, width: undefined })}>{width}%</button>
+            ))}
+            <button type="button" data-active={style.heightPx === undefined} onClick={() => onStyleChange({ heightPx: undefined })}>Altura auto</button>
+          </div>
+
+          <div className={styles.textBoxHelp}>
+            <strong>Moldura e foto são independentes.</strong>
+            <span>As alças mudam o espaço ocupado pela moldura. Dê duplo clique na foto ou use “Ajustar foto” para mover o enquadramento sem deslocar o elemento.</span>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.compactGrid}>
           <label className={styles.field}>
             <span>Tamanho</span>
             <select
@@ -600,24 +975,24 @@ function ElementOptions({
               <option value="3xl">Máximo</option>
             </select>
           </label>
-        ) : null}
 
-        <label className={styles.field}>
-          <span>Largura</span>
-          <select
-            value={style.width ?? "100"}
-            onChange={(event) => onStyleChange({ width: event.target.value as InstitutionalElementStyle["width"] })}
-          >
-            <option value="auto">Automática</option>
-            <option value="25">25%</option>
-            <option value="33">33%</option>
-            <option value="50">50%</option>
-            <option value="66">66%</option>
-            <option value="75">75%</option>
-            <option value="100">100%</option>
-          </select>
-        </label>
-      </div>
+          <label className={styles.field}>
+            <span>Largura</span>
+            <select
+              value={style.width ?? "100"}
+              onChange={(event) => onStyleChange({ width: event.target.value as InstitutionalElementStyle["width"], widthPercent: undefined })}
+            >
+              <option value="auto">Automática</option>
+              <option value="25">25%</option>
+              <option value="33">33%</option>
+              <option value="50">50%</option>
+              <option value="66">66%</option>
+              <option value="75">75%</option>
+              <option value="100">100%</option>
+            </select>
+          </label>
+        </div>
+      )}
 
       {imageNode ? (
         <details className={styles.sectionAppearance} open>
@@ -625,7 +1000,7 @@ function ElementOptions({
           <div className={styles.sectionAppearanceBody}>
             <div className={styles.visualOptionGroup}>
               <span className={styles.visualOptionTitle}>Forma da foto</span>
-              <ImageFramePicker style={style} frames={designFrames} onChange={onStyleChange} />
+              <ImageFramePicker style={style} frames={designFrames} previewImageUrl={previewImageUrl} onChange={onStyleChange} />
             </div>
 
             <div className={styles.visualOptionGroup}>
@@ -638,7 +1013,7 @@ function ElementOptions({
                   ["16:9", "Panorâmica", "▬"],
                   ["portrait", "Retrato", "▯"],
                 ].map(([value, label, icon]) => (
-                  <button type="button" key={value} data-active={(style.imageAspect ?? "auto") === value} onClick={() => onStyleChange({ imageAspect: value as NonNullable<InstitutionalElementStyle["imageAspect"]> })}>
+                  <button type="button" key={value} data-active={(style.imageAspect ?? "auto") === value} onClick={() => onStyleChange({ imageAspect: value as NonNullable<InstitutionalElementStyle["imageAspect"]>, heightPx: undefined })}>
                     <b>{icon}</b><span>{label}</span>
                   </button>
                 ))}
@@ -666,7 +1041,7 @@ function ElementOptions({
                   <button type="button" key={`${x}-${y}`} data-active={Math.abs((style.focalX ?? 50) - x) < 13 && Math.abs((style.focalY ?? 50) - y) < 13} onClick={() => onStyleChange({ focalX: x, focalY: y })} aria-label={`Focar em ${x === 25 ? "esquerda" : x === 75 ? "direita" : "centro"}, ${y === 25 ? "topo" : y === 75 ? "base" : "meio"}`} />
                 )))}
               </div>
-              <small className={styles.humanHint}>Você também pode arrastar a própria foto no canvas.</small>
+              <small className={styles.humanHint}>Dê duplo clique na foto (ou use “Ajustar foto”) e então arraste o enquadramento no canvas.</small>
             </div>
 
             <div className={styles.visualOptionGroup}>
@@ -674,9 +1049,22 @@ function ElementOptions({
               <div className={styles.overlayRow}>
                 <div className={styles.colorChoices}>
                   {(["primary", "secondary", "accent", "text"] as const).map((color) => (
-                    <button type="button" key={color} data-color={color} data-active={style.overlayColor === color} onClick={() => onStyleChange({ overlayColor: color })} aria-label={`Usar cor recomendada ${color}`} />
+                    <button
+                      type="button"
+                      key={color}
+                      data-color={color}
+                      data-active={style.overlayColor === color}
+                      onClick={() => onStyleChange({ overlayColor: color })}
+                      aria-label={`Usar cor recomendada ${color}`}
+                      style={{ background: resolveElementColor(color, brand) ?? undefined }}
+                    />
                   ))}
-                  <input type="color" value={style.overlayColor?.startsWith("#") ? style.overlayColor : "#000000"} onChange={(event) => onStyleChange({ overlayColor: event.target.value as `#${string}` })} aria-label="Escolher qualquer cor sobre a foto" />
+                  <ColorPickerControl
+                    value={resolveElementColor(style.overlayColor, brand) ?? "#000000"}
+                    onChange={(hex) => onStyleChange({ overlayColor: hex })}
+                    label="Cor sobre a foto"
+                    compact
+                  />
                 </div>
                 <label className={styles.field}>
                   <span>Intensidade · {Math.round((style.overlayOpacity ?? 0) * 100)}%</span>
@@ -705,7 +1093,20 @@ function ElementOptions({
       ) : null}
 
       <div className={styles.visualOptionGroup}>
-        <span className={styles.visualOptionTitle}>Posição do elemento</span>
+        <span className={styles.visualOptionTitle}>Alinhar onde já está</span>
+        <small className={styles.humanHint}>Só corrige um eixo por vez. O outro permanece exatamente onde está.</small>
+        <div className={styles.alignObjectGrid}>
+          <button type="button" onClick={() => alignCurrentElement("horizontal", "start")}><b>←</b><span>Esquerda</span></button>
+          <button type="button" onClick={() => alignCurrentElement("horizontal", "center")}><b>↔</b><span>Centro</span></button>
+          <button type="button" onClick={() => alignCurrentElement("horizontal", "end")}><b>→</b><span>Direita</span></button>
+          <button type="button" onClick={() => alignCurrentElement("vertical", "start")}><b>↑</b><span>Topo</span></button>
+          <button type="button" onClick={() => alignCurrentElement("vertical", "center")}><b>↕</b><span>Meio</span></button>
+          <button type="button" onClick={() => alignCurrentElement("vertical", "end")}><b>↓</b><span>Base</span></button>
+        </div>
+      </div>
+
+      <div className={styles.visualOptionGroup}>
+        <span className={styles.visualOptionTitle}>Posição no fluxo</span>
         <div className={styles.placementPicker}>
           <button type="button" data-active={style.placement === "left"} onClick={() => onStyleChange({ placement: "left", offsetX: 0 })}>À esquerda</button>
           <button type="button" data-active={style.placement === "center"} onClick={() => onStyleChange({ placement: "center", offsetX: 0 })}>Centralizar</button>
@@ -721,7 +1122,7 @@ function ElementOptions({
         <button type="button" data-active={Boolean(style.hidden)} onClick={() => onStyleChange({ hidden: !style.hidden })}>{style.hidden ? <FiEye /> : <FiEyeOff />}{style.hidden ? "Mostrar" : "Ocultar"}</button>
       </div>
 
-      {!imageNode ? (
+      {!imageNode && !shapeNode ? (
       <div className={styles.colorOptions}>
         <span>Cor</span>
         <div>
@@ -733,13 +1134,15 @@ function ElementOptions({
               data-active={style.color === color}
               onClick={() => onStyleChange({ color })}
               aria-label={`Usar cor ${color}`}
+              style={{ background: resolveElementColor(color, brand) ?? undefined }}
             />
           ))}
-          <input
-            type="color"
-            value={style.color?.startsWith("#") ? style.color : "#1366c4"}
-            onChange={(event) => onStyleChange({ color: event.target.value as `#${string}` })}
-            aria-label="Cor personalizada"
+          <SemanticColorChoices value={style.color} brand={brand} onChange={(color) => onStyleChange({ color })} roles={["text", "primary", "secondary", "accent"]} />
+          <ColorPickerControl
+            value={resolveElementColor(style.color, brand) ?? brand?.textColor ?? "#091C30"}
+            onChange={(hex) => onStyleChange({ color: hex })}
+            label="Cor personalizada"
+            compact
           />
         </div>
       </div>
@@ -757,19 +1160,21 @@ function ElementOptions({
                 data-active={style.backgroundColor === color}
                 onClick={() => onStyleChange({ backgroundColor: color })}
                 aria-label={`Usar fundo ${color}`}
+                style={{ background: resolveElementColor(color, brand) ?? undefined }}
               />
             ))}
-            <input
-              type="color"
-              value={style.backgroundColor?.startsWith("#") ? style.backgroundColor : "#f7b534"}
-              onChange={(event) => onStyleChange({ backgroundColor: event.target.value as `#${string}` })}
-              aria-label="Fundo personalizado"
+            <SemanticColorChoices value={style.backgroundColor} brand={brand} onChange={(backgroundColor) => onStyleChange({ backgroundColor })} roles={["primary", "secondary", "accent", "background"]} />
+            <ColorPickerControl
+              value={resolveElementColor(style.backgroundColor, brand) ?? brand?.accentColor ?? "#F7B534"}
+              onChange={(hex) => onStyleChange({ backgroundColor: hex })}
+              label="Fundo personalizado"
+              compact
             />
           </div>
         </div>
       ) : null}
 
-      {!imageNode && contrast !== null ? (
+      {!imageNode && !shapeNode && contrast !== null ? (
         contrastPass ? (
           <div className={styles.readingOk}><FiCheck /><span>Boa leitura</span></div>
         ) : (
@@ -779,6 +1184,45 @@ function ElementOptions({
             {effectiveBackground ? <button type="button" onClick={() => onStyleChange({ color: bestReadableElementColor(effectiveBackground, brand) })}>Melhorar automaticamente</button> : null}
           </div>
         )
+      ) : null}
+
+      {designerMode && onConstraintsChange ? (
+        <details className={styles.designerRules} open>
+          <summary>Regras para quem usar o template</summary>
+          <div className={styles.designerRulesBody}>
+            <p>O tamanho atual é o padrão do template. Defina até onde a ONG pode reduzir ou ampliar este elemento no modo guiado.</p>
+            <div className={styles.designerDefault}>
+              <span>Padrão atual</span>
+              <strong>
+                {widthDefault !== undefined ? `${Math.round(widthDefault)}%` : "Largura automática"}
+                {textBoxNode ? ` · ${fontDefault}px` : (imageNode || buttonNode || shapeNode) ? ` · ${heightDefault !== undefined ? `${Math.round(heightDefault)}px` : "altura do design"}` : ""}
+              </strong>
+            </div>
+            <div className={styles.constraintGrid}>
+              <label>
+                <span>Largura mínima</span>
+                <div><input type="number" min="8" max="100" value={constraints.minWidthPercent ?? 8} onChange={(event) => changeConstraints({ minWidthPercent: Number(event.target.value) })} /><b>%</b></div>
+              </label>
+              <label>
+                <span>Largura máxima</span>
+                <div><input type="number" min="8" max="100" value={constraints.maxWidthPercent ?? 100} onChange={(event) => changeConstraints({ maxWidthPercent: Number(event.target.value) })} /><b>%</b></div>
+              </label>
+              {textBoxNode ? (
+                <>
+                  <label><span>Texto mínimo</span><div><input type="number" min="10" max="160" value={constraints.minFontSize ?? Math.max(10, Math.min(fontDefault, 12))} onChange={(event) => changeConstraints({ minFontSize: Number(event.target.value) })} /><b>px</b></div></label>
+                  <label><span>Texto máximo</span><div><input type="number" min="10" max="160" value={constraints.maxFontSize ?? Math.max(fontDefault, 84)} onChange={(event) => changeConstraints({ maxFontSize: Number(event.target.value) })} /><b>px</b></div></label>
+                </>
+              ) : null}
+              {imageNode || buttonNode || shapeNode ? (
+                <>
+                  <label><span>Altura mínima</span><div><input type="number" min={imageNode ? 80 : buttonNode ? 32 : 24} max="1400" value={constraints.minHeightPx ?? (imageNode ? 80 : buttonNode ? 32 : 24)} onChange={(event) => changeConstraints({ minHeightPx: Number(event.target.value) })} /><b>px</b></div></label>
+                  <label><span>Altura máxima</span><div><input type="number" min={imageNode ? 80 : buttonNode ? 32 : 24} max="1400" value={constraints.maxHeightPx ?? (buttonNode ? 420 : 1400)} onChange={(event) => changeConstraints({ maxHeightPx: Number(event.target.value) })} /><b>px</b></div></label>
+                </>
+              ) : null}
+            </div>
+            <small>Esses limites protegem o design no modo guiado. No modo livre, a ONG pode ultrapassá-los conscientemente.</small>
+          </div>
+        </details>
       ) : null}
     </div>
   );
@@ -800,6 +1244,8 @@ export default function PropertiesPanel({
   onUploadSectionBackground,
   allowImageUpload = true,
   designFrames = [],
+  designerMode = false,
+  onElementConstraintsChange,
 }: {
   section: InstitutionalSection | null;
   variants: InstitutionalVariant[];
@@ -816,7 +1262,11 @@ export default function PropertiesPanel({
   onUploadSectionBackground?: (file: File) => void;
   allowImageUpload?: boolean;
   designFrames?: InstitutionalDesignFrame[];
+  designerMode?: boolean;
+  onElementConstraintsChange?: (constraints: InstitutionalElementConstraints) => void;
 }) {
+  const [panelTab, setPanelTab] = useState<"content" | "design" | "layout">("content");
+
   if (!section) {
     return (
       <aside className={styles.panel}>
@@ -844,6 +1294,21 @@ export default function PropertiesPanel({
     section.settings.sectionStyle && typeof section.settings.sectionStyle === "object"
       ? (section.settings.sectionStyle as InstitutionalSectionStyle)
       : {};
+  const contentGuidance =
+    section.settings.contentGuidance && typeof section.settings.contentGuidance === "object"
+      ? (section.settings.contentGuidance as {
+          source?: string;
+          area?: string | null;
+          needsReview?: boolean;
+        })
+      : null;
+  const selectedImagePreviewUrl = selectedElement
+    ? selectedElement.type === "element"
+      ? asImage(selectedElement.value)?.url
+      : selectedElement.type === "slot"
+        ? asImage(section.content[selectedElement.slot])?.url
+        : undefined
+    : undefined;
 
   return (
     <aside className={styles.panel}>
@@ -857,13 +1322,39 @@ export default function PropertiesPanel({
         </button>
       </div>
 
-      <div className={styles.panelBody}>
+      <div className={styles.inspectorTabs} role="tablist" aria-label="Opções da seção">
+        <button type="button" role="tab" aria-selected={panelTab === "content"} data-active={panelTab === "content"} onClick={() => setPanelTab("content")}>Conteúdo</button>
+        <button type="button" role="tab" aria-selected={panelTab === "design"} data-active={panelTab === "design"} onClick={() => setPanelTab("design")}>Design</button>
+        <button type="button" role="tab" aria-selected={panelTab === "layout"} data-active={panelTab === "layout"} onClick={() => setPanelTab("layout")}>Layout</button>
+      </div>
+
+      <div className={styles.guidedIntro} data-tab={panelTab}>
+        <strong>{panelTab === "content" ? "O que esta seção diz" : panelTab === "design" ? "Como esta seção aparece" : "Como o conteúdo ocupa o espaço"}</strong>
+        <span>{panelTab === "content" ? "Edite textos, imagens e ações. A CONG mantém o restante organizado." : panelTab === "design" ? "Escolha uma composição e personalize o visual sem perder seu conteúdo." : "Ajuste espaço e largura. As opções recomendadas funcionam melhor em mais tamanhos de tela."}</span>
+      </div>
+
+      <div className={styles.panelBody} data-tab={panelTab} data-editing-element={Boolean(selectedElement)}>
+        {contentGuidance?.source === "contextual-example" && contentGuidance.needsReview ? (
+          <div className={styles.contextGuidance}>
+            <strong>Já deixamos um exemplo para você começar</strong>
+            <span>
+              {contentGuidance.area
+                ? `A sugestão considera a atuação em ${contentGuidance.area}. `
+                : "A sugestão usa exemplos comuns para organizações sociais. "}
+              Troque os números, nomes e textos pelos dados reais da organização antes de publicar.
+            </span>
+          </div>
+        ) : null}
+
         {selectedElement && onElementStyleChange && onElementValueChange && onRemoveElement ? (
           <ElementOptions
             node={selectedElement}
             brand={brand}
             sectionBackground={sectionStyle.backgroundColor}
             designFrames={designFrames}
+            previewImageUrl={selectedImagePreviewUrl}
+            designerMode={designerMode}
+            onConstraintsChange={onElementConstraintsChange}
             onStyleChange={onElementStyleChange}
             onValueChange={onElementValueChange}
             onRemove={onRemoveElement}
@@ -922,9 +1413,23 @@ export default function PropertiesPanel({
                       <span>Cor</span>
                       <div>
                         {(["background", "primary", "secondary", "accent"] as const).map((color) => (
-                          <button type="button" key={color} data-color={color} data-active={!sectionStyle.backgroundImage && sectionStyle.backgroundColor === color} onClick={() => onSectionStyleChange({ backgroundColor: color, backgroundImage: null })} aria-label={`Usar cor ${color}`} />
+                          <button
+                            type="button"
+                            key={color}
+                            data-color={color}
+                            data-active={!sectionStyle.backgroundImage && sectionStyle.backgroundColor === color}
+                            onClick={() => onSectionStyleChange({ backgroundColor: color, backgroundImage: null })}
+                            aria-label={`Usar cor ${color}`}
+                            style={{ background: resolveElementColor(color, brand) ?? undefined }}
+                          />
                         ))}
-                        <input type="color" value={sectionStyle.backgroundColor?.startsWith("#") ? sectionStyle.backgroundColor : brand?.backgroundColor ?? "#ffffff"} onChange={(event) => onSectionStyleChange({ backgroundColor: event.target.value as `#${string}`, backgroundImage: null })} aria-label="Escolher outra cor" />
+                        <SemanticColorChoices value={sectionStyle.backgroundColor} brand={brand} onChange={(backgroundColor) => onSectionStyleChange({ backgroundColor, backgroundImage: null })} roles={["background", "primary", "secondary", "accent"]} />
+                        <ColorPickerControl
+                          value={resolveElementColor(sectionStyle.backgroundColor, brand) ?? brand?.backgroundColor ?? "#FFFFFF"}
+                          onChange={(hex) => onSectionStyleChange({ backgroundColor: hex, backgroundImage: null })}
+                          label="Fundo personalizado"
+                          compact
+                        />
                       </div>
                     </div>
                   </div>

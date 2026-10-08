@@ -9,7 +9,9 @@ import type {
   InstitutionalElementStyle,
   InstitutionalImageValue,
 } from "../../../services/institutionalService";
+import { institutionalColorCssVar } from "../../../utils/institutionalColors";
 
+import FloatingCanvasHint from "./FloatingCanvasHint";
 import styles from "./InstitutionalRenderer.module.css";
 
 type DragState = {
@@ -29,14 +31,9 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function cssColor(value: InstitutionalElementStyle["overlayColor"]): string {
-  if (!value) return "#000000";
-  if (value.startsWith("#")) return value;
-  if (value === "text") return "var(--org-text)";
-  if (value === "primary") return "var(--org-primary)";
-  if (value === "secondary") return "var(--org-secondary)";
-  if (value === "accent") return "var(--org-accent)";
-  return "var(--org-background)";
+  return institutionalColorCssVar(value) ?? "#000000";
 }
+
 
 export default function ImageMedia({
   image,
@@ -62,6 +59,7 @@ export default function ImageMedia({
   onInteractionCommit?: () => void;
 }) {
   const dragRef = useRef<DragState | null>(null);
+  const hintAnchorRef = useRef<HTMLDivElement>(null);
   const focalX = style.focalX ?? 50;
   const focalY = style.focalY ?? 50;
   const imageZoom = style.imageZoom ?? 1;
@@ -134,7 +132,7 @@ export default function ImageMedia({
   if (!image?.url) {
     if (!editable) return null;
     return (
-      <div className={styles.editableMedia}>
+      <div ref={hintAnchorRef} className={styles.editableMedia}>
         <button
           type="button"
           className={`${styles.imagePlaceholder} ${styles[presentation] ?? ""}`}
@@ -144,29 +142,31 @@ export default function ImageMedia({
           }}
         >
           <FiImage aria-hidden="true" />
-          <span>Adicionar imagem</span>
+          <span>Escolher uma foto</span>
+          <small>Prefira uma imagem real de pessoas, ações ou do território.</small>
         </button>
         {selected && guidance ? (
-          <div className={styles.imageFloatingHint} role="note">
+          <FloatingCanvasHint anchorRef={hintAnchorRef} className={styles.imageFloatingHint} preferredWidth={420}>
             <FiImage aria-hidden="true" />
             <div>
               <strong>{guidance.title}</strong>
               {guidance.text ? <span>{guidance.text}</span> : null}
               {guidance.note ? <small>{guidance.note}</small> : null}
             </div>
-          </div>
+          </FloatingCanvasHint>
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className={styles.imageMediaRoot}>
+    <div ref={hintAnchorRef} className={styles.imageMediaRoot}>
       <div
         className={`${styles.imageMediaFrame} ${styles[presentation] ?? ""}`}
         data-frame={imageFrame}
         data-fit={imageFit}
         data-aspect={imageAspect}
+        data-custom-height={style.heightPx !== undefined}
         style={frameStyle}
         onPointerDown={beginFocalDrag}
         onPointerMove={moveFocal}
@@ -197,14 +197,14 @@ export default function ImageMedia({
       </div>
 
       {editable && selected && guidance ? (
-        <div className={styles.imageFloatingHint} role="note">
+        <FloatingCanvasHint anchorRef={hintAnchorRef} className={styles.imageFloatingHint} preferredWidth={420}>
           <FiImage aria-hidden="true" />
           <div>
             <strong>{guidance.title}</strong>
             {guidance.text ? <span>{guidance.text}</span> : null}
             {guidance.note ? <small>{guidance.note}</small> : null}
           </div>
-        </div>
+        </FloatingCanvasHint>
       ) : null}
     </div>
   );

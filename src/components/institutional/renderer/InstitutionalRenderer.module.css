@@ -348,15 +348,18 @@
 
 .editableText {
   position: relative;
-  display: grid;
+  display: block;
   width: fit-content;
   max-width: 100%;
-  gap: 7px;
 }
 
 .inlineGuidance {
-  width: fit-content;
-  max-width: min(520px, 100%);
+  position: absolute;
+  z-index: 18;
+  top: calc(100% + 8px);
+  left: 0;
+  width: max-content;
+  max-width: min(520px, calc(100vw - 56px));
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -370,6 +373,7 @@
   font-family: var(--font-interface);
   font-size: var(--font-2xs);
   line-height: var(--line-normal);
+  pointer-events: none;
 }
 
 .inlineGuidance[data-warning="true"] {
@@ -503,6 +507,35 @@
 .elementShell[data-selected="true"] {
   z-index: 3;
   background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+}
+
+/* Textbox geometry: the shell is the actual text box. Guidance floats outside
+   the geometry and an explicit/temporary width makes the text reflow inside
+   that box instead of staying trapped by a template max-width. */
+.elementShell[data-text-box="true"] {
+  box-sizing: border-box;
+}
+
+.elementShell[data-text-box="true"] .editableText {
+  max-width: 100%;
+}
+
+.elementShell[data-text-box="true"][data-explicit-width="true"] .editableText,
+.elementShell[data-text-box="true"][data-resizing="true"] .editableText {
+  width: 100%;
+  max-width: none;
+}
+
+.elementShell[data-text-box="true"][data-explicit-width="true"] :is(.display, .heading, .lead, .body, .itemBody, .contactLine, .caption, .itemTitle, .metricValue, .metricLabel, .customQuote),
+.elementShell[data-text-box="true"][data-resizing="true"] :is(.display, .heading, .lead, .body, .itemBody, .contactLine, .caption, .itemTitle, .metricValue, .metricLabel, .customQuote) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  overflow-wrap: break-word;
+}
+
+.elementShell[data-text-box="true"] [contenteditable="true"] {
+  white-space: pre-wrap;
 }
 
 .elementShell :is(.display, .heading, .lead, .body, .itemBody, .contactLine, .caption, .itemTitle, .metricValue, .metricLabel) {
@@ -1445,6 +1478,13 @@
   cursor: ew-resize;
 }
 
+.elementShell[data-text-box="true"] > .resizeHandle[data-edge="left"],
+.elementShell[data-text-box="true"] > .resizeHandle[data-edge="right"] {
+  width: 8px;
+  height: 24px;
+  border-radius: 5px;
+}
+
 .resizeHandle[data-edge="bottom"] {
   left: 50%;
   right: auto;
@@ -2236,3 +2276,1063 @@
   transform: none;
 }
 .safeAreaWarning { pointer-events: auto; }
+
+/* =========================================================
+   CONG Builder V1.9 — interaction engine
+   ========================================================= */
+.smartGuideVertical,
+.smartGuideHorizontal {
+  position: fixed;
+  z-index: 9998;
+  pointer-events: none;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 1px rgb(var(--color-white-rgb) / .75);
+  opacity: .72;
+}
+.smartGuideVertical { top: 0; bottom: 0; width: 1px; }
+.smartGuideHorizontal { left: 0; right: 0; height: 1px; }
+
+.elementShell[data-dragging="true"] {
+  transition: none !important;
+  will-change: transform;
+}
+.elementShell[data-resizing="true"] {
+  transition: none !important;
+  will-change: width, height, transform;
+}
+
+.cropDoneButton {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border-radius: 9px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  font-size: 10px;
+  font-weight: var(--font-semibold);
+}
+.cropDoneButton:hover { background: var(--color-primary-dark); }
+
+.hexColorField {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 10px;
+  padding-top: 2px;
+  color: var(--color-slate-600);
+  font-size: 10px;
+}
+.hexColorField input {
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  outline: none;
+  color: var(--color-navy);
+  background: var(--color-slate-50);
+  font: 600 10px var(--font-interface);
+  text-transform: uppercase;
+}
+.hexColorField input:focus {
+  border-color: var(--color-primary-300);
+  background: var(--color-white);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+.paletteGrid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.paletteColor span[style] { border: 1px solid rgb(var(--color-navy-rgb) / .08); }
+
+.elementShell[data-crop-mode="true"] {
+  cursor: default !important;
+  outline-color: var(--color-accent-600);
+  box-shadow: 0 0 0 4px rgb(var(--color-accent-rgb) / .11);
+}
+.elementShell[data-crop-mode="true"] .imageMediaFrame {
+  cursor: grab;
+  box-shadow: inset 0 0 0 2px rgb(var(--color-accent-rgb) / .45);
+}
+.elementShell[data-crop-mode="true"] .imageMediaFrame:active { cursor: grabbing; }
+
+/* Decoration variables are user-controlled in V1.9. */
+.section[data-background-decor="soft-glow"]:not([data-has-background-image="true"]) {
+  background-image:
+    radial-gradient(circle at 82% 20%, color-mix(in srgb, var(--section-decor-color) var(--section-decor-strong, 20%), transparent), transparent 34%),
+    radial-gradient(circle at 10% 86%, color-mix(in srgb, var(--section-decor-secondary) var(--section-decor-soft, 10%), transparent), transparent 38%) !important;
+}
+.section[data-background-decor="corner-glow"]:not([data-has-background-image="true"]) {
+  background-image: radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--section-decor-color) var(--section-decor-strong, 24%), transparent), transparent 36%) !important;
+}
+.section[data-background-decor="wash"]:not([data-has-background-image="true"]) {
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--section-decor-color) var(--section-decor-soft, 11%), transparent), transparent 46%, color-mix(in srgb, var(--section-decor-secondary) var(--section-decor-soft, 9%), transparent)) !important;
+}
+.section[data-background-decor="rings"]:not([data-has-background-image="true"])::before {
+  transform: scale(var(--section-decor-scale, 1));
+  transform-origin: top right;
+  border-color: color-mix(in srgb, var(--section-decor-color) var(--section-decor-strong, 26%), transparent);
+  box-shadow:
+    0 0 0 54px color-mix(in srgb, var(--section-decor-color) var(--section-decor-soft, 5%), transparent),
+    0 0 0 108px color-mix(in srgb, var(--section-decor-secondary) var(--section-decor-soft, 4%), transparent);
+}
+.elementShell[data-hidden="true"][data-editable="true"]::after {
+  content: "Oculto";
+  position: absolute;
+  z-index: 40;
+  top: 7px;
+  left: 7px;
+  padding: 4px 7px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 999px;
+  color: var(--color-slate-600);
+  background: rgb(var(--color-white-rgb) / .92);
+  box-shadow: 0 3px 10px rgb(var(--color-navy-rgb) / .08);
+  font-family: var(--font-interface);
+  font-size: 8px;
+  font-weight: var(--font-semibold);
+  pointer-events: none;
+}
+.elementShell[data-hidden="true"][data-editable="false"] { display: none; }
+.contextPopover { max-height: min(440px, calc(100vh - 96px)); overflow-y: auto; }
+
+/* V1.10 — poucas famílias, peças compatíveis e acabamento compartilhado */
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  color: color-mix(in srgb, var(--org-text, var(--color-navy)) 82%, transparent);
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.navLink:hover {
+  color: var(--org-primary, var(--color-primary));
+  background: color-mix(in srgb, var(--org-primary, var(--color-primary)) 7%, transparent);
+}
+
+.navLink:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--org-primary, var(--color-primary)) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.headerSection {
+  position: relative;
+  z-index: 20;
+  padding-block: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--org-text, var(--color-navy)) 9%, transparent);
+  background: color-mix(in srgb, var(--section-background, var(--org-background)) 94%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.headerSection .sectionInner > .columns {
+  min-height: 52px;
+}
+
+.headerSection .sectionInner > .columns > .stack:last-child {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.headerSection .repeat {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.headerSection .itemTitle {
+  font-size: clamp(1.05rem, 1.6vw, 1.32rem);
+  letter-spacing: -0.015em;
+}
+
+.headerSection .primaryAction {
+  min-height: 40px;
+  padding-inline: 16px;
+}
+
+.section[data-visual-style="header-human"] {
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--org-text) 5%, transparent);
+}
+
+.section[data-visual-style="header-human"] .itemTitle::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  margin-right: 9px;
+  border-radius: 3px 9px 9px 9px;
+  background: linear-gradient(135deg, var(--org-primary), var(--org-accent));
+  transform: rotate(-12deg);
+}
+
+.section[data-visual-style="header-essential"] {
+  box-shadow: none;
+  background: var(--section-background, var(--org-background));
+}
+
+.section[data-visual-style="hero-human-v2"] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 7% 90%, color-mix(in srgb, var(--org-accent) 10%, transparent), transparent 28%),
+    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--org-primary) 8%, transparent), transparent 30%),
+    var(--section-background, var(--org-background));
+}
+
+.section[data-visual-style="hero-human-v2"]::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: clamp(-140px, -8vw, -70px);
+  bottom: clamp(-150px, -11vw, -80px);
+  width: clamp(230px, 30vw, 470px);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--org-primary) 12%, transparent);
+  border-radius: 43% 57% 62% 38% / 54% 38% 62% 46%;
+}
+
+.section[data-visual-style="hero-human-v2"] .display {
+  max-width: 11.5ch;
+  font-size: clamp(3rem, 6.6vw, 6.2rem);
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.section[data-visual-style="hero-human-v2"] .lead {
+  max-width: 52ch;
+  font-size: clamp(1.05rem, 1.7vw, 1.3rem);
+}
+
+.section[data-visual-style="hero-human-v2"] :is(.imageButton, .customImageButton, .imageMediaFrame) {
+  min-height: clamp(390px, 48vw, 650px);
+  border-radius: 48% 52% 30% 70% / 36% 38% 62% 64%;
+  box-shadow: 0 28px 70px color-mix(in srgb, var(--org-text) 14%, transparent);
+}
+
+.section[data-visual-style="hero-human-v2"] .primaryAction,
+.section[data-visual-style="support-human-v2"] .primaryAction {
+  box-shadow: 0 9px 22px color-mix(in srgb, var(--org-accent) 22%, transparent);
+}
+
+.section[data-visual-style="hero-clear"] {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--org-primary) 3%, var(--org-background)), var(--org-background) 56%);
+}
+
+.section[data-visual-style="hero-clear"] .sectionInner > .stack {
+  max-width: 1050px;
+  margin-inline: auto;
+  align-items: center;
+  text-align: center;
+}
+
+.section[data-visual-style="hero-clear"] .display {
+  max-width: 14ch;
+  font-size: clamp(3.2rem, 7.2vw, 6.8rem);
+  line-height: 0.93;
+  letter-spacing: -0.052em;
+  text-wrap: balance;
+}
+
+.section[data-visual-style="hero-clear"] .lead {
+  max-width: 58ch;
+  font-size: clamp(1.08rem, 1.8vw, 1.32rem);
+}
+
+.section[data-visual-style="hero-clear"] :is(.imageButton, .customImageButton, .imageMediaFrame) {
+  width: min(980px, 100%);
+  margin-inline: auto;
+  border-radius: 30px;
+  box-shadow: 0 22px 56px color-mix(in srgb, var(--org-text) 10%, transparent);
+}
+
+.section[data-visual-style="impact-story"] {
+  padding-block: clamp(46px, 6vw, 76px);
+  background: color-mix(in srgb, var(--org-primary) 4%, var(--org-background));
+}
+
+.section[data-visual-style="impact-story"] .heading,
+.section[data-visual-style="impact-editorial"] .heading {
+  max-width: 19ch;
+  font-size: clamp(2.15rem, 4.3vw, 4rem);
+  text-wrap: balance;
+}
+
+.section[data-visual-style="impact-story"] .repeat {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--org-primary) 11%, transparent);
+  border-radius: 22px;
+  background: var(--org-background);
+  box-shadow: 0 14px 38px color-mix(in srgb, var(--org-text) 6%, transparent);
+}
+
+.section[data-visual-style="impact-story"] .repeat > * {
+  min-height: 150px;
+  justify-content: center;
+  padding: clamp(20px, 3vw, 34px);
+  border-right: 1px solid color-mix(in srgb, var(--org-text) 9%, transparent);
+}
+
+.section[data-visual-style="impact-story"] .repeat > *:last-child {
+  border-right: 0;
+}
+
+.section[data-visual-style="impact-story"] .metricValue {
+  font-size: clamp(2.8rem, 5.4vw, 5.2rem);
+  letter-spacing: -0.05em;
+}
+
+.section[data-visual-style="impact-story"] .caption {
+  font-size: 0.72rem;
+}
+
+.section[data-visual-style="impact-editorial"] .repeat {
+  border-block: 1px solid color-mix(in srgb, var(--org-text) 12%, transparent);
+}
+
+.section[data-visual-style="impact-editorial"] .repeat > * {
+  padding-block: clamp(24px, 4vw, 44px);
+  border-right: 1px solid color-mix(in srgb, var(--org-text) 10%, transparent);
+}
+
+.section[data-visual-style="impact-editorial"] .repeat > *:last-child {
+  border-right: 0;
+}
+
+.section[data-visual-style="impact-editorial"] .metricValue {
+  color: var(--org-text);
+  font-size: clamp(3rem, 5.5vw, 5.6rem);
+  letter-spacing: -0.055em;
+}
+
+.section[data-visual-style="about-human-v2"] {
+  background:
+    radial-gradient(circle at 0% 10%, color-mix(in srgb, var(--org-accent) 9%, transparent), transparent 25%),
+    var(--section-background, var(--org-background));
+}
+
+.section[data-visual-style="about-human-v2"] :is(.imageButton, .customImageButton, .imageMediaFrame) {
+  min-height: clamp(380px, 43vw, 610px);
+  border-radius: 34px 96px 34px 34px;
+  box-shadow: 0 22px 58px color-mix(in srgb, var(--org-text) 11%, transparent);
+}
+
+.section[data-visual-style="about-human-v2"] .surfacecard {
+  padding: clamp(28px, 4vw, 50px);
+  border: 0;
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--org-primary) 5%, var(--org-background));
+  box-shadow: inset 5px 0 0 color-mix(in srgb, var(--org-primary) 78%, transparent);
+}
+
+.section[data-visual-style="about-human-v2"] .heading {
+  max-width: 17ch;
+  font-size: clamp(2.25rem, 4.6vw, 4.25rem);
+  text-wrap: balance;
+}
+
+.section[data-visual-style="projects-mosaic-v2"] {
+  background: linear-gradient(180deg, var(--org-background), color-mix(in srgb, var(--org-secondary) 3%, var(--org-background)));
+}
+
+.section[data-visual-style="projects-mosaic-v2"] .repeat {
+  align-items: stretch;
+}
+
+.section[data-visual-style="projects-mosaic-v2"] .surfacecard {
+  min-height: 100%;
+  padding: 14px 14px 22px;
+  border: 1px solid color-mix(in srgb, var(--org-primary) 9%, transparent);
+  border-radius: 24px;
+  background: var(--org-background);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--org-text) 7%, transparent);
+}
+
+.section[data-visual-style="projects-mosaic-v2"] .cardImage,
+.section[data-visual-style="projects-mosaic-v2"] .imageMediaFrame {
+  border-radius: 17px;
+}
+
+.section[data-visual-style="projects-mosaic-v2"] .itemTitle {
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+}
+
+.section[data-visual-style="projects-editorial-v2"] .repeat {
+  grid-template-columns: 1fr;
+}
+
+.section[data-visual-style="projects-editorial-v2"] .surfacecard {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.72fr) minmax(0, 1.28fr);
+  align-items: center;
+  column-gap: clamp(20px, 4vw, 52px);
+  padding: clamp(18px, 2.5vw, 28px) 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--org-text) 11%, transparent);
+  border-radius: 0;
+  background: transparent;
+}
+
+.section[data-visual-style="projects-editorial-v2"] .surfacecard > :first-child {
+  grid-row: 1 / span 5;
+}
+
+.section[data-visual-style="projects-editorial-v2"] .cardImage,
+.section[data-visual-style="projects-editorial-v2"] .imageMediaFrame {
+  min-height: 210px;
+  border-radius: 20px;
+}
+
+.section[data-visual-style="support-human-v2"] {
+  background: color-mix(in srgb, var(--org-secondary) 4%, var(--org-background));
+}
+
+.section[data-visual-style="support-human-v2"] .repeat {
+  align-items: stretch;
+}
+
+.section[data-visual-style="support-human-v2"] .surfacecard {
+  position: relative;
+  min-height: 100%;
+  padding: clamp(26px, 3.5vw, 40px);
+  border: 1px solid color-mix(in srgb, var(--org-primary) 9%, transparent);
+  border-radius: 24px;
+  background: var(--org-background);
+  box-shadow: 0 14px 38px color-mix(in srgb, var(--org-text) 7%, transparent);
+}
+
+.section[data-visual-style="support-human-v2"] .surfacecard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  border-radius: 24px 0 0 24px;
+  background: linear-gradient(var(--org-primary), var(--org-accent));
+}
+
+.section[data-visual-style="contact-human-v2"] .sectionInner {
+  padding: clamp(28px, 5vw, 58px);
+  border: 1px solid color-mix(in srgb, var(--org-primary) 11%, transparent);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 95% 8%, color-mix(in srgb, var(--org-accent) 13%, transparent), transparent 28%),
+    color-mix(in srgb, var(--org-primary) 4%, var(--org-background));
+  box-shadow: 0 20px 52px color-mix(in srgb, var(--org-text) 8%, transparent);
+}
+
+.section[data-visual-style="contact-human-v2"] .surfacecard {
+  border: 0;
+  background: var(--org-background);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--org-text) 6%, transparent);
+}
+
+.section[data-visual-style="process-v2"] .grid {
+  position: relative;
+}
+
+.section[data-visual-style="process-v2"] .grid::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 48px;
+  left: 12%;
+  right: 12%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--org-primary), var(--org-accent));
+  opacity: 0.22;
+}
+
+.section[data-visual-style="process-v2"] .surfacecard {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  padding: clamp(24px, 3.4vw, 38px);
+  border: 1px solid color-mix(in srgb, var(--org-primary) 9%, transparent);
+  border-radius: 24px;
+  background: var(--org-background);
+  box-shadow: 0 12px 34px color-mix(in srgb, var(--org-text) 6%, transparent);
+}
+
+.section[data-visual-style="process-v2"] .customIcon {
+  width: 58px;
+  height: 58px;
+  box-shadow: 0 0 0 8px color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.section[data-visual-style="footer-purpose"],
+.section[data-visual-style="footer-essential"] {
+  color: var(--section-foreground, var(--color-white));
+  background:
+    radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--org-accent) 24%, transparent), transparent 23%),
+    var(--section-background, var(--org-primary));
+}
+
+.section[data-visual-style="footer-purpose"] .heading {
+  max-width: 16ch;
+  font-size: clamp(2rem, 3.6vw, 3.25rem);
+}
+
+.section[data-visual-style="footer-essential"] {
+  background: var(--section-background, var(--org-primary));
+}
+
+.section[data-visual-style="footer-essential"] .heading {
+  font-size: clamp(1.55rem, 2.7vw, 2.35rem);
+}
+
+.section[data-visual-style="footer-purpose"] :is(.heading, .body, .contactLink, .contactLine, .caption, .socialLink),
+.section[data-visual-style="footer-essential"] :is(.heading, .body, .contactLink, .contactLine, .caption, .socialLink) {
+  color: var(--section-foreground, var(--color-white));
+}
+
+@container institutional-site (max-width: 900px) {
+  .headerSection .sectionInner > .columns {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .headerSection .sectionInner > .columns > .stack:last-child,
+  .headerSection .repeat {
+    justify-content: flex-start;
+  }
+
+  .section[data-visual-style="impact-story"] .repeat > *,
+  .section[data-visual-style="impact-editorial"] .repeat > * {
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--org-text) 9%, transparent);
+  }
+
+  .section[data-visual-style="impact-story"] .repeat > *:last-child,
+  .section[data-visual-style="impact-editorial"] .repeat > *:last-child {
+    border-bottom: 0;
+  }
+
+  .section[data-visual-style="projects-editorial-v2"] .surfacecard {
+    grid-template-columns: 1fr;
+  }
+
+  .section[data-visual-style="projects-editorial-v2"] .surfacecard > :first-child {
+    grid-row: auto;
+  }
+
+  .section[data-visual-style="process-v2"] .grid::before {
+    display: none;
+  }
+}
+
+@container institutional-site (max-width: 620px) {
+  .headerSection .repeat {
+    display: none;
+  }
+
+  .section[data-visual-style="hero-human-v2"] .display,
+  .section[data-visual-style="hero-clear"] .display {
+    max-width: 15ch;
+    font-size: clamp(2.55rem, 12vw, 4.35rem);
+  }
+
+  .section[data-visual-style="hero-human-v2"] :is(.imageButton, .customImageButton, .imageMediaFrame),
+  .section[data-visual-style="about-human-v2"] :is(.imageButton, .customImageButton, .imageMediaFrame) {
+    min-height: 300px;
+    border-radius: 24px;
+  }
+
+  .section[data-visual-style="contact-human-v2"] .sectionInner {
+    padding: 22px;
+    border-radius: 24px;
+  }
+}
+
+.imagePlaceholder small {
+  max-width: 28ch;
+  color: color-mix(in srgb, var(--org-text, var(--color-navy)) 58%, transparent);
+  font-size: var(--font-xs);
+  font-weight: var(--font-regular);
+  line-height: var(--line-normal);
+  text-align: center;
+}
+
+
+.brandLogo {
+  display: block;
+  width: auto;
+  max-width: 148px;
+  height: 42px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (max-width: 760px) {
+  .brandLogo {
+    max-width: 116px;
+    height: 36px;
+  }
+}
+
+.metricIconBadge,
+.supportIconBadge {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  color: var(--org-primary, var(--color-primary));
+  background: color-mix(in srgb, var(--org-primary, var(--color-primary)) 9%, var(--org-background, #fff));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--org-primary, var(--color-primary)) 10%, transparent);
+}
+
+.metricIconBadge svg,
+.supportIconBadge svg {
+  width: 21px;
+  height: 21px;
+}
+
+.section[data-visual-style="impact-story"] .metricIconBadge {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 2px;
+  border-radius: 14px;
+  color: var(--org-primary);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--org-primary) 10%, var(--org-background)),
+    color-mix(in srgb, var(--org-accent) 14%, var(--org-background))
+  );
+}
+
+.section[data-visual-style="support-human-v2"] .supportIconBadge {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  color: var(--org-primary);
+  background: color-mix(in srgb, var(--org-accent) 16%, var(--org-background));
+  box-shadow: none;
+}
+
+
+/* V1.10 — image frame/media separation.
+   Frame handles resize the occupied box; crop mode moves only the photo. */
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="top"] {
+  top: -9px;
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="top-left"],
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="top-right"],
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="bottom-left"],
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="bottom-right"] {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="top-left"] {
+  top: -9px;
+  bottom: auto;
+  left: -9px;
+  right: auto;
+  transform: none;
+  cursor: nwse-resize;
+}
+
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="top-right"] {
+  top: -9px;
+  bottom: auto;
+  left: auto;
+  right: -9px;
+  transform: none;
+  cursor: nesw-resize;
+}
+
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="bottom-left"] {
+  top: auto;
+  bottom: -9px;
+  left: -9px;
+  right: auto;
+  transform: none;
+  cursor: nesw-resize;
+}
+
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="bottom-right"] {
+  top: auto;
+  bottom: -9px;
+  left: auto;
+  right: -9px;
+  transform: none;
+  cursor: nwse-resize;
+}
+
+.elementShell[data-crop-mode="true"] > .resizeHandle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.elementShell[data-image-element="true"][data-resizing="true"] .imageMediaFrame {
+  transition: none;
+}
+
+.elementShell[data-image-element="true"][data-crop-mode="true"] .imageMediaImage {
+  transition: none;
+}
+
+/* V1.10.2 — axis-aware media resize.
+   Side handles reshape only width; top/bottom reshape only height.
+   Template aspect ratios are suspended only for those one-axis gestures. */
+.elementShell[data-image-element="true"][data-resizing="true"][data-resize-mode="width"] .imageMediaFrame,
+.elementShell[data-image-element="true"][data-resizing="true"][data-resize-mode="height"] .imageMediaFrame {
+  height: var(--image-height, auto) !important;
+  aspect-ratio: auto !important;
+}
+
+.elementShell[data-image-element="true"][data-resizing="true"][data-resize-mode="width"] .imageMediaFrame {
+  min-height: 80px;
+}
+
+/* Text is draggable while selected. Text editing is an explicit state entered
+   with double click/Enter, so the editable span no longer steals every drag. */
+.elementShell[data-text-box="true"] .editableText [data-editing="false"] {
+  cursor: inherit;
+  user-select: none;
+}
+
+.elementShell[data-text-box="true"] .editableText [data-editing="true"] {
+  cursor: text;
+  user-select: text;
+}
+
+/* A circular preset starts square, but once the user explicitly reshapes the
+   frame the manual geometry wins. This keeps side/top handles predictable. */
+.imageMediaFrame[data-frame="circle"][data-custom-height="true"] {
+  height: var(--image-height) !important;
+  aspect-ratio: auto !important;
+}
+
+/* V1.10.3 — a frame is only a mask for the image. It must never paint a
+   decorative color behind the media. Explicit geometry also wins over the
+   minimum heights defined by visual presets. */
+.imageMediaFrame {
+  background: transparent;
+}
+
+.elementShell[data-image-element="true"][data-resizing="true"] .imageMediaFrame,
+.elementShell[data-image-element="true"] .imageMediaFrame[data-custom-height="true"] {
+  min-height: 0 !important;
+}
+
+/* Side and axis handles deliberately look different from corner handles.
+   This makes width-only, height-only and proportional resize discoverable. */
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="left"],
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="right"] {
+  width: 8px;
+  height: 28px;
+  border-radius: 5px;
+}
+
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="top"],
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="bottom"] {
+  width: 28px;
+  height: 8px;
+  border-radius: 5px;
+}
+
+.elementShell[data-image-element="true"] > .resizeHandle[data-edge="bottom"] {
+  bottom: -7px;
+}
+
+/* User-selected frame geometry is authoritative even inside a visual preset. */
+.elementShell[data-image-element="true"] .imageMediaFrame[data-frame="rectangle"] {
+  border-radius: 0 !important;
+  clip-path: none !important;
+}
+.elementShell[data-image-element="true"] .imageMediaFrame[data-frame="rounded"] {
+  border-radius: 24px !important;
+  clip-path: none !important;
+}
+.elementShell[data-image-element="true"] .imageMediaFrame[data-frame="circle"] {
+  border-radius: 50% !important;
+  clip-path: none !important;
+}
+.elementShell[data-image-element="true"] .imageMediaFrame[data-frame="arch"] {
+  border-radius: 48% 48% 18px 18px / 42% 42% 18px 18px !important;
+  clip-path: none !important;
+}
+.elementShell[data-image-element="true"] .imageMediaFrame[data-frame="blob"] {
+  border-radius: 38% 62% 58% 42% / 45% 38% 62% 55% !important;
+  clip-path: none !important;
+}
+.elementShell[data-image-element="true"] .imageMediaFrame[data-frame="diagonal-left"] {
+  border-radius: 0 !important;
+  clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%) !important;
+}
+.elementShell[data-image-element="true"] .imageMediaFrame[data-frame="diagonal-right"] {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, 92% 0, 100% 100%, 8% 100%) !important;
+}
+.elementShell[data-image-element="true"] .imageMediaFrame[data-frame="custom"] {
+  border-radius: 0 !important;
+  clip-path: var(--image-custom-clip, none) !important;
+}
+
+/* Inline frame chooser follows the same rule: it previews shape, not a color. */
+.frameChoiceGrid button > span {
+  border: 1.5px solid var(--color-slate-400);
+  background: transparent;
+}
+.frameChoiceGrid button[data-active="true"] > span {
+  border-color: var(--color-primary);
+}
+
+/* V1.10.4 — media frames are masks, not painted shapes. Once a photo exists,
+   the frame itself stays transparent and only clips the media. */
+.imageMediaFrame {
+  background: transparent;
+}
+
+/* A manually resized photo must not vertically recenter neighbouring content in
+   a two-column composition. Top alignment keeps the surrounding layout stable
+   while the frame height changes. */
+.columns:has(.elementShell[data-image-element="true"][data-custom-height="true"]) {
+  align-items: flex-start;
+}
+
+/* Frame picker previews the actual selected photo, like Canva/Figma masks.
+   Empty frames remain outline-only; a populated frame shows only the masked photo. */
+.frameChoiceGrid button > span[data-has-image="true"] {
+  border-color: transparent;
+  background-color: transparent;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.frameChoiceGrid button[data-active="true"] > span[data-has-image="true"] {
+  border-color: transparent;
+}
+
+.frameChoiceGrid button {
+  border-color: transparent;
+  background: transparent;
+}
+.frameChoiceGrid button:hover {
+  border-color: var(--color-slate-200);
+  background: var(--color-slate-50);
+}
+.frameChoiceGrid button[data-active="true"] {
+  border-color: var(--color-primary-200);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgb(var(--color-primary-rgb) / .08);
+}
+
+/* V1.10.5 — vertical media resize targets the photo frame, not the section. */
+.columns:has(.elementShell[data-image-element="true"][data-resizing="true"]),
+.columns:has(.elementShell[data-image-element="true"][data-custom-height="true"]) {
+  align-items: flex-start;
+}
+
+.elementShell[data-image-element="true"][data-resizing="true"][data-resize-mode="height"] .imageMediaRoot {
+  align-self: flex-start;
+}
+
+/* Empty frame previews may be decorative; populated frames are pure masks. */
+.frameChoiceGrid button > span:not([data-has-image="true"]) {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--org-primary, var(--color-primary)), var(--org-accent, var(--color-accent)));
+}
+
+.advancedColorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-slate-100);
+}
+.advancedColorRow > span {
+  color: var(--color-slate-500);
+  font-size: 9px;
+  font-weight: var(--font-semibold);
+}
+.elementShell[data-image-element="true"][data-resizing="true"] {
+  align-self: flex-start;
+}
+
+/* V1.10.6 — visual primitives.
+   Icons are pure glyphs; decorative backgrounds must be explicit Shape elements. */
+.customIcon {
+  width: 1em;
+  height: 1em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  color: var(--element-color, var(--org-primary));
+  background: transparent;
+}
+.customIcon svg {
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  stroke: currentColor;
+}
+
+.customShape {
+  width: 100%;
+  min-width: 32px;
+  display: block;
+  aspect-ratio: 1;
+  color: var(--element-color, var(--org-primary));
+}
+.customShape[data-shape="rectangle"] { aspect-ratio: 3 / 2; }
+.customShape[data-shape="line"] { aspect-ratio: 5 / 1; }
+.customShape svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+.customShape :is(circle, rect, polygon) {
+  fill: var(--element-background, var(--org-accent));
+  stroke: var(--element-color, var(--org-primary));
+  stroke-width: var(--shape-stroke-width, 0);
+  vector-effect: non-scaling-stroke;
+}
+.customShape line {
+  fill: none;
+  stroke: var(--element-color, var(--org-primary));
+  stroke-width: max(2px, var(--shape-stroke-width, 4));
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Custom height is the geometry of the media element itself, not an indirect
+   minimum-height on its section. This keeps vertical handles attached to the photo. */
+.elementShell[data-image-element="true"][data-custom-height="true"] {
+  height: var(--image-height);
+}
+.elementShell[data-image-element="true"][data-custom-height="true"] .imageMediaRoot,
+.elementShell[data-image-element="true"][data-custom-height="true"] .imageMediaFrame {
+  height: 100% !important;
+  min-height: 0 !important;
+  aspect-ratio: auto !important;
+}
+.elementShell[data-image-element="true"][data-resizing="true"][data-resize-mode="height"] .imageMediaRoot,
+.elementShell[data-image-element="true"][data-resizing="true"][data-resize-mode="height"] .imageMediaFrame {
+  height: 100% !important;
+  min-height: 0 !important;
+  aspect-ratio: auto !important;
+}
+
+/* =========================================================
+   CONG Builder V1.11 — direct manipulation consistency
+   ========================================================= */
+.canvasHintPortal {
+  position: fixed !important;
+  z-index: 1800 !important;
+  top: auto;
+  left: auto;
+  margin: 0;
+  max-width: calc(100vw - 20px) !important;
+  pointer-events: none;
+}
+
+/* In free mode the template column is no longer a hard width cage. Percentages
+   above 100% intentionally mean "wider than the original grid area". */
+.elementShell[data-free-mode="true"] {
+  max-width: none;
+}
+
+.elementShell[data-button-element="true"] {
+  border-radius: var(--element-radius, 999px);
+  cursor: grab;
+  touch-action: none;
+}
+.elementShell[data-button-element="true"]:active { cursor: grabbing; }
+.elementShell[data-button-element="true"] > :is(.primaryAction, .secondaryAction) {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: var(--element-radius, 999px);
+  cursor: inherit;
+  user-select: none;
+}
+.elementShell[data-button-element="true"] > :is(.primaryAction, .secondaryAction)[data-editing="true"] {
+  cursor: text;
+  user-select: text;
+}
+.elementShell[data-button-element="true"][data-custom-height="true"] > :is(.primaryAction, .secondaryAction) {
+  height: 100%;
+  min-height: 0;
+}
+
+.elementShell[data-shape-element="true"][data-custom-height="true"] .customShape {
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+.colorSpectrumIcon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  flex: none;
+  border: 1.5px solid var(--color-white);
+  border-radius: 50%;
+  background: conic-gradient(#ff3b30, #ffcc00, #34c759, #00c7be, #0a84ff, #5e5ce6, #bf5af2, #ff375f, #ff3b30);
+  box-shadow: 0 0 0 1px rgb(var(--color-navy-rgb) / .18);
+}
+
+:is(.elementShell[data-button-element="true"], .elementShell[data-shape-element="true"]) > .resizeHandle[data-edge="top"] {
+  top: -8px;
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  width: 28px;
+  height: 8px;
+  transform: translateX(-50%);
+  border-radius: 5px;
+  cursor: ns-resize;
+}
+:is(.elementShell[data-button-element="true"], .elementShell[data-shape-element="true"]) > .resizeHandle[data-edge="bottom"] {
+  top: auto;
+  bottom: -8px;
+  left: 50%;
+  right: auto;
+  width: 28px;
+  height: 8px;
+  transform: translateX(-50%);
+  border-radius: 5px;
+  cursor: ns-resize;
+}
+:is(.elementShell[data-button-element="true"], .elementShell[data-shape-element="true"]) > .resizeHandle:is([data-edge="top-left"], [data-edge="top-right"], [data-edge="bottom-left"], [data-edge="bottom-right"]) {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: none;
+}
+:is(.elementShell[data-button-element="true"], .elementShell[data-shape-element="true"]) > .resizeHandle[data-edge="top-left"] {
+  top: -8px; bottom: auto; left: -8px; right: auto; cursor: nwse-resize;
+}
+:is(.elementShell[data-button-element="true"], .elementShell[data-shape-element="true"]) > .resizeHandle[data-edge="top-right"] {
+  top: -8px; bottom: auto; left: auto; right: -8px; cursor: nesw-resize;
+}
+:is(.elementShell[data-button-element="true"], .elementShell[data-shape-element="true"]) > .resizeHandle[data-edge="bottom-left"] {
+  top: auto; bottom: -8px; left: -8px; right: auto; cursor: nesw-resize;
+}
+:is(.elementShell[data-button-element="true"], .elementShell[data-shape-element="true"]) > .resizeHandle[data-edge="bottom-right"] {
+  top: auto; bottom: -8px; left: auto; right: -8px; cursor: nwse-resize;
+}

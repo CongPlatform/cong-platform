@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   FiCheck,
   FiHeart,
@@ -13,6 +14,7 @@ import type {
   InstitutionalLayoutNode,
 } from "../../../services/institutionalService";
 import InlineTextEditor from "../shared/InlineTextEditor";
+import FloatingCanvasHint from "./FloatingCanvasHint";
 import ImageMedia from "./ImageMedia";
 
 import styles from "./InstitutionalRenderer.module.css";
@@ -69,6 +71,7 @@ export default function ElementRenderer({
   onInteractionCommit?: () => void;
 }) {
   const type = node.elementType;
+  const textAnchorRef = useRef<HTMLDivElement>(null);
 
   if (type === "divider") return <hr className={styles.customDivider} />;
   if (type === "spacer") return <div className={styles.customSpacer} aria-hidden="true" />;
@@ -116,6 +119,30 @@ export default function ElementRenderer({
     return <span className={styles.customIcon}><Icon aria-hidden="true" /></span>;
   }
 
+
+  if (type === "shape") {
+    const shape = typeof node.value === "string" ? node.value : "circle";
+    const path =
+      shape === "triangle"
+        ? <polygon points="50,6 96,92 4,92" />
+        : shape === "diamond"
+          ? <polygon points="50,4 96,50 50,96 4,50" />
+          : shape === "star"
+            ? <polygon points="50,4 61,36 96,36 68,56 79,91 50,70 21,91 32,56 4,36 39,36" />
+            : shape === "line"
+              ? <line x1="8" y1="50" x2="92" y2="50" />
+              : shape === "rectangle"
+                ? <rect x="8" y="22" width="84" height="56" rx="6" />
+                : shape === "square"
+                  ? <rect x="10" y="10" width="80" height="80" rx="4" />
+                  : <circle cx="50" cy="50" r="42" />;
+    return (
+      <span className={styles.customShape} data-shape={shape} aria-hidden="true">
+        <svg viewBox="0 0 100 100" focusable="false">{path}</svg>
+      </span>
+    );
+  }
+
   if (type === "metric") {
     const metric = node.value && typeof node.value === "object"
       ? node.value as { value?: string; label?: string }
@@ -127,11 +154,11 @@ export default function ElementRenderer({
             <InlineTextEditor
               value={String(metric.value ?? "0")}
               className={styles.metricValue}
-              onChange={(value) => onValueChange?.({ value, label: String(metric.label ?? "Indicador") })}
-              onCommit={(value) => onValueChange?.({ value, label: String(metric.label ?? "Indicador") })}
+              onChange={(value) => onValueChange?.({ value, label: String(metric.label ?? "Resultado") })}
+              onCommit={(value) => onValueChange?.({ value, label: String(metric.label ?? "Resultado") })}
             />
             <InlineTextEditor
-              value={String(metric.label ?? "Indicador")}
+              value={String(metric.label ?? "Resultado")}
               className={styles.metricLabel}
               onChange={(label) => onValueChange?.({ value: String(metric.value ?? "0"), label })}
               onCommit={(label) => onValueChange?.({ value: String(metric.value ?? "0"), label })}
@@ -150,7 +177,7 @@ export default function ElementRenderer({
   const multiline = type !== "heading";
 
   return (
-    <div className={styles.editableText}>
+    <div ref={textAnchorRef} className={styles.editableText}>
       {editable ? (
         <InlineTextEditor
           value={text}
@@ -165,12 +192,12 @@ export default function ElementRenderer({
         <p className={className}>{text}</p>
       )}
       {editable && showGuidance && guide ? (
-        <div className={styles.inlineGuidance} data-warning={Boolean(guide.max && text.length > guide.max)}>
+        <FloatingCanvasHint anchorRef={textAnchorRef} className={styles.inlineGuidance} preferredWidth={520} dataWarning={Boolean(guide.max && text.length > guide.max)}>
           <span className={styles.inlineGuidanceCount}>
             {guide.max ? `${text.length} / ${guide.max}` : `${text.length} caracteres`}
           </span>
           <small>{guide.text}</small>
-        </div>
+        </FloatingCanvasHint>
       ) : null}
     </div>
   );

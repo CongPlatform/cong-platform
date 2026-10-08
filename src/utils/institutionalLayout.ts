@@ -1,6 +1,7 @@
 import type {
   InstitutionalElementStyle,
   InstitutionalElementType,
+  InstitutionalElementValue,
   InstitutionalLayoutNode,
   InstitutionalSectionStyle,
 } from "../services/institutionalService";
@@ -57,7 +58,9 @@ export function ensureLayoutNodeIds(
   };
 }
 
-export function getSectionLayoutOverride(settings: Record<string, unknown>): InstitutionalLayoutNode | null {
+export function getSectionLayoutOverride(
+  settings: Record<string, unknown>,
+): InstitutionalLayoutNode | null {
   const value = settings.layoutOverride;
   return value && typeof value === "object" && "type" in value
     ? (value as InstitutionalLayoutNode)
@@ -89,7 +92,11 @@ export function findLayoutNode(
     return findLayoutNode(node.item, id);
   }
 
-  if (node.type === "stack" || node.type === "grid" || node.type === "columns") {
+  if (
+    node.type === "stack" ||
+    node.type === "grid" ||
+    node.type === "columns"
+  ) {
     for (const child of node.children) {
       const found = findLayoutNode(child, id);
       if (found) return found;
@@ -126,7 +133,9 @@ export function updateLayoutNode(
   if (node.type === "stack" || node.type === "grid") {
     return {
       ...node,
-      children: node.children.map((child) => updateLayoutNode(child, id, updater)),
+      children: node.children.map((child) =>
+        updateLayoutNode(child, id, updater),
+      ),
     };
   }
 
@@ -199,7 +208,10 @@ export function appendElement(
   };
 }
 
-export function createElementNode(type: InstitutionalElementType): InstitutionalLayoutNode {
+export function createElementNode(
+  type: InstitutionalElementType,
+  initialValue?: InstitutionalElementValue,
+): InstitutionalLayoutNode {
   const id = nodeId();
 
   if (type === "heading") {
@@ -252,7 +264,12 @@ export function createElementNode(type: InstitutionalElementType): Institutional
       elementType: type,
       value: { label: "Saiba mais", href: "#" },
       presentation: "primaryAction",
-      style: { width: "auto", backgroundColor: "accent", color: "text", radius: "pill" },
+      style: {
+        width: "auto",
+        backgroundColor: "accent",
+        color: "text",
+        radius: "pill",
+      },
     };
   }
 
@@ -263,6 +280,23 @@ export function createElementNode(type: InstitutionalElementType): Institutional
       elementType: type,
       value: "heart",
       style: { size: "xl", color: "primary", width: "auto" },
+    };
+  }
+
+  if (type === "shape") {
+    return {
+      type: "element",
+      id,
+      elementType: type,
+      value: typeof initialValue === "string" ? initialValue : "circle",
+      presentation: "shape",
+      style: {
+        size: "xl",
+        widthPercent: 20,
+        color: "primary",
+        backgroundColor: "accent",
+        strokeWidth: 0,
+      },
     };
   }
 
@@ -305,7 +339,6 @@ export function createElementNode(type: InstitutionalElementType): Institutional
   };
 }
 
-
 export function moveLayoutNode(
   node: InstitutionalLayoutNode,
   id: string,
@@ -327,7 +360,10 @@ export function moveLayoutNode(
     if (directIndex >= 0) {
       const target = directIndex + direction;
       if (target >= 0 && target < children.length) {
-        [children[directIndex], children[target]] = [children[target], children[directIndex]];
+        [children[directIndex], children[target]] = [
+          children[target],
+          children[directIndex],
+        ];
       }
       return { ...node, children };
     }
@@ -347,14 +383,19 @@ export function moveLayoutNode(
       const children = [...node.children];
       const target = directIndex + direction;
       if (target >= 0 && target < children.length) {
-        [children[directIndex], children[target]] = [children[target], children[directIndex]];
+        [children[directIndex], children[target]] = [
+          children[target],
+          children[directIndex],
+        ];
       }
       return { ...node, children };
     }
 
     return {
       ...node,
-      children: node.children.map((child) => moveLayoutNode(child, id, direction)),
+      children: node.children.map((child) =>
+        moveLayoutNode(child, id, direction),
+      ),
     };
   }
 
@@ -376,7 +417,6 @@ export function mergeElementStyle(
   };
 }
 
-
 export interface InstitutionalLayerItem {
   id: string;
   node: Extract<InstitutionalLayoutNode, { type: "slot" | "element" }>;
@@ -395,9 +435,181 @@ export function collectInstitutionalLayers(
     return collectInstitutionalLayers(node.item, depth + 1);
   }
 
-  if (node.type === "columns" || node.type === "grid" || node.type === "stack") {
-    return node.children.flatMap((child) => collectInstitutionalLayers(child, depth + 1));
+  if (
+    node.type === "columns" ||
+    node.type === "grid" ||
+    node.type === "stack"
+  ) {
+    return node.children.flatMap((child) =>
+      collectInstitutionalLayers(child, depth + 1),
+    );
   }
 
   return [];
+}
+
+/**
+ * Reconnects a section to its semantic/responsive flow after free positioning.
+ * Manual transforms are normalized, but grouped compositions keep their internal
+ * spacing: the first member becomes the group anchor and the other members keep
+ * their relative offsets instead of collapsing on top of one another.
+ */
+type GroupAnchor = { x: number; y: number };
+
+function collectAutoOrganizeGroupAnchors(
+  node: InstitutionalLayoutNode,
+  anchors = new Map<string, GroupAnchor>(),
+): Map<string, GroupAnchor> {
+  if (node.type === "slot" || node.type === "element") {
+    const groupId = node.style?.groupId;
+    if (groupId && !anchors.has(groupId)) {
+      anchors.set(groupId, {
+        x: node.style?.offsetX ?? 0,
+        y: node.style?.offsetY ?? 0,
+      });
+    }
+    return anchors;
+  }
+  if (node.type === "repeat") {
+    return collectAutoOrganizeGroupAnchors(node.item, anchors);
+  }
+  if (node.type === "columns" || node.type === "grid" || node.type === "stack") {
+    node.children.forEach((child) => collectAutoOrganizeGroupAnchors(child, anchors));
+  }
+  return anchors;
+}
+
+function autoOrganizeNode(
+  node: InstitutionalLayoutNode,
+  groupAnchors: Map<string, GroupAnchor>,
+): InstitutionalLayoutNode {
+  if (node.type === "slot" || node.type === "element") {
+    const current = node.style ?? {};
+    const anchor = current.groupId ? groupAnchors.get(current.groupId) : undefined;
+    return {
+      ...node,
+      style: {
+        ...current,
+        offsetX: anchor ? Math.round((current.offsetX ?? 0) - anchor.x) : 0,
+        offsetY: anchor ? Math.round((current.offsetY ?? 0) - anchor.y) : 0,
+        rotation: 0,
+        zIndex: 0,
+        allowOverflow: false,
+      },
+    };
+  }
+
+  if (node.type === "repeat") {
+    return { ...node, item: autoOrganizeNode(node.item, groupAnchors) };
+  }
+
+  if (node.type === "columns") {
+    return {
+      ...node,
+      children: [
+        autoOrganizeNode(node.children[0], groupAnchors),
+        autoOrganizeNode(node.children[1], groupAnchors),
+      ],
+    };
+  }
+
+  return {
+    ...node,
+    children: node.children.map((child) => autoOrganizeNode(child, groupAnchors)),
+  };
+}
+
+export function autoOrganizeInstitutionalLayout(
+  node: InstitutionalLayoutNode,
+): InstitutionalLayoutNode {
+  return autoOrganizeNode(node, collectAutoOrganizeGroupAnchors(node));
+}
+
+export function collectGroupMemberIds(
+  node: InstitutionalLayoutNode,
+  groupId: string,
+): string[] {
+  return collectInstitutionalLayers(node)
+    .filter((item) => item.node.style?.groupId === groupId)
+    .map((item) => item.id);
+}
+
+export function applyStyleToLayoutNodes(
+  node: InstitutionalLayoutNode,
+  ids: string[],
+  style: Partial<InstitutionalElementStyle>,
+): InstitutionalLayoutNode {
+  const idSet = new Set(ids);
+  if ((node.type === "slot" || node.type === "element") && node.id && idSet.has(node.id)) {
+    return mergeElementStyle(node, style);
+  }
+  if (node.type === "repeat") return { ...node, item: applyStyleToLayoutNodes(node.item, ids, style) };
+  if (node.type === "columns") {
+    return {
+      ...node,
+      children: [
+        applyStyleToLayoutNodes(node.children[0], ids, style),
+        applyStyleToLayoutNodes(node.children[1], ids, style),
+      ],
+    };
+  }
+  if (node.type === "stack" || node.type === "grid") {
+    return { ...node, children: node.children.map((child) => applyStyleToLayoutNodes(child, ids, style)) };
+  }
+  return node;
+}
+
+export function applyOffsetDeltaToLayoutNodes(
+  node: InstitutionalLayoutNode,
+  ids: string[],
+  deltaX: number,
+  deltaY: number,
+): InstitutionalLayoutNode {
+  const idSet = new Set(ids);
+  if ((node.type === "slot" || node.type === "element") && node.id && idSet.has(node.id)) {
+    const current = node.style ?? {};
+    return mergeElementStyle(node, {
+      offsetX: Math.round((current.offsetX ?? 0) + deltaX),
+      offsetY: Math.round((current.offsetY ?? 0) + deltaY),
+    });
+  }
+  if (node.type === "repeat") return { ...node, item: applyOffsetDeltaToLayoutNodes(node.item, ids, deltaX, deltaY) };
+  if (node.type === "columns") {
+    return {
+      ...node,
+      children: [
+        applyOffsetDeltaToLayoutNodes(node.children[0], ids, deltaX, deltaY),
+        applyOffsetDeltaToLayoutNodes(node.children[1], ids, deltaX, deltaY),
+      ],
+    };
+  }
+  if (node.type === "stack" || node.type === "grid") {
+    return { ...node, children: node.children.map((child) => applyOffsetDeltaToLayoutNodes(child, ids, deltaX, deltaY)) };
+  }
+  return node;
+}
+
+export function groupLayoutNodes(
+  node: InstitutionalLayoutNode,
+  ids: string[],
+  kind: "manual" | "native" = "manual",
+): { layout: InstitutionalLayoutNode; groupId: string } {
+  const groupId = crypto.randomUUID();
+  const layout = applyStyleToLayoutNodes(node, ids, { groupId, groupKind: kind });
+  return { layout, groupId };
+}
+
+export function ungroupLayoutNodes(
+  node: InstitutionalLayoutNode,
+  groupId: string,
+): InstitutionalLayoutNode {
+  const ids = collectGroupMemberIds(node, groupId);
+  return applyStyleToLayoutNodes(node, ids, { groupId: undefined, groupKind: undefined });
+}
+
+export function removeLayoutNodes(
+  node: InstitutionalLayoutNode,
+  ids: string[],
+): InstitutionalLayoutNode {
+  return ids.reduce((current, id) => removeLayoutNode(current, id), node);
 }

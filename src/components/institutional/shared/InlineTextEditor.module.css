@@ -1,17 +1,32 @@
 .editor {
   display: inline-block;
+  box-sizing: border-box;
   min-width: 1ch;
+  max-width: 100%;
   border-radius: 6px;
   outline: none;
-  cursor: text;
-  transition: box-shadow 150ms ease, background 150ms ease;
+  transition:
+    box-shadow 150ms ease,
+    background 150ms ease;
 }
 
-.editor:hover {
+.editor[data-multiline="true"] {
+  white-space: pre-wrap;
+}
+
+.editor[data-editing="false"] {
+  cursor: inherit;
+}
+
+.editor[data-editing="true"] {
+  cursor: text;
+}
+
+.editor[data-editing="true"]:hover {
   box-shadow: 0 0 0 2px rgb(var(--color-primary-rgb) / 0.16);
 }
 
-.editor:focus {
+.editor[data-editing="true"]:focus {
   background: rgb(var(--color-white-rgb) / 0.9);
   box-shadow: 0 0 0 2px var(--color-primary);
 }

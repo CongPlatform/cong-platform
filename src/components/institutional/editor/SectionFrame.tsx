@@ -27,6 +27,7 @@ export default function SectionFrame({
   onToggleVisible,
   allowVisibilityToggle = true,
   allowDuplicate = true,
+  allowDelete = true,
   onDragStart,
   onDragOver,
   onDrop,
@@ -47,10 +48,11 @@ export default function SectionFrame({
   onToggleVisible: () => void;
   allowVisibilityToggle?: boolean;
   allowDuplicate?: boolean;
+  allowDelete?: boolean;
   onDragStart?: (event: DragEvent<HTMLDivElement>) => void;
   onDragOver?: (event: DragEvent<HTMLDivElement>) => void;
   onDrop?: (event: DragEvent<HTMLDivElement>) => void;
-  onElementDrop?: (elementType: string) => void;
+  onElementDrop?: (elementType: string, initialValue?: string) => void;
 }) {
   const [elementDragOver, setElementDragOver] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -78,12 +80,17 @@ export default function SectionFrame({
         }
       }}
       onDrop={(event) => {
-        const elementType = event.dataTransfer.getData("application/x-cong-element");
+        const elementType = event.dataTransfer.getData(
+          "application/x-cong-element",
+        );
         if (elementType && onElementDrop) {
           event.preventDefault();
           event.stopPropagation();
           setElementDragOver(false);
-          onElementDrop(elementType);
+          const initialValue =
+            event.dataTransfer.getData("application/x-cong-element-value") ||
+            undefined;
+          onElementDrop(elementType, initialValue);
           return;
         }
         setElementDragOver(false);
@@ -94,40 +101,96 @@ export default function SectionFrame({
         className={styles.sectionIdentity}
         draggable={draggable}
         onDragStart={onDragStart}
-        title={draggable ? "Arraste esta etiqueta para reorganizar a seção" : undefined}
+        title={
+          draggable
+            ? "Arraste esta etiqueta para reorganizar a seção"
+            : undefined
+        }
       >
         {draggable ? <FiMove aria-hidden="true" /> : null}
         <span>{label}</span>
         {selected ? <small>Seção selecionada</small> : null}
       </div>
 
-      {elementDragOver ? <div className={styles.dropHint}>Solte para adicionar nesta seção</div> : null}
+      {elementDragOver ? (
+        <div className={styles.dropHint}>Solte para adicionar nesta seção</div>
+      ) : null}
 
-      <div className={styles.controls} onClick={(event) => event.stopPropagation()}>
+      <div
+        className={styles.controls}
+        onClick={(event) => event.stopPropagation()}
+      >
         {onToggleDesign && designPicker ? (
           <button
             type="button"
             className={styles.designButton}
             data-active={designOpen}
-            onClick={() => { setMenuOpen(false); onToggleDesign(); }}
+            onClick={() => {
+              setMenuOpen(false);
+              onToggleDesign();
+            }}
             aria-expanded={designOpen}
           >
             <FiLayout aria-hidden="true" />
             <span>Design</span>
           </button>
         ) : null}
-        <button type="button" className={styles.moreButton} data-active={menuOpen} onClick={() => setMenuOpen((value) => !value)} aria-label="Mais opções" title="Mais opções"><FiMoreHorizontal /></button>
+        <button
+          type="button"
+          className={styles.moreButton}
+          data-active={menuOpen}
+          onClick={() => setMenuOpen((value) => !value)}
+          aria-label="Mais opções"
+          title="Mais opções"
+        >
+          <FiMoreHorizontal />
+        </button>
         {menuOpen ? (
           <div className={styles.sectionMenu}>
-            {allowDuplicate ? <button type="button" onClick={() => { setMenuOpen(false); onDuplicate(); }}><FiCopy /> Duplicar seção</button> : null}
-            {allowVisibilityToggle ? <button type="button" onClick={() => { setMenuOpen(false); onToggleVisible(); }}>{visible ? <FiEyeOff /> : <FiEye />}{visible ? "Ocultar seção" : "Mostrar seção"}</button> : null}
-            <button type="button" className={styles.dangerAction} onClick={() => { setMenuOpen(false); onDelete(); }}><FiTrash2 /> Excluir seção</button>
+            {allowDuplicate ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onDuplicate();
+                }}
+              >
+                <FiCopy /> Duplicar seção
+              </button>
+            ) : null}
+            {allowVisibilityToggle ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onToggleVisible();
+                }}
+              >
+                {visible ? <FiEyeOff /> : <FiEye />}
+                {visible ? "Ocultar seção" : "Mostrar seção"}
+              </button>
+            ) : null}
+            {allowDelete ? (
+              <button
+                type="button"
+                className={styles.dangerAction}
+                onClick={() => {
+                  setMenuOpen(false);
+                  onDelete();
+                }}
+              >
+                <FiTrash2 /> Excluir seção
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>
 
       {designOpen && designPicker ? (
-        <div className={styles.designPopover} onClick={(event) => event.stopPropagation()}>
+        <div
+          className={styles.designPopover}
+          onClick={(event) => event.stopPropagation()}
+        >
           {designPicker}
         </div>
       ) : null}

@@ -6,15 +6,20 @@ import type {
   InstitutionalDesignPalette,
   InstitutionalFontKey,
 } from "../../../services/institutionalService";
+import { deriveColorTone } from "../../../utils/institutionalColors";
 import {
   analyzeBrandContrast,
   analyzeBrandHarmony,
   buildBrandPaletteSuggestion,
 } from "../../../utils/institutionalPalette";
 
+import ColorPickerControl from "./ColorPickerControl";
 import styles from "./BrandPanel.module.css";
 
-type BrandDraft = Omit<InstitutionalBrand, "organizationId" | "publicSlug" | "logoAsset">;
+type BrandDraft = Omit<
+  InstitutionalBrand,
+  "organizationId" | "publicSlug" | "logoAsset"
+>;
 
 const fontOptions: Array<{ value: InstitutionalFontKey; label: string }> = [
   { value: "interface", label: "Inter · interface CONG" },
@@ -68,7 +73,12 @@ export default function BrandPanel({
         backgroundColor: draft.backgroundColor,
         textColor: draft.textColor,
       }),
-    [draft.accentColor, draft.backgroundColor, draft.primaryColor, draft.textColor],
+    [
+      draft.accentColor,
+      draft.backgroundColor,
+      draft.primaryColor,
+      draft.textColor,
+    ],
   );
 
   const harmonyCheck = useMemo(
@@ -117,14 +127,18 @@ export default function BrandPanel({
             <div className={styles.sectionTitle}>
               <strong>Logo</strong>
               <span>
-                A CONG prepara o arquivo automaticamente para ele ficar leve e nítido.
+                A CONG prepara o arquivo automaticamente para ele ficar leve e
+                nítido.
               </span>
             </div>
 
             <div className={styles.logoRow}>
               <div className={styles.logoPreview}>
                 {brand.logoAsset?.url ? (
-                  <img src={brand.logoAsset.url} alt="Logo atual da organização" />
+                  <img
+                    src={brand.logoAsset.url}
+                    alt="Logo atual da organização"
+                  />
                 ) : (
                   <FiImage aria-hidden="true" />
                 )}
@@ -142,7 +156,9 @@ export default function BrandPanel({
                     }}
                   />
                 </label>
-                <small>JPG, PNG ou WebP. A CONG prepara o arquivo automaticamente.</small>
+                <small>
+                  JPG, PNG ou WebP. A CONG prepara o arquivo automaticamente.
+                </small>
               </div>
             </div>
 
@@ -151,8 +167,8 @@ export default function BrandPanel({
                 <div>
                   <strong>Paleta sugerida a partir do logo</strong>
                   <span>
-                    As cores são classificadas por função e ajustadas quando a leitura
-                    precisa de mais contraste.
+                    As cores são classificadas por função e ajustadas quando a
+                    leitura precisa de mais contraste.
                   </span>
                 </div>
                 <div className={styles.swatches} aria-label="Cores sugeridas">
@@ -163,13 +179,22 @@ export default function BrandPanel({
                     paletteSuggestion.backgroundColor,
                     paletteSuggestion.textColor,
                   ].map((color) => (
-                    <span key={color} style={{ background: color }} title={color} />
+                    <span
+                      key={color}
+                      style={{ background: color }}
+                      title={color}
+                    />
                   ))}
                 </div>
                 {paletteSuggestion.notes.length > 0 ? (
-                  <p className={styles.paletteNote}>{paletteSuggestion.notes[0]}</p>
+                  <p className={styles.paletteNote}>
+                    {paletteSuggestion.notes[0]}
+                  </p>
                 ) : null}
-                <button type="button" onClick={() => onApplyPalette(suggestedPalette)}>
+                <button
+                  type="button"
+                  onClick={() => onApplyPalette(suggestedPalette)}
+                >
                   Usar recomendação
                 </button>
               </div>
@@ -180,15 +205,35 @@ export default function BrandPanel({
             <section className={styles.section}>
               <div className={styles.sectionTitle}>
                 <strong>Paletas criadas por Designers</strong>
-                <span>Use como ponto de partida. Você pode trocar qualquer cor depois.</span>
+                <span>
+                  Use como ponto de partida. Você pode trocar qualquer cor
+                  depois.
+                </span>
               </div>
               <div className={styles.designerPaletteGrid}>
-                {communityPalettes.filter((palette) => palette.status === "published").slice(0, 12).map((palette) => (
-                  <button type="button" key={palette.id} className={styles.designerPaletteCard} onClick={() => onApplyPalette(palette.colors)}>
-                    <span className={styles.designerPaletteSwatches}>{palette.colors.slice(0, 6).map((color) => <i key={color} style={{ background: color }} />)}</span>
-                    <span><strong>{palette.name}</strong><small>{palette.description || "Paleta compartilhada"}</small></span>
-                  </button>
-                ))}
+                {communityPalettes
+                  .filter((palette) => palette.status === "published")
+                  .slice(0, 12)
+                  .map((palette) => (
+                    <button
+                      type="button"
+                      key={palette.id}
+                      className={styles.designerPaletteCard}
+                      onClick={() => onApplyPalette(palette.colors)}
+                    >
+                      <span className={styles.designerPaletteSwatches}>
+                        {palette.colors.slice(0, 6).map((color) => (
+                          <i key={color} style={{ background: color }} />
+                        ))}
+                      </span>
+                      <span>
+                        <strong>{palette.name}</strong>
+                        <small>
+                          {palette.description || "Paleta compartilhada"}
+                        </small>
+                      </span>
+                    </button>
+                  ))}
               </div>
             </section>
           ) : null}
@@ -196,7 +241,10 @@ export default function BrandPanel({
           <section className={styles.section}>
             <div className={styles.sectionTitle}>
               <strong>Cores</strong>
-              <span>Estas são as cores recomendadas da identidade. Você ainda pode escolher outras cores em cada elemento.</span>
+              <span>
+                Estas são as cores recomendadas da identidade. Você ainda pode
+                escolher outras cores em cada elemento.
+              </span>
             </div>
 
             <div className={styles.colorGrid}>
@@ -211,22 +259,56 @@ export default function BrandPanel({
               ).map(([key, label]) => (
                 <label className={styles.colorField} key={key}>
                   <span>{label}</span>
-                  <div>
-                    <input
-                      type="color"
-                      value={/^#[0-9a-f]{6}$/i.test(draft[key]) ? draft[key] : "#000000"}
-                      onChange={(event) => setColor(key, event.target.value)}
-                    />
-                    <input
-                      type="text"
-                      value={draft[key]}
-                      onChange={(event) => setColor(key, event.target.value)}
-                      maxLength={7}
-                      spellCheck={false}
-                    />
-                  </div>
+                  <ColorPickerControl
+                    value={
+                      /^#[0-9a-f]{6}$/i.test(draft[key])
+                        ? draft[key]
+                        : "#000000"
+                    }
+                    onChange={(hex) => setColor(key, hex)}
+                    label={`Cor ${label.toLowerCase()}`}
+                  />
                 </label>
               ))}
+            </div>
+
+            <div className={styles.generatedTones}>
+              <div>
+                <strong>Variações automáticas</strong>
+                <span>
+                  Os templates guardam a relação com a cor da ONG, não um HEX
+                  fixo. Assim, “Principal · Profunda” acompanha qualquer nova
+                  cor principal.
+                </span>
+              </div>
+              <div className={styles.generatedToneGrid}>
+                {(
+                  [
+                    ["primaryColor", "Principal"],
+                    ["secondaryColor", "Complementar"],
+                    ["accentColor", "Destaque"],
+                    ["backgroundColor", "Fundo"],
+                    ["textColor", "Texto"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <div className={styles.generatedToneRow} key={key}>
+                    <span>{label}</span>
+                    <div>
+                      {(
+                        ["soft", "light", "base", "strong", "deep"] as const
+                      ).map((tone) => (
+                        <i
+                          key={tone}
+                          title={tone}
+                          style={{
+                            background: deriveColorTone(draft[key], tone),
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className={styles.readability}>
@@ -234,17 +316,22 @@ export default function BrandPanel({
                 <FiInfo aria-hidden="true" />
                 <div>
                   <strong>Leitura das cores</strong>
-                  <span>A CONG avisa quando alguma combinação pode dificultar a leitura.</span>
+                  <span>
+                    A CONG avisa quando alguma combinação pode dificultar a
+                    leitura.
+                  </span>
                 </div>
               </div>
               <div className={styles.checkList}>
                 {contrastChecks.map((check) => (
-                  <div key={check.label} className={styles.checkItem} data-pass={check.pass}>
+                  <div
+                    key={check.label}
+                    className={styles.checkItem}
+                    data-pass={check.pass}
+                  >
                     <FiCheckCircle aria-hidden="true" />
                     <div>
-                      <strong>
-                        {check.label}
-                      </strong>
+                      <strong>{check.label}</strong>
                       <span>{check.message}</span>
                     </div>
                     <b>{check.pass ? "Boa leitura" : "Pode melhorar"}</b>
@@ -260,7 +347,8 @@ export default function BrandPanel({
                 </div>
               </div>
               <small className={styles.harmonyNote}>
-                Essas são sugestões, não bloqueios: você continua livre para usar as cores que quiser.
+                Essas são sugestões, não bloqueios: você continua livre para
+                usar as cores que quiser.
               </small>
             </div>
           </section>

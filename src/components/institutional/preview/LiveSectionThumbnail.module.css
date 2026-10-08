@@ -30,3 +30,20 @@
   font-size: 10px;
   text-align: center;
 }
+
+.viewport[data-size="large"],
+.fallback[data-size="large"] {
+  height: 172px;
+}
+
+.viewport[data-size="large"] .scaled {
+  transform: scale(0.49);
+}
+
+/* V1.10.3 — show more of the composition in library previews instead of
+   magnifying only the first words of large editorial layouts. */
+.viewport[data-size="large"] .scaled {
+  width: 760px;
+  min-height: 500px;
+  transform: scale(0.415);
+}

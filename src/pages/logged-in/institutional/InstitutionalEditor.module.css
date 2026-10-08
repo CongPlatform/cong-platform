@@ -41,24 +41,29 @@
 .workspace {
   min-height: 0;
   flex: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
   overflow: hidden;
 }
 
 .canvasArea {
   position: relative;
   min-width: 0;
-  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
   display: flex;
   flex-direction: column;
   background:
     linear-gradient(rgb(var(--color-navy-rgb) / 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(var(--color-navy-rgb) / 0.045) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      rgb(var(--color-navy-rgb) / 0.045) 1px,
+      transparent 1px
+    ),
     color-mix(in srgb, var(--color-slate-100) 82%, var(--color-white));
   background-size: 28px 28px;
 }
-
-
 
 .stageBar {
   min-height: 48px;
@@ -95,15 +100,34 @@
   color: var(--color-slate-500);
 }
 
-.stageBar strong { color: var(--color-navy); font-size: var(--font-xs); }
-.stageBar span { overflow: hidden; font-size: var(--font-2xs); text-overflow: ellipsis; white-space: nowrap; }
-.stageBar small { flex: none; padding: 4px 8px; border-radius: 999px; color: var(--color-primary-dark); background: var(--color-primary-50); font-size: 10px; font-weight: var(--font-semibold); }
+.stageBar strong {
+  color: var(--color-navy);
+  font-size: var(--font-xs);
+}
+.stageBar span {
+  overflow: hidden;
+  font-size: var(--font-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stageBar small {
+  flex: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+  font-size: 10px;
+  font-weight: var(--font-semibold);
+}
 
 .canvasViewport {
   min-height: 0;
   flex: 1;
-  overflow: auto;
-  padding: 22px 32px 64px;
+  overflow-x: auto;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  padding: 22px 32px 96px;
+  overscroll-behavior: contain;
 }
 
 .canvas {
@@ -118,21 +142,89 @@
   transition: width 180ms ease;
 }
 
+.propertiesDock {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  width: 0;
+  overflow: visible;
+}
+
+.propertiesDock[data-open="true"] {
+  width: auto;
+}
+
 .openProperties {
-  width: 44px;
-  flex: none;
+  position: absolute;
+  z-index: 20;
+  top: 50%;
+  right: 10px;
+  width: 48px;
+  min-height: 162px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  overflow: hidden;
-  border-left: 1px solid var(--color-slate-200);
+  gap: 10px;
+  padding: 10px 7px;
+  border: 1px solid var(--color-primary-200);
+  border-right: 0;
+  border-radius: 15px 0 0 15px;
   color: var(--color-primary-dark);
+  background: color-mix(in srgb, var(--color-white) 94%, var(--color-primary-50));
+  box-shadow: -8px 10px 26px rgb(var(--color-navy-rgb) / 0.12);
+  transform: translateY(-50%);
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.openProperties::before {
+  content: "";
+  position: absolute;
+  inset-block: 16px;
+  right: -1px;
+  width: 4px;
+  border-radius: 4px 0 0 4px;
+  background: var(--color-primary);
+}
+
+.openProperties:hover {
+  border-color: var(--color-primary-300);
   background: var(--color-white);
+  box-shadow: -10px 12px 30px rgb(var(--color-navy-rgb) / 0.16);
+  transform: translateY(-50%) translateX(-3px);
+}
+
+.openProperties:focus-visible {
+  outline: 3px solid var(--color-primary-100);
+  outline-offset: 3px;
+}
+
+.openPropertiesIcon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  box-shadow: 0 6px 14px rgb(var(--color-primary-rgb) / 0.22);
+}
+
+.openPropertiesIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.openPropertiesLabel {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  font-size: var(--font-xs);
-  font-weight: var(--font-semibold);
+  font-size: 11px;
+  font-weight: var(--font-bold);
+  letter-spacing: 0.015em;
 }
 
 .previewBackdrop {
@@ -202,7 +294,6 @@
   }
 }
 
-
 .helpSteps {
   display: grid;
   gap: 0;
@@ -221,10 +312,22 @@
   color: var(--color-primary);
 }
 
-.helpSteps li:last-child { border-bottom: 0; }
-.helpSteps li > div { display: grid; gap: 3px; }
-.helpSteps strong { color: var(--color-navy); font-size: var(--font-sm); }
-.helpSteps span { color: var(--color-slate-600); font-size: var(--font-xs); line-height: var(--line-normal); }
+.helpSteps li:last-child {
+  border-bottom: 0;
+}
+.helpSteps li > div {
+  display: grid;
+  gap: 3px;
+}
+.helpSteps strong {
+  color: var(--color-navy);
+  font-size: var(--font-sm);
+}
+.helpSteps span {
+  color: var(--color-slate-600);
+  font-size: var(--font-xs);
+  line-height: var(--line-normal);
+}
 
 .stageActions {
   flex: none;
@@ -310,4 +413,336 @@
   background: var(--color-primary);
   font-size: var(--font-sm);
   font-weight: var(--font-semibold);
+}
+
+/* V1.9 — explicit guided/free editing mode without changing CONG identity. */
+.editingModeToggle,
+.editingModeStatic {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 9px;
+  color: var(--color-slate-600);
+  background: var(--color-slate-50);
+  font-family: var(--font-interface);
+}
+.editingModeToggle {
+  border: 1px solid var(--color-slate-200);
+  cursor: pointer;
+}
+.editingModeToggle:hover {
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+}
+.editingModeToggle[data-mode="guided"] {
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-100);
+  background: var(--color-primary-50);
+}
+.editingModeToggle > span {
+  font-size: 9.5px;
+  font-weight: var(--font-semibold);
+}
+.editingModeToggle > small {
+  color: var(--color-slate-500);
+  font-size: 8px;
+}
+.editingModeStatic {
+  font-size: 9px;
+  font-weight: var(--font-semibold);
+}
+.editingModeToggle > small {
+  padding: 0;
+  border-radius: 0;
+  color: var(--color-slate-500);
+  background: transparent;
+  font-size: 8px;
+  font-weight: 500;
+}
+
+
+/* V1.10 — keep the accessibility trigger predictable inside the builder. */
+:global(body.cong-institutional-editor-active [vw-access-button]) {
+  top: auto !important;
+  right: 16px !important;
+  bottom: 16px !important;
+  z-index: 245 !important;
+}
+
+:global(body.cong-institutional-editor-active [vw-plugin-wrapper]) {
+  z-index: 246 !important;
+}
+
+/* V1.10.3 — collapsed inspector must remain unmistakable and reachable.
+   Keep it near the upper-right edge so accessibility widgets never cover it. */
+.openProperties {
+  top: 86px;
+  right: 0;
+  width: 126px;
+  min-height: 42px;
+  flex-direction: row;
+  gap: 7px;
+  padding: 7px 11px 7px 8px;
+  border: 1px solid var(--color-primary);
+  border-right: 0;
+  border-radius: 12px 0 0 12px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  box-shadow: -7px 8px 20px rgb(var(--color-navy-rgb) / 0.17);
+  transform: none;
+}
+
+.openProperties::before {
+  display: none;
+}
+
+.openProperties:hover {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+  box-shadow: -9px 10px 24px rgb(var(--color-navy-rgb) / 0.2);
+  transform: translateX(-3px);
+}
+
+.openPropertiesIcon {
+  width: 27px;
+  height: 27px;
+  flex: none;
+  border-radius: 8px;
+  color: var(--color-primary);
+  background: var(--color-white);
+  box-shadow: none;
+}
+
+.openPropertiesIcon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.openPropertiesLabel {
+  writing-mode: horizontal-tb;
+  transform: none;
+  font-size: 10px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+/* V1.10.4 — compact dock handle inspired by canvas editors: the right panel is
+   detached from the canvas and reopening it does not reserve a visible rail. */
+.workspace { position: relative; }
+.openProperties {
+  position: absolute;
+  z-index: 24;
+  top: 14px;
+  right: 0;
+  width: 36px;
+  height: 44px;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--color-slate-200);
+  border-right: 0;
+  border-radius: 12px 0 0 12px;
+  color: var(--color-slate-600);
+  background: rgb(var(--color-white-rgb) / .97);
+  box-shadow: -6px 8px 20px rgb(var(--color-navy-rgb) / .10);
+  transform: none;
+  transition: width 140ms ease, color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+.openProperties::before { content: none; }
+.openProperties:hover {
+  width: 40px;
+  color: var(--color-primary);
+  border-color: var(--color-primary-200);
+  background: var(--color-white);
+  box-shadow: -8px 10px 24px rgb(var(--color-navy-rgb) / .13);
+  transform: none;
+}
+.openProperties svg { width: 18px; height: 18px; }
+.openPropertiesIcon,
+.openPropertiesLabel { display: none; }
+.openProperties { top: 62px; }
+
+/* V1.10.6 — visible but non-intrusive properties dock. */
+.openProperties {
+  top: 64px;
+  right: 10px;
+  width: 44px;
+  height: 42px;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  overflow: hidden;
+  padding: 0 12px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 12px;
+  color: var(--color-navy);
+  background: rgb(var(--color-white-rgb) / .98);
+  box-shadow: 0 8px 24px rgb(var(--color-navy-rgb) / .12);
+  transition: width 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.openProperties:hover,
+.openProperties:focus-visible {
+  width: 132px;
+  border-color: var(--color-primary-200);
+  background: var(--color-white);
+  box-shadow: 0 10px 28px rgb(var(--color-navy-rgb) / .15);
+  transform: none;
+}
+.openProperties > svg { width: 17px; height: 17px; flex: none; color: var(--color-primary); }
+.openProperties > span {
+  min-width: 76px;
+  color: var(--color-navy);
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(3px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.openProperties:hover > span,
+.openProperties:focus-visible > span { opacity: 1; transform: none; }
+.openProperties > svg:last-child { width: 13px; height: 13px; color: var(--color-slate-400); opacity: 0; }
+.openProperties:hover > svg:last-child,
+.openProperties:focus-visible > svg:last-child { opacity: 1; }
+
+.selectionActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border: 1px solid var(--color-primary-200, #b9d2ff);
+  border-radius: 10px;
+  background: var(--color-primary-50, #eef5ff);
+  color: var(--color-navy);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.selectionActions button {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--color-slate-700);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.selectionActions button:hover { background: var(--color-primary-100, #dfeaff); color: var(--color-primary); }
+.selectionActions .selectionDelete { color: var(--color-danger, #c13d3d); }
+
+/* V1.10.7 — the collapsed inspector is a border handle, not a floating pill. */
+.openProperties {
+  position: absolute;
+  z-index: 28;
+  top: 50%;
+  right: -1px;
+  width: 34px;
+  height: 96px;
+  min-height: 0;
+  display: block;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-primary);
+  transform: translateY(-50%);
+  transition: none;
+}
+.openProperties:hover,
+.openProperties:focus-visible {
+  width: 34px;
+  height: 96px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: translateY(-50%);
+}
+.openProperties > svg,
+.openProperties:hover > svg,
+.openProperties:focus-visible > svg {
+  width: 34px;
+  height: 96px;
+  overflow: visible;
+  opacity: 1;
+  color: inherit;
+}
+.propertiesHandleShape {
+  fill: rgb(var(--color-white-rgb) / .98);
+  stroke: var(--color-slate-200);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+  transition: fill 130ms ease, stroke 130ms ease;
+}
+.propertiesHandleChevron {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.openProperties:hover .propertiesHandleShape,
+.openProperties:focus-visible .propertiesHandleShape {
+  fill: var(--color-primary-50);
+  stroke: var(--color-primary-300, var(--color-primary));
+}
+
+/* V1.11 — compact multi-selection alignment/distribution cluster. */
+.selectionArrange {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 8px;
+  background: rgb(var(--color-white-rgb) / .78);
+}
+
+.selectionArrange button {
+  width: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  justify-content: center;
+  padding: 3px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* V1.11 — properties opener is the inspector border itself bending into the canvas. */
+.openProperties,
+.openProperties:hover,
+.openProperties:focus-visible {
+  width: 42px;
+  height: 114px;
+}
+.openProperties > svg,
+.openProperties:hover > svg,
+.openProperties:focus-visible > svg {
+  width: 40px;
+  height: 112px;
+}
+.propertiesHandleShape {
+  fill: none;
+  stroke: var(--color-slate-300, #cbd5e1);
+  stroke-width: 2;
+}
+.propertiesHandleChevron {
+  stroke-width: 2.2;
+}
+.openProperties:hover .propertiesHandleShape,
+.openProperties:focus-visible .propertiesHandleShape {
+  fill: none;
+  stroke: var(--color-primary);
 }

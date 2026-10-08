@@ -53,7 +53,7 @@
 .panelBody {
   display: grid;
   gap: 20px;
-  padding: 18px;
+  padding: 18px 18px 96px;
 }
 
 .emptyState {
@@ -307,6 +307,98 @@
   gap: 10px;
 }
 
+.textBoxControls,
+.imageSizeControls {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--color-primary-100);
+  border-radius: 12px;
+  background: rgb(var(--color-white-rgb) / .82);
+}
+
+.unitInput {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  background: var(--color-white);
+}
+
+.unitInput:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-50);
+}
+
+.unitInput input {
+  min-width: 0;
+  width: 100%;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  outline: 0;
+  color: var(--color-navy);
+  background: transparent;
+}
+
+.unitInput > span {
+  padding: 0 9px;
+  color: var(--color-slate-500);
+  font-size: 10px;
+  font-weight: var(--font-semibold);
+}
+
+.textBoxPresets {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.textBoxPresets button {
+  min-width: 0;
+  min-height: 30px;
+  padding: 5px 3px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 8px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+  font-size: 9px;
+}
+
+.textBoxPresets button:hover,
+.textBoxPresets button[data-active="true"] {
+  border-color: var(--color-primary-200);
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.textBoxHelp {
+  display: grid;
+  gap: 3px;
+  padding-top: 2px;
+}
+
+.textBoxHelp strong {
+  color: var(--color-navy);
+  font-size: 10px;
+}
+
+.textBoxHelp span {
+  color: var(--color-slate-500);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.textBoxHelp button {
+  justify-self: start;
+  margin-top: 2px;
+  color: var(--color-primary);
+  font-size: 9px;
+  font-weight: var(--font-semibold);
+}
+
 .colorOptions {
   display: grid;
   gap: 8px;
@@ -325,7 +417,7 @@
   flex-wrap: wrap;
 }
 
-.colorOptions button {
+.colorOptions > div > button {
   width: 28px;
   height: 28px;
   border: 2px solid var(--color-white);
@@ -333,15 +425,15 @@
   box-shadow: 0 0 0 1px var(--color-slate-300);
 }
 
-.colorOptions button[data-active="true"] {
+.colorOptions > div > button[data-active="true"] {
   box-shadow: 0 0 0 2px var(--color-primary);
 }
 
-.colorOptions button[data-color="text"] { background: var(--color-navy); }
-.colorOptions button[data-color="primary"] { background: var(--color-primary); }
-.colorOptions button[data-color="secondary"] { background: var(--color-green-strong); }
-.colorOptions button[data-color="accent"] { background: var(--color-accent); }
-.colorOptions button[data-color="background"] { background: var(--color-white); }
+.colorOptions > div > button[data-color="text"] { background: var(--color-navy); }
+.colorOptions > div > button[data-color="primary"] { background: var(--color-primary); }
+.colorOptions > div > button[data-color="secondary"] { background: var(--color-green-strong); }
+.colorOptions > div > button[data-color="accent"] { background: var(--color-accent); }
+.colorOptions > div > button[data-color="background"] { background: var(--color-white); }
 
 .colorOptions input[type="color"] {
   width: 34px;
@@ -424,12 +516,12 @@
 .focalGrid button:hover, .focalGrid button[data-active="true"] { border-color: var(--color-primary); background: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-100); }
 .overlayRow { display: grid; gap: 9px; }
 .colorChoices { display: flex; align-items: center; gap: 6px; }
-.colorChoices button { width: 26px; height: 26px; border: 2px solid var(--color-white); border-radius: 50%; box-shadow: 0 0 0 1px var(--color-slate-300); }
-.colorChoices button[data-active="true"] { box-shadow: 0 0 0 2px var(--color-primary); }
-.colorChoices button[data-color="text"] { background: var(--color-navy); }
-.colorChoices button[data-color="primary"] { background: var(--color-primary); }
-.colorChoices button[data-color="secondary"] { background: var(--color-green-strong); }
-.colorChoices button[data-color="accent"] { background: var(--color-accent); }
+.colorChoices > button { width: 26px; height: 26px; border: 2px solid var(--color-white); border-radius: 50%; box-shadow: 0 0 0 1px var(--color-slate-300); }
+.colorChoices > button[data-active="true"] { box-shadow: 0 0 0 2px var(--color-primary); }
+.colorChoices > button[data-color="text"] { background: var(--color-navy); }
+.colorChoices > button[data-color="primary"] { background: var(--color-primary); }
+.colorChoices > button[data-color="secondary"] { background: var(--color-green-strong); }
+.colorChoices > button[data-color="accent"] { background: var(--color-accent); }
 .colorChoices input[type="color"] { width: 32px; height: 32px; padding: 2px; border: 1px solid var(--color-slate-300); border-radius: 9px; background: var(--color-white); }
 .alignmentPicker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
 .alignmentPicker button { min-width: 0; display: grid; place-items: center; gap: 3px; padding: 7px 2px; border: 1px solid var(--color-slate-200); border-radius: 9px; color: var(--color-slate-500); background: var(--color-white); }
@@ -731,4 +823,339 @@
   border-color: rgb(var(--color-primary-rgb) / .12);
   border-radius: 16px;
   background: linear-gradient(180deg, var(--color-primary-50), var(--color-white) 32%);
+}
+
+/* V1.9.1 — inspector guiado: menos formulário, mais decisão orientada */
+.panel { width: 356px; }
+.panelHeader { padding: 16px 18px 12px; border-bottom: 0; }
+.panelHeader strong { font-size: 15px; }
+.panelHeader span { max-width: 260px; }
+.inspectorTabs { position: sticky; z-index: 3; top: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 0 14px; padding: 4px; border: 1px solid var(--color-slate-200); border-radius: 12px; background: var(--color-slate-50); }
+.inspectorTabs button { min-height: 34px; border-radius: 8px; color: var(--color-slate-500); font-size: 11px; font-weight: var(--font-semibold); }
+.inspectorTabs button:hover { color: var(--color-primary); }
+.inspectorTabs button[data-active="true"] { color: var(--color-navy); background: var(--color-white); box-shadow: 0 1px 5px rgb(var(--color-navy-rgb) / .08); }
+.guidedIntro { display: grid; gap: 3px; margin: 12px 18px 0; padding: 11px 12px; border-radius: 11px; background: color-mix(in srgb, var(--color-primary-50) 55%, var(--color-white)); }
+.guidedIntro strong { color: var(--color-navy); font-size: 11px; }
+.guidedIntro span { color: var(--color-slate-600); font-size: 10px; line-height: 1.45; }
+.panelBody { gap: 14px; padding: 14px 18px 24px; }
+/* Section-level controls are separated by intent. Element editing stays complete and contextual. */
+.panelBody:not([data-editing-element="true"])[data-tab="content"] > .variantQuickArea,
+.panelBody:not([data-editing-element="true"])[data-tab="content"] > .sectionAppearance { display: none; }
+.panelBody:not([data-editing-element="true"])[data-tab="design"] > .field,
+.panelBody:not([data-editing-element="true"])[data-tab="design"] > .fieldGroup,
+.panelBody:not([data-editing-element="true"])[data-tab="design"] > .tips,
+.panelBody:not([data-editing-element="true"])[data-tab="design"] > .tutorial { display: none; }
+.panelBody:not([data-editing-element="true"])[data-tab="layout"] > .variantQuickArea,
+.panelBody:not([data-editing-element="true"])[data-tab="layout"] > .field,
+.panelBody:not([data-editing-element="true"])[data-tab="layout"] > .fieldGroup,
+.panelBody:not([data-editing-element="true"])[data-tab="layout"] > .tips,
+.panelBody:not([data-editing-element="true"])[data-tab="layout"] > .tutorial { display: none; }
+/* Remove the administrative 'card inside card' look. */
+.sectionAppearance { border: 0; border-top: 1px solid var(--color-slate-200); border-radius: 0; }
+.sectionAppearance > summary { padding: 14px 0 8px; }
+.sectionAppearanceBody { padding: 0 0 6px; }
+.variantQuickArea { border: 0; border-radius: 0; padding: 2px 0 12px; background: transparent; }
+.collectionItem { border-color: var(--color-slate-200); background: var(--color-white); }
+.visualOptionGroup { padding: 12px 0; border-top: 1px solid var(--color-slate-100); }
+.visualOptionGroup:first-child { border-top: 0; }
+.segmentedChoices, .widthChoices { gap: 6px; }
+.segmentedChoices button, .widthChoices button { min-height: 42px; border-color: var(--color-slate-200); background: var(--color-white); }
+.segmentedChoices button[data-active="true"], .widthChoices button[data-active="true"] { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-50); }
+
+.contextGuidance {
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border: 1px solid var(--color-green-200, var(--color-primary-100));
+  border-radius: 11px;
+  background: var(--color-green-pale, var(--color-blue-pale));
+}
+
+.contextGuidance strong {
+  color: var(--color-navy);
+  font-size: 11px;
+}
+
+.contextGuidance span {
+  color: var(--color-slate-600);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.panelBody:not([data-editing-element="true"])[data-tab="design"] > .contextGuidance,
+.panelBody:not([data-editing-element="true"])[data-tab="layout"] > .contextGuidance {
+  display: none;
+}
+
+/* V1.10.4 — Designer-only guardrails for template elements. */
+.designerRules {
+  border-top: 1px solid var(--color-slate-200);
+  padding-top: 10px;
+}
+.designerRules > summary {
+  cursor: pointer;
+  color: var(--color-navy);
+  font-size: 11px;
+  font-weight: var(--font-bold);
+  list-style: none;
+}
+.designerRules > summary::-webkit-details-marker { display: none; }
+.designerRulesBody {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+}
+.designerRulesBody > p,
+.designerRulesBody > small {
+  margin: 0;
+  color: var(--color-slate-500);
+  font-size: 9px;
+  line-height: 1.45;
+}
+.designerDefault {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 10px;
+  background: var(--color-slate-50);
+}
+.designerDefault span { color: var(--color-slate-500); font-size: 9px; }
+.designerDefault strong { color: var(--color-navy); font-size: 10px; }
+.constraintGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.constraintGrid label { min-width: 0; display: grid; gap: 5px; }
+.constraintGrid label > span { color: var(--color-slate-600); font-size: 9px; font-weight: var(--font-semibold); }
+.constraintGrid label > div {
+  min-width: 0;
+  height: 36px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  background: var(--color-white);
+}
+.constraintGrid input {
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 8px;
+  border: 0;
+  outline: 0;
+  color: var(--color-navy);
+  background: transparent;
+  font: inherit;
+  font-size: 10px;
+}
+.constraintGrid b { padding-right: 8px; color: var(--color-slate-400); font-size: 9px; }
+
+/* V1.10.5 — reduce inspector noise and keep composition choices readable. */
+.variantQuickChoices {
+  flex-wrap: wrap;
+  overflow: visible;
+  padding-bottom: 0;
+}
+.variantQuickChoices button {
+  min-width: 0;
+  max-width: 100%;
+}
+.panelBody { gap: 12px; }
+.sectionAppearance > summary { color: var(--color-navy); }
+
+/* V1.10.6 — the properties inspector owns its scroll, not the editor page. */
+.panel {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panelHeader {
+  position: relative;
+  top: auto;
+  flex: none;
+}
+.panelBody {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.alignObjectGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.alignObjectGrid button {
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 7px 5px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 10px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+}
+.alignObjectGrid button:hover {
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+}
+.alignObjectGrid button b { color: var(--color-primary); font-size: 15px; line-height: 1; }
+.alignObjectGrid button span { font-size: 9px; font-weight: var(--font-semibold); }
+
+.shapePicker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.shapePicker button {
+  min-width: 0;
+  min-height: 66px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 7px 4px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 10px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+}
+.shapePicker button:hover,
+.shapePicker button[data-active="true"] {
+  border-color: var(--color-primary-200);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+.shapePicker button span { font-size: 8px; font-weight: var(--font-semibold); }
+.shapePicker i {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: block;
+  border: 2px solid currentColor;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+.shapePicker i[data-shape="circle"] { border-radius: 50%; }
+.shapePicker i[data-shape="rectangle"] { width: 30px; height: 18px; border-radius: 3px; }
+.shapePicker i[data-shape="triangle"] { width: 0; height: 0; border: 0; border-left: 13px solid transparent; border-right: 13px solid transparent; border-bottom: 23px solid currentColor; background: transparent; }
+.shapePicker i[data-shape="diamond"] { transform: rotate(45deg) scale(.78); }
+.shapePicker i[data-shape="star"] { border: 0; background: currentColor; clip-path: polygon(50% 0,61% 35%,98% 35%,68% 56%,79% 92%,50% 70%,21% 92%,32% 56%,2% 35%,39% 35%); }
+.shapePicker i[data-shape="line"] { width: 30px; height: 2px; border: 0; background: currentColor; }
+.shapeColorControls { display: grid; gap: 14px; }
+.inspectorTabs,
+.guidedIntro { flex: none; }
+
+.semanticColorChoices {
+  display: grid;
+  gap: 9px;
+  width: 100%;
+}
+
+.semanticRoleRow,
+.semanticToneRow > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.semanticRoleRow button,
+.semanticToneRow button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.semanticRoleRow button > span,
+.semanticToneRow button > span {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgb(9 28 48 / .08);
+}
+
+.semanticRoleRow button[data-active="true"],
+.semanticToneRow button[data-active="true"] {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+.semanticToneRow {
+  display: grid;
+  gap: 5px;
+}
+
+.semanticToneRow > span {
+  color: var(--color-slate-500);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* V1.11 — button geometry is visual and discoverable, not a technical select. */
+.buttonShapePicker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.buttonShapePicker button {
+  min-width: 0;
+  min-height: 62px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 7px 4px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 10px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+}
+.buttonShapePicker button:hover,
+.buttonShapePicker button[data-active="true"] {
+  border-color: var(--color-primary-200);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+.buttonShapePicker i {
+  width: 34px;
+  height: 18px;
+  display: block;
+  background: var(--color-primary);
+}
+.buttonShapePicker i[data-radius="small"] { border-radius: 4px; }
+.buttonShapePicker i[data-radius="medium"] { border-radius: 8px; }
+.buttonShapePicker i[data-radius="large"] { border-radius: 13px; }
+.buttonShapePicker i[data-radius="pill"] { border-radius: 999px; }
+.buttonShapePicker button span {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 8px;
+  font-weight: var(--font-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.textBoxPresets {
+  grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
 }

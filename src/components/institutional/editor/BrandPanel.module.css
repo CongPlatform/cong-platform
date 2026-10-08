@@ -198,7 +198,7 @@
   gap: 7px;
 }
 
-.colorField input[type="color"] {
+.colorField > input[type="color"] {
   width: 42px;
   height: 40px;
   padding: 3px;
@@ -207,7 +207,7 @@
   background: var(--color-white);
 }
 
-.colorField input[type="text"],
+.colorField > input[type="text"],
 .selectField select {
   min-width: 0;
   min-height: 40px;
@@ -345,14 +345,111 @@
   font-size: var(--font-2xs);
 }
 
-.designerPaletteGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-.designerPaletteCard { min-width: 0; display: grid; gap: 7px; padding: 9px; border: 1px solid var(--color-slate-200); border-radius: 11px; text-align: left; background: var(--color-white); }
-.designerPaletteCard:hover { border-color: var(--color-primary-300); background: var(--color-primary-50); }
-.designerPaletteSwatches { min-height: 34px; display: flex; overflow: hidden; border-radius: 8px; }
-.designerPaletteSwatches i { flex: 1; min-width: 0; }
-.designerPaletteCard > span:last-child { display: grid; gap: 2px; }
-.designerPaletteCard strong { color: var(--color-navy); font-size: var(--font-xs); }
-.designerPaletteCard small { color: var(--color-slate-500); font-size: var(--font-2xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 560px) { .designerPaletteGrid { grid-template-columns: 1fr; } }
+.designerPaletteGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+.designerPaletteCard {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 11px;
+  text-align: left;
+  background: var(--color-white);
+}
+.designerPaletteCard:hover {
+  border-color: var(--color-primary-300);
+  background: var(--color-primary-50);
+}
+.designerPaletteSwatches {
+  min-height: 34px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.designerPaletteSwatches i {
+  flex: 1;
+  min-width: 0;
+}
+.designerPaletteCard > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+.designerPaletteCard strong {
+  color: var(--color-navy);
+  font-size: var(--font-xs);
+}
+.designerPaletteCard small {
+  color: var(--color-slate-500);
+  font-size: var(--font-2xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .designerPaletteGrid {
+    grid-template-columns: 1fr;
+  }
+}
 
-.harmonyNote { color: var(--color-slate-500); font-size: var(--font-2xs); line-height: 1.45; }
+.harmonyNote {
+  color: var(--color-slate-500);
+  font-size: var(--font-2xs);
+  line-height: 1.45;
+}
+
+/* V1.10.5 — the shared advanced picker owns the color interaction. */
+.colorField > div {
+  display: block;
+  min-width: 0;
+}
+
+.generatedTones {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 14px;
+  background: var(--color-slate-50);
+}
+.generatedTones > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+.generatedTones strong {
+  color: var(--color-navy);
+  font-size: 13px;
+}
+.generatedTones span {
+  color: var(--color-slate-500);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.generatedToneGrid {
+  display: grid;
+  gap: 8px;
+}
+.generatedToneRow {
+  display: grid;
+  grid-template-columns: 94px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.generatedToneRow > span {
+  font-weight: 700;
+  color: var(--color-slate-600);
+}
+.generatedToneRow > div {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(28px, 1fr));
+  gap: 5px;
+}
+.generatedToneRow i {
+  height: 26px;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px rgb(9 28 48 / 0.08);
+}
