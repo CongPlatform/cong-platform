@@ -55,12 +55,73 @@ function asImage(value: unknown): InstitutionalImageValue | null {
   return null;
 }
 
+
+function placeholderForSlot(
+  slot: string,
+  presentation: string,
+  configured?: string,
+): string {
+  if (configured?.trim()) return configured;
+  const normalized = slot.toLocaleLowerCase("pt-BR");
+  if (normalized.includes("email")) return "email@organizacao.org.br";
+  if (normalized.includes("whatsapp")) return "(00) 00000-0000";
+  if (normalized.includes("phone") || normalized.includes("telefone")) return "(00) 0000-0000";
+  if (normalized.includes("address") || normalized.includes("endereco")) return "Endereço ou área de atuação";
+  if (normalized.includes("hours") || normalized.includes("horario")) return "Horários de atendimento";
+  if (presentation === "eyebrow") return "Categoria ou chamada curta";
+  if (presentation === "display") return "Título principal";
+  if (presentation === "heading") return "Título da seção";
+  if (presentation === "caption") return "Informação complementar";
+  return "Digite seu conteúdo";
+}
+
 function contactHref(slot: string, value: string): string | undefined {
   if (!value) return undefined;
   if (slot === "email") return `mailto:${value}`;
   if (slot === "phone") return `tel:${value.replace(/\s+/g, "")}`;
   if (slot === "whatsapp") return `https://wa.me/${value.replace(/\D/g, "")}`;
   return undefined;
+}
+
+function phoneDigits(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 11);
+}
+
+function formatBrazilPhone(value: string): string {
+  const digits = phoneDigits(value);
+  if (!digits) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  const area = digits.slice(0, 2);
+  const local = digits.slice(2);
+  if (digits.length === 11) {
+    const first = local.slice(0, 5);
+    const last = local.slice(5);
+    return last ? `(${area}) ${first}-${last}` : `(${area}) ${first}`;
+  }
+  const first = local.slice(0, 4);
+  const last = local.slice(4);
+  return last ? `(${area}) ${first}-${last}` : `(${area}) ${first}`;
+}
+
+function contactValidation(slot: string, value: string): string | null {
+  const normalized = slot.toLocaleLowerCase("pt-BR");
+  if (!value.trim()) return null;
+  if (normalized.includes("email")) {
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+    return valid ? null : "Digite um e-mail válido, como contato@organizacao.org.br.";
+  }
+  if (normalized.includes("phone") || normalized.includes("telefone") || normalized.includes("whatsapp")) {
+    const count = phoneDigits(value).length;
+    return count === 10 || count === 11 ? null : "Informe DDD + número. Ex.: (19) 99999-9999.";
+  }
+  return null;
+}
+
+function normalizeContactValue(slot: string, value: string): string {
+  const normalized = slot.toLocaleLowerCase("pt-BR");
+  if (normalized.includes("email")) return value.replace(/\s+/g, "").toLowerCase();
+  if (normalized.includes("phone") || normalized.includes("telefone") || normalized.includes("whatsapp")) return formatBrazilPhone(value);
+  return value;
 }
 
 
@@ -168,13 +229,14 @@ function TextGuidance({
         : "";
 
   return (
-    <FloatingCanvasHint anchorRef={anchorRef} className={styles.inlineGuidance} preferredWidth={520} dataWarning={outside}>
+    <FloatingCanvasHint anchorRef={anchorRef} className={styles.inlineGuidance} preferredWidth={260} dataWarning={outside}>
+      <span className={styles.canvasTipLabel}>Dica do editor</span>
       <span className={styles.inlineGuidanceCount}>
         {outside ? <FiAlertCircle /> : <FiCheckCircle />}
         {field.recommendedMax ? `${length} / ${field.recommendedMax}` : `${length} caracteres`}
       </span>
       {recommendation ? <span>{recommendation}</span> : null}
-      {field.help ? <small>{field.help}</small> : null}
+      {outside && field.help ? <small>{field.help}</small> : null}
     </FloatingCanvasHint>
   );
 }
@@ -194,6 +256,7 @@ export default function SlotRenderer({
   onImageStyleChange,
   onInteractionStart,
   onInteractionCommit,
+  onImageFile,
 }: {
   slot: string;
   presentation?: string;
@@ -209,6 +272,7 @@ export default function SlotRenderer({
   onImageStyleChange?: (style: Partial<InstitutionalElementStyle>) => void;
   onInteractionStart?: () => void;
   onInteractionCommit?: () => void;
+  onImageFile?: (path: Array<string | number>, file: File) => void;
 }) {
   const value = data[slot];
   const valuePath = [...path, slot];
@@ -231,20 +295,25 @@ export default function SlotRenderer({
   if (["primaryAction", "secondaryAction"].includes(presentation)) {
     const action = asAction(value);
     if (!action) return null;
+    const actionClass = presentation === "primaryAction" ? styles.primaryAction : styles.secondaryAction;
+
+    if (editable && onValueChange) {
+      return (
+        <InlineTextEditor
+          value={action.label}
+          className={actionClass}
+          placeholder="Texto do botão"
+          onChange={(label) => onValueChange(valuePath, { ...action, label })}
+          onCommit={(label) => onValueChange(valuePath, { ...action, label })}
+        />
+      );
+    }
 
     const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
       handleSemanticNavigation(event, action.href, editable);
     };
 
-    return (
-      <a
-        href={action.href}
-        onClick={handleClick}
-        className={presentation === "primaryAction" ? styles.primaryAction : styles.secondaryAction}
-      >
-        {action.label}
-      </a>
-    );
+    return <a href={action.href} onClick={handleClick} className={actionClass} data-font-target="true">{action.label}</a>;
   }
 
   if (["image", "heroImage", "wideImage", "cardImage"].includes(presentation)) {
@@ -271,6 +340,7 @@ export default function SlotRenderer({
         onStyleChange={onImageStyleChange}
         onInteractionStart={onInteractionStart}
         onInteractionCommit={onInteractionCommit}
+        onFile={(file) => onImageFile?.(valuePath, file)}
       />
     );
   }
@@ -283,28 +353,61 @@ export default function SlotRenderer({
   if (presentation === "socialLink") {
     const url = asString(value);
     const label = asString(data.label) || "Rede social";
+    if (editable && onValueChange) {
+      return (
+        <InlineTextEditor
+          value={label}
+          className={styles.socialLink}
+          placeholder="Nome da rede"
+          onChange={(nextLabel) => onValueChange([...path, "label"], nextLabel)}
+          onCommit={(nextLabel) => onValueChange([...path, "label"], nextLabel)}
+        />
+      );
+    }
     return url ? <a className={styles.socialLink} href={url} target="_blank" rel="noreferrer">{label}</a> : null;
   }
 
   if (presentation === "navLink") {
     const href = asString(value);
     const label = asString(data.label) || "Link";
-    if (!href) return null;
 
+    if (editable && onValueChange) {
+      return (
+        <InlineTextEditor
+          value={label}
+          className={styles.navLink}
+          placeholder="Link do menu"
+          onChange={(nextLabel) => onValueChange([...path, "label"], nextLabel)}
+          onCommit={(nextLabel) => onValueChange([...path, "label"], nextLabel)}
+        />
+      );
+    }
+
+    if (!href) return null;
     const handleNavigation = (event: MouseEvent<HTMLAnchorElement>) => {
       handleSemanticNavigation(event, href, editable);
     };
-
-    return (
-      <a className={styles.navLink} href={href} onClick={handleNavigation}>
-        {label}
-      </a>
-    );
+    return <a className={styles.navLink} href={href} onClick={handleNavigation}>{label}</a>;
   }
 
   if (presentation === "contactLink") {
     const text = asString(value);
     const href = contactHref(slot, text);
+    if (editable && onValueChange) {
+      const validation = contactValidation(slot, text);
+      return (
+        <span className={styles.contactEditorField} data-invalid={Boolean(validation) || undefined}>
+          <InlineTextEditor
+            value={text}
+            className={styles.contactLine}
+            placeholder={placeholderForSlot(slot, presentation, fieldDefinition?.placeholder)}
+            onChange={(nextValue) => onValueChange(valuePath, normalizeContactValue(slot, nextValue))}
+            onCommit={(nextValue) => onValueChange(valuePath, normalizeContactValue(slot, nextValue.trim()))}
+          />
+          {validation ? <small className={styles.contactValidationMessage}><FiAlertCircle /> {validation}</small> : null}
+        </span>
+      );
+    }
     if (!text) return null;
     return href ? <a className={styles.contactLink} href={href}>{text}</a> : <span className={styles.contactLine}>{text}</span>;
   }
@@ -322,17 +425,20 @@ export default function SlotRenderer({
           value={text}
           multiline={multiline}
           className={className}
-          placeholder={fieldDefinition?.placeholder}
-          onChange={(nextValue) => onValueChange(valuePath, nextValue)}
-          onCommit={(nextValue) => onValueChange(valuePath, nextValue)}
+          placeholder={placeholderForSlot(slot, presentation, fieldDefinition?.placeholder)}
+          onChange={(nextValue) => onValueChange(valuePath, presentation === "contactLine" ? normalizeContactValue(slot, nextValue) : nextValue)}
+          onCommit={(nextValue) => onValueChange(valuePath, presentation === "contactLine" ? normalizeContactValue(slot, nextValue.trim()) : nextValue)}
         />
-        {showGuidance && fieldDefinition ? <TextGuidance value={text} field={fieldDefinition} anchorRef={textAnchorRef} /> : null}
+        {presentation === "contactLine" && contactValidation(slot, text) ? (
+          <small className={styles.contactValidationMessage}><FiAlertCircle /> {contactValidation(slot, text)}</small>
+        ) : null}
+        {showGuidance && selected && fieldDefinition ? <TextGuidance value={text} field={fieldDefinition} anchorRef={textAnchorRef} /> : null}
       </div>
     );
   }
 
-  if (presentation === "display") return <h1 className={className}>{text}</h1>;
-  if (presentation === "heading") return <h2 className={className}>{text}</h2>;
-  if (["itemTitle", "metricValue"].includes(presentation)) return <strong className={className}>{text}</strong>;
-  return <span className={className}>{text}</span>;
+  if (presentation === "display") return <h1 className={className} data-font-target="true">{text}</h1>;
+  if (presentation === "heading") return <h2 className={className} data-font-target="true">{text}</h2>;
+  if (["itemTitle", "metricValue"].includes(presentation)) return <strong className={className} data-font-target="true">{text}</strong>;
+  return <span className={className} data-font-target="true">{text}</span>;
 }

@@ -31,10 +31,14 @@ export default function SectionDesignPicker({
   return (
     <div className={styles.picker} onClick={(event) => event.stopPropagation()}>
       <div className={styles.header}>
-        <span className={styles.icon}><FiLayout aria-hidden="true" /></span>
+        <span className={styles.icon}>
+          <FiLayout aria-hidden="true" />
+        </span>
         <div>
           <strong>Trocar o design</strong>
-          <small>Seu conteúdo permanece. Compare usando o próprio texto da seção.</small>
+          <small>
+            Seu conteúdo permanece. Compare usando o próprio texto da seção.
+          </small>
         </div>
       </div>
 
@@ -50,12 +54,22 @@ export default function SectionDesignPicker({
               disabled={busy || active}
               onClick={() => onSelect(variant.versionId)}
             >
-              <LiveVariantThumbnail section={section} variant={variant} brand={brand} />
+              <LiveVariantThumbnail
+                section={section}
+                variant={variant}
+                brand={brand}
+              />
               <span className={styles.optionTitle}>
                 <strong>{variant.name}</strong>
-                {active ? <em><FiCheck /> Atual</em> : null}
+                {active ? (
+                  <em>
+                    <FiCheck /> Atual
+                  </em>
+                ) : null}
               </span>
-              {variant.description ? <small>{variant.description}</small> : null}
+              {variant.description ? (
+                <small>{variant.description}</small>
+              ) : null}
             </button>
           );
         })}

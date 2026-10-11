@@ -114,7 +114,6 @@
   }
 }
 
-
 .historyButtons {
   display: inline-flex;
   align-items: center;
@@ -142,4 +141,45 @@
 .historyButtons button:disabled {
   cursor: default;
   opacity: 0.34;
+}
+
+/* ZIP 1 — toolbar consistency and contrast pass. */
+.toolbar {
+  min-height: 64px;
+  padding-block: 8px;
+  border-bottom-color: rgb(var(--color-navy-rgb) / 0.1);
+  box-shadow: 0 1px 0 rgb(var(--color-white-rgb) / 0.65);
+}
+
+.title strong {
+  font-size: var(--font-sm);
+  letter-spacing: -0.01em;
+}
+
+.title span,
+.saveState {
+  color: var(--color-slate-600);
+}
+
+.iconButton,
+.devices button,
+.historyButtons button {
+  transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.devices .active {
+  box-shadow: inset 0 0 0 1px rgb(var(--color-primary-rgb) / 0.14);
+}
+
+.textButton {
+  color: var(--color-slate-700);
+}
+
+.textButton:focus-visible,
+.publishButton:focus-visible,
+.iconButton:focus-visible,
+.devices button:focus-visible,
+.historyButtons button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }

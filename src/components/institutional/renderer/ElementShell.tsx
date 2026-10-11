@@ -15,12 +15,17 @@ import {
   FiAlignRight,
   FiCheck,
   FiChevronDown,
+  FiClipboard,
+  FiCopy,
   FiDroplet,
   FiImage,
   FiLayers,
   FiMaximize2,
   FiMoreHorizontal,
+  FiPlusSquare,
   FiRotateCcw,
+  FiScissors,
+  FiSquare,
   FiTrash2,
   FiType,
 } from "react-icons/fi";
@@ -33,8 +38,9 @@ import type {
   InstitutionalImageFrameResource,
   InstitutionalLayoutNode,
 } from "../../../services/institutionalService";
-import { contrastRatio } from "../../../utils/institutionalPalette";
+import { contrastRatio, nearestAccessibleColor } from "../../../utils/institutionalPalette";
 import { institutionalColorCssVar, resolveInstitutionalColor } from "../../../utils/institutionalColors";
+import { exceedsEditorConstraints } from "../../../utils/institutionalConstraints";
 
 import ColorPickerControl from "../editor/ColorPickerControl";
 import styles from "./InstitutionalRenderer.module.css";
@@ -48,7 +54,7 @@ type ResizeEdge =
   | "top-right"
   | "bottom-left"
   | "bottom-right";
-type ToolbarPanel = "size" | "align" | "position" | "color" | "image" | "frame" | "overlay" | "more" | "readability" | null;
+type ToolbarPanel = "size" | "align" | "position" | "color" | "buttonShape" | "image" | "frame" | "overlay" | "more" | "readability" | null;
 
 type CanvasGuides = { vertical?: number; horizontal?: number };
 
@@ -133,6 +139,14 @@ function percentageWidthBasis(
   return Math.max(measured || rect.width, 1);
 }
 
+function containingBlockWidth(element: HTMLElement): number {
+  const parent = element.parentElement;
+  if (!parent) return Math.max(element.getBoundingClientRect().width, 1);
+  const rect = parent.getBoundingClientRect();
+  const computed = window.getComputedStyle(parent);
+  const padding = Number.parseFloat(computed.paddingLeft || "0") + Number.parseFloat(computed.paddingRight || "0");
+  return Math.max(rect.width - padding, 1);
+}
 
 function isImageNode(node: Extract<InstitutionalLayoutNode, { type: "slot" | "element" }>): boolean {
   if (node.type === "element") return node.elementType === "image";
@@ -167,19 +181,66 @@ function placementStyle(placement: InstitutionalElementStyle["placement"]): Pick
   return {};
 }
 
-function bestReadableColor(background: string | undefined, brand: InstitutionalBrand | undefined): `#${string}` | "text" | "primary" | "secondary" | "accent" {
-  if (!background) return "text";
-  const candidates: Array<{ value: `#${string}` | "text" | "primary" | "secondary" | "accent"; hex: string | undefined }> = [
-    { value: "text", hex: brand?.textColor },
-    { value: "primary", hex: brand?.primaryColor },
-    { value: "secondary", hex: brand?.secondaryColor },
-    { value: "accent", hex: brand?.accentColor },
-    { value: "#ffffff", hex: "#ffffff" },
-    { value: "#091c30", hex: "#091c30" },
-  ];
-  return candidates
-    .filter((item): item is { value: `#${string}` | "text" | "primary" | "secondary" | "accent"; hex: string } => Boolean(item.hex))
-    .sort((a, b) => contrastRatio(b.hex, background) - contrastRatio(a.hex, background))[0]?.value ?? "text";
+function bestReadableColor(
+  background: string | undefined,
+  foreground: string | undefined,
+  minimumRatio = 4.5,
+): `#${string}` | "text" {
+  if (!background || !foreground) return "text";
+  return nearestAccessibleColor(foreground, background, minimumRatio) as `#${string}`;
+}
+
+function cardMetadata(card: HTMLElement): { source: string; index: number } | null {
+  const source = card.dataset.repeatSource;
+  const rawIndex = card.dataset.repeatIndex;
+  if (!source || rawIndex === undefined) return null;
+  const index = Number(rawIndex);
+  return Number.isInteger(index) && index >= 0 ? { source, index } : null;
+}
+
+function distanceFromRect(x: number, y: number, rect: DOMRect): number {
+  const dx = x < rect.left ? rect.left - x : x > rect.right ? x - rect.right : 0;
+  const dy = y < rect.top ? rect.top - y : y > rect.bottom ? y - rect.bottom : 0;
+  return Math.hypot(dx, dy);
+}
+
+function updateCardAnchorCount(card: HTMLElement, delta: 1 | -1): void {
+  const current = Number(card.dataset.anchorCount ?? 0);
+  const next = Math.max(0, current + delta);
+  if (next === 0) {
+    delete card.dataset.anchorCount;
+    delete card.dataset.hasAnchoredAction;
+    return;
+  }
+  card.dataset.anchorCount = String(next);
+  card.dataset.hasAnchoredAction = "true";
+}
+
+function nearestRepeatCard(
+  shell: HTMLElement,
+  sectionContent: HTMLElement,
+): { card: HTMLElement; source: string; index: number; xPercent: number; yPercent: number; distance: number } | null {
+  const shellRect = shell.getBoundingClientRect();
+  const centerX = shellRect.left + shellRect.width / 2;
+  const centerY = shellRect.top + shellRect.height / 2;
+  let best: { card: HTMLElement; source: string; index: number; xPercent: number; yPercent: number; distance: number } | null = null;
+
+  for (const card of Array.from(sectionContent.querySelectorAll<HTMLElement>('[data-surface="card"][data-repeat-source][data-repeat-index]'))) {
+    const meta = cardMetadata(card);
+    if (!meta) continue;
+    const rect = card.getBoundingClientRect();
+    const distance = distanceFromRect(centerX, centerY, rect);
+    if (best && distance >= best.distance) continue;
+    best = {
+      card,
+      ...meta,
+      xPercent: clamp(((centerX - rect.left) / Math.max(rect.width, 1)) * 100, 0, 100),
+      yPercent: clamp(((centerY - rect.top) / Math.max(rect.height, 1)) * 100, 0, 100),
+      distance,
+    };
+  }
+
+  return best;
 }
 
 const frameOptions: Array<{ id: InstitutionalImageFrame; label: string }> = [
@@ -193,9 +254,10 @@ const frameOptions: Array<{ id: InstitutionalImageFrame; label: string }> = [
 ];
 
 export default function ElementShell({
-  node, selected, multiSelected = false, selectedIds = [], editable, removable, children, onSelect, onStyleChange, onMoveCommit, onRemove, brand, sectionBackground, frames = [], editorConstraints,
+  node, selectionId, selected, multiSelected = false, selectedIds = [], editable, removable, children, onSelect, onStyleChange, onMoveCommit, onRemove, onCopy, onCut, onPaste, onDuplicate, brand, sectionBackground, frames = [], editorConstraints,
 }: {
   node: Extract<InstitutionalLayoutNode, { type: "slot" | "element" }>;
+  selectionId?: string;
   selected: boolean;
   multiSelected?: boolean;
   selectedIds?: string[];
@@ -206,12 +268,17 @@ export default function ElementShell({
   onStyleChange?: (style: Partial<InstitutionalElementStyle>) => void;
   onMoveCommit?: (deltaX: number, deltaY: number, elementIds?: string[]) => void;
   onRemove?: () => void;
+  onCopy?: () => void;
+  onCut?: () => void;
+  onPaste?: () => void;
+  onDuplicate?: () => void;
   brand?: InstitutionalBrand;
   sectionBackground?: string;
   frames?: InstitutionalImageFrameResource[];
   editorConstraints?: InstitutionalEditorConstraints;
 }) {
   const shellRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const [toolbarPosition, setToolbarPosition] = useState<{ top: number; left: number } | null>(null);
   const [toolbarPlacement, setToolbarPlacement] = useState<"above" | "below">("above");
   const [outsideSafeArea, setOutsideSafeArea] = useState(false);
@@ -219,6 +286,12 @@ export default function ElementShell({
   const [cropMode, setCropMode] = useState(false);
   const [framePreviewUrl, setFramePreviewUrl] = useState<string | null>(null);
   const [guides, setGuides] = useState<CanvasGuides>({});
+  const [renderedMetrics, setRenderedMetrics] = useState<{
+    fontSize: number | null;
+    foreground: string | null;
+    background: string | null;
+    radiusPx: number | null;
+  }>({ fontSize: null, foreground: null, background: null, radiusPx: null });
   const style = node.style ?? {};
   const locked = Boolean(style.locked);
   const imageLike = isImageNode(node);
@@ -230,11 +303,134 @@ export default function ElementShell({
     (node.type === "slot" &&
       ["primaryAction", "secondaryAction"].includes(node.presentation ?? ""));
   const shapeLike = node.type === "element" && node.elementType === "shape";
-  const heightResizable = imageLike || buttonLike || shapeLike;
+  const iconLike = node.type === "element" && node.elementType === "icon";
+  const shapeKind = shapeLike && typeof node.value === "string" ? node.value : undefined;
+  const heightResizable = imageLike || buttonLike || shapeLike || iconLike;
   const freeMode = editorConstraints?.mode !== "guided";
   const colorable = !imageLike && (node.type === "slot" || node.elementType !== "spacer");
-  const elementConstraints = editorConstraints?.mode === "guided" ? node.constraints : undefined;
+  const elementConstraints = node.constraints;
+  const hasAuthoredOffset = Math.abs(style.offsetX ?? 0) > 0.5 || Math.abs(style.offsetY ?? 0) > 0.5;
+  const positionMode = style.positionMode ?? (hasAuthoredOffset ? "free" : "flow");
 
+  // Copied/free actions that visually belong to a repeated card are rendered as
+  // card actions, not as raw section-level pixel offsets. Existing persisted
+  // anchors are honoured; legacy offset-only actions are inferred at render time
+  // without mutating the saved design just by opening the editor.
+  useLayoutEffect(() => {
+    if (!buttonLike) return;
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    const ownCard = shell.closest<HTMLElement>('[data-surface="card"]');
+    const sectionContent = shell.closest<HTMLElement>('[data-section-content="true"]');
+    if (ownCard || !sectionContent) {
+      shell.style.position = "";
+      shell.style.left = "";
+      shell.style.top = "";
+      shell.style.marginTop = "";
+      delete shell.dataset.cardAnchoredAction;
+      return;
+    }
+
+    let source = style.anchorSource;
+    let index = style.anchorIndex;
+    let xPercent = style.anchorXPercent;
+
+    const hasPersistedAnchor =
+      style.positionMode === "anchored" &&
+      source !== undefined &&
+      index !== undefined;
+
+    if (!hasPersistedAnchor) {
+      if (!hasAuthoredOffset) return;
+      const legacy = nearestRepeatCard(shell, sectionContent);
+      if (!legacy || legacy.distance > 96) return;
+      source = legacy.source;
+      index = legacy.index;
+      xPercent = legacy.xPercent;
+    }
+
+    if (source === undefined || index === undefined) return;
+    const horizontalIntent: "left" | "center" | "right" =
+      (xPercent ?? 16) < 34 ? "left" : (xPercent ?? 16) > 66 ? "right" : "center";
+
+    let markedTarget: HTMLElement | null = null;
+    const place = () => {
+      if (shell.dataset.dragging === "true" || shell.dataset.resizing === "true") return;
+      const target = sectionContent.querySelector<HTMLElement>(
+        `[data-surface="card"][data-repeat-source="${CSS.escape(source!)}"][data-repeat-index="${index}"]`,
+      );
+      if (!target) {
+        if (markedTarget) {
+          updateCardAnchorCount(markedTarget, -1);
+          markedTarget = null;
+        }
+        shell.style.position = "";
+        shell.style.left = "";
+        shell.style.top = "";
+        shell.style.marginTop = "";
+        delete shell.dataset.cardAnchoredAction;
+        return;
+      }
+
+      if (markedTarget !== target) {
+        if (markedTarget) updateCardAnchorCount(markedTarget, -1);
+        markedTarget = target;
+        updateCardAnchorCount(target, 1);
+      }
+
+      const contentRect = sectionContent.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const shellRect = shell.getBoundingClientRect();
+      const horizontalPad = Math.min(18, Math.max(10, targetRect.width * 0.06));
+      const verticalPad = Math.min(18, Math.max(12, targetRect.height * 0.04));
+      const available = Math.max(0, targetRect.width - shellRect.width - horizontalPad * 2);
+      const localX = horizontalIntent === "left" ? 0 : horizontalIntent === "right" ? available : available / 2;
+      const left = targetRect.left - contentRect.left + horizontalPad + localX;
+      const top = targetRect.bottom - contentRect.top - shellRect.height - verticalPad;
+
+      shell.style.position = "absolute";
+      shell.style.left = `${Math.round(left)}px`;
+      shell.style.top = `${Math.round(top)}px`;
+      shell.style.marginTop = "0";
+      shell.style.transform = `rotate(${style.rotation ?? 0}deg)`;
+      shell.dataset.cardAnchoredAction = "true";
+      shell.dataset.anchorSource = source!;
+      shell.dataset.anchorIndex = String(index);
+    };
+
+    place();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(place);
+    observer.observe(sectionContent);
+    const target = sectionContent.querySelector<HTMLElement>(
+      `[data-surface="card"][data-repeat-source="${CSS.escape(source)}"][data-repeat-index="${index}"]`,
+    );
+    if (target) observer.observe(target);
+    return () => {
+      observer.disconnect();
+      if (markedTarget) updateCardAnchorCount(markedTarget, -1);
+    };
+  }, [
+    buttonLike,
+    hasAuthoredOffset,
+    style.anchorIndex,
+    style.anchorSource,
+    style.anchorXPercent,
+    style.offsetX,
+    style.offsetY,
+    style.positionMode,
+    style.rotation,
+  ]);
+
+  // Text belongs to document flow. A vertical offset on a text box must move
+  // the following content with it; using translateY would only move the pixels
+  // and lets the next paragraph remain underneath, causing collisions.
+  // Horizontal movement can stay transform-based because it does not affect
+  // the vertical rhythm of the section. Free media/shapes keep full transform.
+  const authoredOffsetX = style.offsetX ?? 0;
+  const authoredOffsetY = style.offsetY ?? 0;
+  const flowAwareOffsetY = textBoxLike ? authoredOffsetY : 0;
   const css = {
     "--element-color": colorValue(style.color),
     "--element-background": colorValue(style.backgroundColor),
@@ -242,24 +438,112 @@ export default function ElementShell({
     "--element-radius": radiusValue(style.radius),
     "--shape-stroke-width": String(style.strokeWidth ?? 0),
     "--image-height": style.heightPx !== undefined ? `${style.heightPx}px` : undefined,
-    width: widthValue(style),
-    height: heightResizable && style.heightPx !== undefined ? `${style.heightPx}px` : undefined,
+    width: iconLike
+      ? `${Math.max(12, Math.min(320, style.iconSizePx ?? 48))}px`
+      : shapeLike && style.widthPercent === undefined && (!style.width || style.width === "auto")
+        ? "120px"
+        : widthValue(style),
+    height: iconLike
+      ? `${Math.max(12, Math.min(320, style.iconSizePx ?? 48))}px`
+      : heightResizable && style.heightPx !== undefined ? `${style.heightPx}px` : undefined,
     textAlign: style.align,
-    transform: `translate(${style.offsetX ?? 0}px, ${style.offsetY ?? 0}px) rotate(${style.rotation ?? 0}deg)`,
+    marginTop: textBoxLike && flowAwareOffsetY !== 0 ? `${flowAwareOffsetY}px` : undefined,
+    transform: positionMode === "anchored"
+      ? `rotate(${style.rotation ?? 0}deg)`
+      : textBoxLike
+        ? `translateX(${authoredOffsetX}px) rotate(${style.rotation ?? 0}deg)`
+        : `translate(${authoredOffsetX}px, ${authoredOffsetY}px) rotate(${style.rotation ?? 0}deg)`,
     zIndex: style.zIndex,
+    opacity: style.opacity,
     ...placementStyle(style.placement),
   } as CSSProperties;
 
-  const foreground = resolvedColor(style.color, brand, brand?.textColor);
-  const background = buttonLike
+  const semanticForeground = resolvedColor(style.color, brand, brand?.textColor);
+  const semanticBackground = buttonLike
     ? resolvedColor(style.backgroundColor, brand, brand?.accentColor)
     : resolvedColor(style.backgroundColor, brand, sectionBackground ?? brand?.backgroundColor);
+  const foreground = renderedMetrics.foreground ?? semanticForeground;
+  const background = renderedMetrics.background ?? semanticBackground;
+  const renderedFontSize = renderedMetrics.fontSize ?? numericFontSize(style);
+  const renderedButtonRadius = style.radius ?? (
+    renderedMetrics.radiusPx === null ? "pill" :
+      renderedMetrics.radiusPx <= 1 ? "none" :
+        renderedMetrics.radiusPx <= 8 ? "small" :
+          renderedMetrics.radiusPx <= 15 ? "medium" :
+            renderedMetrics.radiusPx <= 32 ? "large" : "pill"
+  );
   const ratio = foreground && background ? contrastRatio(foreground, background) : null;
-  const largeText = textLike && numericFontSize(style) >= 24;
+  const largeText = textLike && renderedFontSize >= 24;
   const goodThreshold = textLike ? (largeText ? 3 : 4.5) : 3;
   const excellentThreshold = textLike ? (largeText ? 4.5 : 7) : 4.5;
   const readabilityPass = ratio === null || ratio >= goodThreshold;
   const readabilityExcellent = ratio !== null && ratio >= excellentThreshold;
+  const outsideRecommendation = Boolean(
+    editorConstraints?.mode === "guided" &&
+    exceedsEditorConstraints(style, {}, editorConstraints, elementConstraints),
+  );
+
+  useLayoutEffect(() => {
+    if (!selected || !editable) return;
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    const parseRgb = (value: string): string | null => {
+      const match = value.match(/rgba?\(\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)/i);
+      if (!match) return /^#[0-9a-f]{6}$/i.test(value) ? value : null;
+      const hex = [match[1], match[2], match[3]]
+        .map((part) => Math.max(0, Math.min(255, Math.round(Number(part)))).toString(16).padStart(2, "0"))
+        .join("");
+      return `#${hex}`;
+    };
+
+    let frame = 0;
+    const measure = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const target = shell.querySelector<HTMLElement>("[data-font-target='true']") ?? shell;
+        const targetStyle = window.getComputedStyle(target);
+        const fontSize = Number.parseFloat(targetStyle.fontSize);
+        const foregroundColor = parseRgb(targetStyle.color);
+        const borderRadius = Number.parseFloat(targetStyle.borderTopLeftRadius);
+
+        let backgroundColor: string | null = null;
+        let current: HTMLElement | null = target;
+        while (current) {
+          const computed = window.getComputedStyle(current);
+          const raw = computed.backgroundColor;
+          if (raw && raw !== "transparent" && !/rgba\([^)]*,\s*0(?:\.0+)?\)$/.test(raw)) {
+            backgroundColor = parseRgb(raw);
+            if (backgroundColor) break;
+          }
+          if (current === shell.closest("[data-section-type]")) break;
+          current = current.parentElement;
+        }
+
+        setRenderedMetrics((previous) => {
+          const next = {
+            fontSize: Number.isFinite(fontSize) ? Math.round(fontSize * 10) / 10 : null,
+            foreground: foregroundColor,
+            background: backgroundColor,
+            radiusPx: Number.isFinite(borderRadius) ? Math.round(borderRadius * 10) / 10 : null,
+          };
+          return previous.fontSize === next.fontSize && previous.foreground === next.foreground && previous.background === next.background && previous.radiusPx === next.radiusPx
+            ? previous
+            : next;
+        });
+      });
+    };
+
+    measure();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    observer?.observe(shell);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [editable, selected, style.fontSize, style.size, style.color, style.backgroundColor, style.heightPx, style.widthPercent, brand, sectionBackground]);
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -311,14 +595,23 @@ export default function ElementShell({
           return;
         }
         const rect = element.getBoundingClientRect();
+        const viewportMargin = 12;
+        const elementGap = 14;
+        const toolbarRect = toolbarRef.current?.getBoundingClientRect();
+        const toolbarWidth = toolbarRect?.width ?? (imageLike ? 520 : 470);
+        const toolbarHeight = toolbarRect?.height ?? 44;
+        const helperHeight = openPanel ? 0 : 38;
         const estimatedPanelHeight = openPanel === "frame" ? 360 : openPanel === "color" ? 300 : openPanel ? 250 : 0;
-        const toolbarWidth = imageLike ? 520 : 470;
-        const roomAbove = rect.top - 16;
-        const roomBelow = window.innerHeight - rect.bottom - 16;
-        const preferAbove = roomAbove >= 58 + estimatedPanelHeight || roomAbove > roomBelow;
-        const top = preferAbove ? Math.max(10, rect.top - 54) : Math.min(window.innerHeight - 54, rect.bottom + 10);
+        const occupiedHeight = toolbarHeight + Math.max(helperHeight, estimatedPanelHeight);
+        const roomAbove = rect.top - viewportMargin;
+        const roomBelow = window.innerHeight - rect.bottom - viewportMargin;
+        const preferAbove = roomAbove >= occupiedHeight + elementGap || (roomAbove > roomBelow && roomAbove >= toolbarHeight + elementGap);
+        const rawTop = preferAbove
+          ? rect.top - toolbarHeight - elementGap
+          : rect.bottom + elementGap;
+        const top = clamp(rawTop, viewportMargin, Math.max(viewportMargin, window.innerHeight - toolbarHeight - viewportMargin));
         const centeredLeft = rect.left + rect.width / 2 - toolbarWidth / 2;
-        const left = clamp(centeredLeft, 12, Math.max(12, window.innerWidth - toolbarWidth - 12));
+        const left = clamp(centeredLeft, viewportMargin, Math.max(viewportMargin, window.innerWidth - toolbarWidth - viewportMargin));
         setToolbarPlacement(preferAbove ? "above" : "below");
         setToolbarPosition({ top, left });
       });
@@ -336,14 +629,28 @@ export default function ElementShell({
     };
   }, [editable, imageLike, openPanel, selected, style.fontSize, style.heightPx, style.offsetX, style.offsetY, style.widthPercent]);
 
+  function contentBoxRect(target: HTMLElement): DOMRect {
+    const rect = target.getBoundingClientRect();
+    const computed = window.getComputedStyle(target);
+    const left = rect.left + (Number.parseFloat(computed.paddingLeft) || 0);
+    const right = rect.right - (Number.parseFloat(computed.paddingRight) || 0);
+    const top = rect.top + (Number.parseFloat(computed.paddingTop) || 0);
+    const bottom = rect.bottom - (Number.parseFloat(computed.paddingBottom) || 0);
+    return new DOMRect(left, top, Math.max(0, right - left), Math.max(0, bottom - top));
+  }
+
   function safeAreaFor(element: HTMLElement): DOMRect | null {
     const frame = element.closest<HTMLElement>("[data-section-id]");
     if (!frame) return null;
     const semanticSection = frame.querySelector<HTMLElement>("section, footer");
-    const inner = semanticSection?.firstElementChild;
-    if (inner instanceof HTMLElement && inner.contains(element)) return inner.getBoundingClientRect();
-    if (semanticSection?.contains(element)) return semanticSection.getBoundingClientRect();
-    return frame.getBoundingClientRect();
+    if (!semanticSection) return contentBoxRect(frame);
+
+    const candidates = Array.from(semanticSection.children)
+      .filter((child): child is HTMLElement => child instanceof HTMLElement && child.contains(element));
+    const closestContainer = candidates[0];
+    if (closestContainer) return contentBoxRect(closestContainer);
+    if (semanticSection.contains(element)) return contentBoxRect(semanticSection);
+    return contentBoxRect(frame);
   }
 
   function snapMove(element: HTMLElement, rect: DOMRect, dx: number, dy: number, disabled: boolean): { dx: number; dy: number; guides: CanvasGuides } {
@@ -398,23 +705,34 @@ export default function ElementShell({
   function beginDirectCanvasMove(event: ReactPointerEvent<HTMLDivElement>): void {
     if (!editable || !onStyleChange || locked || event.button !== 0) return;
 
+    const target = event.target as HTMLElement;
     const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+
+    // Texto inline continua arrastável com um clique. Só bloqueamos o drag
+    // quando o usuário já entrou de fato no modo de edição por duplo clique.
+    const inlineEditor = target.closest<HTMLElement>("[data-inline-text-editor='true']");
+    if (inlineEditor?.dataset.editing === "true") {
+      onSelect?.(additive);
+      return;
+    }
+    if (target.closest("[data-no-canvas-drag='true']")) return;
+
     onSelect?.(additive);
     if (additive) return;
 
-    const target = event.target as HTMLElement;
-    if (target.closest("input, textarea, select, [contenteditable='true'], [data-no-canvas-drag='true']")) return;
+    if (target.closest("input, textarea, select, [contenteditable='true']")) return;
     if (!buttonLike && target.closest("button")) return;
     // While Enquadrar is open, dragging the photo adjusts its crop instead of moving the element.
     if (imageLike && cropMode) return;
 
     const shell = shellRef.current;
     if (!shell) return;
-    try {
-      shell.setPointerCapture(event.pointerId);
-    } catch {
-      // Window listeners below keep the drag alive if pointer capture is unavailable.
-    }
+
+    // Do not capture the pointer on pointer-down. Capturing before the gesture
+    // becomes a real drag steals the native click/double-click sequence from
+    // inline text, which made text editing intermittent or impossible. Window
+    // listeners already keep the drag alive; we only start moving after the
+    // threshold below is crossed.
 
     // ImageMedia also listens for pointer events. In normal mode the canvas owns the drag.
     if (imageLike) event.stopPropagation();
@@ -429,7 +747,7 @@ export default function ElementShell({
       ? Array.from(document.querySelectorAll<HTMLElement>(`[data-group-id="${CSS.escape(style.groupId)}"]`))
       : [];
     const moveIds = groupShells.length > 1
-      ? groupShells.map((candidate) => candidate.dataset.congNodeId).filter((id): id is string => Boolean(id))
+      ? groupShells.map((candidate) => candidate.dataset.selectionId ?? candidate.dataset.congNodeId).filter((id): id is string => Boolean(id))
       : selectedIds.length > 1
         ? selectedIds
         : node.id
@@ -438,7 +756,7 @@ export default function ElementShell({
     const multiShells = moveIds.length > 1
       ? moveIds
           .filter((id) => id !== node.id)
-          .map((id) => document.querySelector<HTMLElement>(`[data-cong-node-id="${CSS.escape(id)}"]`))
+          .map((id) => document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(id)}"]`))
           .filter((candidate): candidate is HTMLElement => Boolean(candidate))
           .map((candidate) => ({
             element: candidate,
@@ -473,12 +791,28 @@ export default function ElementShell({
       const snapped = snapMove(shell, initialRect, dx, dy, pointerEvent.altKey);
       nextX = clamp(Math.round(baseX + snapped.dx), -1200, 1200);
       nextY = clamp(Math.round(baseY + snapped.dy), -1200, 1200);
-      shell.style.transform = `translate(${nextX}px, ${nextY}px) rotate(${style.rotation ?? 0}deg)`;
+      if (textBoxLike) {
+        // Text participates in document flow vertically so following copy reflows.
+        shell.style.marginTop = nextY === 0 ? "" : `${nextY}px`;
+        shell.style.transform = `translateX(${nextX}px) rotate(${style.rotation ?? 0}deg)`;
+      } else {
+        // Buttons/media/shapes are visually positioned. Buttons are clamped to
+        // their containing card/section below so they cannot escape or inflate
+        // the section height in the published site.
+        shell.style.transform = `translate(${nextX}px, ${nextY}px) rotate(${style.rotation ?? 0}deg)`;
+      }
       if (multiShells.length > 0) {
         const moveX = nextX - baseX;
         const moveY = nextY - baseY;
         for (const item of multiShells) {
-          item.element.style.transform = `translate(${item.offsetX + moveX}px, ${item.offsetY + moveY}px) rotate(${item.rotation}deg)`;
+          const itemX = item.offsetX + moveX;
+          const itemY = item.offsetY + moveY;
+          if (item.element.dataset.textBox === "true") {
+            item.element.style.marginTop = itemY === 0 ? "" : `${itemY}px`;
+            item.element.style.transform = `translateX(${itemX}px) rotate(${item.rotation}deg)`;
+          } else {
+            item.element.style.transform = `translate(${itemX}px, ${itemY}px) rotate(${item.rotation}deg)`;
+          }
         }
       }
       if (snapped.guides.vertical !== lastGuideX || snapped.guides.horizontal !== lastGuideY) {
@@ -507,8 +841,40 @@ export default function ElementShell({
       if (active) {
         const deltaX = nextX - baseX;
         const deltaY = nextY - baseY;
-        if (moveIds.length > 1 && onMoveCommit) onMoveCommit(deltaX, deltaY, moveIds);
-        else onStyleChange({ offsetX: nextX, offsetY: nextY });
+        if (moveIds.length > 1 && onMoveCommit) {
+          onMoveCommit(deltaX, deltaY, moveIds);
+        } else {
+          const sectionContent = shell.closest<HTMLElement>('[data-section-content="true"]');
+          const ownCard = shell.closest<HTMLElement>('[data-surface="card"]');
+          const anchor = buttonLike && !ownCard && sectionContent
+            ? nearestRepeatCard(shell, sectionContent)
+            : null;
+
+          if (anchor && anchor.distance <= 96) {
+            onStyleChange({
+              positionMode: "anchored",
+              anchorSource: anchor.source,
+              anchorIndex: anchor.index,
+              anchorXPercent: Math.round(anchor.xPercent * 10) / 10,
+              anchorYPercent: Math.round(anchor.yPercent * 10) / 10,
+              offsetX: 0,
+              offsetY: 0,
+              offsetReferenceWidth: undefined,
+            });
+          } else {
+            const referenceWidth = sectionContent?.getBoundingClientRect().width;
+            onStyleChange({
+              offsetX: nextX,
+              offsetY: nextY,
+              positionMode: textBoxLike ? "flow" : "free",
+              offsetReferenceWidth: referenceWidth ? Math.round(referenceWidth) : style.offsetReferenceWidth,
+              anchorSource: undefined,
+              anchorIndex: undefined,
+              anchorXPercent: undefined,
+              anchorYPercent: undefined,
+            });
+          }
+        }
       }
       setGuides({});
       delete shell.dataset.dragging;
@@ -548,7 +914,7 @@ export default function ElementShell({
     // resolve percentages against their grid area, not against the full grid.
     // Measuring/deriving that basis prevents the frame from snapping back when
     // the gesture is committed.
-    const widthBasisPx = percentageWidthBasis(shell, style);
+    const widthBasisPx = buttonLike || shapeLike ? containingBlockWidth(shell) : percentageWidthBasis(shell, style);
 
     const startX = event.clientX;
     const startY = event.clientY;
@@ -559,28 +925,30 @@ export default function ElementShell({
     const baseOffsetX = style.offsetX ?? 0;
     const baseOffsetY = style.offsetY ?? 0;
 
-    const constraintMinPercent = elementConstraints?.minWidthPercent ?? editorConstraints?.minWidthPercent;
-    const constraintMaxPercent = elementConstraints?.maxWidthPercent ?? editorConstraints?.maxWidthPercent;
     const fallbackMinPercent = textBoxLike ? 8 : imageLike ? 8 : 4;
-    const absoluteMaxPercent = freeMode ? 240 : 100;
-    const minPercent = clamp(constraintMinPercent ?? fallbackMinPercent, 1, absoluteMaxPercent);
-    const maxPercent = clamp(constraintMaxPercent ?? absoluteMaxPercent, minPercent, absoluteMaxPercent);
+    // Guided mode is advisory: users can exceed the recommended geometry and
+    // receive a warning instead of the resize gesture silently stopping.
+    const absoluteMaxPercent = 240;
+    const minPercent = fallbackMinPercent;
+    const maxPercent = absoluteMaxPercent;
 
     const geometryMinWidth = textBoxLike
       ? Math.max(72, numericFontSize(style) * 2.5)
       : imageLike
         ? 96
-        : 48;
+        : iconLike
+          ? 12
+          : 48;
     const minWidthPx = Math.min(
       widthBasisPx * (maxPercent / 100),
       Math.max(geometryMinWidth, widthBasisPx * (minPercent / 100)),
     );
     const maxWidthPx = Math.max(minWidthPx, widthBasisPx * (maxPercent / 100));
-    const defaultMinHeight = imageLike ? 80 : buttonLike ? 32 : shapeLike ? 24 : 1;
-    const defaultMaxHeight = imageLike ? 1400 : buttonLike ? 420 : shapeLike ? 1200 : Math.max(startHeightPx, 1);
-    const minHeightPx = heightResizable ? (elementConstraints?.minHeightPx ?? defaultMinHeight) : 1;
+    const defaultMinHeight = imageLike ? 80 : buttonLike ? 32 : shapeLike ? 24 : iconLike ? 12 : 1;
+    const defaultMaxHeight = imageLike ? 1400 : buttonLike ? 420 : shapeLike ? 1200 : iconLike ? 320 : Math.max(startHeightPx, 1);
+    const minHeightPx = heightResizable ? defaultMinHeight : 1;
     const maxHeightPx = heightResizable
-      ? Math.max(minHeightPx, elementConstraints?.maxHeightPx ?? defaultMaxHeight)
+      ? Math.max(minHeightPx, Math.max(defaultMaxHeight, 1600))
       : Math.max(startHeightPx, 1);
 
     let nextWidthPx = clamp(startWidthPx, minWidthPx, maxWidthPx);
@@ -619,7 +987,14 @@ export default function ElementShell({
           : startHeightPx + deltaY;
       }
 
-      if (imageLike && cornerEdge && !pointerEvent.shiftKey) {
+      if (iconLike) {
+        const requestedSize = horizontalEdge && verticalEdge
+          ? (Math.abs(requestedWidth - startWidthPx) >= Math.abs(requestedHeight - startHeightPx) ? requestedWidth : requestedHeight)
+          : horizontalEdge ? requestedWidth : requestedHeight;
+        const nextSize = clamp(requestedSize, 12, 320);
+        nextWidthPx = nextSize;
+        nextHeightPx = nextSize;
+      } else if (imageLike && cornerEdge && !pointerEvent.shiftKey) {
         // Corner handles scale the frame proportionally, like a free image in Canva.
         const scaleFromWidth = requestedWidth / Math.max(startWidthPx, 1);
         const scaleFromHeight = requestedHeight / Math.max(startHeightPx, 1);
@@ -657,13 +1032,13 @@ export default function ElementShell({
         ? Math.round(baseOffsetY + (startHeightPx - nextHeightPx))
         : baseOffsetY;
 
-      if (horizontalEdge) {
+      if (horizontalEdge || iconLike) {
         shell.style.width = `${Math.round(nextWidthPx)}px`;
       }
       if (leftEdge || (topEdge && heightResizable)) {
         shell.style.transform = `translate(${nextOffsetX}px, ${nextOffsetY}px) rotate(${style.rotation ?? 0}deg)`;
       }
-      if (heightResizable && verticalEdge) {
+      if (heightResizable && (verticalEdge || iconLike)) {
         shell.style.height = `${Math.round(nextHeightPx)}px`;
       }
       if (imageFrame && imageLike) {
@@ -681,7 +1056,14 @@ export default function ElementShell({
 
       const patch: Partial<InstitutionalElementStyle> = {};
 
-      if (horizontalEdge) {
+      if (iconLike && (horizontalEdge || verticalEdge)) {
+        patch.iconSizePx = Math.round(Math.max(nextWidthPx, nextHeightPx));
+        patch.widthPercent = undefined;
+        patch.width = "auto";
+        patch.heightPx = undefined;
+        shell.style.width = `${Math.round(Math.max(nextWidthPx, nextHeightPx))}px`;
+        shell.style.height = `${Math.round(Math.max(nextWidthPx, nextHeightPx))}px`;
+      } else if (horizontalEdge) {
         const widthPercent = Math.round(
           clamp((nextWidthPx / widthBasisPx) * 100, minPercent, maxPercent) * 100,
         ) / 100;
@@ -704,7 +1086,7 @@ export default function ElementShell({
           patch.heightPx = Math.round(nextHeightPx);
           patch.imageAspect = "auto";
         }
-      } else if (heightResizable && verticalEdge) {
+      } else if (heightResizable && verticalEdge && !iconLike) {
         patch.heightPx = Math.round(nextHeightPx);
       }
       if (topEdge && heightResizable) patch.offsetY = nextOffsetY;
@@ -791,6 +1173,7 @@ export default function ElementShell({
   const toolbar = editable && selected && toolbarPosition && typeof document !== "undefined"
     ? createPortal(
         <div
+          ref={toolbarRef}
           className={`${styles.elementToolbarPortal} ${imageLike ? styles.elementToolbarMedia : ""}`}
           style={{
             top: toolbarPosition.top, left: toolbarPosition.left,
@@ -803,10 +1186,12 @@ export default function ElementShell({
         >
           {textLike && onStyleChange ? (
             <>
-              {panelButton("size", `${numericFontSize(style)} px`, <FiType />)}
+              {panelButton("size", `${Math.round(renderedFontSize)} px`, <FiType />)}
               {panelButton("align", "Alinhar", style.align === "center" ? <FiAlignCenter /> : style.align === "right" ? <FiAlignRight /> : style.align === "justify" ? <FiAlignJustify /> : <FiAlignLeft />)}
             </>
           ) : null}
+
+          {buttonLike && onStyleChange ? panelButton("buttonShape", "Formato", <FiSquare />) : null}
 
           {imageLike && onStyleChange ? (
             <>
@@ -819,6 +1204,46 @@ export default function ElementShell({
           {imageLike && onStyleChange ? panelButton("overlay", "Efeito", <FiDroplet />) : null}
           {onStyleChange ? panelButton("position", "Posição", <FiMaximize2 />) : null}
 
+          {onCopy ? (
+            <button type="button" className={styles.quickActionButton} onClick={onCopy} title="Copiar (Ctrl+C)" aria-label="Copiar elemento"><FiCopy /></button>
+          ) : null}
+          {onDuplicate ? (
+            <button type="button" className={styles.quickActionButton} onClick={onDuplicate} title="Duplicar (Ctrl+D)" aria-label="Duplicar elemento"><FiPlusSquare /></button>
+          ) : null}
+          {selectedIds.length > 1 ? (
+            <span className={styles.multiSelectBadge} title="Vários elementos selecionados"><FiLayers /> {selectedIds.length}</span>
+          ) : null}
+
+          {onStyleChange && (outsideSafeArea || outsideRecommendation) ? (
+            <button
+              type="button"
+              className={styles.layoutWarningButton}
+              title={outsideSafeArea ? "Fora da área segura — clique para voltar" : "Fora do recomendado — clique para ajustar"}
+              aria-label={outsideSafeArea ? "Voltar para a área segura" : "Voltar ao recomendado do design"}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (outsideSafeArea) {
+                  onStyleChange({ offsetX: 0, offsetY: 0 });
+                  setOutsideSafeArea(false);
+                  return;
+                }
+                const maxWidth = elementConstraints?.maxWidthPercent ?? editorConstraints?.maxWidthPercent ?? 100;
+                const minWidth = elementConstraints?.minWidthPercent ?? editorConstraints?.minWidthPercent ?? 8;
+                const maxFont = elementConstraints?.maxFontSize ?? editorConstraints?.maxFontSize ?? 84;
+                const minFont = elementConstraints?.minFontSize ?? editorConstraints?.minFontSize ?? 10;
+                const patch: Partial<InstitutionalElementStyle> = {};
+                if (style.widthPercent !== undefined) patch.widthPercent = clamp(style.widthPercent, minWidth, maxWidth);
+                if (style.fontSize !== undefined) patch.fontSize = clamp(style.fontSize, minFont, maxFont);
+                if (style.heightPx !== undefined) {
+                  const minHeight = elementConstraints?.minHeightPx ?? 1;
+                  const maxHeight = elementConstraints?.maxHeightPx ?? 1600;
+                  patch.heightPx = clamp(style.heightPx, minHeight, maxHeight);
+                }
+                onStyleChange(patch);
+              }}
+            ><FiAlertTriangle /><span>Ajustar</span></button>
+          ) : null}
+
           {ratio !== null && colorable && !readabilityPass ? (
             <button
               type="button"
@@ -830,7 +1255,7 @@ export default function ElementShell({
             ><FiAlertTriangle /></button>
           ) : null}
 
-          {(onStyleChange || removable) ? (
+          {(onStyleChange || removable || onCopy || onCut || onPaste || onDuplicate) ? (
             <button type="button" className={styles.moreButton} data-active={openPanel === "more"} onClick={() => { setCropMode(false); setOpenPanel(openPanel === "more" ? null : "more"); }} aria-label="Mais opções" title="Mais opções"><FiMoreHorizontal /></button>
           ) : null}
 
@@ -839,8 +1264,27 @@ export default function ElementShell({
               {openPanel === "size" && onStyleChange ? (
                 <>
                   <div className={styles.popoverHeading}><strong>Tamanho do texto</strong><span>Escolha um tamanho ou ajuste livremente.</span></div>
-                  <div className={styles.sizePresets}>{[14, 18, 24, 32, 48, 64].map((size) => <button type="button" key={size} data-active={numericFontSize(style) === size} onClick={() => onStyleChange({ fontSize: size })}>{size}</button>)}</div>
-                  <label className={styles.visualRange}><span>Menor</span><input type="range" min="10" max="96" step="1" value={numericFontSize(style)} onChange={(event) => onStyleChange({ fontSize: Number(event.target.value) })} /><span>Maior</span></label>
+                  <div className={styles.sizePresets}>{[14, 18, 24, 32, 48, 64].map((size) => <button type="button" key={size} data-active={Math.round(renderedFontSize) === size} onClick={() => onStyleChange({ fontSize: size })}>{size}</button>)}</div>
+                  <label className={styles.visualRange}><span>Menor</span><input type="range" min="10" max="160" step="1" value={Math.round(renderedFontSize)} onChange={(event) => onStyleChange({ fontSize: Number(event.target.value) })} /><span>Maior</span></label>
+                </>
+              ) : null}
+
+              {openPanel === "buttonShape" && onStyleChange ? (
+                <>
+                  <div className={styles.popoverHeading}><strong>Formato do botão</strong><span>Troque a silhueta sem alterar o texto ou a ação.</span></div>
+                  <div className={styles.buttonShapeQuickGrid}>
+                    {([
+                      ["none", "Reto"],
+                      ["small", "Suave"],
+                      ["medium", "Arredondado"],
+                      ["large", "Curvo"],
+                      ["pill", "Pílula"],
+                    ] as const).map(([radius, label]) => (
+                      <button type="button" key={radius} data-active={renderedButtonRadius === radius} onClick={() => onStyleChange({ radius })}>
+                        <span data-radius={radius}><i /></span><small>{label}</small>
+                      </button>
+                    ))}
+                  </div>
                 </>
               ) : null}
 
@@ -968,12 +1412,18 @@ export default function ElementShell({
                 <div className={styles.readabilityPanel} data-pass={readabilityPass}>
                   <div className={styles.readabilityIcon}>{readabilityPass ? <FiCheck /> : <FiAlertTriangle />}</div>
                   <div><strong>{readabilityExcellent ? "Leitura muito boa" : readabilityPass ? "Boa leitura" : "Pode ficar difícil de ler"}</strong><span>{readabilityPass ? "O contraste está confortável para a maioria das pessoas." : "A cor atual se mistura com o fundo. Podemos melhorar sem mudar o conteúdo."}</span></div>
-                  {!readabilityPass && background ? <button type="button" onClick={() => onStyleChange({ color: bestReadableColor(background, brand) })}>Melhorar automaticamente</button> : null}
+                  {!readabilityPass && background ? <button type="button" onClick={() => onStyleChange({ color: bestReadableColor(background, foreground, goodThreshold) })}>Melhorar automaticamente</button> : null}
                 </div>
               ) : null}
 
               {openPanel === "more" ? (
                 <div className={styles.moreMenu}>
+                  <div className={styles.clipboardMenuGroup}>
+                    {onCopy ? <button type="button" onClick={onCopy}><FiCopy /> Copiar <kbd>Ctrl+C</kbd></button> : null}
+                    {onCut ? <button type="button" onClick={onCut}><FiScissors /> Recortar <kbd>Ctrl+X</kbd></button> : null}
+                    {onPaste ? <button type="button" onClick={onPaste}><FiClipboard /> Colar <kbd>Ctrl+V</kbd></button> : null}
+                    {onDuplicate ? <button type="button" onClick={onDuplicate}><FiCopy /> Duplicar <kbd>Ctrl+D</kbd></button> : null}
+                  </div>
                   {onStyleChange ? (
                     <>
                       <button type="button" onClick={selectLayerBelow}><FiLayers /> Selecionar camada abaixo</button>
@@ -1011,16 +1461,26 @@ export default function ElementShell({
       data-primary-selected={selected}
       data-element-shell="true"
       data-cong-node-id={node.id ?? undefined}
+      data-selection-id={selectionId ?? node.id ?? undefined}
       data-offset-x={style.offsetX ?? 0}
       data-offset-y={style.offsetY ?? 0}
+      data-position-mode={positionMode}
+      data-anchor-source={style.anchorSource ?? undefined}
+      data-anchor-index={style.anchorIndex ?? undefined}
+      data-presentation={node.presentation ?? undefined}
+      data-element-type={node.type === "element" ? node.elementType : undefined}
       data-rotation={style.rotation ?? 0}
       data-group-id={style.groupId ?? undefined}
       data-editable={editable}
       data-image-element={imageLike}
       data-button-element={buttonLike}
+      data-icon-element={iconLike}
       data-shape-element={shapeLike}
+      data-shape-kind={shapeKind}
+      data-custom-color={style.color !== undefined}
+      data-custom-background={style.backgroundColor !== undefined}
       data-free-mode={freeMode}
-      data-custom-height={heightResizable && style.heightPx !== undefined}
+      data-custom-height={!iconLike && heightResizable && style.heightPx !== undefined}
       data-text-box={textBoxLike}
       data-explicit-width={explicitWidth}
       data-locked={locked}
@@ -1047,7 +1507,6 @@ export default function ElementShell({
     >
       {toolbar}
       {guideOverlay}
-      {editable && selected && outsideSafeArea ? <div className={styles.safeAreaWarning}><FiAlertTriangle /><span><strong>Fora da área recomendada</strong><small>Pode ficar cortado em telas menores.</small></span><button type="button" onClick={(event) => { event.stopPropagation(); onStyleChange?.({ offsetX: 0, offsetY: 0 }); setOutsideSafeArea(false); }}>Corrigir</button></div> : null}
       {children}
       {editable && selected && onStyleChange && !locked ? (
         <>

@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { FiHelpCircle, FiLayers, FiX } from "react-icons/fi";
+import { FiAlignCenter, FiAlignLeft, FiAlignRight, FiArrowDown, FiArrowUp, FiHelpCircle, FiLayers, FiMinus, FiMoreHorizontal, FiMoreVertical, FiX } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 
 import BrandPanel from "../../../components/institutional/editor/BrandPanel";
@@ -45,7 +45,7 @@ import {
   type InstitutionalVariant,
 } from "../../../services/institutionalService";
 import { setInstitutionalContentValue } from "../../../utils/institutionalContent";
-import { exceedsEditorConstraints, FREE_EDITOR_CONSTRAINTS } from "../../../utils/institutionalConstraints";
+import { FREE_EDITOR_CONSTRAINTS } from "../../../utils/institutionalConstraints";
 import {
   buildBrandPaletteSuggestion,
   extractLogoPalette,
@@ -71,6 +71,15 @@ import {
   defaultSettingsForVariant,
   findRecommendedVariant,
 } from "../../../utils/institutionalVariants";
+import {
+  institutionalSelectionIdForSource,
+  institutionalSourceNodeId,
+  uniqueInstitutionalSourceNodeIds,
+} from "../../../utils/institutionalSelection";
+import {
+  buildNativeExampleSite,
+} from "../../../utils/institutionalPreview";
+import { findNativeDesignFamilyByVisualStyle } from "../../../data/institutional/nativeDesignFamilies";
 
 import styles from "./InstitutionalEditor.module.css";
 
@@ -176,13 +185,13 @@ export default function InstitutionalEditor() {
   const [error, setError] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [exampleView, setExampleView] = useState(true);
   const [brandOpen, setBrandOpen] = useState(false);
   const [brandSaving, setBrandSaving] = useState(false);
   const [suggestedPalette, setSuggestedPalette] = useState<string[]>([]);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [unlockedSiteIds, setUnlockedSiteIds] = useState<Set<string>>(() => new Set());
-  const [constraintPrompt, setConstraintPrompt] = useState<{ sectionId: string; elementId: string; style: Partial<InstitutionalElementStyle> } | null>(null);
   const [pendingImageTarget, setPendingImageTarget] = useState<
     | { kind: "content"; sectionId: string; path: Array<string | number> }
     | { kind: "element"; sectionId: string; elementId: string }
@@ -368,6 +377,38 @@ export default function InstitutionalEditor() {
     [site],
   );
 
+  const nativeFamily = useMemo(() => {
+    const visualStyle = page?.sections
+      .map((section) => section.settings.visualStyle)
+      .find((value): value is string => typeof value === "string");
+    return findNativeDesignFamilyByVisualStyle(visualStyle);
+  }, [page]);
+
+  useEffect(() => {
+    if (!siteId || !nativeFamily) return;
+    const stored = sessionStorage.getItem(`cong:site:${siteId}:example-view`);
+    const next = stored === null ? true : stored === "1";
+    const frame = window.requestAnimationFrame(() => setExampleView(next));
+    return () => window.cancelAnimationFrame(frame);
+  }, [nativeFamily, siteId]);
+
+  const showExampleView = Boolean(nativeFamily && exampleView);
+  const renderedSite = useMemo(
+    () => site && nativeFamily && showExampleView ? buildNativeExampleSite(site, nativeFamily.id) : site,
+    [nativeFamily, showExampleView, site],
+  );
+  const renderedPage = useMemo(
+    () => renderedSite?.pages.find((item) => item.isHome) ?? renderedSite?.pages[0] ?? null,
+    [renderedSite],
+  );
+
+  const changeExampleView = useCallback((next: boolean): void => {
+    setExampleView(next);
+    if (siteId) sessionStorage.setItem(`cong:site:${siteId}:example-view`, next ? "1" : "0");
+    setSelectedElementIds([]);
+    setSelectedSectionId(null);
+  }, [setSelectedElementIds, setSelectedSectionId, siteId]);
+
   const selectedSection = useMemo(
     () => page?.sections.find((section) => section.id === selectedSectionId) ?? null,
     [page, selectedSectionId],
@@ -377,7 +418,7 @@ export default function InstitutionalEditor() {
     const layout = ensureLayoutNodeIds(
       effectiveSectionLayout(selectedSection.layout, selectedSection.settings),
     );
-    return findLayoutNode(layout, selectedElementId);
+    return findLayoutNode(layout, institutionalSourceNodeId(selectedElementId));
   }, [selectedElementId, selectedSection]);
 
   const selectedGroupId = useMemo(() => {
@@ -667,8 +708,9 @@ export default function InstitutionalEditor() {
 
   const changeElementValue = useCallback(
     (sectionId: string, elementId: string, value: unknown): void => {
+      const sourceElementId = institutionalSourceNodeId(elementId);
       updateSectionLayout(sectionId, (layout) =>
-        updateLayoutNode(layout, elementId, (node) =>
+        updateLayoutNode(layout, sourceElementId, (node) =>
           node.type === "element" ? { ...node, value: value as InstitutionalElementValue } : node,
         ),
       );
@@ -678,8 +720,9 @@ export default function InstitutionalEditor() {
 
   const applyElementStyle = useCallback(
     (sectionId: string, elementId: string, style: Partial<InstitutionalElementStyle>): void => {
+      const sourceElementId = institutionalSourceNodeId(elementId);
       updateSectionLayout(sectionId, (layout) =>
-        updateLayoutNode(layout, elementId, (node) => mergeElementStyle(node, style)),
+        updateLayoutNode(layout, sourceElementId, (node) => mergeElementStyle(node, style)),
       );
     },
     [updateSectionLayout],
@@ -691,32 +734,11 @@ export default function InstitutionalEditor() {
       elementId: string,
       style: Partial<InstitutionalElementStyle>,
     ): void => {
-      if (site?.editorConstraints.mode === "guided" && !constraintsUnlocked) {
-        const currentSection = page?.sections.find((item) => item.id === sectionId);
-        if (currentSection) {
-          const latestSettings = latestSettingsRef.current.get(sectionId) ?? currentSection.settings;
-          const layout = ensureLayoutNodeIds(
-            effectiveSectionLayout(currentSection.layout, latestSettings),
-          );
-          const currentNode = findLayoutNode(layout, elementId);
-          if (
-            currentNode &&
-            (currentNode.type === "slot" || currentNode.type === "element") &&
-            exceedsEditorConstraints(
-              currentNode.style ?? {},
-              style,
-              site.editorConstraints,
-              currentNode.constraints,
-            )
-          ) {
-            setConstraintPrompt({ sectionId, elementId, style });
-            return;
-          }
-        }
-      }
+      // Guided mode keeps the template recommendations visible, but never
+      // blocks a deliberate edit. The renderer flags out-of-range choices.
       applyElementStyle(sectionId, elementId, style);
     },
-    [applyElementStyle, constraintsUnlocked, page, site?.editorConstraints],
+    [applyElementStyle],
   );
 
   const reorderElementLayers = useCallback((sectionId: string, orderedElementIds: string[]): void => {
@@ -726,7 +748,7 @@ export default function InstitutionalEditor() {
       const count = Math.max(orderedElementIds.length - 1, 1);
       orderedElementIds.forEach((elementId, index) => {
         const zIndex = Math.round(50 - (70 * index) / count);
-        next = updateLayoutNode(next, elementId, (node) => mergeElementStyle(node, { zIndex }));
+        next = updateLayoutNode(next, institutionalSourceNodeId(elementId), (node) => mergeElementStyle(node, { zIndex }));
       });
       return next;
     });
@@ -755,7 +777,7 @@ export default function InstitutionalEditor() {
   const moveElement = useCallback(
     (sectionId: string, elementId: string, direction: -1 | 1): void => {
       updateSectionLayout(sectionId, (layout) =>
-        moveLayoutNode(layout, elementId, direction),
+        moveLayoutNode(layout, institutionalSourceNodeId(elementId), direction),
       );
     },
     [updateSectionLayout],
@@ -763,7 +785,7 @@ export default function InstitutionalEditor() {
 
   const removeElement = useCallback(
     (sectionId: string, elementId: string): void => {
-      updateSectionLayout(sectionId, (layout) => removeLayoutNode(layout, elementId));
+      updateSectionLayout(sectionId, (layout) => removeLayoutNode(layout, institutionalSourceNodeId(elementId)));
       setSelectedElementId(null);
     },
     [setSelectedElementId, updateSectionLayout],
@@ -771,17 +793,19 @@ export default function InstitutionalEditor() {
 
   const removeSelectedElements = useCallback((): void => {
     if (!selectedSectionId || selectedElementIds.length === 0) return;
+    const sourceIds = uniqueInstitutionalSourceNodeIds(selectedElementIds);
     updateSectionLayout(selectedSectionId, (layout) =>
-      removeLayoutNodes(layout, selectedElementIds),
+      removeLayoutNodes(layout, sourceIds),
     );
     setSelectedElementIds([]);
   }, [selectedElementIds, selectedSectionId, setSelectedElementIds, updateSectionLayout]);
 
   const moveSelectedElements = useCallback((sectionId: string, deltaX: number, deltaY: number, explicitIds?: string[]): void => {
     const ids = explicitIds && explicitIds.length > 1 ? explicitIds : selectedElementIds;
-    if (ids.length <= 1) return;
+    const sourceIds = uniqueInstitutionalSourceNodeIds(ids);
+    if (sourceIds.length <= 1) return;
     updateSectionLayout(sectionId, (layout) =>
-      applyOffsetDeltaToLayoutNodes(layout, ids, deltaX, deltaY),
+      applyOffsetDeltaToLayoutNodes(layout, sourceIds, deltaX, deltaY),
     );
   }, [selectedElementIds, updateSectionLayout]);
 
@@ -800,10 +824,11 @@ export default function InstitutionalEditor() {
       return;
     }
     const layout = ensureLayoutNodeIds(effectiveSectionLayout(section.layout, section.settings));
-    const node = findLayoutNode(layout, elementId);
+    const node = findLayoutNode(layout, institutionalSourceNodeId(elementId));
     const groupId = node && (node.type === "slot" || node.type === "element") ? node.style?.groupId : undefined;
     if (groupId) {
-      const members = collectGroupMemberIds(layout, groupId);
+      const members = collectGroupMemberIds(layout, groupId)
+        .map((memberId) => institutionalSelectionIdForSource(memberId, elementId));
       selectEditorElements(sectionId, [...members.filter((id) => id !== elementId), elementId]);
     } else {
       selectEditorElement(sectionId, elementId, false);
@@ -815,7 +840,7 @@ export default function InstitutionalEditor() {
     if (!selectedSectionId || selectedElementIds.length < 2) return;
     let nextGroupId = "";
     updateSectionLayout(selectedSectionId, (layout) => {
-      const grouped = groupLayoutNodes(layout, selectedElementIds, "manual");
+      const grouped = groupLayoutNodes(layout, uniqueInstitutionalSourceNodeIds(selectedElementIds), "manual");
       nextGroupId = grouped.groupId;
       return grouped.layout;
     });
@@ -827,10 +852,12 @@ export default function InstitutionalEditor() {
 
   const ungroupSelectedElements = useCallback((): void => {
     if (!selectedSectionId || !selectedGroupId) return;
-    const members = selectedGroupMemberIds;
+    const members = selectedElementId
+      ? selectedGroupMemberIds.map((memberId) => institutionalSelectionIdForSource(memberId, selectedElementId))
+      : selectedGroupMemberIds;
     updateSectionLayout(selectedSectionId, (layout) => ungroupLayoutNodes(layout, selectedGroupId));
     setSelectedElementIds(members);
-  }, [selectedGroupId, selectedGroupMemberIds, selectedSectionId, setSelectedElementIds, updateSectionLayout]);
+  }, [selectedElementId, selectedGroupId, selectedGroupMemberIds, selectedSectionId, setSelectedElementIds, updateSectionLayout]);
 
   const alignSelectedElements = useCallback((
     axis: "horizontal" | "vertical",
@@ -839,7 +866,7 @@ export default function InstitutionalEditor() {
     if (!selectedSectionId || selectedElementIds.length < 2 || typeof document === "undefined") return;
     const items = selectedElementIds
       .map((id) => {
-        const element = document.querySelector<HTMLElement>(`[data-cong-node-id="${CSS.escape(id)}"]`);
+        const element = document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(id)}"]`);
         return element ? { id, rect: element.getBoundingClientRect() } : null;
       })
       .filter((item): item is { id: string; rect: DOMRect } => Boolean(item));
@@ -862,7 +889,7 @@ export default function InstitutionalEditor() {
 
     updateSectionLayout(selectedSectionId, (layout) =>
       deltas.reduce((nextLayout, delta) =>
-        updateLayoutNode(nextLayout, delta.id, (node) => {
+        updateLayoutNode(nextLayout, institutionalSourceNodeId(delta.id), (node) => {
           if (node.type !== "slot" && node.type !== "element") return node;
           return mergeElementStyle(node, {
             offsetX: Math.round((node.style?.offsetX ?? 0) + delta.dx),
@@ -876,7 +903,7 @@ export default function InstitutionalEditor() {
     if (!selectedSectionId || selectedElementIds.length < 3 || typeof document === "undefined") return;
     const items = selectedElementIds
       .map((id) => {
-        const element = document.querySelector<HTMLElement>(`[data-cong-node-id="${CSS.escape(id)}"]`);
+        const element = document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(id)}"]`);
         return element ? { id, rect: element.getBoundingClientRect() } : null;
       })
       .filter((item): item is { id: string; rect: DOMRect } => Boolean(item));
@@ -898,7 +925,7 @@ export default function InstitutionalEditor() {
 
     updateSectionLayout(selectedSectionId, (layout) =>
       deltas.reduce((nextLayout, delta) =>
-        updateLayoutNode(nextLayout, delta.id, (node) => {
+        updateLayoutNode(nextLayout, institutionalSourceNodeId(delta.id), (node) => {
           if (node.type !== "slot" && node.type !== "element") return node;
           return mergeElementStyle(node, {
             offsetX: Math.round((node.style?.offsetX ?? 0) + delta.dx),
@@ -949,7 +976,7 @@ export default function InstitutionalEditor() {
       const dx = event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0;
       const dy = event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
       if (selectedElementIds.length > 1) {
-        updateSectionLayout(selectedSectionId, (layout) => applyOffsetDeltaToLayoutNodes(layout, selectedElementIds, dx, dy));
+        updateSectionLayout(selectedSectionId, (layout) => applyOffsetDeltaToLayoutNodes(layout, uniqueInstitutionalSourceNodeIds(selectedElementIds), dx, dy));
         return;
       }
       const currentStyle =
@@ -1383,7 +1410,7 @@ export default function InstitutionalEditor() {
 
       <div className={styles.workspace}>
         <SectionLibrary
-          disabled={busy}
+          disabled={busy || showExampleView}
           brand={site.brand}
           selectedSection={selectedSection}
           variants={variants}
@@ -1426,27 +1453,41 @@ export default function InstitutionalEditor() {
             <div className={styles.stageContext}>
               <strong>Página</strong>
               <span>
-                {selectedSection
-                  ? `Página inicial › ${getSectionDefinition(selectedSection.sectionType).name}${selectedElement ? ` › ${selectedElement.type === "element" ? ({ heading: "Título", text: "Texto", image: "Imagem", button: "Botão", icon: "Ícone", shape: "Forma", metric: "Número em destaque", quote: "Destaque", divider: "Linha divisória", spacer: "Espaço" } as const)[selectedElement.elementType] : selectedElement.type === "slot" ? "Conteúdo" : "Elemento"}` : ""}`
-                  : "Clique no próprio site para editar. Use + entre as seções para adicionar conteúdo."}
+                {showExampleView
+                  ? `${nativeFamily?.name ?? "Design nativo"} · visualização preenchida para você conhecer o design.`
+                  : selectedSection
+                    ? `Página inicial › ${getSectionDefinition(selectedSection.sectionType).name}${selectedElement ? ` › ${selectedElement.type === "element" ? ({ heading: "Título", text: "Texto", image: "Imagem", button: "Botão", icon: "Ícone", shape: "Forma", metric: "Número em destaque", quote: "Destaque", divider: "Linha divisória", spacer: "Espaço" } as const)[selectedElement.elementType] : selectedElement.type === "slot" ? "Conteúdo" : "Elemento"}` : ""}`
+                    : "Clique no próprio site para editar. Use os controles entre as seções para adicionar conteúdo."}
               </span>
             </div>
             <div className={styles.stageActions}>
-              {selectedElementIds.length > 1 ? (
+              {nativeFamily ? (
+                <div className={styles.exampleModeSwitch} role="group" aria-label="Conteúdo exibido no canvas">
+                  <button type="button" data-active={showExampleView} onClick={() => changeExampleView(true)}>
+                    <span>Exemplo do design</span>
+                    <small>Cores e conteúdo fictícios</small>
+                  </button>
+                  <button type="button" data-active={!showExampleView} onClick={() => changeExampleView(false)}>
+                    <span>Minha organização</span>
+                    <small>Minha marca e conteúdo</small>
+                  </button>
+                </div>
+              ) : null}
+              {!showExampleView && selectedElementIds.length > 1 ? (
                 <div className={styles.selectionActions} aria-label="Ações da seleção">
                   <span>{selectedElementIds.length} selecionados</span>
                   {!selectedGroupId ? (
                     <div className={styles.selectionArrange} aria-label="Alinhar seleção">
-                      <button type="button" onClick={() => alignSelectedElements("horizontal", "start")} title="Alinhar à esquerda" aria-label="Alinhar à esquerda">↤</button>
-                      <button type="button" onClick={() => alignSelectedElements("horizontal", "center")} title="Centralizar horizontalmente" aria-label="Centralizar horizontalmente">↔</button>
-                      <button type="button" onClick={() => alignSelectedElements("horizontal", "end")} title="Alinhar à direita" aria-label="Alinhar à direita">↦</button>
-                      <button type="button" onClick={() => alignSelectedElements("vertical", "start")} title="Alinhar ao topo" aria-label="Alinhar ao topo">↥</button>
-                      <button type="button" onClick={() => alignSelectedElements("vertical", "center")} title="Centralizar verticalmente" aria-label="Centralizar verticalmente">↕</button>
-                      <button type="button" onClick={() => alignSelectedElements("vertical", "end")} title="Alinhar à base" aria-label="Alinhar à base">↧</button>
+                      <button type="button" onClick={() => alignSelectedElements("horizontal", "start")} title="Alinhar à esquerda" aria-label="Alinhar à esquerda"><FiAlignLeft /></button>
+                      <button type="button" onClick={() => alignSelectedElements("horizontal", "center")} title="Centralizar horizontalmente" aria-label="Centralizar horizontalmente"><FiAlignCenter /></button>
+                      <button type="button" onClick={() => alignSelectedElements("horizontal", "end")} title="Alinhar à direita" aria-label="Alinhar à direita"><FiAlignRight /></button>
+                      <button type="button" onClick={() => alignSelectedElements("vertical", "start")} title="Alinhar ao topo" aria-label="Alinhar ao topo"><FiArrowUp /></button>
+                      <button type="button" onClick={() => alignSelectedElements("vertical", "center")} title="Centralizar verticalmente" aria-label="Centralizar verticalmente"><FiMinus /></button>
+                      <button type="button" onClick={() => alignSelectedElements("vertical", "end")} title="Alinhar à base" aria-label="Alinhar à base"><FiArrowDown /></button>
                       {selectedElementIds.length >= 3 ? (
                         <>
-                          <button type="button" onClick={() => distributeSelectedElements("horizontal")} title="Distribuir horizontalmente" aria-label="Distribuir horizontalmente">H⋯</button>
-                          <button type="button" onClick={() => distributeSelectedElements("vertical")} title="Distribuir verticalmente" aria-label="Distribuir verticalmente">V⋮</button>
+                          <button type="button" onClick={() => distributeSelectedElements("horizontal")} title="Distribuir horizontalmente" aria-label="Distribuir horizontalmente"><FiMoreHorizontal /></button>
+                          <button type="button" onClick={() => distributeSelectedElements("vertical")} title="Distribuir verticalmente" aria-label="Distribuir verticalmente"><FiMoreVertical /></button>
                         </>
                       ) : null}
                     </div>
@@ -1459,21 +1500,29 @@ export default function InstitutionalEditor() {
                   <button type="button" className={styles.selectionDelete} onClick={removeSelectedElements} title="Excluir selecionados (Delete)">Excluir</button>
                 </div>
               ) : null}
-              {site.sourceTemplateId ? (
+              {!showExampleView && site.sourceTemplateId ? (
                 <button type="button" className={styles.editingModeToggle} data-mode={constraintsUnlocked ? "free" : "guided"} onClick={toggleEditingMode} title={constraintsUnlocked ? "Voltar às proteções do modelo" : "Liberar movimentos e ajustes fora das recomendações"}>
                   <span>{constraintsUnlocked ? "Modo livre" : "Modo guiado"}</span>
                   <small>{constraintsUnlocked ? "Mais liberdade" : "Com recomendações"}</small>
                 </button>
-              ) : <span className={styles.editingModeStatic}>Modo livre</span>}
+              ) : !showExampleView ? <span className={styles.editingModeStatic}>Modo livre</span> : null}
               <small>{device === "desktop" ? "Desktop" : device === "tablet" ? "Tablet" : "Celular"}</small>
             </div>
           </div>
           <div className={styles.canvasViewport}>
-            <div className={styles.canvas} style={{ width: canvasWidth }}>
+            <div className={styles.canvas} style={{ width: canvasWidth }} data-cong-editor-device={device}>
+              {showExampleView ? (
+                <div className={styles.exampleCanvasNotice}>
+                  <strong>Exemplo do design</strong>
+                  <span>Conteúdo, imagens ilustrativas e cores fictícias. Escolha “Minha organização” para editar seus dados.</span>
+                  <button type="button" onClick={() => changeExampleView(false)}>Editar meu site</button>
+                </div>
+              ) : null}
               <InstitutionalSiteView
-                site={site}
-                page={page}
-                editor
+                site={renderedSite ?? site}
+                page={renderedPage ?? page}
+                editor={!showExampleView}
+                responsiveSizeOverride={device}
                 editorConstraints={constraintsUnlocked ? FREE_EDITOR_CONSTRAINTS : site.editorConstraints}
                 selectedSectionId={selectedSectionId}
                 selectedElementId={selectedElementId}
@@ -1525,6 +1574,7 @@ export default function InstitutionalEditor() {
                 if (selectedSection) void uploadImage(selectedSection.id, path, file);
               }}
               selectedElement={selectedElement}
+              selectedElementDomId={selectedElementId}
               brand={site.brand}
               designFrames={designResources.frames}
               onElementStyleChange={(style) => {
@@ -1645,27 +1695,6 @@ export default function InstitutionalEditor() {
         busy={busy}
         onCancel={() => setDeleteTargetId(null)}
         onConfirm={() => void removeSection()}
-      />
-
-      <ConfirmActionModal
-        open={Boolean(constraintPrompt)}
-        title="Sair dos limites recomendados do modelo?"
-        description="Este template foi configurado com limites para preservar a composição e a responsividade. Você pode liberar a edição e continuar; a CONG seguirá mostrando avisos de legibilidade e responsividade quando necessário."
-        confirmLabel="Liberar edição"
-        onCancel={() => setConstraintPrompt(null)}
-        onConfirm={() => {
-          if (!constraintPrompt) return;
-          if (siteId) {
-            sessionStorage.setItem(`cong:site:${siteId}:free-edit`, "1");
-            setUnlockedSiteIds((current) => {
-              const next = new Set(current);
-              next.add(siteId);
-              return next;
-            });
-          }
-          applyElementStyle(constraintPrompt.sectionId, constraintPrompt.elementId, constraintPrompt.style);
-          setConstraintPrompt(null);
-        }}
       />
 
       <ConfirmActionModal

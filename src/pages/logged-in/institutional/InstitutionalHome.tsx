@@ -6,6 +6,7 @@ import {
   FiEdit3,
   FiExternalLink,
   FiGlobe,
+  FiMaximize2,
   FiMoreHorizontal,
   FiPauseCircle,
   FiPlus,
@@ -19,6 +20,8 @@ import SiteCreationModal, {
   type SiteCreationRequest,
 } from "../../../components/institutional/editor/SiteCreationModal";
 import LiveSiteThumbnail from "../../../components/institutional/preview/LiveSiteThumbnail";
+import SitePreviewModal from "../../../components/institutional/preview/SitePreviewModal";
+import { findNativeDesignFamilyById, findNativeDesignFamilyByName } from "../../../data/institutional/nativeDesignFamilies";
 import { useWorkspace } from "../../../contexts/workspace-context";
 import { ApiError } from "../../../services/api";
 import {
@@ -144,7 +147,17 @@ async function applyGuidedAnswers(
       };
     }
 
-    return content ? [updateInstitutionalSection(section.id, { content })] : [];
+    if (!content) return [];
+    const guidance = section.settings.contentGuidance && typeof section.settings.contentGuidance === "object"
+      ? section.settings.contentGuidance as Record<string, unknown>
+      : {};
+    return [updateInstitutionalSection(section.id, {
+      content,
+      settings: {
+        ...section.settings,
+        contentGuidance: { ...guidance, source: "guided-answers", needsReview: false },
+      },
+    })];
   });
 
   await Promise.all(updates);
@@ -169,6 +182,9 @@ export default function InstitutionalHome() {
   const [selectedTemplate, setSelectedTemplate] = useState<InstitutionalTemplate | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [previewSite, setPreviewSite] = useState<InstitutionalSite | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<InstitutionalTemplate | null>(null);
+  const [visibleTemplateCount, setVisibleTemplateCount] = useState(6);
 
   useEffect(() => {
     let active = true;
@@ -210,6 +226,11 @@ export default function InstitutionalHome() {
   const standardTemplates = useMemo(() => templates.filter((template) => !template.isExample), [templates]);
   const examples = useMemo(() => templates.filter((template) => template.isExample), [templates]);
   const allTemplates = useMemo(() => [...standardTemplates, ...examples], [examples, standardTemplates]);
+  const visibleTemplates = useMemo(
+    () => allTemplates.slice(0, visibleTemplateCount),
+    [allTemplates, visibleTemplateCount],
+  );
+  const hiddenTemplateCount = Math.max(0, allTemplates.length - visibleTemplates.length);
 
   function openCreate(template: InstitutionalTemplate | null): void {
     setSelectedTemplate(template);
@@ -294,8 +315,8 @@ export default function InstitutionalHome() {
       <header className={styles.header}>
         <div>
           <span className={styles.eyebrow}>Sites · {organizationName}</span>
-          <h1>Conte sobre sua organização. A CONG ajuda a transformar isso em um bom site.</h1>
-          <p>Comece guiado, escolha um modelo ou abra o palco livre. Você continua no controle e pode ajustar o que quiser depois.</p>
+          <h1>Sites da organização</h1>
+          <p>Crie, visualize e publique sua presença institucional sem sair da CONG.</p>
         </div>
         <button type="button" className={styles.createButton} onClick={() => openCreate(null)}><FiPlus /> Criar site</button>
       </header>
@@ -324,7 +345,11 @@ export default function InstitutionalHome() {
               previewSite={sitePreviews[site.id] ?? null}
               menuOpen={openMenuId === site.id}
               onToggleMenu={() => setOpenMenuId((current) => current === site.id ? null : site.id)}
-              onOpen={() => navigate(`/app/site-institucional/${site.id}/editor`)}
+              onPreview={() => {
+                const detailed = sitePreviews[site.id];
+                if (detailed) setPreviewSite(detailed);
+              }}
+              onEdit={() => navigate(`/app/site-institucional/${site.id}/editor`)}
               onDelete={() => setPendingAction({ kind: "delete", site })}
               onUnpublish={() => setPendingAction({ kind: "unpublish", site })}
             />
@@ -342,17 +367,45 @@ export default function InstitutionalHome() {
             </div>
           </div>
 
-          <div className={styles.templateRail}>
-            {allTemplates.map((template) => (
+          <div className={styles.templateGrid}>
+            {visibleTemplates.map((template) => (
               <TemplateCard
                 key={template.id}
                 template={template}
                 variants={variants}
                 example={template.isExample}
+                onPreview={() => setPreviewTemplate(template)}
                 onUse={() => openCreate(template)}
               />
             ))}
           </div>
+
+          {hiddenTemplateCount > 0 ? (
+            <div className={styles.templateLoadMore}>
+              <button
+                type="button"
+                className={styles.loadMoreButton}
+                onClick={() => setVisibleTemplateCount((current) => Math.min(current + 6, allTemplates.length))}
+              >
+                Ver mais modelos
+                <span>+{Math.min(6, hiddenTemplateCount)}</span>
+              </button>
+              <button
+                type="button"
+                className={styles.viewAllButton}
+                onClick={() => setVisibleTemplateCount(allTemplates.length)}
+              >
+                Ver todos ({allTemplates.length})
+                <FiArrowRight />
+              </button>
+            </div>
+          ) : allTemplates.length > 6 ? (
+            <div className={styles.templateLoadMore}>
+              <button type="button" className={styles.viewAllButton} onClick={() => setVisibleTemplateCount(6)}>
+                Mostrar menos
+              </button>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -368,6 +421,45 @@ export default function InstitutionalHome() {
           onCreate={(request) => void createSite(request)}
         />
       ) : null}
+
+
+      {previewSite ? (
+        <SitePreviewModal
+          site={previewSite}
+          title={previewSite.name}
+          actionLabel="Editar site"
+          publicUrl={previewSite.publishedAt && previewSite.isPrimary ? institutionalPublicUrl(previewSite.publicSlug) : null}
+          onClose={() => setPreviewSite(null)}
+          onAction={() => navigate(`/app/site-institucional/${previewSite.id}/editor`)}
+        />
+      ) : null}
+
+      {previewTemplate ? (() => {
+        const preview = buildTemplatePreviewSite(previewTemplate, variants);
+        return preview ? (
+          <SitePreviewModal
+            site={preview}
+            title={previewTemplate.name}
+            eyebrow={previewTemplate.isExample ? "Exemplo fictício" : "Prévia do modelo"}
+            actionLabel="Usar este modelo"
+            details={(() => {
+              const family = findNativeDesignFamilyById(previewTemplate.familyKey) ?? findNativeDesignFamilyByName(previewTemplate.name);
+              return {
+                category: previewTemplate.category,
+                description: previewTemplate.description,
+                bestFor: family?.bestFor,
+                composition: family?.composition,
+                traits: family?.traits ? [...family.traits] : [],
+              };
+            })()}
+            onClose={() => setPreviewTemplate(null)}
+            onAction={() => {
+              setPreviewTemplate(null);
+              openCreate(previewTemplate);
+            }}
+          />
+        ) : null;
+      })() : null}
 
       <ConfirmActionModal
         open={Boolean(pendingAction)}
@@ -390,7 +482,8 @@ function SiteCard({
   previewSite,
   menuOpen,
   onToggleMenu,
-  onOpen,
+  onPreview,
+  onEdit,
   onDelete,
   onUnpublish,
 }: {
@@ -398,7 +491,8 @@ function SiteCard({
   previewSite: InstitutionalSite | null;
   menuOpen: boolean;
   onToggleMenu: () => void;
-  onOpen: () => void;
+  onPreview: () => void;
+  onEdit: () => void;
   onDelete: () => void;
   onUnpublish: () => void;
 }) {
@@ -407,9 +501,10 @@ function SiteCard({
 
   return (
     <article className={styles.siteCard}>
-      <button type="button" className={styles.sitePreview} onClick={onOpen} aria-label={`Editar ${site.name}`}>
-        {previewSite ? <LiveSiteThumbnail site={previewSite} scale={0.29} height={210} /> : <div className={styles.previewLoading}>Preparando prévia real…</div>}
+      <button type="button" className={styles.sitePreview} onClick={onPreview} aria-label={`Visualizar ${site.name}`} disabled={!previewSite}>
+        {previewSite ? <LiveSiteThumbnail site={previewSite} height={220} sourceWidth={1180} /> : <div className={styles.previewLoading}>Preparando prévia real…</div>}
         {published ? <div className={styles.livePreviewTag}><FiGlobe /> No ar</div> : null}
+        {previewSite ? <span className={styles.previewOverlay}><FiMaximize2 /> Visualizar site</span> : null}
       </button>
 
       <div className={styles.siteCardBody}>
@@ -434,7 +529,7 @@ function SiteCard({
         </div>
         <small>Atualizado em {new Date(site.updatedAt).toLocaleDateString("pt-BR")}</small>
         <div className={styles.siteCardActions}>
-          <button type="button" className={styles.editSiteButton} onClick={onOpen}><FiEdit3 /> Editar site</button>
+          <button type="button" className={styles.editSiteButton} onClick={onEdit}><FiEdit3 /> Editar site</button>
           {published ? <a className={styles.publicAddress} href={publicUrl} target="_blank" rel="noreferrer">{site.publicSlug}.{institutionalRootDomain()} <FiExternalLink /></a> : null}
         </div>
       </div>
@@ -446,29 +541,34 @@ function TemplateCard({
   template,
   variants,
   example,
+  onPreview,
   onUse,
 }: {
   template: InstitutionalTemplate;
   variants: InstitutionalVariant[];
   example?: boolean;
+  onPreview: () => void;
   onUse: () => void;
 }) {
   const preview = buildTemplatePreviewSite(template, variants);
 
   return (
-    <button type="button" className={styles.templateCard} onClick={onUse}>
-      <div className={styles.templatePreview}>
-        {preview ? <LiveSiteThumbnail site={preview} scale={0.29} height={210} /> : <div className={styles.previewLoading}>Prévia disponível ao abrir</div>}
+    <article className={styles.templateCard}>
+      <button type="button" className={styles.templatePreview} onClick={onPreview} aria-label={`Visualizar modelo ${template.name}`}>
+        {preview ? <LiveSiteThumbnail site={preview} height={218} sourceWidth={1180} /> : <div className={styles.previewLoading}>Prévia disponível ao abrir</div>}
         {example ? <span className={styles.exampleTag}>Exemplo fictício</span> : null}
-      </div>
+        {preview ? <span className={styles.previewOverlay}><FiMaximize2 /> Ver site completo</span> : null}
+      </button>
       <div className={styles.templateBody}>
-        <div>
+        <div className={styles.templateIdentity}>
           <span className={styles.templateCategory}>{template.category}</span>
           <h3>{template.name}</h3>
-          <p>{template.description}</p>
         </div>
-        <span className={styles.useTemplate}>Usar modelo <FiArrowRight /></span>
+        <div className={styles.templateActions}>
+          <button type="button" className={styles.previewTemplateButton} onClick={onPreview}><FiMaximize2 /> Visualizar</button>
+          <button type="button" className={styles.useTemplateButton} onClick={onUse}>Usar modelo <FiArrowRight /></button>
+        </div>
       </div>
-    </button>
+    </article>
   );
 }

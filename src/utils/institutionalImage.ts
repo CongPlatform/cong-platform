@@ -8,11 +8,17 @@ function outputName(name: string): string {
 }
 
 export async function prepareInstitutionalImage(file: File): Promise<File> {
-  if (!file.type.startsWith("image/") || file.size <= 0 || file.size > MAX_SOURCE_BYTES) {
+  if (
+    !file.type.startsWith("image/") ||
+    file.size <= 0 ||
+    file.size > MAX_SOURCE_BYTES
+  ) {
     throw new Error("Envie uma imagem JPG, PNG ou WebP de até 12 MB.");
   }
 
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const bitmap = await createImageBitmap(file, {
+    imageOrientation: "from-image",
+  });
 
   try {
     const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
@@ -31,14 +37,19 @@ export async function prepareInstitutionalImage(file: File): Promise<File> {
 
     const blob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
-        (result) => (result ? resolve(result) : reject(new Error("Não foi possível otimizar esta imagem."))),
+        (result) =>
+          result
+            ? resolve(result)
+            : reject(new Error("Não foi possível otimizar esta imagem.")),
         "image/webp",
         WEBP_QUALITY,
       );
     });
 
     if (blob.size > 5 * 1024 * 1024) {
-      throw new Error("A imagem continua muito grande mesmo após a otimização.");
+      throw new Error(
+        "A imagem continua muito grande mesmo após a otimização.",
+      );
     }
 
     return new File([blob], outputName(file.name), {

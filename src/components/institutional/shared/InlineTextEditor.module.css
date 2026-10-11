@@ -5,9 +5,8 @@
   max-width: 100%;
   border-radius: 6px;
   outline: none;
-  transition:
-    box-shadow 150ms ease,
-    background 150ms ease;
+  background: transparent;
+  transition: box-shadow 150ms ease;
 }
 
 .editor[data-multiline="true"] {
@@ -15,7 +14,12 @@
 }
 
 .editor[data-editing="false"] {
-  cursor: inherit;
+  cursor: grab;
+}
+
+.editor[data-editing="false"]:hover {
+  background: transparent;
+  box-shadow: none;
 }
 
 .editor[data-editing="true"] {
@@ -23,12 +27,13 @@
 }
 
 .editor[data-editing="true"]:hover {
-  box-shadow: 0 0 0 2px rgb(var(--color-primary-rgb) / 0.16);
+  background: transparent;
+  box-shadow: 0 0 0 1px rgb(var(--color-primary-rgb) / 0.22);
 }
 
 .editor[data-editing="true"]:focus {
-  background: rgb(var(--color-white-rgb) / 0.9);
-  box-shadow: 0 0 0 2px var(--color-primary);
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .editor:empty::before {

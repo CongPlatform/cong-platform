@@ -1,9 +1,10 @@
 import {
   useRef,
   type CSSProperties,
+  type ClipboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { FiImage, FiMove } from "react-icons/fi";
+import { FiImage, FiMove, FiUploadCloud } from "react-icons/fi";
 
 import type {
   InstitutionalElementStyle,
@@ -46,6 +47,7 @@ export default function ImageMedia({
   onStyleChange,
   onInteractionStart,
   onInteractionCommit,
+  onFile,
 }: {
   image: InstitutionalImageValue | null;
   presentation?: string;
@@ -57,6 +59,7 @@ export default function ImageMedia({
   onStyleChange?: (style: Partial<InstitutionalElementStyle>) => void;
   onInteractionStart?: () => void;
   onInteractionCommit?: () => void;
+  onFile?: (file: File) => void;
 }) {
   const dragRef = useRef<DragState | null>(null);
   const hintAnchorRef = useRef<HTMLDivElement>(null);
@@ -129,10 +132,36 @@ export default function ImageMedia({
     onInteractionCommit?.();
   }
 
+  function acceptDroppedImage(files: FileList | null): boolean {
+    const file = files?.[0];
+    if (!file || !file.type.startsWith("image/")) return false;
+    onFile?.(file);
+    return true;
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLDivElement>): void {
+    if (!editable || !onFile) return;
+    const files = event.clipboardData.files;
+    if (acceptDroppedImage(files)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
   if (!image?.url) {
     if (!editable) return null;
     return (
-      <div ref={hintAnchorRef} className={styles.editableMedia}>
+      <div
+        ref={hintAnchorRef}
+        className={styles.editableMedia}
+        tabIndex={0}
+        onPaste={handlePaste}
+        onDragOver={(event) => { if (editable && onFile) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } }}
+        onDrop={(event) => {
+          if (!editable || !onFile) return;
+          if (acceptDroppedImage(event.dataTransfer.files)) { event.preventDefault(); event.stopPropagation(); }
+        }}
+      >
         <button
           type="button"
           className={`${styles.imagePlaceholder} ${styles[presentation] ?? ""}`}
@@ -141,12 +170,13 @@ export default function ImageMedia({
             onRequest?.();
           }}
         >
-          <FiImage aria-hidden="true" />
-          <span>Escolher uma foto</span>
-          <small>Prefira uma imagem real de pessoas, ações ou do território.</small>
+          <FiUploadCloud aria-hidden="true" />
+          <span>Adicionar imagem</span>
+          <small>Clique, arraste uma imagem para cá ou cole com Ctrl+V.</small>
         </button>
         {selected && guidance ? (
           <FloatingCanvasHint anchorRef={hintAnchorRef} className={styles.imageFloatingHint} preferredWidth={420}>
+            <span className={styles.canvasTipLabel}>Dica</span>
             <FiImage aria-hidden="true" />
             <div>
               <strong>{guidance.title}</strong>
@@ -160,7 +190,17 @@ export default function ImageMedia({
   }
 
   return (
-    <div ref={hintAnchorRef} className={styles.imageMediaRoot}>
+    <div
+      ref={hintAnchorRef}
+      className={styles.imageMediaRoot}
+      tabIndex={editable ? 0 : undefined}
+      onPaste={handlePaste}
+      onDragOver={(event) => { if (editable && onFile) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } }}
+      onDrop={(event) => {
+        if (!editable || !onFile) return;
+        if (acceptDroppedImage(event.dataTransfer.files)) { event.preventDefault(); event.stopPropagation(); }
+      }}
+    >
       <div
         className={`${styles.imageMediaFrame} ${styles[presentation] ?? ""}`}
         data-frame={imageFrame}
@@ -179,7 +219,7 @@ export default function ImageMedia({
         {editable && selected ? (
           <>
             <span className={styles.cropDragBadge} aria-hidden="true">
-              <FiMove /> Arraste a foto para escolher o enquadramento
+              <FiMove /> Arraste para enquadrar
             </span>
             <button
               type="button"
@@ -198,6 +238,7 @@ export default function ImageMedia({
 
       {editable && selected && guidance ? (
         <FloatingCanvasHint anchorRef={hintAnchorRef} className={styles.imageFloatingHint} preferredWidth={420}>
+          <span className={styles.canvasTipLabel}>Dica</span>
           <FiImage aria-hidden="true" />
           <div>
             <strong>{guidance.title}</strong>

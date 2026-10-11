@@ -1,4 +1,8 @@
-import type { InstitutionalBrand, InstitutionalSection, InstitutionalVariant } from "../../../services/institutionalService";
+import type {
+  InstitutionalBrand,
+  InstitutionalSection,
+  InstitutionalVariant,
+} from "../../../services/institutionalService";
 import { defaultSettingsForVariant } from "../../../utils/institutionalVariants";
 import SectionRenderer from "../renderer/SectionRenderer";
 
@@ -18,10 +22,12 @@ export default function LiveVariantThumbnail({
     ...section.settings,
     ...variantSettings,
     sectionStyle: {
-      ...(section.settings.sectionStyle && typeof section.settings.sectionStyle === "object"
+      ...(section.settings.sectionStyle &&
+      typeof section.settings.sectionStyle === "object"
         ? section.settings.sectionStyle
         : {}),
-      ...(variantSettings.sectionStyle && typeof variantSettings.sectionStyle === "object"
+      ...(variantSettings.sectionStyle &&
+      typeof variantSettings.sectionStyle === "object"
         ? variantSettings.sectionStyle
         : {}),
     },

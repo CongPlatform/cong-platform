@@ -1,6 +1,8 @@
 import type { InstitutionalFieldDefinition } from "../data/institutional/sectionCatalog";
 
-export type InstitutionalCollectionItemType = NonNullable<InstitutionalFieldDefinition["itemType"]>;
+export type InstitutionalCollectionItemType = NonNullable<
+  InstitutionalFieldDefinition["itemType"]
+>;
 
 export function createInstitutionalCollectionItem(
   itemType: InstitutionalCollectionItemType,
@@ -8,8 +10,9 @@ export function createInstitutionalCollectionItem(
   if (itemType === "project") {
     return {
       id: crypto.randomUUID(),
-      title: "Novo projeto",
-      description: "Explique em poucas palavras o que acontece nesta iniciativa.",
+      title: "Nome da iniciativa",
+      description:
+        "Conte para quem esta ação existe, o que acontece e qual mudança ela busca gerar.",
       category: "",
       image: null,
       action: null,
@@ -19,9 +22,9 @@ export function createInstitutionalCollectionItem(
   if (itemType === "impact") {
     return {
       id: crypto.randomUUID(),
-      value: "0",
-      label: "Novo indicador",
-      period: "",
+      value: "1.200+",
+      label: "pessoas alcançadas",
+      period: "Troque por um dado real",
       source: "",
     };
   }
@@ -33,6 +36,14 @@ export function createInstitutionalCollectionItem(
       title: "Nova forma de ajudar",
       description: "Explique como a pessoa pode participar.",
       action: null,
+    };
+  }
+
+  if (itemType === "navigation") {
+    return {
+      id: crypto.randomUUID(),
+      label: "Novo link",
+      href: "#",
     };
   }
 
@@ -54,10 +65,13 @@ export function createInstitutionalCollectionItem(
   };
 }
 
-export function collectionItemLabel(itemType: InstitutionalCollectionItemType): string {
+export function collectionItemLabel(
+  itemType: InstitutionalCollectionItemType,
+): string {
   if (itemType === "project") return "projeto";
-  if (itemType === "impact") return "indicador";
+  if (itemType === "impact") return "resultado";
   if (itemType === "support") return "forma de ajudar";
   if (itemType === "transparency") return "documento";
+  if (itemType === "navigation") return "link do menu";
   return "rede social";
 }

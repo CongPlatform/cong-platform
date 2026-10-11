@@ -11,6 +11,7 @@ import {
   deleteSection,
   duplicateSection,
   getDesignerTemplateItem,
+  getNativeDesignAccess,
   listDesignPaletteItems,
   listImageFrameItems,
   getSite,
@@ -61,6 +62,7 @@ const institutionalRouter = Router();
 
 institutionalRouter.use(authenticate);
 
+institutionalRouter.get("/native-design-access", getNativeDesignAccess);
 institutionalRouter.get("/templates", listTemplates);
 institutionalRouter.get("/variants", listVariants);
 

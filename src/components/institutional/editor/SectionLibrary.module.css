@@ -1732,6 +1732,7 @@
   line-height: 1.4;
 }
 
+
 /* =========================================================
    CONG Builder V1.10 — deterministic library shell
    The rail width is the single source of truth while collapsed.
@@ -1814,11 +1815,7 @@
   border-radius: 12px;
   text-align: left;
   background: var(--color-white);
-  transition:
-    border-color 130ms ease,
-    background 130ms ease,
-    box-shadow 130ms ease,
-    transform 130ms ease;
+  transition: border-color 130ms ease, background 130ms ease, box-shadow 130ms ease, transform 130ms ease;
 }
 
 .sectionTypeGrid > button:hover {
@@ -1921,10 +1918,7 @@
   border-radius: 15px;
   background: var(--color-white);
   box-shadow: 0 2px 8px rgb(var(--color-navy-rgb) / 0.035);
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease,
-    transform 140ms ease;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .variantCard:hover {
@@ -2318,11 +2312,7 @@
   padding: 11px;
   border: 1px solid var(--color-primary-100);
   border-radius: 12px;
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-50),
-    var(--color-white)
-  );
+  background: linear-gradient(135deg, var(--color-primary-50), var(--color-white));
 }
 .autoOrganizeCard > span {
   width: 34px;
@@ -2335,24 +2325,10 @@
   background: var(--color-white);
   box-shadow: inset 0 0 0 1px var(--color-primary-100);
 }
-.autoOrganizeCard > span svg {
-  width: 16px;
-  height: 16px;
-}
-.autoOrganizeCard > div {
-  min-width: 0;
-  display: grid;
-  gap: 3px;
-}
-.autoOrganizeCard strong {
-  color: var(--color-navy);
-  font-size: 11px;
-}
-.autoOrganizeCard small {
-  color: var(--color-slate-500);
-  font-size: 9px;
-  line-height: 1.4;
-}
+.autoOrganizeCard > span svg { width: 16px; height: 16px; }
+.autoOrganizeCard > div { min-width: 0; display: grid; gap: 3px; }
+.autoOrganizeCard strong { color: var(--color-navy); font-size: 11px; }
+.autoOrganizeCard small { color: var(--color-slate-500); font-size: 9px; line-height: 1.4; }
 .autoOrganizeCard > button {
   grid-column: 2;
   justify-self: start;
@@ -2365,14 +2341,8 @@
   font-size: 9px;
   font-weight: var(--font-semibold);
 }
-.autoOrganizeCard > button:hover:not(:disabled) {
-  color: var(--color-white);
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-}
-.autoOrganizeCard > button:disabled {
-  opacity: 0.55;
-}
+.autoOrganizeCard > button:hover:not(:disabled) { color: var(--color-white); border-color: var(--color-primary); background: var(--color-primary); }
+.autoOrganizeCard > button:disabled { opacity: .55; }
 
 @media (max-width: 1100px) {
   .panel[data-category="structure"],
@@ -2414,8 +2384,7 @@
 }
 
 .layerItem[data-grouped="true"] {
-  box-shadow: inset 3px 0 0
-    color-mix(in srgb, var(--color-primary) 55%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-primary) 55%, transparent);
 }
 .layerGroupBadge {
   margin-left: auto;
@@ -2424,4 +2393,200 @@
   font-style: normal;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* Native design families — the current site's family is suggested without
+   blocking deliberate mixing between families. */
+.variantCard[data-family-match="true"] {
+  border-color: color-mix(in srgb, var(--org-primary, var(--color-primary)) 42%, var(--color-slate-200));
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--org-primary, var(--color-primary)) 10%, transparent);
+}
+
+.variantFamilyLine {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.variantFamilyLine > strong {
+  min-width: 0;
+}
+
+.variantFamilyLine em {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--color-slate-600);
+  background: var(--color-slate-100);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.variantFamilyLine em[data-recommended="true"] {
+  color: var(--org-primary, var(--color-primary));
+  background: color-mix(in srgb, var(--org-primary, var(--color-primary)) 10%, var(--color-white));
+}
+
+.variantCharacter {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-slate-500);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+
+/* Native families v2.1 — large previews and family language stay visible. */
+.panel[data-category="sections"] .variantPreviewButton > div {
+  height: 190px;
+}
+
+.panel[data-category="sections"] .variantMeta small {
+  -webkit-line-clamp: 2;
+}
+
+.variantTraits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.variantTraits em {
+  padding: 3px 6px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 999px;
+  color: var(--color-slate-500);
+  background: var(--color-slate-50);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: var(--font-semibold);
+  line-height: 1;
+}
+
+.variantCard[data-family-match="true"] .variantTraits em {
+  border-color: color-mix(in srgb, var(--org-primary, var(--color-primary)) 20%, var(--color-slate-200));
+  color: var(--org-primary, var(--color-primary));
+  background: color-mix(in srgb, var(--org-primary, var(--color-primary)) 6%, var(--color-white));
+}
+
+/* =========================================================
+   CONG Phase 2 / ZIP 2 — icon library
+   ========================================================= */
+.iconLibrary {
+  display: grid;
+  gap: 12px;
+}
+.iconCategoryTabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 1px 0 5px;
+  scrollbar-width: thin;
+}
+.iconCategoryTabs button {
+  flex: none;
+  padding: 7px 10px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 999px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+  font-size: 9px;
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+.iconCategoryTabs button:hover,
+.iconCategoryTabs button[data-active="true"] {
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+}
+.iconCategoryTabs button[data-active="true"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+.iconLibraryMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--color-slate-500);
+}
+.iconLibraryMeta strong {
+  color: var(--color-navy);
+  font-size: 10px;
+}
+.iconLibraryMeta span {
+  font-size: 8.5px;
+}
+.iconLibraryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.iconLibraryItem {
+  min-width: 0;
+  min-height: 74px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 8px 5px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 12px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+  transition: 120ms ease;
+}
+.iconLibraryItem > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+.iconLibraryItem svg {
+  width: 19px;
+  height: 19px;
+}
+.iconLibraryItem small {
+  max-width: 100%;
+  overflow: hidden;
+  color: inherit;
+  font-size: 8px;
+  font-weight: var(--font-semibold);
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iconLibraryItem:hover:not(:disabled) {
+  transform: translateY(-1px);
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-200);
+  box-shadow: 0 6px 16px rgb(var(--color-navy-rgb) / 0.07);
+}
+.iconLibraryItem:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+.iconEmptyState {
+  padding: 18px 12px;
+  border: 1px dashed var(--color-slate-200);
+  border-radius: 12px;
+  color: var(--color-slate-500);
+  text-align: center;
+  font-size: 10px;
+}
+.panel[data-category="icons"] .search {
+  margin-bottom: 8px;
+}
+@media (max-width: 1180px) {
+  .iconLibraryGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

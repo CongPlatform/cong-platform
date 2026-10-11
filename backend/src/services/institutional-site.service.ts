@@ -14,6 +14,10 @@ import {
 } from "./institutional-media.service.js";
 import { getInstitutionalTemplateDefinition } from "./institutional-template.service.js";
 import {
+  contextualizeInstitutionalSection,
+  type InstitutionalOrganizationProfile,
+} from "./institutional-content-guide.service.js";
+import {
   getInstitutionalVariantVersion,
   validateInstitutionalLayout,
   type InstitutionalVariant,
@@ -168,13 +172,15 @@ interface SiteSnapshot {
 }
 
 function slugify(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 70) || "organizacao";
+  return (
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 70) || "organizacao"
+  );
 }
 
 async function getActiveUserId(
@@ -204,13 +210,27 @@ async function getActiveUserId(
 async function requireNgo(
   client: PoolClient,
   organizationId: string,
-): Promise<{ id: string; name: string }> {
-  const result = await client.query<{ id: string; name: string; organizationType: string }>(
+): Promise<{
+  id: string;
+  name: string;
+  profile: InstitutionalOrganizationProfile;
+}> {
+  const result = await client.query<{
+    id: string;
+    name: string;
+    organizationType: string;
+    description: string | null;
+    areas: string[] | null;
+    supportTypes: string[] | null;
+  }>(
     `
       select
         id,
         name,
-        organization_type as "organizationType"
+        organization_type as "organizationType",
+        description,
+        coalesce(settings -> 'areas', '[]'::jsonb) as areas,
+        coalesce(settings -> 'supportTypes', '[]'::jsonb) as "supportTypes"
       from public.organizations
       where id = $1
         and active = true
@@ -232,6 +252,14 @@ async function requireNgo(
   return {
     id: organization.id,
     name: organization.name,
+    profile: {
+      name: organization.name,
+      description: organization.description ?? "",
+      areas: Array.isArray(organization.areas) ? organization.areas : [],
+      supportTypes: Array.isArray(organization.supportTypes)
+        ? organization.supportTypes
+        : [],
+    },
   };
 }
 
@@ -265,7 +293,6 @@ async function createUniqueSlug(
     "INSTITUTIONAL_SLUG_UNAVAILABLE",
   );
 }
-
 
 async function createUniquePublicSlug(
   client: PoolClient,
@@ -318,7 +345,9 @@ async function getBrandProfile(
 ): Promise<BrandRow> {
   await ensureBrandProfile(client, organizationId);
 
-  const currentResult = await client.query<BrandRow & { organizationName: string }>(
+  const currentResult = await client.query<
+    BrandRow & { organizationName: string }
+  >(
     `
       select
         b.organization_id as "organizationId",
@@ -354,7 +383,10 @@ async function getBrandProfile(
     return current;
   }
 
-  const publicSlug = await createUniquePublicSlug(client, current.organizationName);
+  const publicSlug = await createUniquePublicSlug(
+    client,
+    current.organizationName,
+  );
   const result = await client.query<BrandRow>(
     `
       update public.organization_brand_profiles
@@ -500,7 +532,10 @@ async function requireSection(
   return section;
 }
 
-function collectAssetIds(value: unknown, result = new Set<string>()): Set<string> {
+function collectAssetIds(
+  value: unknown,
+  result = new Set<string>(),
+): Set<string> {
   if (Array.isArray(value)) {
     value.forEach((item) => collectAssetIds(item, result));
     return result;
@@ -631,22 +666,25 @@ async function buildSiteSnapshot(
     brand,
     pages: pagesResult.rows.map((page) => ({
       ...page,
-      sections: sectionsResult.rows.filter((section) => section.pageId === page.id),
+      sections: sectionsResult.rows.filter(
+        (section) => section.pageId === page.id,
+      ),
     })),
   };
 }
 
-async function hydrateSnapshot(snapshot: SiteSnapshot): Promise<InstitutionalSite> {
+async function hydrateSnapshot(
+  snapshot: SiteSnapshot,
+): Promise<InstitutionalSite> {
   const assetIds = collectAssetIds(snapshot.pages);
 
   if (snapshot.brand.logoAssetId) {
     assetIds.add(snapshot.brand.logoAssetId);
   }
 
-  const assets = await getSignedOrganizationAssets(
-    snapshot.organization.id,
-    [...assetIds],
-  );
+  const assets = await getSignedOrganizationAssets(snapshot.organization.id, [
+    ...assetIds,
+  ]);
 
   return {
     id: snapshot.site.id,
@@ -668,8 +706,14 @@ async function hydrateSnapshot(snapshot: SiteSnapshot): Promise<InstitutionalSit
       ...page,
       sections: page.sections.map((section) => ({
         ...section,
-        content: hydrateAssets(section.content, assets) as Record<string, unknown>,
-        settings: hydrateAssets(section.settings, assets) as Record<string, unknown>,
+        content: hydrateAssets(section.content, assets) as Record<
+          string,
+          unknown
+        >,
+        settings: hydrateAssets(section.settings, assets) as Record<
+          string,
+          unknown
+        >,
       })),
     })),
   };
@@ -683,7 +727,9 @@ export async function listInstitutionalSites(
   try {
     await requireNgo(client, organizationId);
     const brand = await getBrandProfile(client, organizationId);
-    const result = await client.query<Omit<InstitutionalSiteSummary, "publicSlug">>(
+    const result = await client.query<
+      Omit<InstitutionalSiteSummary, "publicSlug">
+    >(
       `
         select
           id,
@@ -701,7 +747,10 @@ export async function listInstitutionalSites(
       `,
       [organizationId],
     );
-    return result.rows.map((site) => ({ ...site, publicSlug: brand.publicSlug }));
+    return result.rows.map((site) => ({
+      ...site,
+      publicSlug: brand.publicSlug,
+    }));
   } finally {
     client.release();
   }
@@ -715,7 +764,11 @@ export async function getInstitutionalSite(
 
   try {
     await requireNgo(client, organizationId);
-    const site = await requireSiteForOrganization(client, organizationId, siteId);
+    const site = await requireSiteForOrganization(
+      client,
+      organizationId,
+      siteId,
+    );
     const snapshot = await buildSiteSnapshot(client, organizationId, siteId);
     const hydrated = await hydrateSnapshot(snapshot);
 
@@ -772,7 +825,8 @@ export async function createInstitutionalSite(
         cleanName,
         slug,
         input.templateId ?? null,
-        template?.editorConstraints ?? (template ? GUIDED_EDITOR_CONSTRAINTS : FREE_EDITOR_CONSTRAINTS),
+        template?.editorConstraints ??
+          (template ? GUIDED_EDITOR_CONSTRAINTS : FREE_EDITOR_CONSTRAINTS),
         userId,
       ],
     );
@@ -830,19 +884,39 @@ export async function createInstitutionalSite(
         );
       }
 
-      for (const [sectionIndex, sectionDefinition] of pageDefinition.sections.entries()) {
-        const sectionType = sectionDefinition.sectionType as InstitutionalSectionType;
+      for (const [
+        sectionIndex,
+        sectionDefinition,
+      ] of pageDefinition.sections.entries()) {
+        const sectionType =
+          sectionDefinition.sectionType as InstitutionalSectionType;
         const variant = await getInstitutionalVariantVersion(
           sectionDefinition.variantVersionId,
           sectionType,
         );
+        const sourceContent = template?.example
+          ? contextualizeInstitutionalSection(
+              sectionType,
+              sectionDefinition.content,
+              organization.profile,
+            )
+          : sectionDefinition.content;
         const content = parseInstitutionalSectionContent(
           sectionType,
-          sectionDefinition.content,
+          sourceContent,
         );
-        const settings = parseInstitutionalSectionSettings(
-          sectionDefinition.settings ?? {},
-        );
+        const settings = parseInstitutionalSectionSettings({
+          ...(sectionDefinition.settings ?? {}),
+          ...(template?.example
+            ? {
+                contentGuidance: {
+                  source: "contextual-example",
+                  area: organization.profile.areas[0] ?? null,
+                  needsReview: true,
+                },
+              }
+            : {}),
+        });
         await assertContentAssets(client, organizationId, content);
         await assertContentAssets(client, organizationId, settings);
 
@@ -982,7 +1056,9 @@ export async function updateInstitutionalBrand(
 
     return {
       ...brand,
-      logoAsset: brand.logoAssetId ? (assets.get(brand.logoAssetId) ?? null) : null,
+      logoAsset: brand.logoAssetId
+        ? (assets.get(brand.logoAssetId) ?? null)
+        : null,
     };
   } catch (error) {
     await client.query("rollback");
@@ -1011,20 +1087,42 @@ export async function addInstitutionalSection(
     const page = await requirePage(client, organizationId, pageId);
     siteId = page.siteId;
 
+    if (input.sectionType === "site_header") {
+      const existingHeader = await client.query<{ id: string }>(
+        `
+          select s.id
+          from public.institutional_sections s
+          join public.institutional_pages p on p.id = s.page_id
+          where p.site_id = $1
+            and s.section_type = 'site_header'
+          limit 1
+        `,
+        [siteId],
+      );
+      if (existingHeader.rowCount) {
+        throw new AppError(
+          "Este site já possui um cabeçalho global.",
+          409,
+          "INSTITUTIONAL_HEADER_ALREADY_EXISTS",
+        );
+      }
+    }
+
     if (input.sectionType === "site_footer") {
       const existingFooter = await client.query<{ id: string }>(
         `
-          select id
-          from public.institutional_sections
-          where page_id = $1
-            and section_type = 'site_footer'
+          select s.id
+          from public.institutional_sections s
+          join public.institutional_pages p on p.id = s.page_id
+          where p.site_id = $1
+            and s.section_type = 'site_footer'
           limit 1
         `,
-        [pageId],
+        [siteId],
       );
       if (existingFooter.rowCount) {
         throw new AppError(
-          "Esta página já possui um rodapé.",
+          "Este site já possui um rodapé global.",
           409,
           "INSTITUTIONAL_FOOTER_ALREADY_EXISTS",
         );
@@ -1035,8 +1133,39 @@ export async function addInstitutionalSection(
       input.variantVersionId,
       input.sectionType,
     );
-    const content = parseInstitutionalSectionContent(input.sectionType, input.content);
-    const settings = parseInstitutionalSectionSettings(input.settings ?? {});
+    const requestedSettings = parseInstitutionalSectionSettings(
+      input.settings ?? {},
+    );
+    const guidance =
+      requestedSettings.contentGuidance &&
+      typeof requestedSettings.contentGuidance === "object"
+        ? (requestedSettings.contentGuidance as { source?: string })
+        : null;
+    const wantsContextualExample = guidance?.source === "contextual-request";
+    const organization = wantsContextualExample
+      ? await requireNgo(client, organizationId)
+      : null;
+    const sourceContent = organization
+      ? contextualizeInstitutionalSection(
+          input.sectionType,
+          parseInstitutionalSectionContent(input.sectionType, input.content),
+          organization.profile,
+        )
+      : input.content;
+    const content = parseInstitutionalSectionContent(
+      input.sectionType,
+      sourceContent,
+    );
+    const settings = organization
+      ? parseInstitutionalSectionSettings({
+          ...requestedSettings,
+          contentGuidance: {
+            source: "contextual-example",
+            area: organization.profile.areas[0] ?? null,
+            needsReview: true,
+          },
+        })
+      : requestedSettings;
     await assertContentAssets(client, organizationId, content);
 
     const positionResult = await client.query<{ position: number }>(
@@ -1102,7 +1231,10 @@ export async function updateInstitutionalSection(
     const variantVersionId = input.variantVersionId ?? section.variantVersionId;
 
     if (input.variantVersionId) {
-      await getInstitutionalVariantVersion(input.variantVersionId, section.sectionType);
+      await getInstitutionalVariantVersion(
+        input.variantVersionId,
+        section.sectionType,
+      );
     }
 
     const content =
@@ -1164,11 +1296,15 @@ export async function duplicateInstitutionalSection(
     const section = await requireSection(client, organizationId, sectionId);
     siteId = section.siteId;
 
-    if (section.sectionType === "site_footer") {
+    if (["site_header", "site_footer"].includes(section.sectionType)) {
       throw new AppError(
-        "O rodapé é único na página e não pode ser duplicado.",
+        section.sectionType === "site_header"
+          ? "O cabeçalho global é único e não pode ser duplicado."
+          : "O rodapé global é único e não pode ser duplicado.",
         409,
-        "INSTITUTIONAL_FOOTER_DUPLICATE_FORBIDDEN",
+        section.sectionType === "site_header"
+          ? "INSTITUTIONAL_HEADER_DUPLICATE_FORBIDDEN"
+          : "INSTITUTIONAL_FOOTER_DUPLICATE_FORBIDDEN",
       );
     }
 
@@ -1229,6 +1365,14 @@ export async function deleteInstitutionalSection(
     const section = await requireSection(client, organizationId, sectionId);
     siteId = section.siteId;
 
+    if (section.sectionType === "site_header") {
+      throw new AppError(
+        "O cabeçalho global faz parte da estrutura do site. Troque seu design ou edite seu conteúdo.",
+        409,
+        "INSTITUTIONAL_HEADER_DELETE_FORBIDDEN",
+      );
+    }
+
     await client.query(
       `delete from public.institutional_sections where id = $1`,
       [sectionId],
@@ -1284,7 +1428,10 @@ export async function reorderInstitutionalSections(
     const page = await requirePage(client, organizationId, pageId);
     siteId = page.siteId;
 
-    const currentResult = await client.query<{ id: string; sectionType: InstitutionalSectionType }>(
+    const currentResult = await client.query<{
+      id: string;
+      sectionType: InstitutionalSectionType;
+    }>(
       `
         select id, section_type as "sectionType"
         from public.institutional_sections
@@ -1308,11 +1455,16 @@ export async function reorderInstitutionalSections(
       );
     }
 
+    const headerIds = currentResult.rows
+      .filter((row) => row.sectionType === "site_header")
+      .map((row) => row.id);
     const footerIds = currentResult.rows
       .filter((row) => row.sectionType === "site_footer")
       .map((row) => row.id);
+    const fixedIds = new Set([...headerIds, ...footerIds]);
     const normalizedSectionIds = [
-      ...sectionIds.filter((sectionId) => !footerIds.includes(sectionId)),
+      ...headerIds,
+      ...sectionIds.filter((sectionId) => !fixedIds.has(sectionId)),
       ...footerIds,
     ];
 

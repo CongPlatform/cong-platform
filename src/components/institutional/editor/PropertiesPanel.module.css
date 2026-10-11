@@ -1159,3 +1159,159 @@
 .textBoxPresets {
   grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
 }
+
+/* =========================================================
+   CONG Phase 2 / ZIP 2 — Lucide icons + real editable shapes
+   ========================================================= */
+.iconInspector {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 14px;
+  background: var(--color-slate-50);
+}
+.iconInspectorHeading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.iconInspectorPreview {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-primary-100);
+  border-radius: 12px;
+  color: var(--color-primary-dark);
+  background: var(--color-white);
+}
+.iconInspectorPreview svg { width: 23px; height: 23px; }
+.iconInspectorHeading > div { min-width: 0; display: grid; gap: 2px; }
+.iconInspectorHeading strong { color: var(--color-navy); font-size: 11px; }
+.iconInspectorHeading small { color: var(--color-slate-500); font-size: 8.5px; }
+.iconSearchField { display: grid; gap: 5px; }
+.iconSearchField > span { color: var(--color-slate-600); font-size: 9px; font-weight: var(--font-semibold); }
+.iconSearchField input {
+  min-height: 36px;
+  width: 100%;
+  padding: 0 10px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 10px;
+  outline: 0;
+  color: var(--color-slate-700);
+  background: var(--color-white);
+  font: inherit;
+  font-size: 10px;
+}
+.iconSearchField input:focus {
+  border-color: var(--color-primary-200);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+.iconInspectorCategories {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: thin;
+}
+.iconInspectorCategories button {
+  flex: none;
+  padding: 6px 8px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 999px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+  font-size: 8px;
+  font-weight: var(--font-semibold);
+}
+.iconInspectorCategories button:hover,
+.iconInspectorCategories button[data-active="true"] {
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+}
+.iconInspectorGrid {
+  max-height: 250px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  overflow: auto;
+  padding: 1px 3px 3px 1px;
+}
+.iconInspectorGrid button {
+  min-width: 0;
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  padding: 6px 3px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 10px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+}
+.iconInspectorGrid button svg { width: 18px; height: 18px; }
+.iconInspectorGrid button span {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 7.5px;
+  font-weight: var(--font-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iconInspectorGrid button:hover,
+.iconInspectorGrid button[data-active="true"] {
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+}
+.iconInspectorGrid button[data-active="true"] {
+  box-shadow: inset 0 0 0 1px var(--color-primary-100);
+}
+.iconGeometryControls,
+.shapeGeometryControls {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-slate-50) 70%, var(--color-white));
+}
+
+/* Shape previews. Square is intentionally the only rectangle primitive: its
+   canvas dimensions determine whether it renders as a square or rectangle. */
+.shapePicker i[data-shape="square"] { border-radius: 4px; }
+.shapePicker i[data-shape="pentagon"] {
+  border: 0;
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
+}
+.shapePicker i[data-shape="hexagon"] {
+  border: 0;
+  background: currentColor;
+  clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);
+}
+.shapePicker i[data-shape="arrow"] {
+  width: 30px;
+  height: 22px;
+  border: 0;
+  background: currentColor;
+  clip-path: polygon(0 28%,62% 28%,62% 0,100% 50%,62% 100%,62% 72%,0 72%);
+}
+.shapePicker i[data-shape="blob"] {
+  border: 0;
+  border-radius: 45% 55% 62% 38% / 48% 38% 62% 52%;
+  background: currentColor;
+  transform: rotate(-9deg);
+}
+.shapePicker {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.shapePicker button { min-height: 72px; }
+
+@media (max-width: 1180px) {
+  .iconInspectorGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

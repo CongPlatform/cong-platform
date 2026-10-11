@@ -41,12 +41,15 @@ import {
   updateDesignPalette,
   updateImageFrame,
 } from "../services/institutional-design.service.js";
+import { canManageNativeDesigns } from "../services/platform-capability.service.js";
 import { AppError } from "../utils/app-error.js";
 import { institutionalSectionTypeSchema } from "../validators/institutional.validator.js";
 
 function handleError(error: unknown, res: Response): void {
   if (error instanceof AppError) {
-    res.status(error.statusCode).json({ error: error.message, code: error.code });
+    res
+      .status(error.statusCode)
+      .json({ error: error.message, code: error.code });
     return;
   }
 
@@ -65,7 +68,26 @@ function paramString(req: Request, key: string, code: string): string {
   return value;
 }
 
-export async function listTemplates(_req: Request, res: Response): Promise<void> {
+export async function getNativeDesignAccess(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const canManageNativeDesignsValue = await canManageNativeDesigns(
+      res.locals.authUser.id,
+    );
+    res
+      .status(200)
+      .json({ canManageNativeDesigns: canManageNativeDesignsValue });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function listTemplates(
+  _req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const templates = await listInstitutionalTemplates();
     res.status(200).json({ templates });
@@ -74,7 +96,10 @@ export async function listTemplates(_req: Request, res: Response): Promise<void>
   }
 }
 
-export async function listDesignerTemplateItems(req: Request, res: Response): Promise<void> {
+export async function listDesignerTemplateItems(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const templates = await listDesignerTemplates(res.locals.authUser.id);
     res.status(200).json({ templates });
@@ -83,39 +108,64 @@ export async function listDesignerTemplateItems(req: Request, res: Response): Pr
   }
 }
 
-export async function getDesignerTemplateItem(req: Request, res: Response): Promise<void> {
+export async function getDesignerTemplateItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const templateId = paramString(req, "templateId", "TEMPLATE_ID_REQUIRED");
-    const template = await getDesignerTemplate(res.locals.authUser.id, templateId);
+    const template = await getDesignerTemplate(
+      res.locals.authUser.id,
+      templateId,
+    );
     res.status(200).json({ template });
   } catch (error) {
     handleError(error, res);
   }
 }
 
-export async function createDesignerTemplateItem(req: Request, res: Response): Promise<void> {
+export async function createDesignerTemplateItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
-    const template = await createDesignerTemplate(res.locals.authUser.id, req.body);
+    const template = await createDesignerTemplate(
+      res.locals.authUser.id,
+      req.body,
+    );
     res.status(201).json({ template });
   } catch (error) {
     handleError(error, res);
   }
 }
 
-export async function updateDesignerTemplateItem(req: Request, res: Response): Promise<void> {
+export async function updateDesignerTemplateItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const templateId = paramString(req, "templateId", "TEMPLATE_ID_REQUIRED");
-    const template = await updateDesignerTemplate(res.locals.authUser.id, templateId, req.body);
+    const template = await updateDesignerTemplate(
+      res.locals.authUser.id,
+      templateId,
+      req.body,
+    );
     res.status(200).json({ template });
   } catch (error) {
     handleError(error, res);
   }
 }
 
-export async function publishDesignerTemplateItem(req: Request, res: Response): Promise<void> {
+export async function publishDesignerTemplateItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const templateId = paramString(req, "templateId", "TEMPLATE_ID_REQUIRED");
-    const template = await publishDesignerTemplate(res.locals.authUser.id, templateId);
+    const template = await publishDesignerTemplate(
+      res.locals.authUser.id,
+      templateId,
+    );
     res.status(200).json({ template });
   } catch (error) {
     handleError(error, res);
@@ -124,8 +174,13 @@ export async function publishDesignerTemplateItem(req: Request, res: Response): 
 
 export async function listVariants(req: Request, res: Response): Promise<void> {
   try {
-    const rawSectionType = typeof req.query.sectionType === "string" ? req.query.sectionType : undefined;
-    const parsedSectionType = rawSectionType ? institutionalSectionTypeSchema.safeParse(rawSectionType) : null;
+    const rawSectionType =
+      typeof req.query.sectionType === "string"
+        ? req.query.sectionType
+        : undefined;
+    const parsedSectionType = rawSectionType
+      ? institutionalSectionTypeSchema.safeParse(rawSectionType)
+      : null;
 
     if (parsedSectionType && !parsedSectionType.success) {
       throw new AppError(
@@ -146,26 +201,42 @@ export async function listVariants(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function createVariant(req: Request, res: Response): Promise<void> {
+export async function createVariant(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
-    const variant = await createInstitutionalVariant(res.locals.authUser.id, req.body);
+    const variant = await createInstitutionalVariant(
+      res.locals.authUser.id,
+      req.body,
+    );
     res.status(201).json({ variant });
   } catch (error) {
     handleError(error, res);
   }
 }
 
-export async function updateVariant(req: Request, res: Response): Promise<void> {
+export async function updateVariant(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const variantId = paramString(req, "variantId", "VARIANT_ID_REQUIRED");
-    const variant = await updateInstitutionalVariant(res.locals.authUser.id, variantId, req.body);
+    const variant = await updateInstitutionalVariant(
+      res.locals.authUser.id,
+      variantId,
+      req.body,
+    );
     res.status(200).json({ variant });
   } catch (error) {
     handleError(error, res);
   }
 }
 
-export async function publishVariant(req: Request, res: Response): Promise<void> {
+export async function publishVariant(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const variantId = paramString(req, "variantId", "VARIANT_ID_REQUIRED");
     await publishInstitutionalVariant(res.locals.authUser.id, variantId);
@@ -175,70 +246,121 @@ export async function publishVariant(req: Request, res: Response): Promise<void>
   }
 }
 
-export async function listDesignPaletteItems(req: Request, res: Response): Promise<void> {
+export async function listDesignPaletteItems(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const palettes = await listDesignPalettes(
       res.locals.authUser.id,
       req.query.includeOwnedDrafts === "true",
     );
     res.status(200).json({ palettes });
-  } catch (error) { handleError(error, res); }
+  } catch (error) {
+    handleError(error, res);
+  }
 }
 
-export async function createDesignPaletteItem(req: Request, res: Response): Promise<void> {
+export async function createDesignPaletteItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const palette = await createDesignPalette(res.locals.authUser.id, req.body);
     res.status(201).json({ palette });
-  } catch (error) { handleError(error, res); }
+  } catch (error) {
+    handleError(error, res);
+  }
 }
 
-export async function updateDesignPaletteItem(req: Request, res: Response): Promise<void> {
+export async function updateDesignPaletteItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const paletteId = paramString(req, "paletteId", "PALETTE_ID_REQUIRED");
-    const palette = await updateDesignPalette(res.locals.authUser.id, paletteId, req.body);
+    const palette = await updateDesignPalette(
+      res.locals.authUser.id,
+      paletteId,
+      req.body,
+    );
     res.status(200).json({ palette });
-  } catch (error) { handleError(error, res); }
+  } catch (error) {
+    handleError(error, res);
+  }
 }
 
-export async function publishDesignPaletteItem(req: Request, res: Response): Promise<void> {
+export async function publishDesignPaletteItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const paletteId = paramString(req, "paletteId", "PALETTE_ID_REQUIRED");
-    const palette = await publishDesignPalette(res.locals.authUser.id, paletteId);
+    const palette = await publishDesignPalette(
+      res.locals.authUser.id,
+      paletteId,
+    );
     res.status(200).json({ palette });
-  } catch (error) { handleError(error, res); }
+  } catch (error) {
+    handleError(error, res);
+  }
 }
 
-export async function listImageFrameItems(req: Request, res: Response): Promise<void> {
+export async function listImageFrameItems(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const frames = await listImageFrames(
       res.locals.authUser.id,
       req.query.includeOwnedDrafts === "true",
     );
     res.status(200).json({ frames });
-  } catch (error) { handleError(error, res); }
+  } catch (error) {
+    handleError(error, res);
+  }
 }
 
-export async function createImageFrameItem(req: Request, res: Response): Promise<void> {
+export async function createImageFrameItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const frame = await createImageFrame(res.locals.authUser.id, req.body);
     res.status(201).json({ frame });
-  } catch (error) { handleError(error, res); }
+  } catch (error) {
+    handleError(error, res);
+  }
 }
 
-export async function updateImageFrameItem(req: Request, res: Response): Promise<void> {
+export async function updateImageFrameItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const frameId = paramString(req, "frameId", "FRAME_ID_REQUIRED");
-    const frame = await updateImageFrame(res.locals.authUser.id, frameId, req.body);
+    const frame = await updateImageFrame(
+      res.locals.authUser.id,
+      frameId,
+      req.body,
+    );
     res.status(200).json({ frame });
-  } catch (error) { handleError(error, res); }
+  } catch (error) {
+    handleError(error, res);
+  }
 }
 
-export async function publishImageFrameItem(req: Request, res: Response): Promise<void> {
+export async function publishImageFrameItem(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const frameId = paramString(req, "frameId", "FRAME_ID_REQUIRED");
     const frame = await publishImageFrame(res.locals.authUser.id, frameId);
     res.status(200).json({ frame });
-  } catch (error) { handleError(error, res); }
+  } catch (error) {
+    handleError(error, res);
+  }
 }
 
 export async function listSites(_req: Request, res: Response): Promise<void> {
@@ -280,7 +402,11 @@ export async function renameSite(req: Request, res: Response): Promise<void> {
   try {
     const organizationId = res.locals.organizationContext.organizationId;
     const siteId = paramString(req, "siteId", "SITE_ID_REQUIRED");
-    const site = await renameInstitutionalSite(organizationId, siteId, req.body.name);
+    const site = await renameInstitutionalSite(
+      organizationId,
+      siteId,
+      req.body.name,
+    );
     res.status(200).json({ site });
   } catch (error) {
     handleError(error, res);
@@ -309,7 +435,11 @@ export async function updateBrand(req: Request, res: Response): Promise<void> {
 export async function uploadMedia(req: Request, res: Response): Promise<void> {
   try {
     if (!req.file) {
-      throw new AppError("Image file is required", 400, "INSTITUTIONAL_FILE_REQUIRED");
+      throw new AppError(
+        "Image file is required",
+        400,
+        "INSTITUTIONAL_FILE_REQUIRED",
+      );
     }
 
     const asset = await uploadInstitutionalMedia(
@@ -337,7 +467,10 @@ export async function addSection(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function updateSection(req: Request, res: Response): Promise<void> {
+export async function updateSection(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const sectionId = paramString(req, "sectionId", "SECTION_ID_REQUIRED");
     const site = await updateInstitutionalSection(
@@ -351,7 +484,10 @@ export async function updateSection(req: Request, res: Response): Promise<void> 
   }
 }
 
-export async function duplicateSection(req: Request, res: Response): Promise<void> {
+export async function duplicateSection(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const sectionId = paramString(req, "sectionId", "SECTION_ID_REQUIRED");
     const site = await duplicateInstitutionalSection(
@@ -364,7 +500,10 @@ export async function duplicateSection(req: Request, res: Response): Promise<voi
   }
 }
 
-export async function deleteSection(req: Request, res: Response): Promise<void> {
+export async function deleteSection(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const sectionId = paramString(req, "sectionId", "SECTION_ID_REQUIRED");
     const site = await deleteInstitutionalSection(
@@ -377,7 +516,10 @@ export async function deleteSection(req: Request, res: Response): Promise<void> 
   }
 }
 
-export async function reorderSections(req: Request, res: Response): Promise<void> {
+export async function reorderSections(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const pageId = paramString(req, "pageId", "PAGE_ID_REQUIRED");
     const site = await reorderInstitutionalSections(
@@ -405,8 +547,10 @@ export async function publishSite(req: Request, res: Response): Promise<void> {
   }
 }
 
-
-export async function unpublishSite(req: Request, res: Response): Promise<void> {
+export async function unpublishSite(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const siteId = paramString(req, "siteId", "SITE_ID_REQUIRED");
     await unpublishInstitutionalSite(
@@ -432,7 +576,10 @@ export async function deleteSite(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function getPublicSite(req: Request, res: Response): Promise<void> {
+export async function getPublicSite(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const slug = paramString(req, "slug", "SITE_SLUG_REQUIRED");
     const site = await getPublishedInstitutionalSite(slug);

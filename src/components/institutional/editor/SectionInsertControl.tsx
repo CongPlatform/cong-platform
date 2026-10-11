@@ -10,7 +10,10 @@ import LiveSectionThumbnail from "../preview/LiveSectionThumbnail";
 
 import styles from "./SectionInsertControl.module.css";
 
-const hiddenTypes = new Set<InstitutionalSectionType>(["site_footer"]);
+const hiddenTypes = new Set<InstitutionalSectionType>([
+  "site_header",
+  "site_footer",
+]);
 
 export default function SectionInsertControl({
   variants,
@@ -39,7 +42,9 @@ export default function SectionInsertControl({
         <div className={styles.popover}>
           <div className={styles.popoverHeader}>
             <strong>O que você quer mostrar aqui?</strong>
-            <span>Escolha pelo resultado. Você pode trocar o design depois.</span>
+            <span>
+              Escolha pelo resultado. Você pode trocar o design depois.
+            </span>
           </div>
           <div className={styles.options}>
             {sectionCatalog
@@ -53,7 +58,10 @@ export default function SectionInsertControl({
                     setOpen(false);
                   }}
                 >
-                  <LiveSectionThumbnail sectionType={definition.type} variants={variants} />
+                  <LiveSectionThumbnail
+                    sectionType={definition.type}
+                    variants={variants}
+                  />
                   <span>
                     <strong>{definition.name}</strong>
                     <small>{definition.shortDescription}</small>

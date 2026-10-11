@@ -282,7 +282,7 @@ const elementStyleSchema = z
     heightPx: z.number().min(24).max(1400).optional(),
     offsetX: z.number().min(-1200).max(1200).optional(),
     offsetY: z.number().min(-1200).max(1200).optional(),
-    rotation: z.number().min(-30).max(30).optional(),
+    rotation: z.number().min(-180).max(180).optional(),
     color: elementColorSchema.optional(),
     backgroundColor: elementColorSchema.optional(),
     align: z.enum(["left", "center", "right", "justify"]).optional(),
@@ -312,8 +312,18 @@ const elementStyleSchema = z
     locked: z.boolean().optional(),
     zIndex: z.number().int().min(-20).max(50).optional(),
     strokeWidth: z.number().min(0).max(20).optional(),
+    opacity: z.number().min(0).max(1).optional(),
+    iconSizePx: z.number().min(12).max(320).optional(),
+    iconStrokeWidth: z.number().min(0.5).max(4).optional(),
+    shapeRadius: z.number().min(0).max(50).optional(),
     groupId: z.string().uuid().optional(),
     groupKind: z.enum(["manual", "native"]).optional(),
+    positionMode: z.enum(["flow", "free", "anchored"]).optional(),
+    offsetReferenceWidth: z.number().min(240).max(2400).optional(),
+    anchorSource: z.string().trim().min(1).max(80).optional(),
+    anchorIndex: z.number().int().min(0).max(500).optional(),
+    anchorXPercent: z.number().min(0).max(100).optional(),
+    anchorYPercent: z.number().min(0).max(100).optional(),
   })
   .strict();
 

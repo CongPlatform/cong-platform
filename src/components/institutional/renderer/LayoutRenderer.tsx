@@ -12,6 +12,7 @@ import {
   collectionItemLabel,
   createInstitutionalCollectionItem,
 } from "../../../utils/institutionalCollections";
+import { institutionalSelectionId } from "../../../utils/institutionalSelection";
 import ElementRenderer from "./ElementRenderer";
 import ElementShell from "./ElementShell";
 import SlotRenderer from "./SlotRenderer";
@@ -20,6 +21,15 @@ import styles from "./InstitutionalRenderer.module.css";
 
 function joinClassNames(...values: Array<string | undefined>): string {
   return values.filter(Boolean).join(" ");
+}
+
+function repeatContext(path: Array<string | number>): { source?: string; index?: number } {
+  if (path.length < 2) return {};
+  const index = path[path.length - 1];
+  const source = path[path.length - 2];
+  return typeof index === "number" && typeof source === "string"
+    ? { source, index }
+    : {};
 }
 
 export default function LayoutRenderer({
@@ -34,16 +44,24 @@ export default function LayoutRenderer({
   onSelectElement,
   onValueChange,
   onImageRequest,
+  onImageFile,
   onElementValueChange,
   onElementImageRequest,
+  onElementImageFile,
   onElementStyleChange,
   onMoveSelection,
   onMoveElement,
   onRemoveElement,
+  onCopyElement,
+  onCutElement,
+  onPasteElement,
+  onDuplicateElement,
   brand,
   sectionBackground,
   frames = [],
   editorConstraints,
+  instanceStyles = {},
+  instanceValues = {},
 }: {
   node: InstitutionalLayoutNode;
   data: Record<string, unknown>;
@@ -56,25 +74,35 @@ export default function LayoutRenderer({
   onSelectElement?: (elementId: string, additive?: boolean) => void;
   onValueChange?: (path: Array<string | number>, value: unknown) => void;
   onImageRequest?: (path: Array<string | number>) => void;
+  onImageFile?: (path: Array<string | number>, file: File) => void;
   onElementValueChange?: (elementId: string, value: unknown) => void;
   onElementImageRequest?: (elementId: string) => void;
+  onElementImageFile?: (elementId: string, file: File) => void;
   onElementStyleChange?: (
     elementId: string,
     style: Partial<InstitutionalElementStyle>,
   ) => void;
-  onMoveSelection?: (
-    deltaX: number,
-    deltaY: number,
-    elementIds?: string[],
-  ) => void;
+  onMoveSelection?: (deltaX: number, deltaY: number, elementIds?: string[]) => void;
   onMoveElement?: (elementId: string, direction: -1 | 1) => void;
   onRemoveElement?: (elementId: string) => void;
+  onCopyElement?: () => void;
+  onCutElement?: () => void;
+  onPasteElement?: () => void;
+  onDuplicateElement?: () => void;
   brand?: InstitutionalBrand;
   sectionBackground?: string;
   frames?: InstitutionalImageFrameResource[];
   editorConstraints?: InstitutionalEditorConstraints;
+  instanceStyles?: Record<string, InstitutionalElementStyle>;
+  instanceValues?: Record<string, unknown>;
 }) {
+  const repeatMeta = repeatContext(path);
+
   if (node.type === "slot") {
+    const selectionId = node.id ? institutionalSelectionId(node.id, path) : null;
+    const effectiveNode = selectionId && instanceStyles[selectionId]
+      ? { ...node, style: { ...(node.style ?? {}), ...instanceStyles[selectionId] } }
+      : node;
     const fieldDefinition =
       path.length === 0
         ? sectionDefinition.fields.find((field) => field.key === node.slot)
@@ -87,14 +115,15 @@ export default function LayoutRenderer({
         editable={editable}
         path={path}
         fieldDefinition={fieldDefinition}
-        showGuidance={showGuidance && selectedElementId === node.id}
-        selected={Boolean(node.id && selectedElementId === node.id)}
-        imageStyle={node.style}
+        showGuidance={Boolean(selectionId && showGuidance && selectedElementId === selectionId)}
+        selected={Boolean(selectionId && selectedElementId === selectionId)}
+        imageStyle={effectiveNode.style}
         onValueChange={onValueChange}
         onImageRequest={onImageRequest}
+        onImageFile={onImageFile}
         onImageStyleChange={
           node.id
-            ? (style) => onElementStyleChange?.(node.id!, style)
+            ? (style) => onElementStyleChange?.(selectionId ?? node.id!, style)
             : undefined
         }
       />
@@ -104,16 +133,21 @@ export default function LayoutRenderer({
 
     return (
       <ElementShell
-        node={node}
+        node={effectiveNode}
         editable={editable}
-        selected={selectedElementId === node.id}
-        multiSelected={selectedElementIds.includes(node.id!)}
+        selectionId={selectionId ?? node.id}
+        selected={selectedElementId === selectionId}
+        multiSelected={Boolean(selectionId && selectedElementIds.includes(selectionId))}
         selectedIds={selectedElementIds}
-        removable
-        onSelect={(additive) => onSelectElement?.(node.id!, additive)}
-        onStyleChange={(style) => onElementStyleChange?.(node.id!, style)}
+        removable={path.length === 0}
+        onSelect={(additive) => selectionId && onSelectElement?.(selectionId, additive)}
+        onStyleChange={(style) => onElementStyleChange?.(selectionId ?? node.id!, style)}
         onMoveCommit={onMoveSelection}
-        onRemove={() => onRemoveElement?.(node.id!)}
+        onRemove={() => selectionId && onRemoveElement?.(selectionId)}
+        onCopy={onCopyElement}
+        onCut={onCutElement}
+        onPaste={onPasteElement}
+        onDuplicate={onDuplicateElement}
         brand={brand}
         sectionBackground={sectionBackground}
         frames={frames}
@@ -125,31 +159,45 @@ export default function LayoutRenderer({
   }
 
   if (node.type === "element") {
+    const selectionId = institutionalSelectionId(node.id, path);
+    const effectiveNode = (instanceStyles[selectionId] || Object.prototype.hasOwnProperty.call(instanceValues, selectionId))
+      ? {
+          ...node,
+          ...(Object.prototype.hasOwnProperty.call(instanceValues, selectionId) ? { value: instanceValues[selectionId] as typeof node.value } : {}),
+          style: { ...(node.style ?? {}), ...(instanceStyles[selectionId] ?? {}) },
+        }
+      : node;
     return (
       <ElementShell
-        node={node}
+        node={effectiveNode}
+        selectionId={selectionId}
         editable={editable}
-        selected={selectedElementId === node.id}
-        multiSelected={selectedElementIds.includes(node.id)}
+        selected={selectedElementId === selectionId}
+        multiSelected={selectedElementIds.includes(selectionId)}
         selectedIds={selectedElementIds}
-        removable
-        onSelect={(additive) => onSelectElement?.(node.id, additive)}
-        onStyleChange={(style) => onElementStyleChange?.(node.id, style)}
+        removable={path.length === 0}
+        onSelect={(additive) => onSelectElement?.(selectionId, additive)}
+        onStyleChange={(style) => onElementStyleChange?.(selectionId, style)}
         onMoveCommit={onMoveSelection}
-        onRemove={() => onRemoveElement?.(node.id)}
+        onRemove={() => onRemoveElement?.(selectionId)}
+        onCopy={onCopyElement}
+        onCut={onCutElement}
+        onPaste={onPasteElement}
+        onDuplicate={onDuplicateElement}
         brand={brand}
         sectionBackground={sectionBackground}
         frames={frames}
         editorConstraints={editorConstraints}
       >
         <ElementRenderer
-          node={node}
+          node={effectiveNode}
           editable={editable}
-          selected={selectedElementId === node.id}
-          showGuidance={showGuidance && selectedElementId === node.id}
-          onValueChange={(value) => onElementValueChange?.(node.id, value)}
-          onImageRequest={() => onElementImageRequest?.(node.id)}
-          onStyleChange={(style) => onElementStyleChange?.(node.id, style)}
+          selected={selectedElementId === selectionId}
+          showGuidance={showGuidance && selectedElementId === selectionId}
+          onValueChange={(value) => onElementValueChange?.(selectionId, value)}
+          onImageRequest={() => onElementImageRequest?.(selectionId)}
+          onImageFile={(file) => onElementImageFile?.(selectionId, file)}
+          onStyleChange={(style) => onElementStyleChange?.(selectionId, style)}
         />
       </ElementShell>
     );
@@ -200,6 +248,9 @@ export default function LayoutRenderer({
           )}
           data-gap={node.gap}
           data-layout-container="true"
+          data-layout-kind="repeat"
+          data-layout-columns={node.columns}
+          data-repeat-source={node.source}
         >
           {items.map((item, index) => (
             <LayoutRenderer
@@ -223,16 +274,24 @@ export default function LayoutRenderer({
               onSelectElement={onSelectElement}
               onValueChange={onValueChange}
               onImageRequest={onImageRequest}
+              onImageFile={onImageFile}
               onElementValueChange={onElementValueChange}
               onElementImageRequest={onElementImageRequest}
+              onElementImageFile={onElementImageFile}
               onElementStyleChange={onElementStyleChange}
               onMoveSelection={onMoveSelection}
               onMoveElement={onMoveElement}
               onRemoveElement={onRemoveElement}
+              onCopyElement={onCopyElement}
+              onCutElement={onCutElement}
+              onPasteElement={onPasteElement}
+              onDuplicateElement={onDuplicateElement}
               brand={brand}
               sectionBackground={sectionBackground}
               frames={frames}
               editorConstraints={editorConstraints}
+              instanceStyles={instanceStyles}
+              instanceValues={instanceValues}
             />
           ))}
         </div>
@@ -261,16 +320,24 @@ export default function LayoutRenderer({
     onSelectElement,
     onValueChange,
     onImageRequest,
+    onImageFile,
     onElementValueChange,
     onElementImageRequest,
+    onElementImageFile,
     onElementStyleChange,
     onMoveSelection,
     onMoveElement,
     onRemoveElement,
+    onCopyElement,
+    onCutElement,
+    onPasteElement,
+    onDuplicateElement,
     brand,
     sectionBackground,
     frames,
     editorConstraints,
+    instanceStyles,
+    instanceValues,
   };
 
   if (node.type === "columns") {
@@ -284,7 +351,12 @@ export default function LayoutRenderer({
             : undefined,
         )}
         data-gap={node.gap}
+        data-surface={node.surface && node.surface !== "none" ? node.surface : undefined}
         data-layout-container="true"
+        data-layout-kind="columns"
+        data-layout-ratio={node.ratio}
+        data-repeat-source={repeatMeta.source}
+        data-repeat-index={repeatMeta.index}
       >
         {node.children.map((child, index) => (
           <LayoutRenderer key={child.id ?? index} node={child} {...common} />
@@ -304,7 +376,12 @@ export default function LayoutRenderer({
             : undefined,
         )}
         data-gap={node.gap}
+        data-surface={node.surface && node.surface !== "none" ? node.surface : undefined}
         data-layout-container="true"
+        data-layout-kind="grid"
+        data-layout-columns={node.columns}
+        data-repeat-source={repeatMeta.source}
+        data-repeat-index={repeatMeta.index}
       >
         {node.children.map((child, index) => (
           <LayoutRenderer key={child.id ?? index} node={child} {...common} />
@@ -324,7 +401,12 @@ export default function LayoutRenderer({
           : undefined,
       )}
       data-gap={node.gap}
+      data-surface={node.surface && node.surface !== "none" ? node.surface : undefined}
       data-layout-container="true"
+      data-layout-kind="stack"
+      data-layout-direction={node.direction ?? "column"}
+      data-repeat-source={repeatMeta.source}
+      data-repeat-index={repeatMeta.index}
     >
       {node.children.map((child, index) => (
         <LayoutRenderer key={child.id ?? index} node={child} {...common} />

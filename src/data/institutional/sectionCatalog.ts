@@ -1,11 +1,7 @@
 import type { InstitutionalSectionType } from "../../services/institutionalService";
 
 export type InstitutionalFieldKind =
-  | "text"
-  | "textarea"
-  | "image"
-  | "action"
-  | "collection";
+  "text" | "textarea" | "image" | "action" | "collection";
 
 export interface InstitutionalFieldDefinition {
   key: string;
@@ -16,7 +12,8 @@ export interface InstitutionalFieldDefinition {
   recommendedMin?: number;
   recommendedMax?: number;
   imageRatio?: string;
-  itemType?: "project" | "impact" | "support" | "transparency" | "social";
+  itemType?:
+    "project" | "impact" | "support" | "transparency" | "social" | "navigation";
 }
 
 export interface InstitutionalSectionDefinition {
@@ -30,6 +27,66 @@ export interface InstitutionalSectionDefinition {
 }
 
 export const sectionCatalog: readonly InstitutionalSectionDefinition[] = [
+  {
+    type: "site_header",
+    name: "Cabeçalho",
+    shortDescription: "Logo, navegação e ação principal",
+    purpose:
+      "Ajude visitantes a se localizar e mantenha a ação mais importante acessível em todas as páginas.",
+    fields: [
+      {
+        key: "brandLabel",
+        label: "Nome exibido",
+        kind: "text",
+        recommendedMax: 120,
+        help: "Use o nome curto da organização. O logo continua vindo do Brand Kit.",
+      },
+      {
+        key: "links",
+        label: "Itens do menu",
+        kind: "collection",
+        itemType: "navigation",
+        help: "Mantenha entre 3 e 6 atalhos para facilitar a navegação.",
+      },
+      {
+        key: "primaryAction",
+        label: "Botão em destaque",
+        kind: "action",
+        help: "Use para a ação mais importante: doar, participar, entrar em contato ou conhecer um projeto.",
+      },
+    ],
+    quickTips: [
+      "Mantenha o menu curto e previsível.",
+      "Dê destaque a uma única ação principal.",
+      "O cabeçalho é global: uma alteração vale para todo o site.",
+    ],
+    defaultContent: {
+      brandLabel: "Nome da organização",
+      links: [
+        {
+          id: "0f100000-0000-4000-8000-000000000001",
+          label: "Início",
+          href: "#top",
+        },
+        {
+          id: "0f100000-0000-4000-8000-000000000002",
+          label: "Impacto",
+          href: "#impacto",
+        },
+        {
+          id: "0f100000-0000-4000-8000-000000000003",
+          label: "Projetos",
+          href: "#projetos",
+        },
+        {
+          id: "0f100000-0000-4000-8000-000000000004",
+          label: "Sobre",
+          href: "#sobre",
+        },
+      ],
+      primaryAction: { label: "Como ajudar", href: "#como-ajudar" },
+    },
+  },
   {
     type: "organization_intro",
     name: "Início",
@@ -178,9 +235,38 @@ export const sectionCatalog: readonly InstitutionalSectionDefinition[] = [
       "Evite repetir o mesmo texto da seção Quem somos.",
     ],
     defaultContent: {
-      title: "Nossos projetos",
-      description: "Mostre as principais iniciativas da organização.",
-      items: [],
+      title: "Ações que transformam intenção em presença",
+      description:
+        "Use estes exemplos como ponto de partida e substitua pelas iniciativas que melhor representam o trabalho da organização.",
+      items: [
+        {
+          id: "0f200000-0000-4000-8000-000000000001",
+          title: "Uma iniciativa que acontece na prática",
+          description:
+            "Conte para quem ela existe, o que acontece e qual mudança busca gerar.",
+          category: "Projeto em destaque",
+          image: null,
+          action: { label: "Conhecer iniciativa", href: "#" },
+        },
+        {
+          id: "0f200000-0000-4000-8000-000000000002",
+          title: "Uma frente de atuação importante",
+          description:
+            "Mostre uma ação atual que ajude o visitante a entender o trabalho da organização.",
+          category: "Atuação",
+          image: null,
+          action: { label: "Saiba mais", href: "#" },
+        },
+        {
+          id: "0f200000-0000-4000-8000-000000000003",
+          title: "Uma ação feita junto com a comunidade",
+          description:
+            "Explique como pessoas, parceiros ou voluntários participam desta iniciativa.",
+          category: "Comunidade",
+          image: null,
+          action: { label: "Ver projeto", href: "#" },
+        },
+      ],
     },
   },
   {
@@ -211,21 +297,50 @@ export const sectionCatalog: readonly InstitutionalSectionDefinition[] = [
     ],
     quickTips: [
       "Use somente números que a organização possa confirmar.",
-      "Informe o período quando o indicador puder mudar com o tempo.",
-      "Poucos indicadores relevantes costumam comunicar melhor do que muitos números.",
+      "Informe o período quando o resultado puder mudar com o tempo.",
+      "Poucos resultados relevantes costumam comunicar melhor do que muitos números.",
     ],
     defaultContent: {
-      title: "Nosso impacto",
-      description: "Apresente resultados reais e verificáveis da organização.",
-      items: [],
+      title: "Resultados que ajudam a contar essa história",
+      description:
+        "Substitua estes exemplos por números que a organização consiga confirmar. A CONG sugere a estrutura; os dados finais são sempre seus.",
+      items: [
+        {
+          id: "0f300000-0000-4000-8000-000000000001",
+          value: "1.200+",
+          label: "pessoas alcançadas",
+          period: "Exemplo para substituir",
+          source: "",
+        },
+        {
+          id: "0f300000-0000-4000-8000-000000000002",
+          value: "18",
+          label: "ações realizadas",
+          period: "Exemplo para substituir",
+          source: "",
+        },
+        {
+          id: "0f300000-0000-4000-8000-000000000003",
+          value: "9",
+          label: "territórios atendidos",
+          period: "Exemplo para substituir",
+          source: "",
+        },
+        {
+          id: "0f300000-0000-4000-8000-000000000004",
+          value: "80+",
+          label: "pessoas voluntárias",
+          period: "Exemplo para substituir",
+          source: "",
+        },
+      ],
     },
   },
   {
     type: "support_actions",
     name: "Como ajudar",
     shortDescription: "Doações, voluntariado e outras formas de apoio",
-    purpose:
-      "Mostre caminhos concretos para quem quer apoiar a organização.",
+    purpose: "Mostre caminhos concretos para quem quer apoiar a organização.",
     fields: [
       {
         key: "title",
@@ -252,9 +367,35 @@ export const sectionCatalog: readonly InstitutionalSectionDefinition[] = [
       "Use uma ação principal quando houver um caminho prioritário.",
     ],
     defaultContent: {
-      title: "Como ajudar",
-      description: "Apresente as formas reais de participação e apoio.",
-      items: [],
+      title: "Há mais de uma forma de fazer parte",
+      description:
+        "Escolha somente os caminhos que a organização realmente consegue receber e deixe o próximo passo claro.",
+      items: [
+        {
+          id: "0f400000-0000-4000-8000-000000000001",
+          kind: "donate",
+          title: "Apoie o trabalho",
+          description:
+            "Explique como uma contribuição se transforma em ação concreta.",
+          action: { label: "Quero apoiar", href: "#" },
+        },
+        {
+          id: "0f400000-0000-4000-8000-000000000002",
+          kind: "volunteer",
+          title: "Doe seu tempo",
+          description:
+            "Mostre quais atividades voluntárias fazem diferença hoje.",
+          action: { label: "Quero participar", href: "#" },
+        },
+        {
+          id: "0f400000-0000-4000-8000-000000000003",
+          kind: "partner",
+          title: "Construa uma parceria",
+          description:
+            "Convide empresas e instituições a somar recursos, conhecimento ou estrutura.",
+          action: { label: "Conversar sobre parceria", href: "#" },
+        },
+      ],
     },
   },
   {
@@ -347,7 +488,7 @@ export const sectionCatalog: readonly InstitutionalSectionDefinition[] = [
     name: "Seção livre",
     shortDescription: "Comece com uma estrutura e combine elementos",
     purpose:
-      "Crie uma composição própria usando textos, imagens, botões, indicadores e outros elementos da CONG.",
+      "Crie uma composição própria usando textos, imagens, botões, números em destaque e outros elementos da CONG.",
     fields: [],
     quickTips: [
       "Comece com poucos elementos e acrescente apenas o que ajuda a comunicar.",
@@ -396,12 +537,24 @@ export const sectionCatalog: readonly InstitutionalSectionDefinition[] = [
       "Inclua políticas e informações legais quando forem necessárias.",
     ],
     defaultContent: {
-      title: "",
-      description: "",
-      email: "",
+      title: "Nome da organização",
+      description:
+        "Uma frase curta que relembre a causa e o propósito da organização.",
+      email: "contato@organizacao.org",
       phone: "",
-      socialLinks: [],
-      copyright: "",
+      socialLinks: [
+        {
+          id: "0f500000-0000-4000-8000-000000000001",
+          label: "Instagram",
+          url: "",
+        },
+        {
+          id: "0f500000-0000-4000-8000-000000000002",
+          label: "LinkedIn",
+          url: "",
+        },
+      ],
+      copyright: "© Organização. Todos os direitos reservados.",
     },
   },
 ];

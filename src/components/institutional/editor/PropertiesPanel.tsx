@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   FiAlignCenter,
   FiAlignJustify,
@@ -17,6 +17,12 @@ import {
 } from "react-icons/fi";
 
 import {
+  filterInstitutionalIcons,
+  getInstitutionalIconDefinition,
+  institutionalIconCategories,
+  type InstitutionalIconCategory,
+} from "../../../data/institutional/iconLibrary";
+import {
   getSectionDefinition,
   type InstitutionalFieldDefinition,
 } from "../../../data/institutional/sectionCatalog";
@@ -34,7 +40,7 @@ import type {
   InstitutionalColorRole,
   InstitutionalColorValue,
 } from "../../../services/institutionalService";
-import { contrastRatio } from "../../../utils/institutionalPalette";
+import { contrastRatio, nearestAccessibleColor } from "../../../utils/institutionalPalette";
 import { brandRoleHex, deriveColorTone, institutionalColorRoles, institutionalColorTones, parseSemanticColor, resolveInstitutionalColor } from "../../../utils/institutionalColors";
 import { collectionItemLabel, createInstitutionalCollectionItem } from "../../../utils/institutionalCollections";
 
@@ -527,19 +533,10 @@ function isTextBoxNode(node: Extract<InstitutionalLayoutNode, { type: "slot" | "
 
 function bestReadableElementColor(
   background: string,
-  brand: InstitutionalBrand | undefined,
+  foreground: string,
+  minimumRatio = 4.5,
 ): InstitutionalElementStyle["color"] {
-  const candidates: Array<{ value: NonNullable<InstitutionalElementStyle["color"]>; hex: string | undefined }> = [
-    { value: "text", hex: brand?.textColor },
-    { value: "primary", hex: brand?.primaryColor },
-    { value: "secondary", hex: brand?.secondaryColor },
-    { value: "accent", hex: brand?.accentColor },
-    { value: "#ffffff", hex: "#ffffff" },
-    { value: "#091c30", hex: "#091c30" },
-  ];
-  return candidates
-    .filter((item): item is { value: NonNullable<InstitutionalElementStyle["color"]>; hex: string } => Boolean(item.hex))
-    .sort((a, b) => contrastRatio(b.hex, background) - contrastRatio(a.hex, background))[0]?.value ?? "text";
+  return nearestAccessibleColor(foreground, background, minimumRatio) as `#${string}`;
 }
 
 function ElementOptions({
@@ -548,6 +545,7 @@ function ElementOptions({
   sectionBackground,
   designFrames,
   previewImageUrl,
+  domSelectionId,
   designerMode = false,
   onConstraintsChange,
   onStyleChange,
@@ -559,43 +557,117 @@ function ElementOptions({
   sectionBackground?: InstitutionalSectionStyle["backgroundColor"];
   designFrames?: InstitutionalDesignFrame[];
   previewImageUrl?: string;
+  domSelectionId?: string | null;
   designerMode?: boolean;
   onConstraintsChange?: (constraints: InstitutionalElementConstraints) => void;
   onStyleChange: (style: Partial<InstitutionalElementStyle>) => void;
   onValueChange: (value: unknown) => void;
   onRemove: () => void;
 }) {
-  if (node.type !== "slot" && node.type !== "element") return null;
+  const editableNode = node.type === "slot" || node.type === "element";
+  const style = editableNode ? (node.style ?? {}) : {};
+  const [renderedMetrics, setRenderedMetrics] = useState<{ fontSize: number | null; foreground: string | null; background: string | null; radiusPx: number | null }>({
+    fontSize: null, foreground: null, background: null, radiusPx: null,
+  });
+  const [iconQuery, setIconQuery] = useState("");
+  const [iconCategory, setIconCategory] = useState<InstitutionalIconCategory>("all");
 
-  const style = node.style ?? {};
+  useLayoutEffect(() => {
+    if (!domSelectionId || typeof document === "undefined") return;
+    const shell = document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(domSelectionId)}"]`);
+    if (!shell) return;
+
+    const parseRgb = (value: string): string | null => {
+      const match = value.match(/rgba?\(\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)/i);
+      if (!match) return /^#[0-9a-f]{6}$/i.test(value) ? value : null;
+      return `#${[match[1], match[2], match[3]].map((part) => Math.max(0, Math.min(255, Math.round(Number(part)))).toString(16).padStart(2, "0")).join("")}`;
+    };
+
+    let frame = 0;
+    const measure = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const target = shell.querySelector<HTMLElement>("[data-font-target='true']") ?? shell;
+        const computed = window.getComputedStyle(target);
+        let background: string | null = null;
+        let current: HTMLElement | null = target;
+        while (current) {
+          const raw = window.getComputedStyle(current).backgroundColor;
+          if (raw && raw !== "transparent" && !/rgba\([^)]*,\s*0(?:\.0+)?\)$/.test(raw)) {
+            background = parseRgb(raw);
+            if (background) break;
+          }
+          if (current.matches?.("[data-section-type]")) break;
+          current = current.parentElement;
+        }
+        const fontSize = Number.parseFloat(computed.fontSize);
+        const borderRadius = Number.parseFloat(computed.borderTopLeftRadius);
+        setRenderedMetrics((previous) => {
+          const next = {
+            fontSize: Number.isFinite(fontSize) ? Math.round(fontSize * 10) / 10 : null,
+            foreground: parseRgb(computed.color),
+            background,
+            radiusPx: Number.isFinite(borderRadius) ? Math.round(borderRadius * 10) / 10 : null,
+          };
+          return previous.fontSize === next.fontSize && previous.foreground === next.foreground && previous.background === next.background && previous.radiusPx === next.radiusPx
+            ? previous
+            : next;
+        });
+      });
+    };
+
+    measure();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    observer?.observe(shell);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [domSelectionId, style.fontSize, style.size, style.color, style.backgroundColor, style.widthPercent, style.heightPx, brand, sectionBackground]);
+
+  if (!editableNode) return null;
+
   const custom = node.type === "element";
   const imageNode =
     (node.type === "element" && node.elementType === "image") ||
     (node.type === "slot" && ["image", "heroImage", "wideImage", "cardImage", "brandLogo"].includes(node.presentation ?? ""));
   const textBoxNode = isTextBoxNode(node);
   const shapeNode = custom && node.elementType === "shape";
+  const iconNode = custom && node.elementType === "icon";
   const buttonNode =
     (custom && node.elementType === "button") ||
     (node.type === "slot" && ["primaryAction", "secondaryAction"].includes(node.presentation ?? ""));
-  const currentFontSize = effectiveFontSize(style);
+  const currentFontSize = renderedMetrics.fontSize ?? effectiveFontSize(style);
+  const currentButtonRadius = style.radius ?? (
+    renderedMetrics.radiusPx === null ? "pill" :
+      renderedMetrics.radiusPx <= 1 ? "none" :
+        renderedMetrics.radiusPx <= 8 ? "small" :
+          renderedMetrics.radiusPx <= 15 ? "medium" :
+            renderedMetrics.radiusPx <= 32 ? "large" : "pill"
+  );
   const currentBoxWidth = style.widthPercent ?? (style.width && style.width !== "auto" ? Number(style.width) : undefined);
   const actionBackground = buttonNode ? brand?.accentColor ?? null : null;
   const effectiveBackground =
+    renderedMetrics.background ??
     resolveElementColor(style.backgroundColor, brand) ??
     actionBackground ??
     resolveElementColor(sectionBackground, brand) ??
     brand?.backgroundColor ??
     null;
-  const effectiveText = resolveElementColor(style.color ?? "text", brand);
-  const contrast =
-    effectiveText && effectiveBackground
-      ? contrastRatio(effectiveText, effectiveBackground)
-      : null;
-  const contrastPass = contrast === null || contrast >= 4.5;
+  const effectiveText = renderedMetrics.foreground ?? resolveElementColor(style.color ?? "text", brand);
+  const contrast = effectiveText && effectiveBackground
+    ? contrastRatio(effectiveText, effectiveBackground)
+    : null;
+  const contrastThreshold = currentFontSize >= 24 ? 3 : 4.5;
+  const contrastPass = contrast === null || contrast >= contrastThreshold;
   const constraints = node.constraints ?? {};
   const widthDefault = currentBoxWidth;
   const fontDefault = currentFontSize;
   const heightDefault = style.heightPx;
+  const selectedIcon = iconNode ? getInstitutionalIconDefinition(node.value) : null;
+  const filteredIconOptions = iconNode ? filterInstitutionalIcons(iconQuery, iconCategory) : [];
 
   function changeConstraints(patch: Partial<InstitutionalElementConstraints>): void {
     if (!onConstraintsChange) return;
@@ -617,8 +689,10 @@ function ElementOptions({
 
   function alignCurrentElement(axis: "horizontal" | "vertical", value: "start" | "center" | "end"): void {
     if (!node.id || typeof document === "undefined") return;
-    const element = Array.from(document.querySelectorAll<HTMLElement>("[data-cong-node-id]"))
-      .find((candidate) => candidate.dataset.congNodeId === node.id);
+    const element = domSelectionId
+      ? document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(domSelectionId)}"]`)
+      : Array.from(document.querySelectorAll<HTMLElement>("[data-cong-node-id]"))
+          .find((candidate) => candidate.dataset.congNodeId === node.id);
     if (!element) return;
     const container = element.parentElement?.closest<HTMLElement>("[data-layout-container='true']") ?? element.parentElement;
     if (!container) return;
@@ -713,7 +787,7 @@ function ElementOptions({
                 ["large", "Curvo"],
                 ["pill", "Pílula"],
               ] as const).map(([radius, label]) => (
-                <button type="button" key={radius} data-active={(style.radius ?? "pill") === radius} onClick={() => onStyleChange({ radius })}>
+                <button type="button" key={radius} data-active={currentButtonRadius === radius} onClick={() => onStyleChange({ radius })}>
                   <i data-radius={radius} aria-hidden="true" />
                   <span>{label}</span>
                 </button>
@@ -773,17 +847,32 @@ function ElementOptions({
         </>
       ) : null}
 
-      {custom && node.elementType === "icon" ? (
-        <label className={styles.field}>
-          <span>Ícone</span>
-          <select value={typeof node.value === "string" ? node.value : "heart"} onChange={(event) => onValueChange(event.target.value)}>
-            <option value="heart">Coração</option>
-            <option value="users">Pessoas</option>
-            <option value="star">Estrela</option>
-            <option value="check">Confirmação</option>
-            <option value="map">Localização</option>
-          </select>
-        </label>
+      {iconNode ? (
+        <div className={styles.iconInspector}>
+          <div className={styles.iconInspectorHeading}>
+            <span className={styles.iconInspectorPreview}>{selectedIcon ? (() => { const Icon = selectedIcon.icon; return <Icon aria-hidden="true" />; })() : null}</span>
+            <div><strong>{selectedIcon?.label ?? "Ícone"}</strong><small>Biblioteca Lucide · vetor SVG</small></div>
+          </div>
+          <label className={styles.iconSearchField}>
+            <span>Trocar ícone</span>
+            <input value={iconQuery} onChange={(event) => setIconQuery(event.target.value)} placeholder="Buscar por nome ou tema" />
+          </label>
+          <div className={styles.iconInspectorCategories}>
+            {institutionalIconCategories.map((item) => (
+              <button type="button" key={item.id} data-active={iconCategory === item.id} onClick={() => setIconCategory(item.id)}>{item.label}</button>
+            ))}
+          </div>
+          <div className={styles.iconInspectorGrid}>
+            {filteredIconOptions.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button type="button" key={item.id} data-active={selectedIcon?.id === item.id} onClick={() => onValueChange(item.id)} title={item.label}>
+                  <Icon aria-hidden="true" /><span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       ) : null}
 
       {shapeNode ? (
@@ -791,12 +880,15 @@ function ElementOptions({
           <span className={styles.visualOptionTitle}>Forma</span>
           <div className={styles.shapePicker}>
             {[
+              ["square", "Quadrado livre"],
               ["circle", "Círculo"],
-              ["square", "Quadrado"],
-              ["rectangle", "Retângulo"],
               ["triangle", "Triângulo"],
               ["diamond", "Losango"],
+              ["pentagon", "Pentágono"],
+              ["hexagon", "Hexágono"],
               ["star", "Estrela"],
+              ["arrow", "Seta"],
+              ["blob", "Orgânica"],
               ["line", "Linha"],
             ].map(([value, label]) => (
               <button type="button" key={value} data-active={node.value === value} onClick={() => onValueChange(value)}>
@@ -838,7 +930,67 @@ function ElementOptions({
         </div>
       ) : null}
 
-      {textBoxNode ? (
+      {shapeNode ? (
+        <div className={styles.shapeGeometryControls}>
+          <div className={styles.compactGrid}>
+            <label className={styles.field}>
+              <span>Largura</span>
+              <div className={styles.unitInput}>
+                <input type="number" min="4" max="240" value={currentBoxWidth ?? ""} placeholder="Auto" onChange={(event) => {
+                  if (event.target.value === "") { onStyleChange({ widthPercent: undefined, width: "auto" }); return; }
+                  const next = Number(event.target.value);
+                  if (Number.isFinite(next)) onStyleChange({ widthPercent: Math.min(240, Math.max(4, next)), width: undefined });
+                }} />
+                <span>%</span>
+              </div>
+            </label>
+            <label className={styles.field}>
+              <span>Altura</span>
+              <div className={styles.unitInput}>
+                <input type="number" min="8" max="1200" value={style.heightPx ?? 120} onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (Number.isFinite(next)) onStyleChange({ heightPx: Math.min(1200, Math.max(8, next)) });
+                }} />
+                <span>px</span>
+              </div>
+            </label>
+          </div>
+          <small className={styles.humanHint}>Quadrado e círculo não ficam presos à proporção: arraste as alças para transformá-los em retângulo ou elipse.</small>
+          {!["circle", "triangle", "diamond", "pentagon", "hexagon", "star", "arrow", "blob", "line"].includes(String(node.value)) ? (
+            <label className={styles.field}>
+              <span>Arredondamento · {Math.round(style.shapeRadius ?? 8)}%</span>
+              <input type="range" min="0" max="50" step="1" value={style.shapeRadius ?? 8} onChange={(event) => onStyleChange({ shapeRadius: Number(event.target.value) })} />
+            </label>
+          ) : null}
+          <label className={styles.field}>
+            <span>Opacidade · {Math.round((style.opacity ?? 1) * 100)}%</span>
+            <input type="range" min="0.05" max="1" step="0.05" value={style.opacity ?? 1} onChange={(event) => onStyleChange({ opacity: Number(event.target.value) })} />
+          </label>
+          <label className={styles.field}>
+            <span>Rotação · {Math.round(style.rotation ?? 0)}°</span>
+            <input type="range" min="-180" max="180" step="1" value={style.rotation ?? 0} onChange={(event) => onStyleChange({ rotation: Number(event.target.value) })} />
+          </label>
+        </div>
+      ) : iconNode ? (
+        <div className={styles.iconGeometryControls}>
+          <label className={styles.field}>
+            <span>Tamanho · {Math.round(style.iconSizePx ?? 48)}px</span>
+            <input type="range" min="12" max="240" step="1" value={style.iconSizePx ?? 48} onChange={(event) => onStyleChange({ iconSizePx: Number(event.target.value) })} />
+          </label>
+          <label className={styles.field}>
+            <span>Espessura · {(style.iconStrokeWidth ?? 2).toFixed(1)}</span>
+            <input type="range" min="0.5" max="4" step="0.25" value={style.iconStrokeWidth ?? 2} onChange={(event) => onStyleChange({ iconStrokeWidth: Number(event.target.value) })} />
+          </label>
+          <label className={styles.field}>
+            <span>Opacidade · {Math.round((style.opacity ?? 1) * 100)}%</span>
+            <input type="range" min="0.05" max="1" step="0.05" value={style.opacity ?? 1} onChange={(event) => onStyleChange({ opacity: Number(event.target.value) })} />
+          </label>
+          <label className={styles.field}>
+            <span>Rotação · {Math.round(style.rotation ?? 0)}°</span>
+            <input type="range" min="-180" max="180" step="1" value={style.rotation ?? 0} onChange={(event) => onStyleChange({ rotation: Number(event.target.value) })} />
+          </label>
+        </div>
+      ) : textBoxNode ? (
         <div className={styles.textBoxControls}>
           <div className={styles.compactGrid}>
             <label className={styles.field}>
@@ -847,12 +999,12 @@ function ElementOptions({
                 <input
                   type="number"
                   min="10"
-                  max="96"
+                  max="160"
                   step="1"
                   value={currentFontSize}
                   onChange={(event) => {
                     const value = Number(event.target.value);
-                    if (Number.isFinite(value)) onStyleChange({ fontSize: Math.min(96, Math.max(10, value)) });
+                    if (Number.isFinite(value)) onStyleChange({ fontSize: Math.min(160, Math.max(10, value)) });
                   }}
                 />
                 <span>px</span>
@@ -892,7 +1044,7 @@ function ElementOptions({
 
           <div className={styles.textBoxHelp}>
             <strong>Fonte e caixa são independentes.</strong>
-            <span>Arraste as alças laterais para mudar somente a largura e a quebra das linhas. No modo livre a caixa pode ultrapassar a coluna original.</span>
+            <span>{style.fontSize === undefined ? `O design está usando ${Math.round(currentFontSize)} px neste tamanho de tela. ` : ""}Arraste as alças laterais para mudar somente a largura e a quebra das linhas. No modo livre a caixa pode ultrapassar a coluna original.</span>
             {style.fontSize !== undefined ? <button type="button" onClick={() => onStyleChange({ fontSize: undefined })}>Usar tamanho do design</button> : null}
           </div>
         </div>
@@ -905,7 +1057,7 @@ function ElementOptions({
                 <input
                   type="number"
                   min="10"
-                  max="100"
+                  max="240"
                   step="1"
                   value={currentBoxWidth ?? ""}
                   placeholder="Auto"
@@ -915,7 +1067,7 @@ function ElementOptions({
                       return;
                     }
                     const value = Number(event.target.value);
-                    if (Number.isFinite(value)) onStyleChange({ widthPercent: Math.min(100, Math.max(10, value)), width: undefined });
+                    if (Number.isFinite(value)) onStyleChange({ widthPercent: Math.min(240, Math.max(10, value)), width: undefined });
                   }}
                 />
                 <span>%</span>
@@ -1076,7 +1228,7 @@ function ElementOptions({
         </details>
       ) : null}
 
-      {!imageNode ? (
+      {(textBoxNode || buttonNode) ? (
         <div className={styles.visualOptionGroup}>
           <span className={styles.visualOptionTitle}>Alinhar texto</span>
           <div className={styles.alignmentPicker}>
@@ -1174,14 +1326,14 @@ function ElementOptions({
         </div>
       ) : null}
 
-      {!imageNode && !shapeNode && contrast !== null ? (
+      {!imageNode && !shapeNode && !iconNode && contrast !== null ? (
         contrastPass ? (
           <div className={styles.readingOk}><FiCheck /><span>Boa leitura</span></div>
         ) : (
           <div className={styles.contrastNotice} data-pass="false">
             <strong>Esse texto pode ficar difícil de ler</strong>
             <span>A cor está muito próxima do fundo. Você pode continuar assim ou usar uma combinação mais segura.</span>
-            {effectiveBackground ? <button type="button" onClick={() => onStyleChange({ color: bestReadableElementColor(effectiveBackground, brand) })}>Melhorar automaticamente</button> : null}
+            {effectiveBackground ? <button type="button" onClick={() => onStyleChange({ color: bestReadableElementColor(effectiveBackground, effectiveText ?? brand?.textColor ?? "#091c30", contrastThreshold) })}>Melhorar automaticamente</button> : null}
           </div>
         )
       ) : null}
@@ -1236,6 +1388,7 @@ export default function PropertiesPanel({
   onVariantChange,
   onUploadImage,
   selectedElement,
+  selectedElementDomId,
   brand,
   onElementStyleChange,
   onElementValueChange,
@@ -1254,6 +1407,7 @@ export default function PropertiesPanel({
   onVariantChange: (variantVersionId: string) => void;
   onUploadImage: (path: Array<string | number>, file: File) => void;
   selectedElement?: InstitutionalLayoutNode | null;
+  selectedElementDomId?: string | null;
   brand?: InstitutionalBrand;
   onElementStyleChange?: (style: Partial<InstitutionalElementStyle>) => void;
   onElementValueChange?: (value: unknown) => void;
@@ -1353,6 +1507,7 @@ export default function PropertiesPanel({
             sectionBackground={sectionStyle.backgroundColor}
             designFrames={designFrames}
             previewImageUrl={selectedImagePreviewUrl}
+            domSelectionId={selectedElementDomId}
             designerMode={designerMode}
             onConstraintsChange={onElementConstraintsChange}
             onStyleChange={onElementStyleChange}

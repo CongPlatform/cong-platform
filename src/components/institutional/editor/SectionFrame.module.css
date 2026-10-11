@@ -1,7 +1,10 @@
 .frame {
   position: relative;
   border: 1px solid transparent;
-  transition: border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    opacity 140ms ease;
 }
 
 .frame:hover {
@@ -14,7 +17,9 @@
   box-shadow: 0 0 0 3px rgb(var(--color-primary-rgb) / 0.08);
 }
 
-.hiddenSection { opacity: 0.52; }
+.hiddenSection {
+  opacity: 0.52;
+}
 
 .sectionIdentity,
 .controls {
@@ -23,7 +28,9 @@
   top: 8px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 120ms ease, transform 120ms ease;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
 }
 
 .frame:hover .sectionIdentity,
@@ -41,11 +48,11 @@
   gap: 7px;
   max-width: calc(100% - 280px);
   padding: 5px 9px;
-  border: 1px solid rgb(var(--color-white-rgb) / .7);
+  border: 1px solid rgb(var(--color-white-rgb) / 0.7);
   border-radius: 9px;
   color: var(--color-white);
   background: var(--color-primary);
-  box-shadow: 0 5px 14px rgb(var(--color-navy-rgb) / .11);
+  box-shadow: 0 5px 14px rgb(var(--color-navy-rgb) / 0.11);
   font-family: var(--font-interface);
 }
 
@@ -58,7 +65,7 @@
 }
 
 .sectionIdentity small {
-  color: rgb(var(--color-white-rgb) / .76);
+  color: rgb(var(--color-white-rgb) / 0.76);
   font-size: 9px;
   white-space: nowrap;
 }
@@ -71,7 +78,7 @@
   padding: 4px;
   border: 1px solid var(--color-slate-200);
   border-radius: 11px;
-  background: rgb(var(--color-white-rgb) / .98);
+  background: rgb(var(--color-white-rgb) / 0.98);
   box-shadow: 0 8px 24px rgb(var(--color-navy-rgb) / 0.12);
   font-family: var(--font-interface);
   font-size: 11px;
@@ -100,8 +107,13 @@
   background: var(--color-primary-50);
 }
 
-.designButton span { display: inline; }
-.dragHandle { cursor: grab; padding-inline: 6px; }
+.designButton span {
+  display: inline;
+}
+.dragHandle {
+  cursor: grab;
+  padding-inline: 6px;
+}
 
 .designPopover {
   position: absolute;
@@ -135,8 +147,12 @@
 
 @media (max-width: 760px) {
   .sectionIdentity small,
-  .designButton span { display: none; }
-  .sectionIdentity { max-width: calc(100% - 190px); }
+  .designButton span {
+    display: none;
+  }
+  .sectionIdentity {
+    max-width: calc(100% - 190px);
+  }
 }
 
 /* =========================================================
@@ -146,11 +162,13 @@
   border-radius: 2px;
 }
 .frame:hover {
-  border-color: rgb(var(--color-primary-rgb) / .22);
+  border-color: rgb(var(--color-primary-rgb) / 0.22);
 }
 .selected {
   border-color: var(--color-primary-400);
-  box-shadow: inset 0 0 0 1px rgb(var(--color-primary-rgb) / .14), 0 0 0 3px rgb(var(--color-primary-rgb) / .05);
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--color-primary-rgb) / 0.14),
+    0 0 0 3px rgb(var(--color-primary-rgb) / 0.05);
 }
 
 .sectionIdentity {
@@ -158,14 +176,17 @@
   left: 10px;
   gap: 6px;
   padding: 6px 9px;
-  border: 1px solid rgb(var(--color-primary-rgb) / .12);
+  border: 1px solid rgb(var(--color-primary-rgb) / 0.12);
   border-radius: 10px;
   color: var(--color-primary-dark);
-  background: rgb(var(--color-white-rgb) / .96);
-  box-shadow: 0 8px 24px rgb(var(--color-navy-rgb) / .10);
+  background: rgb(var(--color-white-rgb) / 0.96);
+  box-shadow: 0 8px 24px rgb(var(--color-navy-rgb) / 0.1);
   backdrop-filter: blur(10px);
 }
-.sectionIdentity span { font-size: 9px; font-weight: var(--font-bold); }
+.sectionIdentity span {
+  font-size: 9px;
+  font-weight: var(--font-bold);
+}
 .sectionIdentity small {
   padding: 2px 5px;
   border-radius: 999px;
@@ -179,10 +200,10 @@
   right: 10px;
   gap: 5px;
   padding: 5px;
-  border: 1px solid rgb(var(--color-primary-rgb) / .12);
+  border: 1px solid rgb(var(--color-primary-rgb) / 0.12);
   border-radius: 13px;
-  background: rgb(var(--color-white-rgb) / .97);
-  box-shadow: 0 10px 30px rgb(var(--color-navy-rgb) / .12);
+  background: rgb(var(--color-white-rgb) / 0.97);
+  box-shadow: 0 10px 30px rgb(var(--color-navy-rgb) / 0.12);
   backdrop-filter: blur(12px);
 }
 .controls button,
@@ -211,10 +232,20 @@
 .dragHandle {
   cursor: grab;
 }
-.dragHandle:active { cursor: grabbing; }
-.dragHandle > span { font-size: 9px; }
-.moreButton { width: 32px; padding: 0 !important; }
-.moreButton[data-active="true"] { color: var(--color-primary-dark); background: var(--color-primary-50); }
+.dragHandle:active {
+  cursor: grabbing;
+}
+.dragHandle > span {
+  font-size: 9px;
+}
+.moreButton {
+  width: 32px;
+  padding: 0 !important;
+}
+.moreButton[data-active="true"] {
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
 
 .sectionMenu {
   position: absolute;
@@ -228,7 +259,7 @@
   border: 1px solid var(--color-slate-200);
   border-radius: 12px;
   background: var(--color-white);
-  box-shadow: 0 16px 42px rgb(var(--color-navy-rgb) / .16);
+  box-shadow: 0 16px 42px rgb(var(--color-navy-rgb) / 0.16);
 }
 .sectionMenu button {
   width: 100%;
@@ -241,9 +272,15 @@
   color: var(--color-slate-700);
   text-align: left;
 }
-.sectionMenu button:hover { background: var(--color-slate-100); }
-.dangerAction { color: var(--color-danger-dark) !important; }
-.dangerAction:hover { background: var(--color-danger-soft) !important; }
+.sectionMenu button:hover {
+  background: var(--color-slate-100);
+}
+.dangerAction {
+  color: var(--color-danger-dark) !important;
+}
+.dangerAction:hover {
+  background: var(--color-danger-soft) !important;
+}
 
 .designPopover {
   position: absolute;
@@ -257,19 +294,39 @@
   padding: 9px 13px;
   border-color: var(--color-primary-200);
   color: var(--color-primary-dark);
-  background: rgb(var(--color-white-rgb) / .98);
+  background: rgb(var(--color-white-rgb) / 0.98);
 }
 
 @media (max-width: 760px) {
   .dragHandle > span,
   .sectionIdentity small,
-  .designButton span { display: none; }
-  .dragHandle { width: 32px; padding: 0; }
+  .designButton span {
+    display: none;
+  }
+  .dragHandle {
+    width: 32px;
+    padding: 0;
+  }
 }
 
 /* V1.8.2 — section reordering lives on the section label, not in the action toolbar. */
-.sectionIdentity[draggable="true"] { cursor: grab; user-select: none; }
-.sectionIdentity[draggable="true"]:active { cursor: grabbing; }
-.sectionIdentity > svg { width: 12px; height: 12px; flex: none; opacity: .72; }
-.controls { gap: 4px; }
-.controlDivider, .dragHandle { display: none; }
+.sectionIdentity[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+}
+.sectionIdentity[draggable="true"]:active {
+  cursor: grabbing;
+}
+.sectionIdentity > svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  opacity: 0.72;
+}
+.controls {
+  gap: 4px;
+}
+.controlDivider,
+.dragHandle {
+  display: none;
+}

@@ -1,6 +1,10 @@
 import type { PoolClient } from "pg";
 
 import pool from "../config/database.js";
+import {
+  hasPlatformCapability,
+  NATIVE_DESIGNS_CAPABILITY,
+} from "./platform-capability.service.js";
 import { AppError } from "../utils/app-error.js";
 import {
   institutionalLayoutSchema,
@@ -14,6 +18,7 @@ export interface InstitutionalVariant {
   sectionType: InstitutionalSectionType;
   name: string;
   description: string;
+  familyKey: string | null;
   isSystem: boolean;
   visibility: "private" | "public";
   status: "draft" | "published";
@@ -27,6 +32,7 @@ export interface InstitutionalVariant {
 type VariantRow = InstitutionalVariant;
 
 const rootSlots: Record<InstitutionalSectionType, Set<string>> = {
+  site_header: new Set(["brandLogo", "brandLabel", "primaryAction"]),
   organization_intro: new Set([
     "eyebrow",
     "title",
@@ -69,6 +75,9 @@ const repeatSources: Record<
   InstitutionalSectionType,
   Record<string, Set<string>>
 > = {
+  site_header: {
+    links: new Set(["label", "href"]),
+  },
   organization_intro: {},
   organization_about: {},
   projects_showcase: {
@@ -214,6 +223,11 @@ export async function listInstitutionalVariants(
 
   try {
     const userId = await getActiveUserId(client, authUserId);
+    const canManageNative = await hasPlatformCapability(
+      client,
+      authUserId,
+      NATIVE_DESIGNS_CAPABILITY,
+    );
 
     const result = await client.query<VariantRow>(
       `
@@ -222,6 +236,7 @@ export async function listInstitutionalVariants(
           v.section_type as "sectionType",
           v.name,
           v.description,
+          v.family_key as "familyKey",
           v.is_system as "isSystem",
           v.visibility,
           vv.status,
@@ -238,19 +253,21 @@ export async function listInstitutionalVariants(
             and (
               status = 'published'
               or ($3::boolean = true and v.owner_user_id = $2)
+              or ($4::boolean = true and v.is_system = true)
             )
           order by version desc
           limit 1
         ) vv on true
         where ($1::text is null or v.section_type = $1)
+          and coalesce(v.family_key, '') <> 'legacy-retired'
           and (
-            v.is_system = true
-            or (v.status = 'published' and v.visibility = 'public')
+            (v.status = 'published' and v.visibility = 'public')
             or ($3::boolean = true and v.owner_user_id = $2)
+            or ($4::boolean = true and v.is_system = true)
           )
         order by v.is_system desc, v.name asc
       `,
-      [sectionType ?? null, userId, includeOwnedDrafts],
+      [sectionType ?? null, userId, includeOwnedDrafts, canManageNative],
     );
 
     return result.rows;
@@ -270,6 +287,7 @@ export async function getInstitutionalVariantVersion(
         v.section_type as "sectionType",
         v.name,
         v.description,
+        v.family_key as "familyKey",
         v.is_system as "isSystem",
         v.visibility,
         vv.status,
@@ -284,10 +302,8 @@ export async function getInstitutionalVariantVersion(
       where vv.id = $1
         and v.section_type = $2
         and vv.status = 'published'
-        and (
-          v.is_system = true
-          or (v.status = 'published' and v.visibility = 'public')
-        )
+        and v.status = 'published'
+        and v.visibility = 'public' 
       limit 1
     `,
     [variantVersionId, sectionType],
@@ -315,6 +331,7 @@ export async function createInstitutionalVariant(
     name: string;
     description: string;
     layout: InstitutionalLayoutNode;
+    isSystem?: boolean;
   },
 ): Promise<InstitutionalVariant> {
   const layout = validateInstitutionalLayout(input.sectionType, input.layout);
@@ -324,6 +341,21 @@ export async function createInstitutionalVariant(
     await client.query("begin");
 
     const userId = await getActiveUserId(client, authUserId);
+    const isSystem = Boolean(input.isSystem);
+    if (isSystem) {
+      const allowed = await hasPlatformCapability(
+        client,
+        authUserId,
+        NATIVE_DESIGNS_CAPABILITY,
+      );
+      if (!allowed) {
+        throw new AppError(
+          "Você não tem permissão para criar modelos nativos da CONG.",
+          403,
+          "NATIVE_DESIGNS_PERMISSION_REQUIRED",
+        );
+      }
+    }
 
     const variantResult = await client.query<{
       id: string;
@@ -339,10 +371,10 @@ export async function createInstitutionalVariant(
           visibility,
           status
         )
-        values ($1, $2, $3, $4, false, 'private', 'draft')
+        values ($1, $2, $3, $4, $5, 'private', 'draft')
         returning id, updated_at as "updatedAt"
       `,
-      [input.sectionType, input.name, input.description, userId],
+      [input.sectionType, input.name, input.description, isSystem ? null : userId, isSystem],
     );
 
     const variant = variantResult.rows[0];
@@ -390,10 +422,11 @@ export async function createInstitutionalVariant(
       sectionType: input.sectionType,
       name: input.name,
       description: input.description,
-      isSystem: false,
+      familyKey: null,
+      isSystem,
       visibility: "private",
       status: "draft",
-      ownerUserId: userId,
+      ownerUserId: isSystem ? null : userId,
       version: version.version,
       versionId: version.id,
       layout: version.layout,
@@ -422,27 +455,36 @@ export async function updateInstitutionalVariant(
     await client.query("begin");
 
     const userId = await getActiveUserId(client, authUserId);
+    const canManageNative = await hasPlatformCapability(
+      client,
+      authUserId,
+      NATIVE_DESIGNS_CAPABILITY,
+    );
 
     const variantResult = await client.query<{
       id: string;
       sectionType: InstitutionalSectionType;
       isSystem: boolean;
       visibility: "private" | "public";
+      familyKey: string | null;
     }>(
       `
         select
           id,
           section_type as "sectionType",
           is_system as "isSystem",
-          visibility
+          visibility,
+          family_key as "familyKey"
         from public.institutional_section_variants
         where id = $1
-          and owner_user_id = $2
-          and is_system = false
+          and (
+            (owner_user_id = $2 and is_system = false)
+            or (is_system = true and $3::boolean = true)
+          )
         limit 1
         for update
       `,
-      [variantId, userId],
+      [variantId, userId, canManageNative],
     );
 
     const variant = variantResult.rows[0];
@@ -509,10 +551,11 @@ export async function updateInstitutionalVariant(
       sectionType: variant.sectionType,
       name: input.name,
       description: input.description,
-      isSystem: false,
+      familyKey: variant.familyKey,
+      isSystem: variant.isSystem,
       visibility: variant.visibility,
       status: "draft",
-      ownerUserId: userId,
+      ownerUserId: variant.isSystem ? null : userId,
       version: version.version,
       versionId: version.id,
       layout: version.layout,
@@ -535,18 +578,25 @@ export async function publishInstitutionalVariant(
   try {
     await client.query("begin");
     const userId = await getActiveUserId(client, authUserId);
+    const canManageNative = await hasPlatformCapability(
+      client,
+      authUserId,
+      NATIVE_DESIGNS_CAPABILITY,
+    );
 
     const variantResult = await client.query<{ id: string }>(
       `
         select id
         from public.institutional_section_variants
         where id = $1
-          and owner_user_id = $2
-          and is_system = false
+          and (
+            (owner_user_id = $2 and is_system = false)
+            or (is_system = true and $3::boolean = true)
+          )
         limit 1
         for update
       `,
-      [variantId, userId],
+      [variantId, userId, canManageNative],
     );
 
     if (!variantResult.rows[0]) {

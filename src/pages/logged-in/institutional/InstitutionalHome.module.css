@@ -708,3 +708,547 @@
     grid-auto-columns: minmax(290px, 88vw);
   }
 }
+
+.templateBestFor {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-slate-500);
+  font-size: var(--font-xs);
+  line-height: 1.45;
+}
+
+
+/* Native families v2.1 — template cards should communicate a design system,
+   not look like ten recolors of the same preset. */
+.templateRail {
+  grid-auto-columns: minmax(360px, 405px);
+  gap: 18px;
+}
+
+.templatePreview {
+  min-height: 250px;
+  border-bottom: 1px solid var(--color-slate-200);
+  background:
+    linear-gradient(180deg, rgb(var(--color-white-rgb) / 0.2), transparent),
+    var(--color-slate-50);
+}
+
+.templateBody {
+  gap: 14px;
+  padding: 16px 17px 17px;
+}
+
+.templateBestFor,
+.templateComposition {
+  display: block;
+  margin-top: 7px;
+  color: var(--color-slate-500);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.templateComposition {
+  color: var(--color-slate-600);
+  font-weight: var(--font-medium);
+}
+
+.templateTraits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.templateTraits em {
+  padding: 4px 7px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 999px;
+  color: var(--color-slate-600);
+  background: var(--color-slate-50);
+  font-size: 8.5px;
+  font-style: normal;
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.015em;
+}
+
+.templateCard:hover .templateTraits em {
+  border-color: var(--color-primary-100);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+
+@media (max-width: 760px) {
+  .templateRail {
+    grid-auto-columns: minmax(310px, 88vw);
+  }
+}
+
+/* ZIP 1 — visual audit: quieter hierarchy, preview-first cards and clearer actions. */
+.page {
+  padding-top: 26px;
+}
+
+.header {
+  align-items: center;
+  margin-bottom: 26px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgb(var(--color-navy-rgb) / 0.08);
+}
+
+.header > div {
+  max-width: 650px;
+}
+
+.header h1 {
+  max-width: none;
+  font-size: clamp(1.9rem, 3vw, 2.65rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+.header p {
+  max-width: 590px;
+  margin-top: 8px;
+  font-size: var(--font-sm);
+}
+
+.createButton {
+  min-height: 44px;
+  padding-inline: 17px;
+  border-radius: 12px;
+}
+
+.siteSection,
+.templateSection {
+  margin-top: 28px;
+}
+
+.templateSection {
+  margin-top: 46px;
+}
+
+.sectionHeading {
+  margin-bottom: 14px;
+}
+
+.sectionHeading h2 {
+  font-size: clamp(1.3rem, 2vw, 1.7rem);
+  letter-spacing: -0.015em;
+}
+
+.sectionHeading p {
+  margin-top: 4px;
+  color: var(--color-slate-500);
+}
+
+.siteGrid {
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 18px;
+}
+
+.newSiteCard,
+.siteCard,
+.templateCard {
+  border-color: rgb(var(--color-navy-rgb) / 0.1);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgb(var(--color-navy-rgb) / 0.055);
+}
+
+.siteCard,
+.templateCard {
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.siteCard:hover,
+.templateCard:hover {
+  border-color: rgb(var(--color-primary-rgb) / 0.28);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgb(var(--color-navy-rgb) / 0.09);
+}
+
+.newSiteCard {
+  min-height: 330px;
+  border-width: 1px;
+  background: rgb(var(--color-white-rgb) / 0.62);
+  box-shadow: none;
+}
+
+.newSiteCard:hover {
+  background: rgb(var(--color-primary-rgb) / 0.045);
+}
+
+.sitePreview,
+.templatePreview {
+  cursor: zoom-in;
+}
+
+.sitePreview:disabled {
+  cursor: wait;
+}
+
+.sitePreview::after,
+.templatePreview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 55%, rgb(var(--color-navy-rgb) / 0.12));
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.sitePreview:hover::after,
+.templatePreview:hover::after {
+  opacity: 1;
+}
+
+.previewOverlay {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgb(var(--color-white-rgb) / 0.44);
+  border-radius: 10px;
+  color: var(--color-white);
+  background: rgb(var(--color-navy-rgb) / 0.88);
+  box-shadow: 0 8px 24px rgb(var(--color-navy-rgb) / 0.2);
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+
+.sitePreview:hover .previewOverlay,
+.sitePreview:focus-visible .previewOverlay,
+.templatePreview:hover .previewOverlay,
+.templatePreview:focus-visible .previewOverlay {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.siteCardBody {
+  gap: 10px;
+  padding: 15px 16px 16px;
+}
+
+.siteCard h3,
+.templateCard h3 {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.editSiteButton {
+  min-height: 36px;
+  padding-inline: 12px;
+}
+
+.templateRail {
+  grid-auto-columns: minmax(350px, 395px);
+  gap: 18px;
+  padding-bottom: 16px;
+}
+
+.templateCard {
+  overflow: hidden;
+  background: var(--color-white);
+}
+
+.templatePreview {
+  width: 100%;
+  min-height: 250px;
+  display: block;
+  text-align: left;
+}
+
+.templateBody {
+  min-height: 176px;
+  padding: 16px;
+}
+
+.templateBody p {
+  -webkit-line-clamp: 2;
+}
+
+.templateBestFor {
+  margin-top: 9px;
+}
+
+.templateActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.previewTemplateButton,
+.useTemplateButton {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border-radius: 9px;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.previewTemplateButton {
+  border: 1px solid var(--color-slate-200);
+  color: var(--color-slate-700);
+  background: var(--color-white);
+}
+
+.previewTemplateButton:hover {
+  border-color: var(--color-primary-200);
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.useTemplateButton {
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.useTemplateButton:hover {
+  color: var(--color-white);
+  background: var(--color-primary);
+}
+
+@media (hover: none) {
+  .previewOverlay {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (max-width: 760px) {
+  .page { padding-top: 20px; }
+  .header { gap: 18px; }
+  .header h1 { font-size: 2rem; }
+  .header p { font-size: var(--font-xs); }
+  .siteGrid { grid-template-columns: 1fr; }
+  .templateRail { grid-auto-columns: minmax(292px, 88vw); }
+}
+
+/* ZIP 2 — template gallery: preview first, metadata on demand. */
+.templateSection {
+  position: relative;
+}
+
+.templateRail {
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px 2px 10px;
+  mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+
+.templateRail::-webkit-scrollbar {
+  display: none;
+}
+
+.templateCard {
+  scroll-snap-align: start;
+  min-height: 0;
+}
+
+.templateBody {
+  min-height: 118px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 15px 15px;
+}
+
+.templateIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.templateIdentity h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.templateCategory {
+  overflow: hidden;
+  color: var(--color-primary);
+  font-size: 9px;
+  font-weight: var(--font-bold);
+  letter-spacing: .07em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.templateActions {
+  padding-top: 0;
+}
+
+.previewTemplateButton,
+.useTemplateButton {
+  min-height: 34px;
+}
+
+@media (max-width: 760px) {
+  .templateRail {
+    mask-image: none;
+  }
+}
+
+/* ZIP 2 — gallery rebuild: Canva-like grid, cleaner previews and progressive disclosure. */
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.templateGrid .templateCard {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.templateGrid .templatePreview {
+  min-height: 218px;
+  height: 218px;
+  border-bottom: 1px solid var(--color-slate-200);
+}
+
+.templateGrid .templateBody {
+  min-height: 116px;
+  padding: 14px 15px 15px;
+}
+
+.templateLoadMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgb(var(--color-navy-rgb) / 0.07);
+}
+
+.loadMoreButton,
+.viewAllButton {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.loadMoreButton {
+  border: 1px solid var(--color-slate-200);
+  color: var(--color-slate-700);
+  background: var(--color-white);
+}
+
+.loadMoreButton span {
+  min-width: 27px;
+  height: 23px;
+  display: inline-grid;
+  place-items: center;
+  padding-inline: 6px;
+  border-radius: 999px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+  font-size: 10px;
+}
+
+.viewAllButton {
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.loadMoreButton:hover,
+.viewAllButton:hover {
+  transform: translateY(-1px);
+}
+
+.loadMoreButton:hover {
+  border-color: var(--color-primary-200);
+  color: var(--color-primary);
+}
+
+.viewAllButton:hover {
+  color: var(--color-white);
+  background: var(--color-primary);
+}
+
+/* Site cards share the same visual language as the template library. */
+.siteGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.siteCard,
+.newSiteCard {
+  min-height: 0;
+}
+
+.sitePreview {
+  min-height: 220px;
+  height: 220px;
+  background: var(--color-slate-50);
+}
+
+.newSiteCard {
+  min-height: 360px;
+  padding: 24px;
+}
+
+.siteCardBody {
+  min-height: 138px;
+}
+
+@media (max-width: 1180px) {
+  .templateGrid,
+  .siteGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .templateGrid,
+  .siteGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .templateGrid .templatePreview,
+  .sitePreview {
+    height: 210px;
+    min-height: 210px;
+  }
+
+  .templateLoadMore {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .loadMoreButton,
+  .viewAllButton {
+    width: 100%;
+  }
+
+  .newSiteCard {
+    min-height: 220px;
+  }
+}

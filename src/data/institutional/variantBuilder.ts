@@ -6,10 +6,7 @@ import type {
 } from "../../services/institutionalService";
 
 export type VariantComposition =
-  | "balanced"
-  | "media-left"
-  | "media-right"
-  | "centered";
+  "balanced" | "media-left" | "media-right" | "centered";
 
 export interface VariantLayoutSettings {
   composition: VariantComposition;
@@ -25,7 +22,10 @@ export const defaultVariantLayoutSettings: VariantLayoutSettings = {
   collectionColumns: 3,
 };
 
-function slot(slotName: string, presentation?: string): InstitutionalLayoutNode {
+function slot(
+  slotName: string,
+  presentation?: string,
+): InstitutionalLayoutNode {
   return {
     type: "slot",
     slot: slotName,
@@ -203,8 +203,9 @@ function buildContactLayout(
   };
 }
 
-
-function buildCustomLayout(settings: VariantLayoutSettings): InstitutionalLayoutNode {
+function buildCustomLayout(
+  settings: VariantLayoutSettings,
+): InstitutionalLayoutNode {
   return {
     type: "stack",
     gap: settings.gap,
@@ -230,7 +231,41 @@ function buildCustomLayout(settings: VariantLayoutSettings): InstitutionalLayout
   };
 }
 
-function buildFooterLayout(settings: VariantLayoutSettings): InstitutionalLayoutNode {
+function buildHeaderLayout(
+  settings: VariantLayoutSettings,
+): InstitutionalLayoutNode {
+  return {
+    type: "columns",
+    ratio: "1:2",
+    gap: settings.gap,
+    children: [
+      stack([slot("brandLogo", "brandLogo"), slot("brandLabel", "itemTitle")], {
+        gap: "small",
+        align: "start",
+      }),
+      {
+        type: "stack",
+        gap: "small",
+        align: "end",
+        direction: "row",
+        children: [
+          {
+            type: "repeat",
+            source: "links",
+            columns: 4,
+            gap: "small",
+            item: slot("href", "navLink"),
+          },
+          slot("primaryAction", "primaryAction"),
+        ],
+      },
+    ],
+  };
+}
+
+function buildFooterLayout(
+  settings: VariantLayoutSettings,
+): InstitutionalLayoutNode {
   return stack(
     [
       slot("title", "heading"),
@@ -254,7 +289,14 @@ export function buildVariantLayout(
   sectionType: InstitutionalSectionType,
   settings: VariantLayoutSettings,
 ): InstitutionalLayoutNode {
-  if (sectionType === "organization_intro" || sectionType === "organization_about") {
+  if (sectionType === "site_header") {
+    return buildHeaderLayout(settings);
+  }
+
+  if (
+    sectionType === "organization_intro" ||
+    sectionType === "organization_about"
+  ) {
     return buildImageTextLayout(sectionType, settings);
   }
 

@@ -10,7 +10,11 @@ import {
 
 import styles from "./PublicInstitutionalSite.module.css";
 
-export default function PublicInstitutionalSite({ slugOverride }: { slugOverride?: string }) {
+export default function PublicInstitutionalSite({
+  slugOverride,
+}: {
+  slugOverride?: string;
+}) {
   const params = useParams();
   const slug = slugOverride ?? params.slug ?? "";
   const [site, setSite] = useState<InstitutionalSite | null>(null);
@@ -41,12 +45,12 @@ export default function PublicInstitutionalSite({ slugOverride }: { slugOverride
     };
   }, [slug]);
 
-
   useEffect(() => {
     if (!site) return;
 
     const previousTitle = document.title;
-    const currentIcon = document.querySelector<HTMLLinkElement>('link[rel~="icon"]');
+    const currentIcon =
+      document.querySelector<HTMLLinkElement>('link[rel~="icon"]');
     const previousIconHref = currentIcon?.href ?? null;
     let icon = currentIcon;
     let createdIcon = false;

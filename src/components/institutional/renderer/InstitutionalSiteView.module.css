@@ -17,8 +17,13 @@
   justify-content: space-between;
   gap: 24px;
   padding: 14px clamp(24px, 5vw, 72px);
-  border-bottom: 1px solid color-mix(in srgb, var(--org-text, var(--color-navy)) 10%, transparent);
-  background: color-mix(in srgb, var(--org-background, var(--color-white)) 96%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--org-text, var(--color-navy)) 10%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--org-background, var(--color-white)) 96%,
+    transparent
+  );
 }
 
 .brand {
@@ -63,7 +68,11 @@
 }
 
 .navigation a {
-  color: color-mix(in srgb, var(--org-text, var(--color-navy)) 78%, transparent);
+  color: color-mix(
+    in srgb,
+    var(--org-text, var(--color-navy)) 78%,
+    transparent
+  );
   font-size: var(--font-sm);
   font-weight: var(--font-medium);
 }

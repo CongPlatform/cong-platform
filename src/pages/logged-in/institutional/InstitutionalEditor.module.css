@@ -746,3 +746,159 @@
   fill: none;
   stroke: var(--color-primary);
 }
+
+/* V2.2 — native family example/organization switch. */
+.exampleModeSwitch {
+  display: inline-grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch !important;
+  gap: 3px !important;
+  padding: 3px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 12px;
+  background: var(--color-slate-50);
+  box-shadow: inset 0 1px 0 rgb(var(--color-white-rgb) / .9);
+}
+
+.exampleModeSwitch button {
+  min-width: 124px;
+  min-height: 40px;
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--color-slate-600);
+  background: transparent;
+  font-family: var(--font-interface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.exampleModeSwitch button:hover {
+  color: var(--color-navy);
+  background: var(--color-white);
+}
+
+.exampleModeSwitch button[data-active="true"] {
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-100);
+  background: var(--color-white);
+  box-shadow: 0 2px 8px rgb(var(--color-navy-rgb) / .08);
+}
+
+.exampleModeSwitch button > span {
+  overflow: visible;
+  color: inherit;
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  line-height: 1.2;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.exampleModeSwitch button > small {
+  padding: 0;
+  border-radius: 0;
+  color: var(--color-slate-500);
+  background: transparent;
+  font-size: 8px;
+  font-weight: var(--font-medium);
+  line-height: 1.2;
+}
+
+.exampleCanvasNotice {
+  position: sticky;
+  z-index: 220;
+  top: 10px;
+  width: fit-content;
+  max-width: min(720px, calc(100% - 24px));
+  margin: 10px auto -58px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px 8px 13px;
+  border: 1px solid var(--color-primary-100);
+  border-radius: 12px;
+  color: var(--color-slate-600);
+  background: rgb(var(--color-white-rgb) / .96);
+  box-shadow: 0 12px 34px rgb(var(--color-navy-rgb) / .12);
+  backdrop-filter: blur(14px);
+  font-family: var(--font-interface);
+}
+
+.exampleCanvasNotice strong {
+  flex: none;
+  color: var(--color-primary-dark);
+  font-size: var(--font-xs);
+}
+
+.exampleCanvasNotice span {
+  min-width: 0;
+  color: var(--color-slate-600);
+  font-size: var(--font-2xs);
+  line-height: 1.35;
+}
+
+.exampleCanvasNotice button {
+  flex: none;
+  min-height: 30px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  font-family: var(--font-interface);
+  font-size: var(--font-2xs);
+  font-weight: var(--font-bold);
+  cursor: pointer;
+}
+
+.exampleCanvasNotice button:hover { background: var(--color-primary-dark); }
+.exampleCanvasNotice button:focus-visible { outline: 3px solid var(--color-primary-200); outline-offset: 2px; }
+
+@media (max-width: 1180px) {
+  .stageBar { align-items: flex-start; flex-wrap: wrap; }
+  .stageActions { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+}
+
+/* Builder zoom — useful when editing very small cards/images without changing
+   the actual site geometry. */
+.zoomControl {
+  flex: none;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 2px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  background: var(--color-white);
+  box-shadow: 0 2px 8px rgb(var(--color-navy-rgb) / .05);
+}
+
+.zoomControl button {
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--color-slate-600);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--font-bold);
+  cursor: pointer;
+}
+
+.zoomControl button:hover {
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+
+.zoomControl .zoomValue {
+  min-width: 48px;
+  font-size: 10px;
+}

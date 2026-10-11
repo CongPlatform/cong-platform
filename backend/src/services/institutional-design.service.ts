@@ -25,17 +25,24 @@ export interface InstitutionalImageFrameResource {
   updatedAt: Date;
 }
 
-async function activeUserId(client: PoolClient, authUserId: string): Promise<string> {
+async function activeUserId(
+  client: PoolClient,
+  authUserId: string,
+): Promise<string> {
   const result = await client.query<{ id: string }>(
     `select id from public.users where auth_user_id = $1 and active = true limit 1`,
     [authUserId],
   );
   const userId = result.rows[0]?.id;
-  if (!userId) throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+  if (!userId)
+    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
   return userId;
 }
 
-export async function listDesignPalettes(authUserId: string, includeOwnedDrafts = false): Promise<InstitutionalDesignPalette[]> {
+export async function listDesignPalettes(
+  authUserId: string,
+  includeOwnedDrafts = false,
+): Promise<InstitutionalDesignPalette[]> {
   const client = await pool.connect();
   try {
     const userId = await activeUserId(client, authUserId);
@@ -49,10 +56,15 @@ export async function listDesignPalettes(authUserId: string, includeOwnedDrafts 
       [userId, includeOwnedDrafts],
     );
     return result.rows;
-  } finally { client.release(); }
+  } finally {
+    client.release();
+  }
 }
 
-export async function createDesignPalette(authUserId: string, input: { name: string; description: string; colors: string[] }): Promise<InstitutionalDesignPalette> {
+export async function createDesignPalette(
+  authUserId: string,
+  input: { name: string; description: string; colors: string[] },
+): Promise<InstitutionalDesignPalette> {
   const client = await pool.connect();
   try {
     const userId = await activeUserId(client, authUserId);
@@ -64,10 +76,16 @@ export async function createDesignPalette(authUserId: string, input: { name: str
       [userId, input.name, input.description, JSON.stringify(input.colors)],
     );
     return result.rows[0]!;
-  } finally { client.release(); }
+  } finally {
+    client.release();
+  }
 }
 
-export async function updateDesignPalette(authUserId: string, paletteId: string, input: { name: string; description: string; colors: string[] }): Promise<InstitutionalDesignPalette> {
+export async function updateDesignPalette(
+  authUserId: string,
+  paletteId: string,
+  input: { name: string; description: string; colors: string[] },
+): Promise<InstitutionalDesignPalette> {
   const client = await pool.connect();
   try {
     const userId = await activeUserId(client, authUserId);
@@ -77,15 +95,31 @@ export async function updateDesignPalette(authUserId: string, paletteId: string,
        where id = $2 and owner_user_id = $1
        returning id, name, description, colors, visibility, status,
                  owner_user_id as "ownerUserId", updated_at as "updatedAt"`,
-      [userId, paletteId, input.name, input.description, JSON.stringify(input.colors)],
+      [
+        userId,
+        paletteId,
+        input.name,
+        input.description,
+        JSON.stringify(input.colors),
+      ],
     );
     const palette = result.rows[0];
-    if (!palette) throw new AppError("Paleta não encontrada.", 404, "DESIGN_PALETTE_NOT_FOUND");
+    if (!palette)
+      throw new AppError(
+        "Paleta não encontrada.",
+        404,
+        "DESIGN_PALETTE_NOT_FOUND",
+      );
     return palette;
-  } finally { client.release(); }
+  } finally {
+    client.release();
+  }
 }
 
-export async function publishDesignPalette(authUserId: string, paletteId: string): Promise<InstitutionalDesignPalette> {
+export async function publishDesignPalette(
+  authUserId: string,
+  paletteId: string,
+): Promise<InstitutionalDesignPalette> {
   const client = await pool.connect();
   try {
     const userId = await activeUserId(client, authUserId);
@@ -98,12 +132,22 @@ export async function publishDesignPalette(authUserId: string, paletteId: string
       [userId, paletteId],
     );
     const palette = result.rows[0];
-    if (!palette) throw new AppError("Paleta não encontrada.", 404, "DESIGN_PALETTE_NOT_FOUND");
+    if (!palette)
+      throw new AppError(
+        "Paleta não encontrada.",
+        404,
+        "DESIGN_PALETTE_NOT_FOUND",
+      );
     return palette;
-  } finally { client.release(); }
+  } finally {
+    client.release();
+  }
 }
 
-export async function listImageFrames(authUserId: string, includeOwnedDrafts = false): Promise<InstitutionalImageFrameResource[]> {
+export async function listImageFrames(
+  authUserId: string,
+  includeOwnedDrafts = false,
+): Promise<InstitutionalImageFrameResource[]> {
   const client = await pool.connect();
   try {
     const userId = await activeUserId(client, authUserId);
@@ -117,10 +161,15 @@ export async function listImageFrames(authUserId: string, includeOwnedDrafts = f
       [userId, includeOwnedDrafts],
     );
     return result.rows;
-  } finally { client.release(); }
+  } finally {
+    client.release();
+  }
 }
 
-export async function createImageFrame(authUserId: string, input: { name: string; description: string; clipPath: string }): Promise<InstitutionalImageFrameResource> {
+export async function createImageFrame(
+  authUserId: string,
+  input: { name: string; description: string; clipPath: string },
+): Promise<InstitutionalImageFrameResource> {
   const client = await pool.connect();
   try {
     const userId = await activeUserId(client, authUserId);
@@ -132,10 +181,16 @@ export async function createImageFrame(authUserId: string, input: { name: string
       [userId, input.name, input.description, input.clipPath],
     );
     return result.rows[0]!;
-  } finally { client.release(); }
+  } finally {
+    client.release();
+  }
 }
 
-export async function updateImageFrame(authUserId: string, frameId: string, input: { name: string; description: string; clipPath: string }): Promise<InstitutionalImageFrameResource> {
+export async function updateImageFrame(
+  authUserId: string,
+  frameId: string,
+  input: { name: string; description: string; clipPath: string },
+): Promise<InstitutionalImageFrameResource> {
   const client = await pool.connect();
   try {
     const userId = await activeUserId(client, authUserId);
@@ -148,12 +203,22 @@ export async function updateImageFrame(authUserId: string, frameId: string, inpu
       [userId, frameId, input.name, input.description, input.clipPath],
     );
     const frame = result.rows[0];
-    if (!frame) throw new AppError("Moldura não encontrada.", 404, "IMAGE_FRAME_NOT_FOUND");
+    if (!frame)
+      throw new AppError(
+        "Moldura não encontrada.",
+        404,
+        "IMAGE_FRAME_NOT_FOUND",
+      );
     return frame;
-  } finally { client.release(); }
+  } finally {
+    client.release();
+  }
 }
 
-export async function publishImageFrame(authUserId: string, frameId: string): Promise<InstitutionalImageFrameResource> {
+export async function publishImageFrame(
+  authUserId: string,
+  frameId: string,
+): Promise<InstitutionalImageFrameResource> {
   const client = await pool.connect();
   try {
     const userId = await activeUserId(client, authUserId);
@@ -166,7 +231,14 @@ export async function publishImageFrame(authUserId: string, frameId: string): Pr
       [userId, frameId],
     );
     const frame = result.rows[0];
-    if (!frame) throw new AppError("Moldura não encontrada.", 404, "IMAGE_FRAME_NOT_FOUND");
+    if (!frame)
+      throw new AppError(
+        "Moldura não encontrada.",
+        404,
+        "IMAGE_FRAME_NOT_FOUND",
+      );
     return frame;
-  } finally { client.release(); }
+  } finally {
+    client.release();
+  }
 }

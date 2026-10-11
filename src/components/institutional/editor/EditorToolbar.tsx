@@ -54,7 +54,12 @@ export default function EditorToolbar({
   return (
     <header className={styles.toolbar}>
       <div className={styles.start}>
-        <button type="button" className={styles.iconButton} onClick={onBack} aria-label="Voltar">
+        <button
+          type="button"
+          className={styles.iconButton}
+          onClick={onBack}
+          aria-label="Voltar"
+        >
           <FiChevronLeft />
         </button>
         <div className={styles.title}>
@@ -64,29 +69,84 @@ export default function EditorToolbar({
       </div>
 
       <div className={styles.devices} aria-label="Tamanho da visualização">
-        <button type="button" className={device === "desktop" ? styles.active : ""} onClick={() => onDeviceChange("desktop")} aria-label="Visualização desktop"><FiMonitor /></button>
-        <button type="button" className={device === "tablet" ? styles.active : ""} onClick={() => onDeviceChange("tablet")} aria-label="Visualização tablet"><FiTablet /></button>
-        <button type="button" className={device === "mobile" ? styles.active : ""} onClick={() => onDeviceChange("mobile")} aria-label="Visualização mobile"><FiSmartphone /></button>
+        <button
+          type="button"
+          className={device === "desktop" ? styles.active : ""}
+          onClick={() => onDeviceChange("desktop")}
+          aria-label="Visualização desktop"
+        >
+          <FiMonitor />
+        </button>
+        <button
+          type="button"
+          className={device === "tablet" ? styles.active : ""}
+          onClick={() => onDeviceChange("tablet")}
+          aria-label="Visualização tablet"
+        >
+          <FiTablet />
+        </button>
+        <button
+          type="button"
+          className={device === "mobile" ? styles.active : ""}
+          onClick={() => onDeviceChange("mobile")}
+          aria-label="Visualização mobile"
+        >
+          <FiSmartphone />
+        </button>
       </div>
 
       <div className={styles.end}>
         <div className={styles.historyButtons} aria-label="Histórico de edição">
-          <button type="button" onClick={onUndo} disabled={!canUndo} aria-label="Desfazer" title="Desfazer (Ctrl+Z)"><FiCornerUpLeft /></button>
-          <button type="button" onClick={onRedo} disabled={!canRedo} aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)"><FiCornerUpRight /></button>
+          <button
+            type="button"
+            onClick={onUndo}
+            disabled={!canUndo}
+            aria-label="Desfazer"
+            title="Desfazer (Ctrl+Z)"
+          >
+            <FiCornerUpLeft />
+          </button>
+          <button
+            type="button"
+            onClick={onRedo}
+            disabled={!canRedo}
+            aria-label="Refazer"
+            title="Refazer (Ctrl+Shift+Z)"
+          >
+            <FiCornerUpRight />
+          </button>
         </div>
-        <span className={`${styles.saveState} ${savingState === "error" ? styles.saveError : ""}`}>
-          {savingState === "saving" ? "Salvando..." : savingState === "error" ? "Não foi possível salvar" : "Salvo"}
+        <span
+          className={`${styles.saveState} ${savingState === "error" ? styles.saveError : ""}`}
+        >
+          {savingState === "saving"
+            ? "Salvando..."
+            : savingState === "error"
+              ? "Não foi possível salvar"
+              : "Salvo"}
         </span>
 
         <button type="button" className={styles.textButton} onClick={onHelp}>
           <FiHelpCircle /> Ajuda
         </button>
         {showBrand && onBrand ? (
-          <button type="button" className={styles.textButton} onClick={onBrand}>Marca</button>
+          <button type="button" className={styles.textButton} onClick={onBrand}>
+            Marca
+          </button>
         ) : null}
-        <button type="button" className={styles.textButton} onClick={onPreview}>Visualizar</button>
-        <button type="button" className={styles.publishButton} onClick={onPublish} disabled={publishing}>
-          {publishing ? "Publicando..." : publishLabel ?? (published ? "Publicar nova versão" : "Publicar site")}
+        <button type="button" className={styles.textButton} onClick={onPreview}>
+          Visualizar
+        </button>
+        <button
+          type="button"
+          className={styles.publishButton}
+          onClick={onPublish}
+          disabled={publishing}
+        >
+          {publishing
+            ? "Publicando..."
+            : (publishLabel ??
+              (published ? "Publicar nova versão" : "Publicar site"))}
         </button>
       </div>
     </header>

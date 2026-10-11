@@ -3,21 +3,25 @@
   width: 100%;
   height: var(--preview-height, 210px);
   overflow: hidden;
-  background: var(--color-slate-50);
+  background: var(--color-white);
+  isolation: isolate;
 }
 
 .scaled {
   position: absolute;
   top: 0;
   left: 0;
-  width: 1080px;
-  min-height: 1100px;
+  width: var(--preview-source-width, 1180px);
+  min-height: 1200px;
   transform-origin: top left;
   background: var(--color-white);
+  will-change: transform;
 }
 
 .guard {
   position: absolute;
-  inset: 0;
   z-index: 2;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
 }

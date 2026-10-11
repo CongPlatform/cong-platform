@@ -278,8 +278,14 @@ export function createElementNode(
       type: "element",
       id,
       elementType: type,
-      value: "heart",
-      style: { size: "xl", color: "primary", width: "auto" },
+      value: typeof initialValue === "string" ? initialValue : "heart",
+      style: {
+        color: "primary",
+        width: "auto",
+        iconSizePx: 48,
+        iconStrokeWidth: 2,
+        opacity: 1,
+      },
     };
   }
 
@@ -288,14 +294,16 @@ export function createElementNode(
       type: "element",
       id,
       elementType: type,
-      value: typeof initialValue === "string" ? initialValue : "circle",
+      value: typeof initialValue === "string" ? initialValue : "square",
       presentation: "shape",
       style: {
-        size: "xl",
-        widthPercent: 20,
+        width: "auto",
+        heightPx: typeof initialValue === "string" && initialValue === "line" ? 28 : 120,
         color: "primary",
         backgroundColor: "accent",
-        strokeWidth: 0,
+        strokeWidth: typeof initialValue === "string" && initialValue === "line" ? 4 : 0,
+        opacity: 1,
+        shapeRadius: 8,
       },
     };
   }
@@ -495,6 +503,12 @@ function autoOrganizeNode(
         rotation: 0,
         zIndex: 0,
         allowOverflow: false,
+        positionMode: "flow",
+        offsetReferenceWidth: undefined,
+        anchorSource: undefined,
+        anchorIndex: undefined,
+        anchorXPercent: undefined,
+        anchorYPercent: undefined,
       },
     };
   }
@@ -612,4 +626,53 @@ export function removeLayoutNodes(
   ids: string[],
 ): InstitutionalLayoutNode {
   return ids.reduce((current, id) => removeLayoutNode(current, id), node);
+}
+
+/**
+ * Clones a layout subtree for duplication while giving every cloned node a
+ * fresh id. Leaf elements are nudged slightly so the duplicate is visible
+ * immediately, and manual grouping metadata is intentionally cleared.
+ */
+export function cloneLayoutNodeWithFreshIds(
+  node: InstitutionalLayoutNode,
+): InstitutionalLayoutNode {
+  const clone = structuredClone(node);
+
+  const refresh = (current: InstitutionalLayoutNode): InstitutionalLayoutNode => {
+    if (current.type === "element" || current.type === "slot") {
+      return {
+        ...current,
+        id: nodeId(),
+        style: current.style
+          ? {
+              ...current.style,
+              offsetX: Math.round((current.style.offsetX ?? 0) + 18),
+              offsetY: Math.round((current.style.offsetY ?? 0) + 18),
+              groupId: undefined,
+              groupKind: undefined,
+            }
+          : undefined,
+      };
+    }
+
+    if (current.type === "repeat") {
+      return { ...current, id: nodeId(), item: refresh(current.item) };
+    }
+
+    if (current.type === "columns") {
+      return {
+        ...current,
+        id: nodeId(),
+        children: [refresh(current.children[0]), refresh(current.children[1])],
+      };
+    }
+
+    return {
+      ...current,
+      id: nodeId(),
+      children: current.children.map(refresh),
+    };
+  };
+
+  return refresh(clone);
 }

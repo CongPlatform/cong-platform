@@ -76,10 +76,10 @@ export default function SiteCreationModal({
 
   const recommendedTemplate = useMemo(() => {
     const preferredNames = visualStyle === "human"
-      ? ["Presença social completa", "Humano e acolhedor"]
+      ? ["Acolher", "Sereno", "Comunidade"]
       : visualStyle === "impact"
-        ? ["Impacto em evidência", "Presença social completa"]
-        : ["Institucional editorial", "Presença social completa"];
+        ? ["Horizonte Editorial", "Pulso", "Território Vivo"]
+        : ["Essencial", "Conexão", "Horizonte Editorial"];
 
     for (const preferredName of preferredNames) {
       const match = templates.find((item) => item.name === preferredName);

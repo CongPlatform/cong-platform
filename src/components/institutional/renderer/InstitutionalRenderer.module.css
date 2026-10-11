@@ -555,7 +555,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  max-width: min(390px, calc(100vw - 20px));
+  max-width: min(720px, calc(100vw - 20px));
   padding: 4px;
   border: 1px solid var(--color-slate-200);
   border-radius: 11px;
@@ -3207,7 +3207,7 @@
   display: block;
   overflow: visible;
 }
-.customShape :is(circle, rect, polygon) {
+.customShape :is(circle, rect, polygon, path) {
   fill: var(--element-background, var(--org-accent));
   stroke: var(--element-color, var(--org-primary));
   stroke-width: var(--shape-stroke-width, 0);
@@ -3335,4 +3335,3401 @@
 }
 :is(.elementShell[data-button-element="true"], .elementShell[data-shape-element="true"]) > .resizeHandle[data-edge="bottom-right"] {
   top: auto; bottom: -8px; left: auto; right: -8px; cursor: nwse-resize;
+}
+
+/* ========================================================================== */
+/* Native design families V2                                                  */
+/* ========================================================================== */
+/*
+ * These are intentionally systems, not recolors. Every family keeps its own
+ * geometry, rhythm, card language and image treatment while still consuming
+ * the organization's semantic palette.
+ */
+
+.section[data-design-family] {
+  --family-line: color-mix(in srgb, var(--org-text) 12%, transparent);
+  --family-soft: color-mix(in srgb, var(--org-primary) 5%, var(--org-background));
+  --family-card: color-mix(in srgb, var(--org-background) 96%, white);
+}
+
+.section[data-design-family] .primaryAction,
+.section[data-design-family] .secondaryAction {
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.section[data-design-family] .primaryAction:hover,
+.section[data-design-family] .secondaryAction:hover {
+  transform: translateY(-2px);
+}
+
+/* 01 — Horizonte Editorial ------------------------------------------------ */
+.section[data-design-family="horizonte"] {
+  --family-radius: 14px;
+}
+
+.section[data-visual-style="horizonte-header"] {
+  border-bottom: 1px solid var(--family-line);
+  box-shadow: 0 10px 32px color-mix(in srgb, var(--org-text) 4%, transparent);
+}
+
+.section[data-visual-style="horizonte-hero"] {
+  overflow: hidden;
+  background:
+    linear-gradient(115deg, color-mix(in srgb, var(--org-accent) 7%, transparent), transparent 42%),
+    var(--section-background, var(--org-background));
+}
+
+.section[data-visual-style="horizonte-hero"] .display {
+  max-width: 10.5ch;
+  font-size: clamp(3.25rem, 7vw, 7rem);
+  line-height: .92;
+  letter-spacing: -.055em;
+  text-wrap: balance;
+}
+
+.section[data-visual-style="horizonte-hero"] .eyebrow {
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.section[data-visual-style="horizonte-hero"] :is(.heroImage, .imageMediaFrame) {
+  min-height: clamp(430px, 55vw, 720px);
+  border-radius: 6px 64px 6px 6px;
+  clip-path: polygon(11% 0, 100% 0, 100% 100%, 0 100%, 0 18%);
+  box-shadow: 0 30px 70px color-mix(in srgb, var(--org-text) 14%, transparent);
+}
+
+.section[data-visual-style="horizonte-impact"] .repeat {
+  border-block: 1px solid var(--family-line);
+}
+
+.section[data-visual-style="horizonte-impact"] .repeat > * {
+  padding: clamp(22px, 3vw, 36px);
+  border-right: 1px solid var(--family-line);
+}
+
+.section[data-visual-style="horizonte-impact"] .repeat > *:last-child { border-right: 0; }
+.section[data-visual-style="horizonte-impact"] .metricValue { color: var(--org-text); font-size: clamp(2.6rem, 5vw, 5rem); }
+
+.section[data-visual-style="horizonte-about"] :is(.imageButton, .imageMediaFrame) {
+  min-height: 430px;
+  border-radius: 0 52px 0 0;
+}
+
+.section[data-visual-style="horizonte-about"] .surfacecard {
+  padding: clamp(30px, 5vw, 64px);
+  border: 0;
+  border-left: 5px solid var(--org-accent);
+  border-radius: 0;
+  background: var(--family-soft);
+}
+
+.section[data-visual-style="horizonte-projects"] .surfacecard {
+  padding: 0 0 22px;
+  overflow: hidden;
+  border: 1px solid var(--family-line);
+  border-radius: 14px;
+  background: var(--org-background);
+}
+
+.section[data-visual-style="horizonte-projects"] .surfacecard > :not(:first-child) { margin-inline: 18px; }
+.section[data-visual-style="horizonte-projects"] .cardImage,
+.section[data-visual-style="horizonte-projects"] .imageMediaFrame { border-radius: 0; }
+
+.section[data-visual-style="horizonte-support"] .surfacecard,
+.section[data-visual-style="horizonte-transparency"] .surfacecard {
+  border-radius: 12px;
+  box-shadow: none;
+  border: 1px solid var(--family-line);
+}
+
+.section[data-visual-style="horizonte-story"] .surfacehighlight {
+  padding: clamp(34px, 6vw, 76px);
+  border-radius: 0 58px 0 0;
+  color: white;
+  background: var(--org-primary);
+}
+
+.section[data-visual-style="horizonte-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading) { color: white; }
+.section[data-visual-style="horizonte-contact"] .sectionInner { border-top: 1px solid var(--family-line); padding-top: 34px; }
+.section[data-visual-style="horizonte-footer"] { background: var(--org-primary); color: white; }
+
+/* 02 — Território Vivo ---------------------------------------------------- */
+.section[data-design-family="territorio-vivo"] { --family-radius: 20px; }
+.section[data-visual-style="territorio-vivo-header"],
+.section[data-visual-style="territorio-vivo-footer"] {
+  color: white;
+  background: color-mix(in srgb, var(--org-primary) 90%, #06150f);
+}
+.section[data-visual-style="territorio-vivo-header"] :is(.itemTitle, .navLink, .primaryAction),
+.section[data-visual-style="territorio-vivo-footer"] :is(.heading, .body, .contactLink, .contactLine, .caption, .socialLink) { color: white; }
+
+.section[data-visual-style="territorio-vivo-hero"] {
+  color: white;
+  background:
+    radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--org-accent) 18%, transparent), transparent 28%),
+    color-mix(in srgb, var(--org-primary) 92%, #071c13);
+}
+.section[data-visual-style="territorio-vivo-hero"] :is(.display, .lead, .eyebrow) { color: white; }
+.section[data-visual-style="territorio-vivo-hero"] .display { max-width: 9ch; font-size: clamp(3.1rem, 6.5vw, 6.5rem); line-height: .92; }
+.section[data-visual-style="territorio-vivo-hero"] :is(.heroImage, .imageMediaFrame) {
+  min-height: clamp(450px, 58vw, 740px);
+  border-radius: 26px 26px 96px 26px;
+  box-shadow: 0 28px 70px rgb(0 0 0 / .28);
+}
+.section[data-visual-style="territorio-vivo-impact"] { background: color-mix(in srgb, var(--org-primary) 7%, var(--org-background)); }
+.section[data-visual-style="territorio-vivo-impact"] .repeat > * { padding: 24px; border-left: 3px solid color-mix(in srgb, var(--org-primary) 24%, transparent); }
+.section[data-visual-style="territorio-vivo-about"] { background: linear-gradient(150deg, var(--org-background), color-mix(in srgb, var(--org-primary) 8%, var(--org-background))); }
+.section[data-visual-style="territorio-vivo-about"] :is(.imageButton, .imageMediaFrame) { min-height: 440px; border-radius: 28px 100px 28px 28px; }
+.section[data-visual-style="territorio-vivo-projects"] .surfacecard { overflow: hidden; padding: 0 0 24px; border: 0; border-radius: 22px; box-shadow: 0 18px 44px color-mix(in srgb, var(--org-primary) 14%, transparent); }
+.section[data-visual-style="territorio-vivo-projects"] .surfacecard > :not(:first-child) { margin-inline: 20px; }
+.section[data-visual-style="territorio-vivo-projects"] :is(.cardImage, .imageMediaFrame) { min-height: 240px; border-radius: 0; }
+.section[data-visual-style="territorio-vivo-support"] .surfacecard { border: 0; border-radius: 22px; background: color-mix(in srgb, var(--org-primary) 7%, var(--org-background)); }
+.section[data-visual-style="territorio-vivo-transparency"] .surfacecard { border-radius: 18px; box-shadow: none; border: 1px solid var(--family-line); }
+.section[data-visual-style="territorio-vivo-story"] { color: white; background: var(--org-primary); }
+.section[data-visual-style="territorio-vivo-story"] :is(.heading, .body, .customText, .customHeading, .customQuote) { color: white; }
+.section[data-visual-style="territorio-vivo-contact"] .sectionInner { padding: clamp(28px, 5vw, 58px); border-radius: 30px; background: var(--family-soft); }
+
+/* 03 — Acolher ------------------------------------------------------------ */
+.section[data-design-family="acolher"] { --family-radius: 30px; }
+.section[data-visual-style="acolher-header"] { box-shadow: 0 9px 28px color-mix(in srgb, var(--org-text) 6%, transparent); }
+.section[data-visual-style="acolher-hero"] { background: radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--org-accent) 16%, transparent), transparent 32%), var(--org-background); }
+.section[data-visual-style="acolher-hero"] .display { max-width: 11ch; font-size: clamp(3rem, 6.2vw, 6rem); line-height: .96; }
+.section[data-visual-style="acolher-hero"] :is(.heroImage, .imageMediaFrame) { min-height: clamp(430px, 52vw, 680px); border-radius: 80px 28px 80px 28px; box-shadow: 0 24px 58px color-mix(in srgb, var(--org-text) 14%, transparent); }
+.section[data-visual-style="acolher-impact"] .repeat { padding: 16px; border-radius: 30px; background: color-mix(in srgb, var(--org-accent) 10%, var(--org-background)); }
+.section[data-visual-style="acolher-impact"] .repeat > * { padding: 22px; }
+.section[data-visual-style="acolher-about"] :is(.imageButton, .imageMediaFrame) { min-height: 420px; border-radius: 36px; }
+.section[data-visual-style="acolher-about"] .surfacecard { padding: clamp(28px, 4vw, 48px); border: 0; border-radius: 34px; background: color-mix(in srgb, var(--org-accent) 11%, var(--org-background)); }
+.section[data-visual-style="acolher-projects"] .surfacecard { border-radius: 28px; background: var(--org-background); box-shadow: 0 14px 34px color-mix(in srgb, var(--org-text) 8%, transparent); }
+.section[data-visual-style="acolher-projects"] :is(.cardImage, .imageMediaFrame) { border-radius: 22px; }
+.section[data-visual-style="acolher-support"] .surfacecard { border: 0; border-radius: 30px; background: color-mix(in srgb, var(--org-accent) 13%, var(--org-background)); }
+.section[data-visual-style="acolher-support"] .primaryAction { border-radius: 999px; }
+.section[data-visual-style="acolher-transparency"] { background: color-mix(in srgb, var(--org-secondary) 4%, var(--org-background)); }
+.section[data-visual-style="acolher-story"] .surfacehighlight { padding: clamp(32px, 6vw, 72px); border-radius: 38px; background: color-mix(in srgb, var(--org-accent) 18%, var(--org-background)); }
+.section[data-visual-style="acolher-contact"] .sectionInner { padding: clamp(28px, 5vw, 56px); border-radius: 36px; background: color-mix(in srgb, var(--org-secondary) 7%, var(--org-background)); }
+.section[data-visual-style="acolher-footer"] { background: color-mix(in srgb, var(--org-primary) 88%, #2f211a); color: white; }
+
+/* 04 — Essencial ---------------------------------------------------------- */
+.section[data-design-family="essencial"] { --family-radius: 6px; }
+.section[data-visual-style="essencial-header"] { border-bottom: 4px solid var(--org-primary); }
+.section[data-visual-style="essencial-hero"] { color: white; background: color-mix(in srgb, var(--org-text) 92%, #050709); }
+.section[data-visual-style="essencial-hero"] :is(.display, .lead, .eyebrow) { color: white; }
+.section[data-visual-style="essencial-hero"] .display { max-width: 9ch; font-size: clamp(3.4rem, 7vw, 7.2rem); line-height: .9; letter-spacing: -.055em; }
+.section[data-visual-style="essencial-hero"] :is(.heroImage, .imageMediaFrame) { min-height: clamp(430px, 55vw, 710px); border-radius: 4px; box-shadow: 18px 18px 0 color-mix(in srgb, var(--org-primary) 78%, transparent); }
+.section[data-visual-style="essencial-impact"] .repeat { border: 2px solid var(--org-text); }
+.section[data-visual-style="essencial-impact"] .repeat > * { padding: 22px; border-right: 2px solid var(--org-text); }
+.section[data-visual-style="essencial-impact"] .repeat > *:last-child { border-right: 0; }
+.section[data-visual-style="essencial-impact"] .metricValue { color: var(--org-primary); }
+.section[data-visual-style="essencial-about"] :is(.imageButton, .imageMediaFrame),
+.section[data-visual-style="essencial-projects"] :is(.cardImage, .imageMediaFrame) { border-radius: 4px; }
+.section[data-visual-style="essencial-about"] .surfacecard,
+.section[data-visual-style="essencial-support"] .surfacecard,
+.section[data-visual-style="essencial-transparency"] .surfacecard { border-radius: 4px; box-shadow: none; border: 1px solid var(--family-line); }
+.section[data-visual-style="essencial-projects"] .surfacecard { border-radius: 4px; box-shadow: none; border: 1px solid var(--family-line); }
+.section[data-visual-style="essencial-story"] { color: white; background: var(--org-primary); }
+.section[data-visual-style="essencial-story"] :is(.heading, .body, .customText, .customHeading, .customQuote) { color: white; }
+.section[data-visual-style="essencial-contact"] .sectionInner { border: 2px solid var(--org-text); padding: clamp(26px, 4vw, 48px); }
+.section[data-visual-style="essencial-footer"] { color: white; background: color-mix(in srgb, var(--org-text) 94%, #000); }
+
+/* 05 — Comunidade --------------------------------------------------------- */
+.section[data-design-family="comunidade"] { --family-radius: 18px; }
+.section[data-visual-style="comunidade-header"] { border-bottom: 1px solid color-mix(in srgb, var(--org-primary) 30%, transparent); }
+.section[data-visual-style="comunidade-hero"] { background: linear-gradient(110deg, color-mix(in srgb, var(--org-primary) 10%, var(--org-background)) 0 48%, var(--org-background) 48%); }
+.section[data-visual-style="comunidade-hero"] .display { max-width: 10ch; font-size: clamp(3.2rem, 6.5vw, 6.4rem); line-height: .93; }
+.section[data-visual-style="comunidade-hero"] :is(.heroImage, .imageMediaFrame) { min-height: clamp(440px, 54vw, 700px); border-radius: 0 0 0 70px; }
+.section[data-visual-style="comunidade-impact"] { color: white; background: var(--org-primary); }
+.section[data-visual-style="comunidade-impact"] :is(.heading, .lead, .metricValue, .metricLabel, .caption) { color: white; }
+.section[data-visual-style="comunidade-impact"] .repeat > * { padding: 22px; border-right: 1px solid rgb(255 255 255 / .22); }
+.section[data-visual-style="comunidade-about"] :is(.imageButton, .imageMediaFrame) { min-height: 430px; border-radius: 0 48px 0 48px; }
+.section[data-visual-style="comunidade-about"] .surfacecard { padding: clamp(28px, 5vw, 54px); border: 0; border-radius: 0 36px 0 0; background: color-mix(in srgb, var(--org-accent) 13%, var(--org-background)); }
+.section[data-visual-style="comunidade-projects"] .surfacecard { border-radius: 10px; border: 0; box-shadow: 0 12px 32px color-mix(in srgb, var(--org-primary) 12%, transparent); }
+.section[data-visual-style="comunidade-projects"] :is(.cardImage, .imageMediaFrame) { border-radius: 8px; }
+.section[data-visual-style="comunidade-support"] { background: color-mix(in srgb, var(--org-accent) 12%, var(--org-background)); }
+.section[data-visual-style="comunidade-support"] .surfacecard { border: 0; border-radius: 16px; }
+.section[data-visual-style="comunidade-story"] .surfacehighlight { padding: clamp(34px, 6vw, 74px); border-left: 8px solid var(--org-accent); border-radius: 0; background: color-mix(in srgb, var(--org-primary) 8%, var(--org-background)); }
+.section[data-visual-style="comunidade-footer"] { color: white; background: color-mix(in srgb, var(--org-secondary) 90%, #15231a); }
+
+/* 06 — Vozes -------------------------------------------------------------- */
+.section[data-design-family="vozes"] { --family-radius: 24px; }
+.section[data-visual-style="vozes-header"] { border-bottom: 1px solid color-mix(in srgb, var(--org-primary) 22%, transparent); }
+.section[data-visual-style="vozes-hero"] { overflow: hidden; color: white; background: linear-gradient(135deg, color-mix(in srgb, var(--org-primary) 94%, #28051b), var(--org-secondary)); }
+.section[data-visual-style="vozes-hero"] :is(.display, .lead, .eyebrow) { color: white; }
+.section[data-visual-style="vozes-hero"] .display { max-width: 10ch; font-size: clamp(3.4rem, 7.2vw, 7rem); line-height: .9; }
+.section[data-visual-style="vozes-hero"] :is(.heroImage, .imageMediaFrame) { min-height: clamp(440px, 54vw, 700px); border-radius: 44% 56% 20% 80% / 32% 28% 72% 68%; box-shadow: 0 0 0 12px rgb(255 255 255 / .08); }
+.section[data-visual-style="vozes-impact"] { color: white; background: var(--org-primary); }
+.section[data-visual-style="vozes-impact"] :is(.heading, .lead, .metricValue, .metricLabel, .caption) { color: white; }
+.section[data-visual-style="vozes-about"] { background: color-mix(in srgb, var(--org-secondary) 6%, var(--org-background)); }
+.section[data-visual-style="vozes-about"] :is(.imageButton, .imageMediaFrame) { min-height: 430px; border-radius: 38% 12% 38% 12%; }
+.section[data-visual-style="vozes-projects"] .surfacecard { border: 0; border-radius: 24px; background: color-mix(in srgb, var(--org-primary) 5%, var(--org-background)); }
+.section[data-visual-style="vozes-support"] .surfacecard { border: 1px solid color-mix(in srgb, var(--org-primary) 18%, transparent); border-radius: 24px; box-shadow: none; }
+.section[data-visual-style="vozes-story"] .surfacehighlight { position: relative; padding: clamp(36px, 6vw, 76px); border-radius: 32px 8px 32px 8px; background: color-mix(in srgb, var(--org-secondary) 12%, var(--org-background)); }
+.section[data-visual-style="vozes-story"] .surfacehighlight::before { content: "“"; position: absolute; top: 8px; left: 24px; color: var(--org-primary); font-size: 6rem; line-height: 1; opacity: .18; }
+.section[data-visual-style="vozes-contact"] .sectionInner { padding: clamp(28px, 5vw, 58px); border-radius: 30px; background: color-mix(in srgb, var(--org-primary) 6%, var(--org-background)); }
+.section[data-visual-style="vozes-footer"] { color: white; background: color-mix(in srgb, var(--org-primary) 93%, #27051a); }
+
+/* 07 — Pulso -------------------------------------------------------------- */
+.section[data-design-family="pulso"] { --family-radius: 2px; }
+.section[data-visual-style="pulso-header"],
+.section[data-visual-style="pulso-footer"] { color: white; background: color-mix(in srgb, var(--org-primary) 95%, #02070b); }
+.section[data-visual-style="pulso-header"] :is(.itemTitle, .navLink, .primaryAction),
+.section[data-visual-style="pulso-footer"] :is(.heading, .body, .contactLink, .contactLine, .caption, .socialLink) { color: white; }
+.section[data-visual-style="pulso-hero"] { position: relative; overflow: hidden; color: white; background: color-mix(in srgb, var(--org-primary) 96%, #02070b); }
+.section[data-visual-style="pulso-hero"]::after { content: ""; position: absolute; width: 52vw; height: 26px; right: -8vw; top: 32%; background: var(--org-accent); transform: rotate(-11deg); opacity: .92; }
+.section[data-visual-style="pulso-hero"] :is(.display, .lead, .eyebrow) { position: relative; z-index: 1; color: white; }
+.section[data-visual-style="pulso-hero"] .display { max-width: 9ch; font-size: clamp(3.5rem, 7.8vw, 7.6rem); line-height: .84; letter-spacing: -.055em; text-transform: uppercase; }
+.section[data-visual-style="pulso-hero"] :is(.heroImage, .imageMediaFrame) { min-height: clamp(440px, 54vw, 700px); border-radius: 0; clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%); }
+.section[data-visual-style="pulso-impact"] { color: white; background: color-mix(in srgb, var(--org-primary) 94%, #02070b); }
+.section[data-visual-style="pulso-impact"] :is(.heading, .lead, .metricValue, .metricLabel, .caption) { color: white; text-transform: uppercase; }
+.section[data-visual-style="pulso-impact"] .metricValue { color: var(--org-accent); }
+.section[data-visual-style="pulso-about"] :is(.imageButton, .imageMediaFrame),
+.section[data-visual-style="pulso-projects"] :is(.cardImage, .imageMediaFrame) { border-radius: 0; }
+.section[data-visual-style="pulso-projects"] .surfacecard,
+.section[data-visual-style="pulso-support"] .surfacecard,
+.section[data-visual-style="pulso-transparency"] .surfacecard { border: 2px solid var(--org-text); border-radius: 0; box-shadow: 8px 8px 0 color-mix(in srgb, var(--org-accent) 75%, transparent); }
+.section[data-visual-style="pulso-support"] { background: color-mix(in srgb, var(--org-accent) 10%, var(--org-background)); }
+.section[data-visual-style="pulso-story"] { color: var(--org-text); background: var(--org-accent); }
+.section[data-visual-style="pulso-story"] :is(.heading, .body, .customText, .customHeading, .customQuote) { color: var(--org-text); }
+.section[data-visual-style="pulso-contact"] .sectionInner { border: 3px solid var(--org-text); padding: clamp(26px, 5vw, 54px); }
+
+/* 08 — Profundezas -------------------------------------------------------- */
+.section[data-design-family="profundezas"] { --family-radius: 18px; }
+.section[data-visual-style="profundezas-header"],
+.section[data-visual-style="profundezas-footer"] { color: white; background: color-mix(in srgb, var(--org-primary) 94%, #001a28); }
+.section[data-visual-style="profundezas-header"] :is(.itemTitle, .navLink, .primaryAction),
+.section[data-visual-style="profundezas-footer"] :is(.heading, .body, .contactLink, .contactLine, .caption, .socialLink) { color: white; }
+.section[data-visual-style="profundezas-hero"] { color: white; background: radial-gradient(circle at 75% 20%, color-mix(in srgb, var(--org-accent) 24%, transparent), transparent 27%), color-mix(in srgb, var(--org-primary) 94%, #001827); }
+.section[data-visual-style="profundezas-hero"] :is(.display, .lead, .eyebrow) { color: white; }
+.section[data-visual-style="profundezas-hero"] .display { max-width: 10ch; font-size: clamp(3.2rem, 6.8vw, 6.8rem); line-height: .9; }
+.section[data-visual-style="profundezas-hero"] :is(.heroImage, .imageMediaFrame) { min-height: clamp(450px, 58vw, 740px); border-radius: 24px 80px 24px 80px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--org-accent) 30%, transparent), 0 30px 80px rgb(0 0 0 / .26); }
+.section[data-visual-style="profundezas-impact"] { color: white; background: color-mix(in srgb, var(--org-primary) 92%, #001827); }
+.section[data-visual-style="profundezas-impact"] :is(.heading, .lead, .metricValue, .metricLabel, .caption) { color: white; }
+.section[data-visual-style="profundezas-impact"] .metricValue { color: var(--org-accent); }
+.section[data-visual-style="profundezas-about"] { background: color-mix(in srgb, var(--org-secondary) 7%, var(--org-background)); }
+.section[data-visual-style="profundezas-about"] :is(.imageButton, .imageMediaFrame) { min-height: 440px; border-radius: 24px; }
+.section[data-visual-style="profundezas-projects"] .surfacecard { overflow: hidden; padding: 0 0 22px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--org-primary) 13%, transparent); }
+.section[data-visual-style="profundezas-projects"] .surfacecard > :not(:first-child) { margin-inline: 18px; }
+.section[data-visual-style="profundezas-projects"] :is(.cardImage, .imageMediaFrame) { border-radius: 0; }
+.section[data-visual-style="profundezas-support"] .surfacecard { border-radius: 18px; background: color-mix(in srgb, var(--org-accent) 7%, var(--org-background)); }
+.section[data-visual-style="profundezas-story"] { color: white; background: color-mix(in srgb, var(--org-primary) 92%, #001827); }
+.section[data-visual-style="profundezas-story"] :is(.heading, .body, .customText, .customHeading, .customQuote) { color: white; }
+.section[data-visual-style="profundezas-contact"] .sectionInner { padding: clamp(28px, 5vw, 58px); border-radius: 24px; background: color-mix(in srgb, var(--org-accent) 8%, var(--org-background)); }
+
+/* 09 — Sereno ------------------------------------------------------------- */
+.section[data-design-family="sereno"] { --family-radius: 30px; }
+.section[data-visual-style="sereno-header"] { box-shadow: none; border-bottom: 1px solid var(--family-line); }
+.section[data-visual-style="sereno-hero"] { background: linear-gradient(105deg, color-mix(in srgb, var(--org-accent) 8%, var(--org-background)), var(--org-background)); }
+.section[data-visual-style="sereno-hero"] .display { max-width: 11ch; font-size: clamp(3rem, 6.2vw, 6rem); line-height: .98; letter-spacing: -.04em; }
+.section[data-visual-style="sereno-hero"] :is(.heroImage, .imageMediaFrame) { min-height: clamp(430px, 52vw, 680px); border-radius: 48% 48% 18px 18px; box-shadow: 0 20px 54px color-mix(in srgb, var(--org-text) 10%, transparent); }
+.section[data-visual-style="sereno-impact"] { background: color-mix(in srgb, var(--org-secondary) 5%, var(--org-background)); }
+.section[data-visual-style="sereno-impact"] .repeat > * { padding: clamp(20px, 3vw, 34px); text-align: center; }
+.section[data-visual-style="sereno-about"] :is(.imageButton, .imageMediaFrame) { min-height: 420px; border-radius: 30px 90px 30px 30px; }
+.section[data-visual-style="sereno-about"] .surfacecard { padding: clamp(30px, 5vw, 56px); border: 0; border-radius: 34px; background: color-mix(in srgb, var(--org-accent) 8%, var(--org-background)); }
+.section[data-visual-style="sereno-projects"] .surfacecard,
+.section[data-visual-style="sereno-support"] .surfacecard { border: 0; border-radius: 28px; background: var(--org-background); box-shadow: 0 10px 30px color-mix(in srgb, var(--org-text) 6%, transparent); }
+.section[data-visual-style="sereno-story"] .surfacehighlight { padding: clamp(34px, 6vw, 72px); border-radius: 34px; background: color-mix(in srgb, var(--org-accent) 12%, var(--org-background)); }
+.section[data-visual-style="sereno-contact"] .sectionInner { padding: clamp(30px, 5vw, 58px); border-radius: 36px; background: color-mix(in srgb, var(--org-primary) 5%, var(--org-background)); }
+.section[data-visual-style="sereno-footer"] { color: white; background: var(--org-primary); }
+
+/* 10 — Conexão ------------------------------------------------------------ */
+.section[data-design-family="conexao"] { --family-radius: 16px; }
+.section[data-visual-style="conexao-header"] { border-bottom: 1px solid var(--family-line); }
+.section[data-visual-style="conexao-hero"] { background: linear-gradient(135deg, var(--org-background), color-mix(in srgb, var(--org-primary) 5%, var(--org-background))); }
+.section[data-visual-style="conexao-hero"] .display { max-width: 11.5ch; font-size: clamp(3.1rem, 6.4vw, 6.3rem); line-height: .93; }
+.section[data-visual-style="conexao-hero"] :is(.heroImage, .imageMediaFrame) { min-height: clamp(420px, 50vw, 660px); border-radius: 28px; }
+.section[data-visual-style="conexao-impact"] .repeat { border-block: 1px solid var(--family-line); }
+.section[data-visual-style="conexao-impact"] .repeat > * { padding: 22px; }
+.section[data-visual-style="conexao-about"] :is(.imageButton, .imageMediaFrame) { min-height: 410px; border-radius: 22px; }
+.section[data-visual-style="conexao-projects"] .surfacecard { border-radius: 18px; border: 1px solid var(--family-line); box-shadow: none; }
+.section[data-visual-style="conexao-support"] .surfacecard { border-radius: 18px; border: 1px solid var(--family-line); box-shadow: none; }
+.section[data-visual-style="conexao-transparency"] { background: color-mix(in srgb, var(--org-primary) 4%, var(--org-background)); }
+.section[data-visual-style="conexao-story"] .surfacehighlight { padding: clamp(34px, 6vw, 70px); border-radius: 20px; color: white; background: var(--org-primary); }
+.section[data-visual-style="conexao-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote) { color: white; }
+.section[data-visual-style="conexao-contact"] .sectionInner { padding: clamp(28px, 5vw, 56px); border: 1px solid var(--family-line); border-radius: 22px; }
+.section[data-visual-style="conexao-footer"] { color: white; background: color-mix(in srgb, var(--org-primary) 92%, #0e251b); }
+
+/* Shared family footer contrast. */
+.section[data-visual-style$="-footer"] :is(.heading, .body, .contactLink, .contactLine, .caption, .socialLink) {
+  color: inherit;
+}
+
+/* Shared CTA/story custom content treatment. */
+.section[data-visual-style$="-story"] .surfacehighlight {
+  min-height: 100%;
+}
+
+/* Responsive family behavior: keep the personality, remove risky geometry. */
+@container institutional-site (max-width: 900px) {
+  .section[data-design-family] .repeat > * { border-right: 0; }
+
+  .section[data-visual-style="horizonte-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="territorio-vivo-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="acolher-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="essencial-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="comunidade-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="vozes-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="pulso-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="profundezas-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="sereno-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="conexao-hero"] :is(.heroImage, .imageMediaFrame) {
+    min-height: 360px;
+  }
+}
+
+@container institutional-site (max-width: 620px) {
+  .section[data-design-family] .display {
+    max-width: 14ch;
+    font-size: clamp(2.45rem, 12vw, 4.25rem);
+  }
+
+  .section[data-visual-style="pulso-hero"]::after { display: none; }
+  .section[data-visual-style="horizonte-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="comunidade-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style="pulso-hero"] :is(.heroImage, .imageMediaFrame) { clip-path: none; }
+}
+
+/* ========================================================================== */
+/* Native design families V2.1 — visual fidelity pass                         */
+/* ========================================================================== */
+/* This pass deliberately changes composition, rhythm and surfaces per family.
+   It is layered after V2 so old renderer primitives stay compatible. */
+
+.section[data-design-family] {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+
+.section[data-design-family] .sectionInner {
+  position: relative;
+  z-index: 1;
+}
+
+.section[data-design-family] .surfacecard,
+.section[data-design-family] .surfacehighlight,
+.section[data-design-family] :is(.imageButton, .imageMediaFrame) {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.section[data-design-family] .surfacecard:hover {
+  transform: translateY(-3px);
+}
+
+.section[data-design-family] :is(.primaryAction, .secondaryAction) {
+  min-height: 48px;
+  padding-inline: 22px;
+  letter-spacing: -0.01em;
+}
+
+.section[data-visual-style$="-projects"] .repeat,
+.section[data-visual-style$="-support"] .repeat {
+  align-items: stretch;
+}
+
+.section[data-visual-style$="-projects"] .repeat > *,
+.section[data-visual-style$="-support"] .repeat > * {
+  min-width: 0;
+  height: 100%;
+}
+
+/* 01 — Horizonte: editorial, asymmetric, magazine-like. */
+.section[data-design-family="horizonte"] :is(.display, .heading, .itemTitle, .metricValue, .customQuote) {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.section[data-design-family="horizonte"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 8px;
+}
+
+.section[data-visual-style="horizonte-hero"]::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  width: min(44vw, 620px);
+  aspect-ratio: 1;
+  right: -11vw;
+  top: -20%;
+  background: color-mix(in srgb, var(--org-primary) 11%, transparent);
+  clip-path: polygon(18% 0, 100% 0, 100% 74%, 54% 100%, 0 68%);
+}
+
+.section[data-visual-style="horizonte-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  gap: clamp(34px, 6vw, 88px);
+}
+
+.section[data-visual-style="horizonte-hero"] .primaryAction {
+  color: white;
+  background: var(--org-secondary);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--org-secondary) 22%, transparent);
+}
+
+.section[data-visual-style="horizonte-hero"] .secondaryAction {
+  border-color: color-mix(in srgb, var(--org-primary) 26%, transparent);
+  background: rgb(255 255 255 / 0.76);
+}
+
+.section[data-visual-style="horizonte-projects"] .repeat {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.section[data-visual-style="horizonte-projects"] .surfacecard:hover {
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--org-text) 10%, transparent);
+}
+
+.section[data-visual-style="horizonte-story"]::after {
+  content: "“";
+  position: absolute;
+  right: clamp(28px, 7vw, 110px);
+  top: 6%;
+  color: rgb(255 255 255 / 0.1);
+  font-family: Georgia, serif;
+  font-size: clamp(8rem, 22vw, 18rem);
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* 02 — Território Vivo: immersive landscape and territorial data. */
+.section[data-design-family="territorio-vivo"] :is(.display, .heading, .itemTitle, .metricValue, .customQuote) {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.section[data-design-family="territorio-vivo"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 10px;
+}
+
+.section[data-visual-style="territorio-vivo-hero"]::before,
+.section[data-visual-style="territorio-vivo-story"]::before {
+  content: "";
+  position: absolute;
+  inset: auto -9vw -52% auto;
+  width: min(56vw, 760px);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--org-accent) 28%, transparent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 42px color-mix(in srgb, var(--org-accent) 3%, transparent),
+    0 0 0 88px color-mix(in srgb, var(--org-accent) 2%, transparent);
+  pointer-events: none;
+}
+
+.section[data-visual-style="territorio-vivo-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  gap: clamp(30px, 5vw, 74px);
+}
+
+.section[data-visual-style="territorio-vivo-hero"] .primaryAction {
+  color: var(--org-text);
+  background: var(--org-accent);
+  box-shadow: 0 14px 32px color-mix(in srgb, var(--org-accent) 24%, transparent);
+}
+
+.section[data-visual-style="territorio-vivo-projects"] .repeat {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section[data-visual-style="territorio-vivo-projects"] .surfacecard:nth-child(2) {
+  transform: translateY(18px);
+}
+
+.section[data-visual-style="territorio-vivo-projects"] .surfacecard:nth-child(2):hover {
+  transform: translateY(14px);
+}
+
+.section[data-visual-style="territorio-vivo-transparency"] .repeat {
+  border-top: 1px solid var(--family-line);
+}
+
+/* 03 — Acolher: soft organic geometry and emotional proximity. */
+.section[data-design-family="acolher"] :is(.display, .heading, .itemTitle, .metricValue, .customQuote) {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.section[data-design-family="acolher"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 999px;
+}
+
+.section[data-visual-style="acolher-hero"]::before {
+  content: "";
+  position: absolute;
+  width: min(38vw, 520px);
+  aspect-ratio: 1.08;
+  left: -12vw;
+  bottom: -37%;
+  border-radius: 46% 54% 58% 42% / 42% 38% 62% 58%;
+  background: color-mix(in srgb, var(--org-accent) 18%, transparent);
+  transform: rotate(18deg);
+}
+
+.section[data-visual-style="acolher-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(30px, 5vw, 72px);
+}
+
+.section[data-visual-style="acolher-hero"] .primaryAction {
+  color: white;
+  background: var(--org-primary);
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--org-primary) 18%, transparent);
+}
+
+.section[data-visual-style="acolher-projects"] .repeat {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.section[data-visual-style="acolher-projects"] .surfacecard:nth-child(even) {
+  margin-top: 20px;
+}
+
+.section[data-visual-style="acolher-story"] .surfacehighlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.section[data-visual-style="acolher-story"] .surfacehighlight::after {
+  content: "♡";
+  position: absolute;
+  right: 5%;
+  bottom: -12%;
+  color: color-mix(in srgb, var(--org-primary) 13%, transparent);
+  font-family: Georgia, serif;
+  font-size: clamp(8rem, 20vw, 16rem);
+  line-height: 1;
+}
+
+/* 04 — Essencial: sober, sharp and operational. */
+.section[data-design-family="essencial"] :is(.display, .heading, .itemTitle, .metricValue) {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.045em;
+}
+
+.section[data-design-family="essencial"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 6px;
+}
+
+.section[data-visual-style="essencial-hero"]::before {
+  content: "+";
+  position: absolute;
+  left: clamp(22px, 4vw, 72px);
+  bottom: -0.28em;
+  color: color-mix(in srgb, var(--org-primary) 12%, transparent);
+  font: 800 clamp(12rem, 31vw, 28rem)/1 ui-sans-serif, system-ui;
+  pointer-events: none;
+}
+
+.section[data-visual-style="essencial-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 0.76fr) minmax(0, 1.24fr);
+  gap: clamp(26px, 4vw, 58px);
+}
+
+.section[data-visual-style="essencial-hero"] .primaryAction {
+  color: white;
+  background: var(--org-primary);
+}
+
+.section[data-visual-style="essencial-impact"] .repeat > * {
+  border-left: 1px solid color-mix(in srgb, var(--org-text) 15%, transparent);
+}
+
+.section[data-visual-style="essencial-projects"] .repeat,
+.section[data-visual-style="essencial-story"] .repeat {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section[data-visual-style="essencial-transparency"] .sectionInner > .columns {
+  padding: clamp(26px, 4vw, 52px);
+  border: 1px solid var(--family-line);
+  background: rgb(255 255 255 / 0.62);
+}
+
+/* 05 — Comunidade: material blocks, before/after feeling, grounded warmth. */
+.section[data-design-family="comunidade"] :is(.display, .heading, .itemTitle, .metricValue, .customQuote) {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.section[data-design-family="comunidade"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 7px;
+}
+
+.section[data-visual-style="comunidade-hero"]::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: min(45vw, 690px);
+  background: color-mix(in srgb, var(--org-primary) 10%, transparent);
+  clip-path: polygon(0 0, 88% 0, 100% 50%, 88% 100%, 0 100%);
+}
+
+.section[data-visual-style="comunidade-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  gap: clamp(34px, 5vw, 72px);
+}
+
+.section[data-visual-style="comunidade-projects"] .repeat {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section[data-visual-style="comunidade-impact"] .repeat {
+  background: var(--org-primary);
+  color: white;
+}
+
+.section[data-visual-style="comunidade-impact"] .repeat > * {
+  padding: clamp(22px, 3vw, 34px);
+}
+
+.section[data-visual-style="comunidade-impact"] :is(.metricValue, .metricLabel, .caption) {
+  color: white;
+}
+
+.section[data-visual-style="comunidade-story"] .surfacehighlight {
+  border-left: 10px solid var(--org-accent);
+}
+
+/* 06 — Vozes: expressive editorial, advocacy and strong human stories. */
+.section[data-design-family="vozes"] :is(.display, .heading, .itemTitle, .metricValue, .customQuote) {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.section[data-design-family="vozes"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 6px;
+}
+
+.section[data-visual-style="vozes-hero"]::before {
+  content: "";
+  position: absolute;
+  right: -9vw;
+  top: -25%;
+  width: min(53vw, 720px);
+  aspect-ratio: 1;
+  border-radius: 47% 53% 32% 68% / 59% 38% 62% 41%;
+  background: color-mix(in srgb, var(--org-secondary) 34%, transparent);
+  transform: rotate(-12deg);
+}
+
+.section[data-visual-style="vozes-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr);
+  gap: clamp(30px, 5vw, 74px);
+}
+
+.section[data-visual-style="vozes-hero"] .primaryAction {
+  color: white;
+  background: var(--org-secondary);
+}
+
+.section[data-visual-style="vozes-projects"] .repeat {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section[data-visual-style="vozes-projects"] .surfacecard:nth-child(2) {
+  transform: translateY(-22px);
+}
+
+.section[data-visual-style="vozes-projects"] .surfacecard:nth-child(2):hover {
+  transform: translateY(-26px);
+}
+
+.section[data-visual-style="vozes-story"]::after {
+  content: "";
+  position: absolute;
+  width: min(36vw, 480px);
+  height: 26px;
+  left: 12%;
+  bottom: 12%;
+  background: var(--org-accent);
+  transform: rotate(-2deg);
+  opacity: .45;
+}
+
+/* 07 — Pulso: poster-like, kinetic and deliberately loud. */
+.section[data-design-family="pulso"] :is(.display, .heading, .itemTitle, .metricValue) {
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.035em;
+}
+
+.section[data-design-family="pulso"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 2px;
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: .025em;
+}
+
+.section[data-visual-style="pulso-hero"]::before {
+  content: "";
+  position: absolute;
+  width: 58vw;
+  height: 110px;
+  left: -14vw;
+  bottom: 9%;
+  background: color-mix(in srgb, var(--org-secondary) 92%, transparent);
+  transform: rotate(8deg);
+  clip-path: polygon(0 28%, 100% 0, 95% 74%, 3% 100%);
+  opacity: .9;
+}
+
+.section[data-visual-style="pulso-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  gap: clamp(24px, 4vw, 52px);
+}
+
+.section[data-visual-style="pulso-hero"] .primaryAction {
+  color: var(--org-text);
+  background: var(--org-accent);
+  box-shadow: 9px 9px 0 color-mix(in srgb, var(--org-secondary) 70%, transparent);
+}
+
+.section[data-visual-style="pulso-projects"] .repeat {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.section[data-visual-style="pulso-projects"] .surfacecard:nth-child(odd) {
+  transform: rotate(-.7deg);
+}
+
+.section[data-visual-style="pulso-projects"] .surfacecard:nth-child(even) {
+  transform: rotate(.7deg);
+}
+
+.section[data-visual-style="pulso-projects"] .surfacecard:hover {
+  transform: translateY(-5px) rotate(0deg);
+}
+
+/* 08 — Profundezas: cinematic, scientific and data-led. */
+.section[data-design-family="profundezas"] :is(.display, .heading, .itemTitle, .metricValue, .customQuote) {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.section[data-design-family="profundezas"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 8px;
+}
+
+.section[data-visual-style="profundezas-hero"]::before {
+  content: "";
+  position: absolute;
+  right: -11vw;
+  bottom: -55%;
+  width: min(70vw, 920px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--org-accent) 28%, transparent);
+  box-shadow:
+    0 0 0 56px color-mix(in srgb, var(--org-accent) 3%, transparent),
+    0 0 0 118px color-mix(in srgb, var(--org-accent) 2%, transparent);
+}
+
+.section[data-visual-style="profundezas-hero"] :is(.sectionInner > .columns, .sectionInner > .stack > .columns) {
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  gap: clamp(28px, 5vw, 72px);
+}
+
+.section[data-visual-style="profundezas-hero"] .primaryAction {
+  color: #001c28;
+  background: var(--org-accent);
+}
+
+.section[data-visual-style="profundezas-projects"] .repeat {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section[data-visual-style="profundezas-about"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+}
+
+.section[data-visual-style="profundezas-transparency"] .surfacecard {
+  border: 1px solid color-mix(in srgb, var(--org-accent) 25%, transparent);
+  background: color-mix(in srgb, var(--org-primary) 5%, var(--org-background));
+}
+
+/* 09 — Sereno: calm, spacious and intimate. */
+.section[data-design-family="sereno"] :is(.display, .heading, .itemTitle, .metricValue, .customQuote) {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.section[data-design-family="sereno"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 999px;
+}
+
+.section[data-visual-style="sereno-hero"]::before {
+  content: "";
+  position: absolute;
+  left: -8vw;
+  top: -40%;
+  width: min(42vw, 560px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--org-accent) 9%, transparent);
+}
+
+.section[data-visual-style="sereno-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, .96fr) minmax(0, 1.04fr);
+  gap: clamp(42px, 7vw, 96px);
+}
+
+.section[data-visual-style="sereno-hero"] .lead {
+  max-width: 50ch;
+}
+
+.section[data-visual-style="sereno-projects"] .repeat,
+.section[data-visual-style="sereno-story"] .repeat {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section[data-visual-style="sereno-story"] .surfacehighlight {
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--org-text) 8%, transparent);
+}
+
+/* 10 — Conexão: neutral, modular and broadly adaptable. */
+.section[data-design-family="conexao"] :is(.display, .heading, .itemTitle, .metricValue) {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.045em;
+}
+
+.section[data-design-family="conexao"] :is(.primaryAction, .secondaryAction) {
+  border-radius: 10px;
+}
+
+.section[data-visual-style="conexao-hero"]::before {
+  content: "";
+  position: absolute;
+  right: 7%;
+  top: 10%;
+  width: clamp(110px, 18vw, 250px);
+  aspect-ratio: 1;
+  border-radius: 34% 66% 45% 55% / 58% 38% 62% 42%;
+  background: color-mix(in srgb, var(--org-accent) 16%, transparent);
+  transform: rotate(18deg);
+}
+
+.section[data-visual-style="conexao-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(34px, 6vw, 82px);
+}
+
+.section[data-visual-style="conexao-projects"] .repeat {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section[data-visual-style="conexao-support"] .repeat {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.section[data-visual-style="conexao-support"] .surfacecard:hover,
+.section[data-visual-style="conexao-projects"] .surfacecard:hover {
+  border-color: color-mix(in srgb, var(--org-primary) 30%, var(--family-line));
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--org-primary) 9%, transparent);
+}
+
+/* Header and footer polish shared by all native families. */
+.section[data-visual-style$="-header"] {
+  padding-block: 15px;
+}
+
+.section[data-visual-style$="-header"] .sectionInner > .columns {
+  min-height: 58px;
+}
+
+.section[data-visual-style$="-header"] .brandLogo,
+.section[data-visual-style$="-header"] .imageMediaFrame {
+  max-height: 54px;
+}
+
+.section[data-visual-style$="-footer"] {
+  padding-top: clamp(46px, 6vw, 74px);
+  padding-bottom: clamp(30px, 4vw, 48px);
+}
+
+.section[data-visual-style$="-footer"] .sectionInner {
+  border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  padding-top: 28px;
+}
+
+/* Keep the desktop signatures, but intentionally simplify them on narrower
+   canvases so the same native family remains usable in published mobile sites. */
+@container institutional-site (max-width: 980px) {
+  .section[data-visual-style$="-hero"] .sectionInner > .columns,
+  .section[data-visual-style$="-about"] .sectionInner > .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .section[data-visual-style="horizonte-projects"] .repeat,
+  .section[data-visual-style="acolher-projects"] .repeat,
+  .section[data-visual-style="pulso-projects"] .repeat,
+  .section[data-visual-style="conexao-support"] .repeat {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .section[data-visual-style="territorio-vivo-projects"] .surfacecard:nth-child(2),
+  .section[data-visual-style="acolher-projects"] .surfacecard:nth-child(even),
+  .section[data-visual-style="vozes-projects"] .surfacecard:nth-child(2),
+  .section[data-visual-style="pulso-projects"] .surfacecard:nth-child(n) {
+    margin-top: 0;
+    transform: none;
+  }
+}
+
+@container institutional-site (max-width: 640px) {
+  .section[data-design-family] :is(.primaryAction, .secondaryAction) {
+    width: 100%;
+  }
+
+  .section[data-visual-style$="-projects"] .repeat,
+  .section[data-visual-style$="-support"] .repeat,
+  .section[data-visual-style$="-impact"] .repeat {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .section[data-visual-style$="-hero"]::before,
+  .section[data-visual-style$="-hero"]::after,
+  .section[data-visual-style$="-story"]::before,
+  .section[data-visual-style$="-story"]::after {
+    opacity: .42;
+  }
+
+  .section[data-visual-style$="-header"] .sectionInner > .columns {
+    min-height: auto;
+  }
+}
+
+/* ========================================================================== */
+/* V2.2 — visual contract: real typography, polished edit states, accessibility */
+/* ========================================================================== */
+
+.contextPopover[data-panel="buttonShape"] {
+  width: min(410px, calc(100vw - 24px));
+}
+
+.buttonShapeQuickGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.buttonShapeQuickGrid button {
+  min-width: 0;
+  min-height: 82px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 8px 5px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 12px;
+  color: var(--color-slate-600);
+  background: var(--color-white);
+  font-family: var(--font-interface);
+  cursor: pointer;
+}
+
+.buttonShapeQuickGrid button:hover,
+.buttonShapeQuickGrid button[data-active="true"] {
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-200);
+  background: var(--color-primary-50);
+}
+
+.buttonShapeQuickGrid button > span {
+  width: 52px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+}
+
+.buttonShapeQuickGrid button > span > i {
+  width: 48px;
+  height: 24px;
+  display: block;
+  border: 1.5px solid var(--color-primary-500);
+  background: linear-gradient(135deg, var(--color-primary-100), var(--color-primary-50));
+}
+
+.buttonShapeQuickGrid button > span[data-radius="none"] > i { border-radius: 1px; }
+.buttonShapeQuickGrid button > span[data-radius="small"] > i { border-radius: 6px; }
+.buttonShapeQuickGrid button > span[data-radius="medium"] > i { border-radius: 11px; }
+.buttonShapeQuickGrid button > span[data-radius="large"] > i { border-radius: 16px; }
+.buttonShapeQuickGrid button > span[data-radius="pill"] > i { border-radius: 999px; }
+.buttonShapeQuickGrid small { font-size: 8px; line-height: 1.2; text-align: center; }
+
+/* Collection states must look like intentional product UI, never raw HTML. */
+.collectionCanvasGroup {
+  display: grid;
+  gap: 14px;
+}
+
+.emptyCollection {
+  min-height: 168px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 26px 22px;
+  border: 1.5px dashed color-mix(in srgb, var(--org-primary, var(--color-primary)) 28%, transparent);
+  border-radius: 18px;
+  color: color-mix(in srgb, var(--org-text, var(--color-navy)) 68%, transparent);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--org-primary, var(--color-primary)) 8%, transparent), transparent 56%),
+    color-mix(in srgb, var(--org-background, var(--color-white)) 96%, var(--org-primary, var(--color-primary)) 4%);
+  font-family: var(--font-interface);
+  text-align: center;
+}
+
+.emptyCollection::before {
+  content: "+";
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 2px;
+  border: 1px solid color-mix(in srgb, var(--org-primary, var(--color-primary)) 22%, transparent);
+  border-radius: 12px;
+  color: var(--org-primary, var(--color-primary));
+  background: color-mix(in srgb, var(--org-primary, var(--color-primary)) 8%, var(--org-background, var(--color-white)));
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.emptyCollection strong {
+  color: var(--org-text, var(--color-navy));
+  font-size: 13px;
+  font-weight: var(--font-bold);
+  line-height: 1.25;
+}
+
+.emptyCollection span {
+  max-width: 38ch;
+  color: color-mix(in srgb, var(--org-text, var(--color-navy)) 62%, transparent);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.canvasAddItem,
+.canvasAddItemSecondary {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid color-mix(in srgb, var(--org-primary, var(--color-primary)) 24%, transparent);
+  border-radius: 10px;
+  color: var(--org-primary, var(--color-primary));
+  background: var(--org-background, var(--color-white));
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--org-text, var(--color-navy)) 7%, transparent);
+  font-family: var(--font-interface);
+  font-size: 11px;
+  font-weight: var(--font-bold);
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.canvasAddItem { margin-top: 7px; }
+.canvasAddItemSecondary { justify-self: center; }
+.canvasAddItem svg,
+.canvasAddItemSecondary svg { width: 14px; height: 14px; }
+.canvasAddItem:hover,
+.canvasAddItemSecondary:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--org-primary, var(--color-primary)) 46%, transparent);
+  background: color-mix(in srgb, var(--org-primary, var(--color-primary)) 6%, var(--org-background, var(--color-white)));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--org-text, var(--color-navy)) 9%, transparent);
+}
+.canvasAddItem:focus-visible,
+.canvasAddItemSecondary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--org-primary, var(--color-primary)) 25%, transparent);
+  outline-offset: 2px;
+}
+
+/* Native type scale: family personality stays intact without cartoonishly large text. */
+.section[data-design-family] .display {
+  max-width: 18ch;
+  font-size: clamp(2.25rem, 4.2vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.038em;
+}
+.section[data-design-family] .heading {
+  font-size: clamp(1.7rem, 2.6vw, 2.65rem);
+  line-height: 1.04;
+  letter-spacing: -.03em;
+}
+.section[data-design-family] .lead {
+  max-width: 62ch;
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  line-height: 1.55;
+}
+.section[data-design-family] .body,
+.section[data-design-family] .itemBody,
+.section[data-design-family] .contactLine,
+.section[data-design-family] .contactLink,
+.section[data-design-family] .documentLink,
+.section[data-design-family] .socialLink {
+  font-size: clamp(.94rem, 1vw, 1.02rem);
+  line-height: 1.55;
+}
+.section[data-design-family] .itemTitle { font-size: clamp(1.06rem, 1.35vw, 1.28rem); line-height: 1.18; }
+.section[data-design-family] .metricValue { font-size: clamp(1.85rem, 3vw, 3rem); line-height: .96; }
+.section[data-design-family] .metricLabel { font-size: clamp(.9rem, 1vw, 1rem); line-height: 1.35; }
+.section[data-design-family] :is(.eyebrow, .caption) { font-size: clamp(.72rem, .82vw, .82rem); line-height: 1.4; }
+
+/* Keep the expressive family louder, but within a usable responsive scale. */
+.section[data-visual-style="pulso-hero"] .display { font-size: clamp(2.75rem, 4.8vw, 4.5rem); line-height: .88; }
+.section[data-visual-style="vozes-hero"] .display { font-size: clamp(2.65rem, 4.7vw, 4.4rem); line-height: .94; }
+.section[data-visual-style="profundezas-hero"] .display,
+.section[data-visual-style="territorio-vivo-hero"] .display { font-size: clamp(2.6rem, 4.6vw, 4.35rem); }
+.section[data-visual-style="horizonte-hero"] .display,
+.section[data-visual-style="comunidade-hero"] .display,
+.section[data-visual-style="essencial-hero"] .display { font-size: clamp(2.55rem, 4.5vw, 4.25rem); }
+.section[data-visual-style="sereno-hero"] .display,
+.section[data-visual-style="acolher-hero"] .display,
+.section[data-visual-style="conexao-hero"] .display { font-size: clamp(2.4rem, 4.15vw, 4rem); }
+
+/* Explicit user sizes always win over family defaults. */
+.elementShell[data-custom-font-size="true"] [data-font-target="true"] {
+  font-size: var(--element-font-size) !important;
+}
+
+/* Semantic contrast contract for native families. */
+.section[data-design-family] .primaryAction {
+  color: var(--family-on-accent, var(--org-text));
+  background: var(--org-accent);
+}
+.section[data-design-family] .secondaryAction {
+  color: var(--family-on-background, var(--org-text));
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  background: color-mix(in srgb, var(--org-background) 92%, transparent);
+}
+
+.section[data-visual-style="territorio-vivo-header"],
+.section[data-visual-style="territorio-vivo-footer"],
+.section[data-visual-style="territorio-vivo-impact"],
+.section[data-visual-style="pulso-header"],
+.section[data-visual-style="pulso-footer"],
+.section[data-visual-style="pulso-impact"],
+.section[data-visual-style="profundezas-header"],
+.section[data-visual-style="profundezas-footer"],
+.section[data-visual-style="profundezas-impact"] {
+  color: var(--family-on-primary-deep);
+  background: var(--org-primary-deep);
+}
+
+.section[data-visual-style="vozes-hero"],
+.section[data-visual-style="vozes-footer"],
+.section[data-visual-style="vozes-impact"],
+.section[data-visual-style="comunidade-impact"] {
+  color: var(--family-on-primary);
+}
+
+.section[data-design-family] :is(.primaryAction, .secondaryAction, .documentLink, .socialLink, .contactLink) {
+  text-decoration: none;
+  cursor: pointer;
+}
+.section[data-design-family] :is(.primaryAction, .secondaryAction) {
+  transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+.section[data-design-family] :is(.primaryAction, .secondaryAction):hover {
+  transform: translateY(-2px);
+  filter: saturate(1.04) brightness(.97);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--org-text) 13%, transparent);
+}
+.section[data-design-family] :is(.primaryAction, .secondaryAction):active {
+  transform: translateY(0) scale(.985);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--org-text) 10%, transparent);
+}
+.section[data-design-family] :is(.primaryAction, .secondaryAction):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--org-accent) 48%, white);
+  outline-offset: 3px;
+}
+
+@container institutional-site (max-width: 720px) {
+  .section[data-design-family] .display { font-size: clamp(2.1rem, 9.2vw, 3.2rem); }
+  .section[data-design-family] .heading { font-size: clamp(1.65rem, 6.2vw, 2.3rem); }
+  .section[data-visual-style="pulso-hero"] .display,
+  .section[data-visual-style="vozes-hero"] .display { font-size: clamp(2.3rem, 10vw, 3.5rem); }
+  .buttonShapeQuickGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.section[data-visual-style="territorio-vivo-header"] :is(.display, .heading, .lead, .body, .itemTitle, .metricValue, .metricLabel, .caption, .eyebrow, .navLink, .contactLine, .socialLink),
+.section[data-visual-style="territorio-vivo-footer"] :is(.display, .heading, .lead, .body, .itemTitle, .metricValue, .metricLabel, .caption, .eyebrow, .navLink, .contactLine, .socialLink),
+.section[data-visual-style="territorio-vivo-impact"] :is(.display, .heading, .lead, .body, .itemTitle, .metricValue, .metricLabel, .caption, .eyebrow),
+.section[data-visual-style="pulso-header"] :is(.display, .heading, .lead, .body, .itemTitle, .metricValue, .metricLabel, .caption, .eyebrow, .navLink, .contactLine, .socialLink),
+.section[data-visual-style="pulso-footer"] :is(.display, .heading, .lead, .body, .itemTitle, .metricValue, .metricLabel, .caption, .eyebrow, .navLink, .contactLine, .socialLink),
+.section[data-visual-style="pulso-impact"] :is(.display, .heading, .lead, .body, .itemTitle, .metricLabel, .caption, .eyebrow),
+.section[data-visual-style="profundezas-header"] :is(.display, .heading, .lead, .body, .itemTitle, .metricValue, .metricLabel, .caption, .eyebrow, .navLink, .contactLine, .socialLink),
+.section[data-visual-style="profundezas-footer"] :is(.display, .heading, .lead, .body, .itemTitle, .metricValue, .metricLabel, .caption, .eyebrow, .navLink, .contactLine, .socialLink),
+.section[data-visual-style="profundezas-impact"] :is(.display, .heading, .lead, .body, .itemTitle, .metricValue, .metricLabel, .caption, .eyebrow) {
+  color: var(--family-on-primary-deep);
+}
+
+.section[data-visual-style="vozes-hero"] :is(.display, .heading, .lead, .body, .caption, .eyebrow),
+.section[data-visual-style="vozes-footer"] :is(.display, .heading, .lead, .body, .caption, .eyebrow, .contactLine, .socialLink),
+.section[data-visual-style="vozes-impact"] :is(.heading, .lead, .metricValue, .metricLabel, .caption),
+.section[data-visual-style="comunidade-impact"] :is(.heading, .lead, .metricValue, .metricLabel, .caption) {
+  color: var(--family-on-primary);
+}
+
+/* Resizing owns the pointer gesture; the button fills the live shell immediately. */
+.elementShell[data-button-element="true"][data-resizing="true"] > :is(.primaryAction, .secondaryAction),
+.elementShell[data-button-element="true"][data-custom-height="true"] > :is(.primaryAction, .secondaryAction) {
+  height: 100%;
+  min-height: 0;
+}
+
+.elementShell[data-button-element="true"] > .resizeHandle,
+.elementShell[data-shape-element="true"] > .resizeHandle {
+  z-index: 34;
+  pointer-events: auto;
+}
+
+.elementInteractionTip {
+  position: absolute;
+  z-index: 0;
+  top: calc(100% - 2px);
+  left: 10px;
+  max-width: min(560px, calc(100vw - 36px));
+  padding: 9px 11px 7px;
+  border: 1px solid var(--color-primary-100);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  color: var(--color-slate-500);
+  background: rgb(var(--color-white-rgb) / .96);
+  box-shadow: 0 8px 18px rgb(var(--color-navy-rgb) / .08);
+  font-family: var(--font-interface);
+  font-size: 9px;
+  font-weight: var(--font-medium);
+  line-height: 1.35;
+  white-space: normal;
+  pointer-events: none;
+}
+
+.section[data-visual-style="territorio-vivo-story"],
+.section[data-visual-style="essencial-story"],
+.section[data-visual-style="profundezas-story"] {
+  color: var(--family-on-primary);
+}
+.section[data-visual-style="territorio-vivo-story"] :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow),
+.section[data-visual-style="essencial-story"] :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow),
+.section[data-visual-style="profundezas-story"] :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow) {
+  color: var(--family-on-primary);
+}
+.section[data-visual-style="pulso-story"] :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow) {
+  color: var(--family-on-accent);
+}
+
+/* ========================================================================== */
+/* Native design families V2.3 — visual foundation contract                   */
+/* ========================================================================== */
+/* Every piece of visible native UI inherits a deliberate type treatment. */
+.section[data-design-family],
+.section[data-design-family] :is(button, input, textarea, select, a) {
+  font-family: var(--org-body-font, var(--font-body));
+}
+
+.section[data-design-family="horizonte"] { --family-button-radius: 8px; }
+.section[data-design-family="territorio-vivo"] { --family-button-radius: 10px; }
+.section[data-design-family="acolher"] { --family-button-radius: 999px; }
+.section[data-design-family="essencial"] { --family-button-radius: 6px; }
+.section[data-design-family="comunidade"] { --family-button-radius: 7px; }
+.section[data-design-family="vozes"] { --family-button-radius: 6px; }
+.section[data-design-family="pulso"] { --family-button-radius: 2px; }
+.section[data-design-family="profundezas"] { --family-button-radius: 8px; }
+.section[data-design-family="sereno"] { --family-button-radius: 999px; }
+.section[data-design-family="conexao"] { --family-button-radius: 10px; }
+
+/* The user's button shape is authoritative. Family CSS supplies only the
+   fallback, so the quick shape picker actually changes native buttons too. */
+.elementShell[data-button-element="true"] {
+  border-radius: var(--element-radius, var(--family-button-radius, 999px));
+}
+.elementShell[data-button-element="true"] > :is(.primaryAction, .secondaryAction) {
+  border-radius: var(--element-radius, var(--family-button-radius, 999px)) !important;
+}
+
+/* A restrained, truthful type scale. The toolbar reads the computed result,
+   and an explicit editor size still wins through data-custom-font-size. */
+.section[data-design-family] .display {
+  font-size: clamp(2.35rem, 4.4vw, 4.3rem);
+  line-height: .99;
+}
+.section[data-design-family] .heading {
+  font-size: clamp(1.75rem, 2.75vw, 2.7rem);
+  line-height: 1.06;
+}
+.section[data-design-family] .lead {
+  font-size: clamp(1rem, 1.25vw, 1.16rem);
+}
+.section[data-design-family] .itemTitle {
+  font-size: clamp(1.05rem, 1.35vw, 1.28rem);
+}
+.section[data-design-family] .metricValue {
+  font-size: clamp(1.9rem, 3vw, 3rem);
+}
+.section[data-visual-style="pulso-hero"] .display { font-size: clamp(2.75rem, 5vw, 4.75rem); }
+.section[data-visual-style="vozes-hero"] .display,
+.section[data-visual-style="profundezas-hero"] .display,
+.section[data-visual-style="territorio-vivo-hero"] .display { font-size: clamp(2.65rem, 4.8vw, 4.55rem); }
+.section[data-visual-style="horizonte-hero"] .display,
+.section[data-visual-style="comunidade-hero"] .display,
+.section[data-visual-style="essencial-hero"] .display { font-size: clamp(2.55rem, 4.65vw, 4.4rem); }
+.section[data-visual-style="sereno-hero"] .display,
+.section[data-visual-style="acolher-hero"] .display,
+.section[data-visual-style="conexao-hero"] .display { font-size: clamp(2.45rem, 4.35vw, 4.15rem); }
+
+/* Native dark surfaces never assume white/black: they consume a contrast-safe
+   foreground calculated from the active organization palette. */
+.section[data-design-family][data-visual-style$="-footer"] {
+  color: var(--section-foreground, var(--family-on-primary));
+}
+.section[data-visual-style="horizonte-story"] .surfacehighlight,
+.section[data-visual-style="conexao-story"] .surfacehighlight {
+  color: var(--family-on-primary);
+}
+.section[data-visual-style="horizonte-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow),
+.section[data-visual-style="conexao-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow) {
+  color: var(--family-on-primary);
+}
+.section[data-visual-style="essencial-hero"] :is(.display, .lead, .eyebrow),
+.section[data-visual-style="essencial-header"] :is(.itemTitle, .navLink),
+.section[data-visual-style="essencial-footer"] :is(.heading, .body, .contactLink, .contactLine, .caption, .socialLink) {
+  color: var(--family-on-text, #fff);
+}
+
+/* Empty image states look like intentional builder components, not browser
+   leftovers. The same visual contract is used by every native family. */
+.section[data-design-family] .imagePlaceholder {
+  position: relative;
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 28px;
+  overflow: hidden;
+  border: 1px dashed color-mix(in srgb, var(--org-primary) 30%, transparent);
+  border-radius: max(14px, var(--family-radius, 18px));
+  color: var(--family-on-background, var(--org-text));
+  background:
+    radial-gradient(circle at 22% 20%, color-mix(in srgb, var(--org-accent) 18%, transparent), transparent 30%),
+    linear-gradient(145deg, color-mix(in srgb, var(--org-primary) 6%, var(--org-background)), var(--org-background));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--org-background) 70%, transparent);
+  text-align: center;
+}
+.section[data-design-family] .imagePlaceholder::before {
+  content: "";
+  width: 52px;
+  height: 42px;
+  border: 2px solid color-mix(in srgb, var(--org-primary) 60%, transparent);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 72% 30%, var(--org-accent) 0 5px, transparent 6px),
+    linear-gradient(145deg, transparent 48%, color-mix(in srgb, var(--org-primary) 28%, transparent) 49% 60%, transparent 61%);
+}
+.section[data-design-family] .imagePlaceholder small {
+  max-width: 34ch;
+  color: color-mix(in srgb, var(--family-on-background, var(--org-text)) 68%, transparent);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+/* All collection/add controls share a clear interaction surface. */
+.section[data-design-family] :is(.canvasAddItem, .canvasAddItemSecondary) {
+  min-height: 38px;
+  padding-inline: 14px;
+  border-radius: 10px;
+}
+.section[data-design-family] .emptyCollection {
+  min-height: 126px;
+}
+
+/* Keep helpers readable without becoming part of the design itself. */
+.elementInteractionTip {
+  z-index: 2;
+  min-width: 220px;
+  font-size: 10px;
+}
+
+@container institutional-site (max-width: 720px) {
+  .section[data-design-family] .display { font-size: clamp(2.1rem, 9.5vw, 3.35rem); }
+  .section[data-design-family] .heading { font-size: clamp(1.65rem, 6.5vw, 2.3rem); }
+  .section[data-visual-style="pulso-hero"] .display,
+  .section[data-visual-style="vozes-hero"] .display { font-size: clamp(2.35rem, 10.5vw, 3.65rem); }
+  .section[data-design-family] .imagePlaceholder { min-height: 160px; }
+}
+
+/* Story cards use a matching semantic surface/foreground pair, so untouched
+   native designs never begin with a contrast warning. */
+.section[data-visual-style="territorio-vivo-story"] .surfacehighlight,
+.section[data-visual-style="profundezas-story"] .surfacehighlight {
+  color: var(--family-on-primary-deep);
+  background: var(--org-primary-deep);
+}
+.section[data-visual-style="territorio-vivo-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow),
+.section[data-visual-style="profundezas-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow) {
+  color: var(--family-on-primary-deep);
+}
+.section[data-visual-style="essencial-story"] .surfacehighlight {
+  color: var(--family-on-background);
+  background: var(--org-background);
+}
+.section[data-visual-style="essencial-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow) {
+  color: var(--family-on-background);
+}
+.section[data-visual-style="pulso-story"] .surfacehighlight {
+  color: var(--family-on-accent);
+  background: color-mix(in srgb, var(--org-accent) 92%, var(--org-background));
+}
+.section[data-visual-style="pulso-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow) {
+  color: var(--family-on-accent);
+}
+.section[data-visual-style="acolher-story"] .surfacehighlight,
+.section[data-visual-style="comunidade-story"] .surfacehighlight,
+.section[data-visual-style="vozes-story"] .surfacehighlight,
+.section[data-visual-style="sereno-story"] .surfacehighlight {
+  color: var(--family-on-background);
+}
+.section[data-visual-style="acolher-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow),
+.section[data-visual-style="comunidade-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow),
+.section[data-visual-style="vozes-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow),
+.section[data-visual-style="sereno-story"] .surfacehighlight :is(.heading, .body, .customText, .customHeading, .customQuote, .caption, .eyebrow) {
+  color: var(--family-on-background);
+}
+
+/* Guided mode is advisory, not a cage: explicit user geometry can cross the
+   template recommendation while the warning remains visible. */
+.elementShell[data-explicit-width="true"] {
+  max-width: none;
+}
+
+.elementToolbarPortal[data-popover-direction="below"] .elementInteractionTip {
+  top: auto;
+  bottom: calc(100% - 2px);
+  border-top: 1px solid var(--color-primary-100);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+}
+
+/* ZIP 2 — collision-safe contextual controls and safer geometry feedback. */
+.elementToolbarPortal {
+  max-width: min(680px, calc(100vw - 24px));
+}
+
+/* Helpers always open away from the selected element instead of covering it. */
+.elementToolbarPortal[data-popover-direction="above"] .elementInteractionTip {
+  top: auto;
+  bottom: calc(100% - 2px);
+  border-top: 1px solid var(--color-primary-100);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+}
+
+.elementToolbarPortal[data-popover-direction="below"] .elementInteractionTip {
+  top: calc(100% - 2px);
+  bottom: auto;
+  border-top: 0;
+  border-bottom: 1px solid var(--color-primary-100);
+  border-radius: 0 0 10px 10px;
+}
+
+.elementToolbarPortal[data-popover-direction="above"] .contextPopover {
+  bottom: calc(100% + 10px);
+}
+
+.elementToolbarPortal[data-popover-direction="below"] .contextPopover {
+  top: calc(100% + 10px);
+}
+
+.safeAreaWarning {
+  min-width: 0;
+  width: max-content;
+  max-width: min(310px, calc(100vw - 32px));
+  gap: 7px;
+  padding: 7px 8px;
+}
+
+.safeAreaWarning strong {
+  white-space: nowrap;
+}
+
+.safeAreaWarning small {
+  max-width: 175px;
+  line-height: 1.3;
+}
+
+.elementShell[data-button-element="true"] {
+  max-width: min(100%, 1000px);
+}
+
+.elementShell[data-button-element="true"] > :is(.primaryAction, .secondaryAction) {
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 780px) {
+  .elementToolbarPortal {
+    max-width: calc(100vw - 16px);
+  }
+
+  .elementInteractionTip {
+    display: none;
+  }
+
+  .safeAreaWarning small {
+    display: none;
+  }
+}
+
+/* ZIP 2 — native family system pass: clearer rhythm, useful empty states and
+   less “placeholder” looking authoring surfaces across the 10 × 10 family set. */
+.section[data-design-family] {
+  container-type: inline-size;
+}
+
+.section[data-design-family] :is(.surfacecard, .surfacehighlight, .surfacelist) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.section[data-design-family] .surfacecard {
+  border-color: color-mix(in srgb, currentColor 10%, transparent);
+  box-shadow: 0 12px 34px rgb(var(--color-navy-rgb) / .055);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.section[data-design-family] .surfacecard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgb(var(--color-navy-rgb) / .085);
+}
+
+.section[data-design-family] .emptyCollection {
+  min-height: 118px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border: 1px dashed color-mix(in srgb, var(--family-primary, var(--color-primary)) 28%, transparent);
+  border-radius: 14px;
+  color: color-mix(in srgb, var(--family-on-background, var(--color-slate-600)) 72%, transparent);
+  background: color-mix(in srgb, var(--family-background, var(--color-white)) 93%, var(--family-primary, var(--color-primary)) 7%);
+  text-align: center;
+}
+
+.section[data-design-family] :is(.canvasAddItem, .canvasAddItemSecondary) {
+  min-height: 38px;
+  border: 1px dashed color-mix(in srgb, var(--family-primary, var(--color-primary)) 32%, transparent);
+  color: var(--family-primary, var(--color-primary));
+  background: color-mix(in srgb, var(--family-background, var(--color-white)) 95%, var(--family-primary, var(--color-primary)) 5%);
+  box-shadow: none;
+}
+
+.section[data-design-family] :is(.canvasAddItem, .canvasAddItemSecondary):hover {
+  border-style: solid;
+  background: color-mix(in srgb, var(--family-background, var(--color-white)) 89%, var(--family-primary, var(--color-primary)) 11%);
+}
+
+.section[data-design-family] :is(.display, .heading, .lead, .body, .itemTitle, .itemBody, .metricValue, .metricLabel) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.section[data-design-family] .collectionCanvasGroup {
+  min-width: 0;
+}
+
+.section[data-design-family] .metricValue {
+  font-variant-numeric: tabular-nums;
+}
+
+@container institutional-site (max-width: 760px) {
+  .section[data-design-family] :is(.surfacecard, .surfacehighlight, .surfacelist) {
+    max-width: 100%;
+  }
+
+  .section[data-design-family] .emptyCollection {
+    min-height: 96px;
+    padding: 16px;
+  }
+}
+
+/* ZIP 3 — stronger native template signatures ---------------------------- */
+@media (min-width: 900px) {
+  /* Horizonte: magazine spread, asymmetric crop and editorial rhythm. */
+  .section[data-visual-style="horizonte-hero"] .sectionInner > .columns {
+    grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+    gap: clamp(36px, 6vw, 92px);
+    align-items: end;
+  }
+
+  .section[data-visual-style="horizonte-hero"] .sectionInner > .columns > :first-child {
+    padding-block: clamp(48px, 7vw, 96px);
+    position: relative;
+    z-index: 2;
+  }
+
+  .section[data-visual-style="horizonte-hero"] .sectionInner > .columns > :last-child {
+    transform: translateY(34px);
+  }
+
+  .section[data-visual-style="horizonte-projects"] .repeat {
+    grid-template-columns: 1.35fr .85fr .85fr;
+    align-items: stretch;
+  }
+
+  .section[data-visual-style="horizonte-projects"] .surfacecard:first-child {
+    grid-row: span 2;
+  }
+
+  .section[data-visual-style="horizonte-projects"] .surfacecard:first-child :is(.cardImage, .imageMediaFrame) {
+    min-height: 380px;
+  }
+
+  /* Território Vivo: immersive photographic hero with text floating on top. */
+  .section[data-visual-style="territorio-vivo-hero"] {
+    min-height: clamp(650px, 78vh, 860px);
+    isolation: isolate;
+  }
+
+  .section[data-visual-style="territorio-vivo-hero"] .sectionInner,
+  .section[data-visual-style="territorio-vivo-hero"] .sectionInner > .columns {
+    min-height: inherit;
+  }
+
+  .section[data-visual-style="territorio-vivo-hero"] .sectionInner > .columns {
+    position: relative;
+    display: block;
+  }
+
+  .section[data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :first-child {
+    position: relative;
+    z-index: 3;
+    width: min(620px, 58%);
+    padding: clamp(92px, 12vw, 156px) 0 clamp(62px, 9vw, 112px);
+    text-shadow: 0 2px 24px rgb(0 0 0 / .24);
+  }
+
+  .section[data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :last-child {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .section[data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :last-child::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgb(5 27 18 / .9) 0%, rgb(5 27 18 / .68) 43%, rgb(5 27 18 / .08) 77%);
+  }
+
+  .section[data-visual-style="territorio-vivo-hero"] :is(.heroImage, .imageMediaFrame) {
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .section[data-visual-style="territorio-vivo-projects"] .repeat {
+    grid-template-columns: 1.25fr .75fr .75fr;
+  }
+
+  .section[data-visual-style="territorio-vivo-projects"] .surfacecard:first-child {
+    grid-row: span 2;
+  }
+
+  /* Acolher: softer overlapping composition and organic image mask. */
+  .section[data-visual-style="acolher-hero"] .sectionInner > .columns {
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr);
+    align-items: center;
+    gap: clamp(12px, 2.4vw, 34px);
+  }
+
+  .section[data-visual-style="acolher-hero"] .sectionInner > .columns > :first-child {
+    z-index: 2;
+    margin-right: -56px;
+    padding: clamp(34px, 5vw, 68px);
+    border-radius: 42px;
+    background: color-mix(in srgb, var(--org-background) 90%, transparent);
+    box-shadow: 0 26px 70px color-mix(in srgb, var(--org-text) 10%, transparent);
+    backdrop-filter: blur(8px);
+  }
+
+  .section[data-visual-style="acolher-hero"] :is(.heroImage, .imageMediaFrame) {
+    clip-path: polygon(12% 0, 84% 0, 100% 18%, 94% 82%, 75% 100%, 13% 94%, 0 70%, 2% 18%);
+    border-radius: 0;
+  }
+
+  .section[data-visual-style="acolher-projects"] .repeat {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .section[data-visual-style="acolher-projects"] .surfacecard:nth-child(2),
+  .section[data-visual-style="acolher-projects"] .surfacecard:nth-child(4) {
+    transform: translateY(28px);
+  }
+
+  /* Essencial: campaign poster with compact text rail and dominant image. */
+  .section[data-visual-style="essencial-hero"] .sectionInner > .columns {
+    grid-template-columns: minmax(280px, .58fr) minmax(0, 1.42fr);
+    gap: 0;
+    align-items: stretch;
+  }
+
+  .section[data-visual-style="essencial-hero"] .sectionInner > .columns > :first-child {
+    padding: clamp(48px, 6vw, 86px) clamp(28px, 4vw, 58px);
+    border-left: 9px solid var(--org-primary);
+    background: rgb(7 12 16 / .88);
+    z-index: 2;
+  }
+
+  .section[data-visual-style="essencial-hero"] :is(.heroImage, .imageMediaFrame) {
+    min-height: 620px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Comunidade: built-environment geometry and staggered cards. */
+  .section[data-visual-style="comunidade-hero"] .sectionInner > .columns {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    align-items: center;
+  }
+
+  .section[data-visual-style="comunidade-hero"] :is(.heroImage, .imageMediaFrame) {
+    clip-path: polygon(10% 14%, 50% 0, 94% 14%, 100% 100%, 0 100%, 0 30%);
+    border-radius: 0;
+  }
+
+  .section[data-visual-style="comunidade-projects"] .repeat {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .section[data-visual-style="comunidade-projects"] .surfacecard:nth-child(2n) {
+    transform: translateY(34px);
+  }
+
+  /* Vozes: portrait-led editorial layout. */
+  .section[data-visual-style="vozes-hero"] .sectionInner > .columns {
+    grid-template-columns: minmax(0, 1.16fr) minmax(300px, .84fr);
+    align-items: center;
+  }
+
+  .section[data-visual-style="vozes-hero"] .sectionInner > .columns > :first-child {
+    z-index: 2;
+    padding-right: clamp(24px, 4vw, 64px);
+  }
+
+  .section[data-visual-style="vozes-hero"] :is(.heroImage, .imageMediaFrame) {
+    min-height: 620px;
+    border-radius: 999px 999px 24px 24px;
+    clip-path: none;
+  }
+
+  .section[data-visual-style="vozes-projects"] .repeat {
+    grid-template-columns: .82fr 1.18fr .82fr;
+    align-items: start;
+  }
+
+  /* Pulso: kinetic poster, image becomes a tilted slab. */
+  .section[data-visual-style="pulso-hero"] .sectionInner > .columns {
+    grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr);
+    align-items: center;
+    overflow: visible;
+  }
+
+  .section[data-visual-style="pulso-hero"] .sectionInner > .columns > :last-child {
+    transform: rotate(-4deg) scale(1.05);
+    transform-origin: center;
+  }
+
+  .section[data-visual-style="pulso-hero"] :is(.heroImage, .imageMediaFrame) {
+    clip-path: polygon(8% 0, 100% 9%, 92% 100%, 0 88%);
+    border-radius: 0;
+    box-shadow: 18px 18px 0 var(--org-accent);
+  }
+
+  .section[data-visual-style="pulso-projects"] .repeat {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .section[data-visual-style="pulso-projects"] .surfacecard:nth-child(2) {
+    margin-top: 48px;
+  }
+
+  .section[data-visual-style="profundezas-impact"] .repeat {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 880px;
+    margin-left: auto;
+  }
+
+  /* Sereno: quiet centered copy with a soft portrait window. */
+  .section[data-visual-style="sereno-hero"] .sectionInner > .columns {
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+    align-items: center;
+  }
+
+  .section[data-visual-style="sereno-hero"] .sectionInner > .columns > :first-child {
+    padding-block: clamp(72px, 9vw, 128px);
+  }
+
+  .section[data-visual-style="sereno-hero"] :is(.heroImage, .imageMediaFrame) {
+    min-height: 620px;
+    border-radius: 50% 50% 22px 22px / 38% 38% 22px 22px;
+  }
+
+  .section[data-visual-style="sereno-projects"] .repeat {
+    grid-template-columns: 1.18fr .82fr .82fr;
+  }
+
+  /* Conexão: modular dashboard-like composition instead of a generic split. */
+  .section[data-visual-style="conexao-hero"] .sectionInner > .columns {
+    grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+    align-items: center;
+  }
+
+  .section[data-visual-style="conexao-hero"] .sectionInner > .columns > :last-child {
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--org-primary) 16%, transparent);
+    border-radius: 34px;
+    background: color-mix(in srgb, var(--org-primary) 4%, var(--org-background));
+    box-shadow:
+      28px -24px 0 -12px color-mix(in srgb, var(--org-accent) 23%, transparent),
+      -26px 28px 0 -14px color-mix(in srgb, var(--org-secondary) 18%, transparent);
+  }
+
+  .section[data-visual-style="conexao-hero"] :is(.heroImage, .imageMediaFrame) {
+    min-height: 560px;
+    border-radius: 24px;
+  }
+
+  .section[data-visual-style="conexao-projects"] .repeat {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Project artwork should not look like the same duplicated photograph. */
+.section[data-visual-style$="-projects"] .cardImage,
+.section[data-visual-style$="-projects"] .imageMediaFrame {
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+/* Profundezas desktop composition is determined by the site canvas mode.
+   Keeping it outside viewport media queries makes editor and published render agree. */
+[data-responsive-size="desktop"] .section[data-visual-style="profundezas-hero"] :is(.sectionInner > .columns, .sectionInner > .stack > .columns) {
+  grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr);
+  gap: clamp(18px, 2.4cqw, 34px);
+  align-items: center;
+  overflow: visible;
+}
+
+/* The narrative is a physical overlay, not a narrow column next to the image.
+   The card extends across the grid gutter and INTO the image column. */
+[data-responsive-size="desktop"] .section[data-visual-style="profundezas-hero"] :is(.sectionInner > .columns, .sectionInner > .stack > .columns) > :first-child {
+  position: relative;
+  z-index: 3;
+  box-sizing: border-box;
+  /* Keep the card compact: the original overlap is about 50 CSS px,
+     not the ~170 CSS px introduced by the previous patch. A narrower
+     panel also restores the original four-line editorial headline. */
+  width: calc(100% + clamp(48px, 6cqw, 86px));
+  max-width: none;
+  padding: clamp(28px, 3.5cqw, 54px);
+  margin-right: calc(-1 * clamp(48px, 6cqw, 86px));
+  margin-bottom: 44px;
+  border: 1px solid color-mix(in srgb, var(--org-accent) 30%, transparent);
+  border-radius: 20px;
+  /* Transparent color lets the wave show through the blurred glass. */
+  background: color-mix(in srgb, var(--org-primary) 78%, transparent);
+  box-shadow: 0 20px 52px rgb(0 10 28 / 22%);
+  -webkit-backdrop-filter: blur(14px) saturate(115%);
+  backdrop-filter: blur(14px) saturate(115%);
+}
+
+[data-responsive-size="desktop"] .section[data-visual-style="profundezas-hero"] :is(.sectionInner > .columns, .sectionInner > .stack > .columns) > :last-child {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+[data-responsive-size="desktop"] .section[data-visual-style="profundezas-hero"] :is(.heroImage, .imageMediaFrame) {
+  min-height: 690px;
+  border-radius: 20px;
+}
+
+/* Mobile keeps the identity without carrying desktop overlaps into narrow canvases. */
+@media (max-width: 899px) {
+  :is([data-responsive-size="tablet"], [data-responsive-size="mobile"]) .section[data-visual-style$="-hero"] .sectionInner > .columns > * {
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  .section[data-visual-style="territorio-vivo-hero"] .sectionInner > .columns {
+    display: grid;
+  }
+
+  :is([data-responsive-size="tablet"], [data-responsive-size="mobile"]) .section[data-visual-style="acolher-hero"] .sectionInner > .columns > :first-child,
+  :is([data-responsive-size="tablet"], [data-responsive-size="mobile"]) .section[data-visual-style="profundezas-hero"] :is(.sectionInner > .columns, .sectionInner > .stack > .columns) > :first-child {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Builder interaction hardening ------------------------------------------------ */
+.canvasTipLabel {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+  font-family: var(--font-interface);
+  font-size: 9px;
+  font-weight: var(--font-bold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* Menu authoring must never change the geometry of the published header. */
+.headerSection .collectionCanvasGroup {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.headerSection .collectionCanvasGroup > .canvasAddItemSecondary {
+  position: static;
+  z-index: 2;
+  flex: 0 0 30px;
+  width: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  max-height: 30px;
+  margin: 0 0 0 4px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 0;
+  opacity: .84;
+  pointer-events: auto;
+  transform: none;
+  box-shadow: none;
+}
+
+.headerSection .collectionCanvasGroup > .canvasAddItemSecondary svg {
+  width: 15px;
+  height: 15px;
+}
+
+.headerSection .collectionCanvasGroup > .canvasAddItemSecondary:hover,
+.headerSection .collectionCanvasGroup > .canvasAddItemSecondary:focus-visible {
+  opacity: 1;
+  transform: none;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--org-text, var(--color-navy)) 10%, transparent);
+}
+
+/* Small images keep the photograph readable; detailed controls live in the
+   floating toolbar rather than stacking labels on top of the media. */
+.elementShell[data-image-element="true"] {
+  container-type: inline-size;
+}
+
+@container (max-width: 220px) {
+  .cropDragBadge {
+    display: none !important;
+  }
+
+  .imageReplaceButton {
+    top: 6px;
+    right: 6px;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 6px;
+    gap: 0;
+    font-size: 0;
+  }
+
+  .imageReplaceButton svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@container (max-width: 140px) {
+  .imageReplaceButton {
+    top: 50%;
+    right: 50%;
+    transform: translate(50%, -50%);
+    background: rgb(var(--color-white-rgb) / .86);
+  }
+}
+
+.imageMediaRoot:focus-visible,
+.editableMedia:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.clipboardMenuGroup {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--color-slate-100);
+}
+
+.moreMenu button kbd {
+  margin-left: auto;
+  padding: 2px 5px;
+  border: 1px solid var(--color-slate-200);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  color: var(--color-slate-400);
+  background: var(--color-slate-50);
+  font: inherit;
+  font-size: 8px;
+  font-weight: var(--font-semibold);
+}
+
+/* Builder fix: dicas pertencem à interface do editor e nunca devem parecer
+   conteúdo do site. A renderização lateral do portal evita cobrir títulos. */
+.canvasHintPortal {
+  pointer-events: none;
+  max-width: min(360px, calc(100vw - 24px));
+}
+
+.inlineGuidance {
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 760px) {
+  .headerSection .collectionCanvasGroup > .canvasAddItemSecondary {
+    flex-basis: 28px;
+    width: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+}
+
+/* V1.10.5 — flow-safe text editing.
+   Text boxes stay in normal vertical flow: changing font size/width or moving a
+   text block vertically must reflow the content below instead of painting over it. */
+.elementShell[data-text-box="true"] {
+  min-height: max-content;
+  overflow: visible;
+}
+
+.elementShell[data-text-box="true"] > .editableText,
+.elementShell[data-text-box="true"] > .editableText > [data-inline-text-editor="true"] {
+  min-height: 1em;
+  height: auto;
+  overflow: visible;
+}
+
+/* Layout warnings belong to the editor chrome, not on top of the site. */
+.layoutWarningButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 31px;
+  padding: 0 9px;
+  border: 1px solid var(--color-orange-200);
+  border-radius: 8px;
+  color: var(--color-orange-700);
+  background: var(--color-orange-50);
+  font-size: 11px;
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.layoutWarningButton:hover {
+  border-color: var(--color-orange-300);
+  background: color-mix(in srgb, var(--color-orange-50) 72%, var(--color-white));
+}
+
+@media (max-width: 760px) {
+  .layoutWarningButton span { display: none; }
+  .layoutWarningButton { width: 31px; padding: 0; justify-content: center; }
+}
+
+/* V1.12 — builder interaction cleanup --------------------------------------- */
+.quickActionButton {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-slate-600);
+  background: transparent;
+  cursor: pointer;
+}
+.quickActionButton:hover,
+.quickActionButton:focus-visible {
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+.quickActionButton:focus-visible {
+  outline: 2px solid var(--color-primary-300);
+  outline-offset: 1px;
+}
+.quickActionButton svg { width: 15px; height: 15px; }
+
+.multiSelectBadge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+  font-family: var(--font-interface);
+  font-size: 9px;
+  font-weight: var(--font-bold);
+}
+.multiSelectBadge svg { width: 12px; height: 12px; }
+
+/* Guidance is a compact editor annotation, never a banner across the design. */
+.inlineGuidance.canvasHintPortal {
+  width: auto !important;
+  max-width: min(260px, calc(100vw - 24px)) !important;
+  min-height: 30px;
+  padding: 5px 8px;
+  gap: 4px 7px;
+  border-radius: 9px;
+  box-shadow: 0 7px 18px rgb(var(--color-navy-rgb) / .10);
+  backdrop-filter: blur(12px);
+}
+.inlineGuidance.canvasHintPortal small {
+  flex-basis: 100%;
+  max-width: 30ch;
+  margin-top: 1px;
+  font-size: 9px;
+  line-height: 1.3;
+}
+.inlineGuidanceCount { white-space: nowrap; }
+
+/* Contact data is operational information: make invalid values impossible to
+   miss without covering the site design. */
+.contactEditorField {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 100%;
+  gap: 4px;
+}
+.contactEditorField[data-invalid="true"] {
+  color: inherit;
+}
+.contactValidationMessage {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 5px;
+  max-width: 38ch;
+  padding: 4px 7px;
+  border-radius: 7px;
+  color: #9a3412;
+  background: #fff7ed;
+  font-family: var(--font-interface);
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+.contactValidationMessage svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 1px;
+}
+
+/* Empty media must reserve ONLY its own media slot. Never stretch an empty
+   uploader to the height of the whole card: that overlays the card title/body. */
+.elementShell[data-image-element="true"] > .editableMedia,
+.elementShell[data-image-element="true"] .editableMedia {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+}
+.elementShell[data-image-element="true"] .imagePlaceholder {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+}
+.surfacecard .elementShell[data-image-element="true"] {
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+}
+.section[data-visual-style$="-projects"] .surfacecard .imagePlaceholder.cardImage,
+.section[data-visual-style$="-projects"] .surfacecard .editableMedia:has(.imagePlaceholder.cardImage) {
+  aspect-ratio: 16 / 10;
+  min-height: 0;
+}
+.section[data-visual-style$="-projects"] .surfacecard .imagePlaceholder.cardImage {
+  padding: clamp(14px, 7%, 24px);
+}
+
+/* Collection creation is presented as a real builder action instead of a tiny
+   detached control under the grid. */
+.section[data-visual-style$="-projects"] .collectionCanvasGroup > .canvasAddItemSecondary {
+  justify-self: stretch;
+  width: 100%;
+  min-height: 50px;
+  margin-top: 2px;
+  border-style: dashed;
+  border-width: 1.5px;
+  border-color: color-mix(in srgb, var(--org-primary) 34%, transparent);
+  border-radius: 14px;
+  color: color-mix(in srgb, var(--org-primary) 88%, var(--org-text));
+  background: color-mix(in srgb, var(--org-primary) 4%, var(--org-background));
+  box-shadow: none;
+  font-size: 11px;
+}
+.section[data-visual-style$="-projects"] .collectionCanvasGroup > .canvasAddItemSecondary:hover {
+  transform: none;
+  border-color: color-mix(in srgb, var(--org-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--org-primary) 8%, var(--org-background));
+  box-shadow: none;
+}
+
+
+/* V1.13 — editor guidance must read unmistakably as editor chrome.
+   Solid surface + accent rail keeps tips legible over photos and dark sections. */
+.inlineGuidance.canvasHintPortal {
+  position: fixed !important;
+  isolation: isolate;
+  min-height: 42px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid var(--color-primary-200) !important;
+  border-left: 4px solid var(--color-primary) !important;
+  border-radius: 10px;
+  color: var(--color-slate-700) !important;
+  background: var(--color-white) !important;
+  box-shadow:
+    0 10px 26px rgb(var(--color-navy-rgb) / .16),
+    0 2px 7px rgb(var(--color-navy-rgb) / .08) !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+}
+
+.inlineGuidance.canvasHintPortal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--color-white);
+}
+
+.inlineGuidance.canvasHintPortal[data-warning="true"] {
+  border-color: var(--color-orange-300) !important;
+  border-left-color: var(--color-orange-500) !important;
+  background: var(--color-white) !important;
+}
+
+.inlineGuidance.canvasHintPortal .canvasTipLabel {
+  min-height: 22px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  box-shadow: none;
+  font-size: 9px;
+  font-weight: var(--font-bold);
+  letter-spacing: .055em;
+}
+
+.inlineGuidance.canvasHintPortal[data-warning="true"] .canvasTipLabel {
+  background: var(--color-orange-600);
+}
+
+.inlineGuidance.canvasHintPortal .inlineGuidanceCount {
+  color: var(--color-slate-700);
+  font-weight: var(--font-semibold);
+}
+
+.inlineGuidance.canvasHintPortal > span:not(.canvasTipLabel):not(.inlineGuidanceCount) {
+  color: var(--color-slate-600);
+  font-weight: var(--font-medium);
+}
+
+.inlineGuidance.canvasHintPortal small {
+  color: var(--color-slate-600) !important;
+  font-size: 10px !important;
+  font-weight: var(--font-medium);
+  line-height: 1.35;
+}
+
+
+/* ========================================================================== */
+/* V1.15 — stable publish parity + responsive safety                         */
+/* ========================================================================== */
+
+/* ElementShell is geometry/editor chrome only. The rendered primitive owns
+   the actual fill so selecting a shape/button never reveals a fake square. */
+.elementShell[data-shape-element="true"],
+.elementShell[data-button-element="true"],
+.elementShell[data-shape-element="true"][data-selected="true"],
+.elementShell[data-button-element="true"][data-selected="true"] {
+  background: transparent;
+}
+
+/* One resizable square primitive is enough: stretching it creates a rectangle. */
+.elementShell[data-shape-element="true"] {
+  width: 120px;
+  height: 120px;
+  min-width: 24px;
+  max-width: 100%;
+  min-height: 24px;
+}
+.elementShell[data-shape-element="true"][data-shape-kind="line"] {
+  width: 220px;
+  height: 28px;
+}
+.elementShell[data-shape-element="true"] .customShape {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  aspect-ratio: auto;
+}
+.elementShell[data-shape-element="true"] .customShape[data-shape="rectangle"] {
+  aspect-ratio: auto;
+}
+
+/* A color explicitly chosen by the user must beat the design-family skin. */
+.elementShell[data-button-element="true"][data-custom-background="true"] > :is(.primaryAction, .secondaryAction) {
+  background: var(--element-background) !important;
+}
+.elementShell[data-button-element="true"][data-custom-color="true"] > :is(.primaryAction, .secondaryAction) {
+  color: var(--element-color) !important;
+}
+
+/* Sections and collections always size from real flow content. In particular,
+   grid children must not use height:100%: CSS Grid already stretches tracks,
+   and percentage heights were able to preserve large ghost areas. */
+.sectionInner,
+.collectionCanvasGroup,
+.section[data-visual-style$="-projects"] .repeat,
+.section[data-visual-style$="-support"] .repeat {
+  min-height: 0;
+  height: auto;
+}
+.sectionInner {
+  position: relative;
+}
+.collectionCanvasGroup {
+  align-content: start;
+}
+.section[data-visual-style$="-projects"] .repeat,
+.section[data-visual-style$="-support"] .repeat {
+  grid-auto-rows: auto;
+  align-items: stretch;
+  align-content: start;
+}
+.section[data-visual-style$="-projects"] .repeat > *,
+.section[data-visual-style$="-support"] .repeat > * {
+  height: auto !important;
+  min-height: 0;
+  align-self: stretch;
+}
+.section[data-visual-style$="-projects"],
+.section[data-visual-style$="-support"] {
+  min-height: 0 !important;
+  height: auto !important;
+  padding-bottom: clamp(36px, 4.5vw, 62px) !important;
+}
+
+/* Native actions remain ordinary flow items and therefore remain draggable.
+   Only a copied/free action that ElementShell anchored to a card becomes an
+   absolute overlay. That overlay is recalculated from the card geometry on
+   every resize, so editor/preview/published layouts share the same target. */
+.elementShell[data-button-element="true"] {
+  max-width: 100%;
+}
+.elementShell[data-card-anchored-action="true"] {
+  z-index: 6;
+  max-width: min(280px, calc(100% - 36px));
+}
+.elementShell[data-card-anchored-action="true"] > :is(.primaryAction, .secondaryAction) {
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* When at least one copied action is anchored to a card, reserve a safe action
+   rail in the cards so the overlay never covers the last lines of copy. */
+.surfacecard[data-has-anchored-action="true"] {
+  padding-bottom: 84px !important;
+}
+
+/* Text/media inside cards can wrap but can never force horizontal overflow. */
+.section[data-visual-style$="-projects"] .surfacecard,
+.section[data-visual-style$="-support"] .surfacecard,
+.section[data-visual-style$="-projects"] .surfacecard > *,
+.section[data-visual-style$="-support"] .surfacecard > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.section[data-visual-style$="-projects"] .surfacecard :is(.body, .itemBody, .itemTitle),
+.section[data-visual-style$="-support"] .surfacecard :is(.body, .itemBody, .itemTitle) {
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive contract shared by every native family. These rules intentionally
+   live at the very end so family-specific desktop compositions cannot override
+   safe tablet/mobile geometry.                                                */
+/* -------------------------------------------------------------------------- */
+
+@container institutional-site (max-width: 1100px) {
+  .section[data-visual-style$="-projects"] .repeat,
+  .section[data-visual-style$="-support"] .repeat,
+  .section[data-visual-style$="-impact"] .repeat,
+  .section[data-visual-style$="-transparency"] .repeat,
+  .section[data-visual-style$="-values"] .repeat,
+  .section[data-visual-style$="-team"] .repeat {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .section[data-design-family] .surfacecard {
+    min-width: 0;
+  }
+}
+
+@container institutional-site (max-width: 820px) {
+  .section {
+    padding-inline: clamp(18px, 5vw, 34px);
+  }
+
+  /* Every split hero/about/contact becomes a true single-column composition. */
+  .section[data-visual-style$="-hero"] .sectionInner > .columns,
+  .section[data-visual-style$="-about"] .sectionInner > .columns,
+  .section[data-visual-style$="-contact"] .sectionInner > .columns,
+  .section[data-visual-style$="-story"] .sectionInner > .columns,
+  .headerSection .sectionInner > .columns {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: clamp(22px, 5vw, 38px) !important;
+  }
+
+  /* Desktop-only overlap/tilt/stagger effects are decorative. Reset them on a
+     narrow canvas instead of allowing negative margins or rotations to clip. */
+  .section[data-design-family] .sectionInner > .columns > *,
+  .section[data-design-family] .repeat > .surfacecard {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    transform: none !important;
+  }
+
+  .section[data-visual-style$="-hero"] :is(.heroImage, .imageMediaFrame),
+  .section[data-visual-style$="-about"] :is(.image, .imageButton, .imageMediaFrame) {
+    width: 100%;
+    min-height: 0 !important;
+    max-height: none;
+    aspect-ratio: 4 / 3;
+    clip-path: none !important;
+    border-radius: clamp(16px, 4vw, 28px);
+  }
+
+  .headerSection .stackRow {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+  .headerSection .repeat {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    min-width: 0;
+  }
+}
+
+@container institutional-site (max-width: 680px) {
+  .section[data-visual-style$="-projects"] .repeat,
+  .section[data-visual-style$="-support"] .repeat,
+  .section[data-visual-style$="-impact"] .repeat,
+  .section[data-visual-style$="-transparency"] .repeat,
+  .section[data-visual-style$="-values"] .repeat,
+  .section[data-visual-style$="-team"] .repeat,
+  .section[data-visual-style$="-story"] .repeat {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .section[data-design-family] :is(.display, .heading, .lead, .body, .itemTitle, .itemBody) {
+    max-width: 100%;
+  }
+  .section[data-design-family] .display {
+    font-size: clamp(2.05rem, 10vw, 3.35rem);
+    line-height: .98;
+  }
+  .section[data-design-family] .heading {
+    font-size: clamp(1.65rem, 7vw, 2.35rem);
+  }
+
+  .section[data-design-family] :is(.primaryAction, .secondaryAction) {
+    max-width: 100%;
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  /* Free text positioning is a desktop authoring affordance. On phones the
+     content returns to normal flow; card-anchored copied actions are exempt and
+     remain attached to their card by the renderer. */
+  .section .elementShell[data-text-box="true"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    transform: none !important;
+  }
+  .section .elementShell[data-button-element="true"]:not([data-card-anchored-action="true"]) {
+    max-width: 100%;
+  }
+}
+
+@container institutional-site (max-width: 480px) {
+  .section {
+    padding-block: 34px;
+    padding-inline: 16px;
+  }
+  .surfacecard,
+  .surfacelist,
+  .surfacehighlight {
+    padding: 18px;
+    border-radius: 18px;
+  }
+  .surfacecard[data-has-anchored-action="true"] {
+    padding-bottom: 78px !important;
+  }
+  .elementShell[data-card-anchored-action="true"] {
+    max-width: calc(100% - 32px);
+  }
+}
+
+
+/* ========================================================================== */
+/* V1.16 — conservative responsive reflow without rewriting desktop design    */
+/* ========================================================================== */
+
+/* Desktop remains exactly template/authored. At tablet widths, only elements
+   inside repeated semantic items give up pixel offsets. This prevents the old
+   -900px / +800px authoring coordinates from escaping the canvas while keeping
+   the family's actual composition, spacing, overlaps and typography intact. */
+@container institutional-site (max-width: 920px) {
+  .section[data-visual-style$="-impact"] [data-repeat-source][data-repeat-index] .elementShell,
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell,
+  .section[data-visual-style$="-support"] [data-repeat-source][data-repeat-index] .elementShell,
+  .section[data-visual-style$="-transparency"] [data-repeat-source][data-repeat-index] .elementShell,
+  .section[data-visual-style$="-values"] [data-repeat-source][data-repeat-index] .elementShell,
+  .section[data-visual-style$="-team"] [data-repeat-source][data-repeat-index] .elementShell {
+    transform: none !important;
+    margin-top: 0 !important;
+    max-width: 100%;
+  }
+
+  .section[data-visual-style$="-impact"] [data-repeat-source][data-repeat-index] {
+    min-width: 0;
+    align-content: start;
+  }
+
+  .section[data-visual-style$="-impact"] .elementShell[data-presentation="metricIcon"],
+  .section[data-visual-style$="-impact"] .elementShell[data-presentation="metricValue"],
+  .section[data-visual-style$="-impact"] .elementShell[data-presentation="metricLabel"],
+  .section[data-visual-style$="-impact"] .elementShell[data-presentation="caption"] {
+    width: auto !important;
+  }
+
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"] :is(.cardImage, .imageMediaFrame) {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: clamp(130px, 19cqw, 190px) !important;
+    aspect-ratio: auto !important;
+  }
+
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] :is(.itemTitle, .itemBody, .eyebrow),
+  .section[data-visual-style$="-support"] [data-repeat-source][data-repeat-index] :is(.itemTitle, .itemBody, .eyebrow) {
+    position: relative;
+    z-index: 1;
+    max-width: 100%;
+  }
+}
+
+@container institutional-site (max-width: 680px) {
+  /* Metrics are compact data, not full cards: two columns remain substantially
+     more readable than a four-item vertical strip on phones. */
+  .section[data-visual-style$="-impact"] .repeat {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: clamp(18px, 5cqw, 28px) !important;
+  }
+
+  .section[data-visual-style$="-impact"] [data-repeat-source][data-repeat-index] {
+    gap: 7px !important;
+  }
+
+  .section[data-visual-style$="-impact"] .metricValue {
+    font-size: clamp(1.8rem, 9cqw, 2.65rem) !important;
+    line-height: 1 !important;
+  }
+
+  .section[data-visual-style$="-impact"] :is(.metricLabel, .caption) {
+    font-size: clamp(.72rem, 3.2cqw, .9rem) !important;
+    line-height: 1.3;
+  }
+
+  /* Project cards become a strict media -> content -> action flow on phones.
+     Focal point/zoom still affect the image itself; only layout offsets are reset. */
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] {
+    overflow: hidden;
+  }
+
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"] :is(.cardImage, .imageMediaFrame) {
+    height: clamp(180px, 58cqw, 280px) !important;
+  }
+
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .itemTitle,
+  .section[data-visual-style$="-support"] [data-repeat-source][data-repeat-index] .itemTitle {
+    font-size: clamp(1.05rem, 5.2cqw, 1.35rem) !important;
+    line-height: 1.16 !important;
+  }
+
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .itemBody,
+  .section[data-visual-style$="-support"] [data-repeat-source][data-repeat-index] .itemBody {
+    font-size: clamp(.9rem, 3.9cqw, 1rem) !important;
+    line-height: 1.45 !important;
+  }
+
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .eyebrow,
+  .section[data-visual-style$="-support"] [data-repeat-source][data-repeat-index] .eyebrow {
+    font-size: clamp(.68rem, 3cqw, .8rem) !important;
+    line-height: 1.25 !important;
+  }
+
+  .surfacecard[data-has-anchored-action="true"] {
+    padding-bottom: 80px !important;
+  }
+
+  .elementShell[data-card-anchored-action="true"] {
+    max-width: calc(100% - 28px);
+  }
+}
+
+@container institutional-site (max-width: 460px) {
+  .section[data-visual-style$="-impact"] .repeat {
+    gap: 16px 14px !important;
+  }
+
+  .section[data-visual-style$="-impact"] .metricValue {
+    font-size: clamp(1.6rem, 10cqw, 2.25rem) !important;
+  }
+
+  .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"] :is(.cardImage, .imageMediaFrame) {
+    height: clamp(168px, 62cqw, 240px) !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Deterministic editor/public responsive mode. Container queries remain the
+   progressive CSS path; data-responsive-size mirrors the actual rendered site
+   width so device preview and publication cannot disagree about the breakpoint. */
+/* -------------------------------------------------------------------------- */
+
+[data-responsive-size="tablet"] .section[data-visual-style$="-projects"] .repeat,
+[data-responsive-size="tablet"] .section[data-visual-style$="-support"] .repeat,
+[data-responsive-size="tablet"] .section[data-visual-style$="-impact"] .repeat,
+[data-responsive-size="tablet"] .section[data-visual-style$="-transparency"] .repeat,
+[data-responsive-size="tablet"] .section[data-visual-style$="-values"] .repeat,
+[data-responsive-size="tablet"] .section[data-visual-style$="-team"] .repeat {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+[data-responsive-size="tablet"] .section[data-visual-style$="-hero"] .sectionInner > .columns,
+[data-responsive-size="tablet"] .section[data-visual-style$="-about"] .sectionInner > .columns,
+[data-responsive-size="tablet"] .section[data-visual-style$="-contact"] .sectionInner > .columns,
+[data-responsive-size="tablet"] .section[data-visual-style$="-story"] .sectionInner > .columns,
+[data-responsive-size="tablet"] .headerSection .sectionInner > .columns,
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .section[data-visual-style$="-about"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .section[data-visual-style$="-contact"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .section[data-visual-style$="-story"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .headerSection .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(22px, 5cqw, 38px) !important;
+}
+
+[data-responsive-size="tablet"] .section[data-visual-style$="-impact"] [data-repeat-source][data-repeat-index] .elementShell,
+[data-responsive-size="tablet"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell,
+[data-responsive-size="tablet"] .section[data-visual-style$="-support"] [data-repeat-source][data-repeat-index] .elementShell,
+[data-responsive-size="tablet"] .section[data-visual-style$="-transparency"] [data-repeat-source][data-repeat-index] .elementShell,
+[data-responsive-size="mobile"] .section[data-visual-style$="-impact"] [data-repeat-source][data-repeat-index] .elementShell,
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell,
+[data-responsive-size="mobile"] .section[data-visual-style$="-support"] [data-repeat-source][data-repeat-index] .elementShell,
+[data-responsive-size="mobile"] .section[data-visual-style$="-transparency"] [data-repeat-source][data-repeat-index] .elementShell {
+  transform: none !important;
+  margin-top: 0 !important;
+  max-width: 100%;
+}
+
+[data-responsive-size="tablet"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"],
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+[data-responsive-size="tablet"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"] :is(.cardImage, .imageMediaFrame) {
+  width: 100% !important;
+  height: clamp(130px, 19cqw, 190px) !important;
+  min-height: 0 !important;
+}
+
+[data-responsive-size="mobile"] .section {
+  padding-inline: clamp(16px, 5cqw, 24px);
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] .repeat,
+[data-responsive-size="mobile"] .section[data-visual-style$="-support"] .repeat,
+[data-responsive-size="mobile"] .section[data-visual-style$="-transparency"] .repeat,
+[data-responsive-size="mobile"] .section[data-visual-style$="-values"] .repeat,
+[data-responsive-size="mobile"] .section[data-visual-style$="-team"] .repeat,
+[data-responsive-size="mobile"] .section[data-visual-style$="-story"] .repeat {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-impact"] .repeat {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: clamp(16px, 5cqw, 24px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"] :is(.cardImage, .imageMediaFrame) {
+  width: 100% !important;
+  height: clamp(168px, 60cqw, 260px) !important;
+  min-height: 0 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-design-family] .display {
+  font-size: clamp(1.9rem, 10.5cqw, 3rem) !important;
+  line-height: 1 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-design-family] .heading {
+  font-size: clamp(1.45rem, 7.2cqw, 2.15rem) !important;
+  line-height: 1.08 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-impact"] .metricValue {
+  font-size: clamp(1.6rem, 10cqw, 2.35rem) !important;
+  line-height: 1 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-design-family] :is(.primaryAction, .secondaryAction) {
+  max-width: 100%;
+  min-height: 44px;
+  white-space: normal;
+}
+
+[data-responsive-size="mobile"] .sectionInner {
+  overflow-x: clip;
+}
+
+/* ========================================================================== */
+/* V1.17 — mobile-native reflow                                               */
+/* ========================================================================== */
+/*
+   Desktop remains authored/template-driven. Mobile is treated as a distinct
+   composition mode rather than a scaled desktop canvas. These rules live last
+   on purpose: they neutralize desktop-only geometry while preserving colors,
+   typefaces, borders and other family identity.
+*/
+
+[data-responsive-size="mobile"] .section {
+  padding-block: clamp(44px, 12cqw, 64px) !important;
+  padding-inline: clamp(18px, 5.5cqw, 24px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-spacing="compact"] {
+  padding-block: clamp(26px, 7cqw, 38px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-spacing="generous"] {
+  padding-block: clamp(50px, 13cqw, 70px) !important;
+}
+
+[data-responsive-size="mobile"] .sectionInner,
+[data-responsive-size="mobile"] .section[data-content-width="wide"] .sectionInner,
+[data-responsive-size="mobile"] .section[data-content-width="full"] .sectionInner {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* A phone never inherits authored desktop coordinates. Shapes remain free
+   primitives, and anchored card actions keep their semantic card attachment. */
+[data-responsive-size="mobile"] .section .elementShell:not([data-shape-element="true"]):not([data-card-anchored-action="true"]),
+[data-responsive-size="mobile"] .footerSection .elementShell:not([data-shape-element="true"]) {
+  transform: none !important;
+  margin-top: 0 !important;
+  max-width: 100% !important;
+}
+
+[data-responsive-size="mobile"] .section .elementShell[data-text-box="true"] {
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] .elementShell[data-image-element="true"],
+[data-responsive-size="mobile"] .section[data-visual-style$="-about"] .elementShell[data-image-element="true"],
+[data-responsive-size="mobile"] .section[data-visual-style$="-contact"] .elementShell[data-image-element="true"] {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+}
+
+/* Root split layouts become intentional mobile compositions. */
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .section[data-visual-style$="-about"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .section[data-visual-style$="-contact"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .section[data-visual-style$="-story"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .section[data-visual-style$="-transparency"] .sectionInner > .columns,
+[data-responsive-size="mobile"] .footerSection .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: clamp(26px, 7.5cqw, 38px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] .sectionInner > .columns > *,
+[data-responsive-size="mobile"] .section[data-visual-style$="-about"] .sectionInner > .columns > *,
+[data-responsive-size="mobile"] .section[data-visual-style$="-contact"] .sectionInner > .columns > *,
+[data-responsive-size="mobile"] .section[data-visual-style$="-story"] .sectionInner > .columns > *,
+[data-responsive-size="mobile"] .section[data-visual-style$="-transparency"] .sectionInner > .columns > *,
+[data-responsive-size="mobile"] .footerSection .sectionInner > .columns > * {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+/* Desktop hero overlaps are replaced by a clean text -> media rhythm. */
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] .sectionInner > .columns > :first-child {
+  margin: 0 !important;
+  min-width: 0 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] :is(.heroImage, .imageMediaFrame, .imageButton),
+[data-responsive-size="mobile"] .section[data-visual-style$="-about"] :is(.imageMediaFrame, .imageButton) {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 4 / 3 !important;
+  clip-path: none !important;
+  border-radius: clamp(16px, 5cqw, 24px) !important;
+}
+
+/* Readable phone typography: custom desktop sizes cannot collapse or explode. */
+[data-responsive-size="mobile"] .section[data-design-family] .display,
+[data-responsive-size="mobile"] .section[data-design-family] .elementShell[data-presentation="display"] [data-font-target="true"] {
+  max-width: 13ch !important;
+  font-size: clamp(2.05rem, 9.6cqw, 2.8rem) !important;
+  line-height: .98 !important;
+  letter-spacing: -.025em;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+[data-responsive-size="mobile"] .section[data-design-family] .heading,
+[data-responsive-size="mobile"] .section[data-design-family] .elementShell[data-presentation="heading"] [data-font-target="true"] {
+  max-width: 22ch !important;
+  font-size: clamp(1.55rem, 7cqw, 2rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.015em;
+}
+
+[data-responsive-size="mobile"] .section[data-design-family] :is(.lead, .body, .itemBody, .contactLine) {
+  max-width: 100% !important;
+  font-size: clamp(.96rem, 4.15cqw, 1.06rem) !important;
+  line-height: 1.55 !important;
+  text-align: left !important;
+  overflow-wrap: anywhere;
+}
+
+[data-responsive-size="mobile"] .section[data-design-family] .itemTitle {
+  max-width: 100% !important;
+  font-size: clamp(1.08rem, 4.8cqw, 1.3rem) !important;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere;
+}
+
+[data-responsive-size="mobile"] .section[data-design-family] :is(.eyebrow, .caption) {
+  font-size: clamp(.7rem, 3cqw, .8rem) !important;
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere;
+}
+
+/* Header: retain real navigation without letting it consume half the screen. */
+[data-responsive-size="mobile"] .headerSection {
+  padding-block: 12px !important;
+  padding-inline: clamp(16px, 5cqw, 22px) !important;
+}
+
+[data-responsive-size="mobile"] .headerSection .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+}
+
+[data-responsive-size="mobile"] .headerSection .elementShell {
+  transform: none !important;
+  margin-top: 0 !important;
+  max-width: 100% !important;
+}
+
+[data-responsive-size="mobile"] .headerSection .sectionInner > .columns > .stack:first-child {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0;
+}
+
+[data-responsive-size="mobile"] .headerSection .sectionInner > .columns > .stack:nth-child(2) {
+  width: 100% !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  text-align: left !important;
+}
+
+[data-responsive-size="mobile"] .headerSection .repeat {
+  display: flex !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  gap: 12px !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap !important;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-responsive-size="mobile"] .headerSection .repeat::-webkit-scrollbar {
+  display: none;
+}
+
+[data-responsive-size="mobile"] .headerSection .repeat > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+[data-responsive-size="mobile"] .headerSection .navLink {
+  white-space: nowrap;
+  font-size: .78rem !important;
+}
+
+[data-responsive-size="mobile"] .headerSection :is(.primaryAction, .secondaryAction) {
+  flex: 0 0 auto;
+  min-height: 38px !important;
+  padding: 8px 12px !important;
+  font-size: .78rem !important;
+  white-space: nowrap !important;
+}
+
+/* Hero gets breathing room but no desktop-only negative overlap/panel scale. */
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] .stack[data-gap="medium"],
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] .stack[data-gap="large"] {
+  gap: clamp(16px, 4.5cqw, 22px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] .stackRow {
+  gap: 10px !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-hero"] :is(.primaryAction, .secondaryAction) {
+  min-height: 44px !important;
+  padding: 10px 15px !important;
+  font-size: .9rem !important;
+}
+
+/* Profundezas keeps its identity on phone without keeping its desktop overlap. */
+[data-responsive-size="mobile"] .section[data-visual-style="profundezas-hero"] :is(.sectionInner > .columns, .sectionInner > .stack > .columns) > :first-child {
+  padding: clamp(20px, 6cqw, 26px) !important;
+  margin: 0 !important;
+  border: 1px solid color-mix(in srgb, var(--org-accent) 28%, transparent) !important;
+  border-radius: 18px !important;
+  background: color-mix(in srgb, var(--org-primary) 86%, transparent) !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style="profundezas-hero"] :is(.heroImage, .imageMediaFrame) {
+  min-height: 0 !important;
+  aspect-ratio: 4 / 3 !important;
+  border-radius: 22px !important;
+  box-shadow: 0 16px 36px rgb(0 0 0 / .2) !important;
+}
+
+/* Project cards are genuine vertical cards on phone, not desktop cards squeezed
+   into a narrow column. The image owns the card width and copy owns normal flow. */
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] .repeat {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(20px, 6cqw, 28px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] [data-surface="card"][data-repeat-source][data-repeat-index] {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  align-self: stretch !important;
+  overflow: hidden;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell:not([data-card-anchored-action="true"]):not([data-shape-element="true"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  transform: none !important;
+  margin-top: 0 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] .elementShell[data-image-element="true"] :is(.cardImage, .imageMediaFrame, .imageButton) {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 16 / 10 !important;
+  object-fit: cover;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] [data-repeat-source][data-repeat-index] :is(.itemTitle, .itemBody, .eyebrow, .caption) {
+  position: static !important;
+  max-width: 100% !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] .surfacecard[data-has-anchored-action="true"] {
+  padding-bottom: 76px !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] .elementShell[data-card-anchored-action="true"] {
+  max-width: calc(100% - 32px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-projects"] .elementShell[data-card-anchored-action="true"] > :is(.primaryAction, .secondaryAction) {
+  min-height: 42px !important;
+  padding: 9px 13px !important;
+  font-size: .84rem !important;
+}
+
+/* Impact is compact 2x2 data, with enough width for labels and no authored
+   pixel coordinates. */
+[data-responsive-size="mobile"] .section[data-visual-style$="-impact"] .repeat {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: clamp(22px, 7cqw, 32px) clamp(16px, 5cqw, 24px) !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-impact"] [data-repeat-source][data-repeat-index] {
+  width: 100% !important;
+  min-width: 0 !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  gap: 7px !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-impact"] [data-repeat-source][data-repeat-index] .elementShell {
+  width: auto !important;
+  max-width: 100% !important;
+  height: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-impact"] .metricValue {
+  font-size: clamp(1.95rem, 9cqw, 2.45rem) !important;
+  line-height: .95 !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-impact"] .metricLabel {
+  font-size: clamp(.82rem, 3.6cqw, .94rem) !important;
+  line-height: 1.28 !important;
+}
+
+/* Support/transparency/contact: full-width readable blocks with no desktop
+   staggering, fixed widths or justified narrow copy. */
+[data-responsive-size="mobile"] .section[data-visual-style$="-support"] .repeat,
+[data-responsive-size="mobile"] .section[data-visual-style$="-transparency"] .repeat {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(14px, 4cqw, 20px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-support"] [data-surface="card"],
+[data-responsive-size="mobile"] .section[data-visual-style$="-transparency"] [data-surface="card"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-contact"] .sectionInner {
+  padding: clamp(20px, 6cqw, 28px) !important;
+  border-radius: clamp(18px, 5cqw, 24px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-contact"] [data-surface="card"] {
+  width: 100% !important;
+  padding: clamp(18px, 5cqw, 24px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-contact"] .repeat {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-contact"] :is(.socialLink, .contactLink) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Story/quote blocks should feel editorial rather than like oversized desktop
+   cards stacked on one another. */
+[data-responsive-size="mobile"] .section[data-visual-style$="-story"] .surfacehighlight {
+  padding: clamp(22px, 6cqw, 28px) !important;
+  margin: 0 !important;
+  border-radius: clamp(18px, 5cqw, 24px) !important;
+}
+
+[data-responsive-size="mobile"] .section[data-visual-style$="-story"] .customQuote {
+  font-size: clamp(1.18rem, 5.5cqw, 1.5rem) !important;
+  line-height: 1.35 !important;
+}
+
+/* Footer becomes a compact final block and drops authored social-link offsets. */
+[data-responsive-size="mobile"] .footerSection {
+  padding-block: clamp(38px, 10cqw, 52px) !important;
+}
+
+[data-responsive-size="mobile"] .footerSection .stack,
+[data-responsive-size="mobile"] .footerSection .columns {
+  align-items: flex-start !important;
+  text-align: left !important;
+}
+
+[data-responsive-size="mobile"] .footerSection .repeat {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+[data-responsive-size="mobile"] .footerSection :is(.socialLink, .contactLink, .contactLine, .caption) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Very narrow phones still keep comfortable tap/read targets. */
+@container institutional-site (max-width: 390px) {
+  [data-responsive-size="mobile"] .section {
+    padding-inline: 16px !important;
+  }
+
+  [data-responsive-size="mobile"] .headerSection .sectionInner > .columns > .stack:nth-child(2) {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  [data-responsive-size="mobile"] .headerSection .repeat {
+    width: 100%;
+  }
+
+  [data-responsive-size="mobile"] .headerSection :is(.primaryAction, .secondaryAction) {
+    width: 100% !important;
+  }
+
+  [data-responsive-size="mobile"] .section[data-visual-style$="-impact"] .repeat {
+    gap: 20px 12px !important;
+  }
+}
+
+/* V1.18 — mobile header navigation ======================================== */
+.mobileMenuToggle {
+  display: none;
+}
+
+[data-responsive-size="mobile"] .headerSection .sectionInner {
+  position: relative;
+}
+
+[data-responsive-size="mobile"] .headerSection .mobileMenuToggle {
+  position: absolute;
+  z-index: 20;
+  top: 50%;
+  right: 0;
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--section-background, var(--org-background)) 92%, transparent);
+  color: inherit;
+  box-shadow: 0 4px 16px rgb(0 0 0 / .08);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+[data-responsive-size="mobile"] .headerSection .mobileMenuToggle svg {
+  width: 21px;
+  height: 21px;
+  pointer-events: none;
+}
+
+[data-responsive-size="mobile"] .headerSection .sectionInner > .columns {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  width: 100%;
+}
+
+[data-responsive-size="mobile"] .headerSection .sectionInner > .columns > .stack:first-child {
+  min-height: 40px;
+  padding-right: 54px;
+}
+
+/* Closed by default: mobile should not render desktop navigation as a tiny row. */
+[data-responsive-size="mobile"] .headerSection .sectionInner > .columns > .stack:nth-child(2) {
+  display: none !important;
+}
+
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .sectionInner > .columns > .stack:nth-child(2) {
+  display: flex !important;
+  width: 100% !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  text-align: left !important;
+}
+
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .collectionCanvasGroup {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0;
+}
+
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .repeat {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100% !important;
+  max-width: none !important;
+  gap: 2px !important;
+  overflow: visible !important;
+  scroll-snap-type: none !important;
+}
+
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .repeat > * {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .navLink {
+  display: flex !important;
+  width: 100% !important;
+  min-height: 40px;
+  align-items: center;
+  padding: 9px 10px !important;
+  border-radius: 8px;
+  white-space: normal !important;
+  font-size: .9rem !important;
+  line-height: 1.25 !important;
+}
+
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .navLink:hover,
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .navLink:focus-visible {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .elementShell:has(> .primaryAction),
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] .elementShell:has(> .secondaryAction) {
+  width: 100% !important;
+}
+
+[data-responsive-size="mobile"] .headerSection[data-mobile-menu-open="true"] :is(.primaryAction, .secondaryAction) {
+  display: inline-flex !important;
+  width: 100% !important;
+  min-height: 42px !important;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px !important;
+  white-space: normal !important;
+  font-size: .88rem !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-responsive-size="mobile"] .headerSection .mobileMenuToggle {
+    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+}
+
+/* =========================================================
+   CONG Phase 2 / ZIP 2 — vector primitive polish
+   ========================================================= */
+.elementShell[data-icon-element="true"] {
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
+}
+.elementShell[data-icon-element="true"] .customIcon {
+  width: 100%;
+  height: 100%;
+  max-width: min(320px, 100%);
+  max-height: 320px;
+  line-height: 0;
+}
+.elementShell[data-icon-element="true"] .customIcon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+}
+.elementShell[data-shape-element="true"] .customShape :is(circle, rect, polygon, path) {
+  fill: var(--element-background, var(--org-accent));
+  stroke: var(--element-color, var(--org-primary));
+  stroke-width: var(--shape-stroke-width, 0);
+  vector-effect: non-scaling-stroke;
+}
+.elementShell[data-shape-element="true"][data-shape-kind="line"] .customShape {
+  min-height: 8px;
+}
+@container institutional-site (max-width: 720px) {
+  .elementShell[data-icon-element="true"] .customIcon {
+    max-width: min(180px, 100%);
+    max-height: 180px;
+  }
 }

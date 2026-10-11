@@ -1,11 +1,5 @@
 import { useRef } from "react";
-import {
-  FiCheck,
-  FiHeart,
-  FiMapPin,
-  FiStar,
-  FiUsers,
-} from "react-icons/fi";
+import { getInstitutionalIconDefinition } from "../../../data/institutional/iconLibrary";
 
 import type {
   InstitutionalAction,
@@ -56,6 +50,7 @@ export default function ElementRenderer({
   selected = false,
   onValueChange,
   onImageRequest,
+  onImageFile,
   onStyleChange,
   onInteractionStart,
   onInteractionCommit,
@@ -66,6 +61,7 @@ export default function ElementRenderer({
   selected?: boolean;
   onValueChange?: (value: unknown) => void;
   onImageRequest?: () => void;
+  onImageFile?: (file: File) => void;
   onStyleChange?: (style: Partial<InstitutionalElementStyle>) => void;
   onInteractionStart?: () => void;
   onInteractionCommit?: () => void;
@@ -91,6 +87,7 @@ export default function ElementRenderer({
           note: "O ponto focal é preservado quando a página se adapta ao celular.",
         } : null}
         onRequest={onImageRequest}
+        onFile={onImageFile}
         onStyleChange={onStyleChange}
         onInteractionStart={onInteractionStart}
         onInteractionCommit={onInteractionCommit}
@@ -101,12 +98,13 @@ export default function ElementRenderer({
   if (type === "button") {
     const action = asAction(node.value);
     if (!editable) {
-      return <a href={action.href} className={styles.primaryAction}>{action.label}</a>;
+      return <a href={action.href} className={styles.primaryAction} data-font-target="true">{action.label}</a>;
     }
     return (
       <InlineTextEditor
         value={action.label}
         className={styles.primaryAction}
+        placeholder="Texto do botão"
         onChange={(label) => onValueChange?.({ ...action, label })}
         onCommit={(label) => onValueChange?.({ ...action, label })}
       />
@@ -114,31 +112,47 @@ export default function ElementRenderer({
   }
 
   if (type === "icon") {
-    const value = typeof node.value === "string" ? node.value : "heart";
-    const Icon = value === "users" ? FiUsers : value === "star" ? FiStar : value === "check" ? FiCheck : value === "map" ? FiMapPin : FiHeart;
-    return <span className={styles.customIcon}><Icon aria-hidden="true" /></span>;
+    const definition = getInstitutionalIconDefinition(node.value);
+    const Icon = definition.icon;
+    const strokeWidth = Math.max(0.5, Math.min(4, node.style?.iconStrokeWidth ?? 2));
+    return (
+      <span
+        className={styles.customIcon}
+        data-icon-id={definition.id}
+        title={editable ? definition.label : undefined}
+      >
+        <Icon aria-hidden="true" strokeWidth={strokeWidth} />
+      </span>
+    );
   }
 
 
   if (type === "shape") {
-    const shape = typeof node.value === "string" ? node.value : "circle";
+    const shape = typeof node.value === "string" ? node.value : "square";
+    const shapeRadius = Math.max(0, Math.min(50, node.style?.shapeRadius ?? 8));
     const path =
       shape === "triangle"
-        ? <polygon points="50,6 96,92 4,92" />
+        ? <polygon points="50,5 97,94 3,94" />
         : shape === "diamond"
-          ? <polygon points="50,4 96,50 50,96 4,50" />
-          : shape === "star"
-            ? <polygon points="50,4 61,36 96,36 68,56 79,91 50,70 21,91 32,56 4,36 39,36" />
-            : shape === "line"
-              ? <line x1="8" y1="50" x2="92" y2="50" />
-              : shape === "rectangle"
-                ? <rect x="8" y="22" width="84" height="56" rx="6" />
-                : shape === "square"
-                  ? <rect x="10" y="10" width="80" height="80" rx="4" />
-                  : <circle cx="50" cy="50" r="42" />;
+          ? <polygon points="50,3 97,50 50,97 3,50" />
+          : shape === "pentagon"
+            ? <polygon points="50,4 96,38 78,94 22,94 4,38" />
+            : shape === "hexagon"
+              ? <polygon points="25,5 75,5 98,50 75,95 25,95 2,50" />
+              : shape === "star"
+                ? <polygon points="50,3 61,36 96,36 68,56 79,92 50,71 21,92 32,56 4,36 39,36" />
+                : shape === "arrow"
+                  ? <polygon points="4,36 62,36 62,17 97,50 62,83 62,64 4,64" />
+                  : shape === "blob"
+                    ? <path d="M83.7,18.8C94.2,30.7,97,49.4,90.3,65.4C83.5,81.4,67.2,94.8,49.9,94.7C32.6,94.6,14.3,81,7.8,64.1C1.3,47.2,6.6,27,20.2,15.7C33.8,4.4,55.7,2,70.2,8.7C75.4,11.1,79.9,14.5,83.7,18.8Z" />
+                    : shape === "line"
+                      ? <line x1="4" y1="50" x2="96" y2="50" />
+                      : shape === "circle"
+                        ? <circle cx="50" cy="50" r="46" />
+                        : <rect x="4" y="4" width="92" height="92" rx={shapeRadius} ry={shapeRadius} />;
     return (
       <span className={styles.customShape} data-shape={shape} aria-hidden="true">
-        <svg viewBox="0 0 100 100" focusable="false">{path}</svg>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">{path}</svg>
       </span>
     );
   }
@@ -183,16 +197,17 @@ export default function ElementRenderer({
           value={text}
           multiline={multiline}
           className={className}
+          placeholder={type === "heading" ? "Título do elemento" : type === "quote" ? "Escreva um depoimento" : "Digite seu texto"}
           onChange={(value) => onValueChange?.(value)}
           onCommit={(value) => onValueChange?.(value)}
         />
       ) : type === "heading" ? (
-        <h2 className={className}>{text}</h2>
+        <h2 className={className} data-font-target="true">{text}</h2>
       ) : (
-        <p className={className}>{text}</p>
+        <p className={className} data-font-target="true">{text}</p>
       )}
       {editable && showGuidance && guide ? (
-        <FloatingCanvasHint anchorRef={textAnchorRef} className={styles.inlineGuidance} preferredWidth={520} dataWarning={Boolean(guide.max && text.length > guide.max)}>
+        <FloatingCanvasHint anchorRef={textAnchorRef} className={styles.inlineGuidance} preferredWidth={380} dataWarning={Boolean(guide.max && text.length > guide.max)}>
           <span className={styles.inlineGuidanceCount}>
             {guide.max ? `${text.length} / ${guide.max}` : `${text.length} caracteres`}
           </span>

@@ -32,7 +32,18 @@ import {
   FiUpload,
 } from "react-icons/fi";
 
+import {
+  filterInstitutionalIcons,
+  institutionalIconCategories,
+  type InstitutionalIconCategory,
+} from "../../../data/institutional/iconLibrary";
 import { getSectionDefinition, sectionCatalog } from "../../../data/institutional/sectionCatalog";
+import {
+  findNativeDesignFamilyById,
+  findNativeDesignFamilyByName,
+  findNativeDesignFamilyByVisualStyle,
+  nativeFamilyOrder,
+} from "../../../data/institutional/nativeDesignFamilies";
 import type {
   InstitutionalBrand,
   InstitutionalElementStyle,
@@ -54,7 +65,7 @@ import ColorPickerControl from "./ColorPickerControl";
 
 import styles from "./SectionLibrary.module.css";
 
-type LibraryCategory = "structure" | "sections" | "backgrounds" | "text" | "media" | "actions" | "shapes" | "information" | "layout";
+type LibraryCategory = "structure" | "sections" | "backgrounds" | "text" | "media" | "actions" | "icons" | "shapes" | "information" | "layout";
 type SectionGroup = "all" | "presentation" | "action" | "trust" | "structure";
 
 const sectionGroups: Array<{ id: SectionGroup; name: string }> = [
@@ -84,6 +95,7 @@ const categories: Array<{
   { id: "text", name: "Texto", icon: FiType, tone: "violet" },
   { id: "media", name: "Mídia", icon: FiImage, tone: "green" },
   { id: "actions", name: "Ações", icon: FiLink, tone: "yellow" },
+  { id: "icons", name: "Ícones", icon: FiStar, tone: "cyan" },
   { id: "shapes", name: "Formas", icon: FiCircle, tone: "violet" },
   { id: "information", name: "Dados", icon: FiActivity, tone: "cyan" },
   { id: "layout", name: "Organizar", icon: FiGrid, tone: "coral" },
@@ -102,13 +114,15 @@ const elementItems: Array<{
   { type: "quote", name: "Destaque", description: "Uma frase ou relato importante", category: "text", icon: FiHeart },
   { type: "image", name: "Imagem", description: "Uma foto que se adapta à página", category: "media", icon: FiImage },
   { type: "button", name: "Botão", description: "Uma ação para o visitante", category: "actions", icon: FiLink },
-  { type: "icon", name: "Ícone", description: "SVG puro, sem fundo automático", category: "actions", icon: FiStar },
-  { type: "shape", value: "circle", name: "Círculo", description: "Forma geométrica independente", category: "shapes", icon: FiCircle },
-  { type: "shape", value: "square", name: "Quadrado", description: "Forma geométrica independente", category: "shapes", icon: FiSquare },
-  { type: "shape", value: "rectangle", name: "Retângulo", description: "Forma geométrica independente", category: "shapes", icon: FiBox },
-  { type: "shape", value: "triangle", name: "Triângulo", description: "Forma geométrica independente", category: "shapes", icon: FiTriangle },
-  { type: "shape", value: "diamond", name: "Losango", description: "Forma geométrica independente", category: "shapes", icon: FiSquare },
-  { type: "shape", value: "star", name: "Estrela", description: "Forma geométrica independente", category: "shapes", icon: FiStar },
+  { type: "shape", value: "square", name: "Quadrado livre", description: "Estique para criar qualquer retângulo", category: "shapes", icon: FiSquare },
+  { type: "shape", value: "circle", name: "Círculo", description: "Forma elíptica redimensionável", category: "shapes", icon: FiCircle },
+  { type: "shape", value: "triangle", name: "Triângulo", description: "Triângulo redimensionável", category: "shapes", icon: FiTriangle },
+  { type: "shape", value: "diamond", name: "Losango", description: "Losango redimensionável", category: "shapes", icon: FiSquare },
+  { type: "shape", value: "pentagon", name: "Pentágono", description: "Polígono de cinco lados", category: "shapes", icon: FiBox },
+  { type: "shape", value: "hexagon", name: "Hexágono", description: "Polígono de seis lados", category: "shapes", icon: FiBox },
+  { type: "shape", value: "star", name: "Estrela", description: "Estrela decorativa", category: "shapes", icon: FiStar },
+  { type: "shape", value: "arrow", name: "Seta", description: "Seta redimensionável", category: "shapes", icon: FiArrowUp },
+  { type: "shape", value: "blob", name: "Forma orgânica", description: "Forma fluida para fundos e destaques", category: "shapes", icon: FiCircle },
   { type: "shape", value: "line", name: "Linha", description: "Linha decorativa independente", category: "shapes", icon: FiMinus },
   { type: "metric", name: "Número em destaque", description: "Um número importante com uma explicação curta", category: "information", icon: FiActivity },
   { type: "divider", name: "Linha divisória", description: "Uma separação visual sutil", category: "layout", icon: FiMinus },
@@ -119,6 +133,8 @@ function categoryDescription(category: LibraryCategory): string {
   if (category === "structure") return "Veja a ordem das seções e dos elementos. Você pode selecionar, ocultar, travar e reorganizar.";
   if (category === "sections") return "Escolha o tipo de seção e compare composições prontas antes de inserir.";
   if (category === "backgrounds") return "Troque cor, foto e detalhes visuais sem alterar o conteúdo da seção.";
+  if (category === "icons") return "Escolha ícones vetoriais da biblioteca Lucide. Eles continuam nítidos em qualquer tamanho.";
+  if (category === "shapes") return "Adicione formas vetoriais e redimensione largura e altura livremente.";
   return "Adicione peças simples. A CONG cuida da adaptação para telas diferentes.";
 }
 
@@ -204,6 +220,7 @@ export default function SectionLibrary({
   const [backgroundScope, setBackgroundScope] = useState<"section" | "all">("section");
   const [query, setQuery] = useState("");
   const [sectionType, setSectionType] = useState<InstitutionalSectionType>("organization_intro");
+  const [iconCategory, setIconCategory] = useState<InstitutionalIconCategory>("all");
   const [draggedLayer, setDraggedLayer] = useState<{ sectionId: string; layerId: string } | null>(null);
 
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
@@ -223,13 +240,17 @@ export default function SectionLibrary({
     if (!normalizedQuery) return true;
     return `${item.name} ${item.description}`.toLocaleLowerCase("pt-BR").includes(normalizedQuery);
   });
+  const filteredIcons = filterInstitutionalIcons(query, iconCategory);
   const activeSectionType = filteredSections.some((definition) => definition.type === sectionType)
     ? sectionType
     : filteredSections[0]?.type ?? sectionType;
   const selectedDefinition = getSectionDefinition(activeSectionType);
-  const sectionVariants = variants.filter(
-    (variant) => variant.sectionType === activeSectionType && (variant.isSystem || variant.status === "published"),
-  );
+  const currentDesignFamily = findNativeDesignFamilyByVisualStyle(selectedSection?.settings.visualStyle);
+  const sectionVariants = variants
+    .filter(
+      (variant) => variant.sectionType === activeSectionType && (variant.isSystem || variant.status === "published"),
+    )
+    .sort((left, right) => nativeFamilyOrder(left.name) - nativeFamilyOrder(right.name));
 
   const selectedSectionStyle = selectedSection ? getSectionStyle(selectedSection.settings) : {};
   const firstMovableIndex = sections.findIndex(
@@ -310,7 +331,7 @@ export default function SectionLibrary({
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={category === "sections" ? "Buscar seção ou estilo" : "Buscar peça"}
+                placeholder={category === "sections" ? "Buscar seção ou estilo" : category === "icons" ? "Buscar ícone (ex.: pessoas, mapa, doação)" : "Buscar peça"}
               />
             </label>
           ) : null}
@@ -632,43 +653,57 @@ export default function SectionLibrary({
                   </div>
 
                   <div className={styles.variantGallery}>
-                    {sectionVariants.map((variant) => (
-                      <article
-                        key={variant.versionId}
-                        className={styles.variantCard}
-                        draggable={!disabled}
-                        onDragStart={(event) => {
-                          event.dataTransfer.effectAllowed = "copy";
-                          event.dataTransfer.setData("application/x-cong-section-type", activeSectionType);
-                          event.dataTransfer.setData("application/x-cong-variant-version", variant.versionId);
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className={styles.variantPreviewButton}
-                          onClick={() => onAddSection(activeSectionType, variant.versionId)}
-                          disabled={disabled}
-                          aria-label={`Adicionar ${variant.name}`}
+                    {sectionVariants.map((variant) => {
+                      const family = findNativeDesignFamilyById(variant.familyKey) ?? findNativeDesignFamilyByName(variant.name);
+                      const matchesCurrentFamily = Boolean(family && currentDesignFamily?.id === family.id);
+                      return (
+                        <article
+                          key={variant.versionId}
+                          className={styles.variantCard}
+                          data-family={family?.id}
+                          data-family-match={matchesCurrentFamily || undefined}
+                          draggable={!disabled}
+                          onDragStart={(event) => {
+                            event.dataTransfer.effectAllowed = "copy";
+                            event.dataTransfer.setData("application/x-cong-section-type", activeSectionType);
+                            event.dataTransfer.setData("application/x-cong-variant-version", variant.versionId);
+                          }}
                         >
-                          <LiveSectionThumbnail sectionType={activeSectionType} variants={variants} preferredVariant={variant} size="large" />
-                        </button>
-                        <div className={styles.variantMeta}>
-                          <div>
-                            <strong>{variant.name}</strong>
-                            <small>{variant.description || "Um ponto de partida que pode ser personalizado."}</small>
-                            {variant.isSystem ? <em>Design CONG</em> : null}
-                          </div>
                           <button
                             type="button"
-                            className={styles.variantAddButton}
+                            className={styles.variantPreviewButton}
                             onClick={() => onAddSection(activeSectionType, variant.versionId)}
                             disabled={disabled}
+                            aria-label={`Adicionar ${variant.name}`}
                           >
-                            <FiPlus aria-hidden="true" /> Adicionar
+                            <LiveSectionThumbnail sectionType={activeSectionType} variants={variants} preferredVariant={variant} size="large" />
                           </button>
-                        </div>
-                      </article>
-                    ))}
+                          <div className={styles.variantMeta}>
+                            <div>
+                              <span className={styles.variantFamilyLine}>
+                                <strong>{variant.name}</strong>
+                                {matchesCurrentFamily ? <em data-recommended="true">Combina com o site</em> : variant.isSystem ? <em>Família nativa</em> : null}
+                              </span>
+                              <small>{variant.description || "Um ponto de partida que pode ser personalizado."}</small>
+                              {family ? (
+                                <>
+                                  <span className={styles.variantCharacter}>{family.character}</span>
+                                  <span className={styles.variantTraits}>{family.traits.slice(0, 2).map((trait) => <em key={trait}>{trait}</em>)}</span>
+                                </>
+                              ) : null}
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.variantAddButton}
+                              onClick={() => onAddSection(activeSectionType, variant.versionId)}
+                              disabled={disabled}
+                            >
+                              <FiPlus aria-hidden="true" /> Adicionar
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
 
                   {sectionVariants.length === 0 ? (
@@ -709,32 +744,80 @@ export default function SectionLibrary({
                 </div>
               ) : null}
 
-              <div className={styles.elementList}>
-                {filteredElements.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      type="button"
-                      key={`${item.type}-${item.value ?? item.name}`}
-                      className={styles.elementPiece}
-                      data-category={item.category}
-                      onClick={() => onAddElement(item.type, item.value)}
-                      disabled={disabled || !selectedSection}
-                      draggable={!disabled && Boolean(selectedSection)}
-                      onDragStart={(event) => {
-                        event.dataTransfer.effectAllowed = "copy";
-                        event.dataTransfer.setData("application/x-cong-element", item.type);
-                        if (item.value) event.dataTransfer.setData("application/x-cong-element-value", item.value);
-                      }}
-                      title={item.description}
-                    >
-                      <span className={styles.elementIcon}><Icon aria-hidden="true" /></span>
-                      <strong>{item.name}</strong>
-                      <i className={styles.dragDots} aria-hidden="true">⋮⋮</i>
-                    </button>
-                  );
-                })}
-              </div>
+              {category === "icons" ? (
+                <div className={styles.iconLibrary}>
+                  <div className={styles.iconCategoryTabs} aria-label="Categorias de ícones">
+                    {institutionalIconCategories.map((item) => (
+                      <button
+                        type="button"
+                        key={item.id}
+                        data-active={iconCategory === item.id}
+                        onClick={() => setIconCategory(item.id)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={styles.iconLibraryMeta}>
+                    <strong>{filteredIcons.length} ícones</strong>
+                    <span>SVG vetorial · Lucide</span>
+                  </div>
+                  <div className={styles.iconLibraryGrid}>
+                    {filteredIcons.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          type="button"
+                          key={item.id}
+                          className={styles.iconLibraryItem}
+                          onClick={() => onAddElement("icon", item.id)}
+                          disabled={disabled || !selectedSection}
+                          draggable={!disabled && Boolean(selectedSection)}
+                          onDragStart={(event) => {
+                            event.dataTransfer.effectAllowed = "copy";
+                            event.dataTransfer.setData("application/x-cong-element", "icon");
+                            event.dataTransfer.setData("application/x-cong-element-value", item.id);
+                          }}
+                          title={`Adicionar ${item.label}`}
+                        >
+                          <span><Icon aria-hidden="true" /></span>
+                          <small>{item.label}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {filteredIcons.length === 0 ? (
+                    <div className={styles.iconEmptyState}>Nenhum ícone encontrado para esta busca.</div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className={styles.elementList}>
+                  {filteredElements.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        type="button"
+                        key={`${item.type}-${item.value ?? item.name}`}
+                        className={styles.elementPiece}
+                        data-category={item.category}
+                        onClick={() => onAddElement(item.type, item.value)}
+                        disabled={disabled || !selectedSection}
+                        draggable={!disabled && Boolean(selectedSection)}
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = "copy";
+                          event.dataTransfer.setData("application/x-cong-element", item.type);
+                          if (item.value) event.dataTransfer.setData("application/x-cong-element-value", item.value);
+                        }}
+                        title={item.description}
+                      >
+                        <span className={styles.elementIcon}><Icon aria-hidden="true" /></span>
+                        <strong>{item.name}</strong>
+                        <i className={styles.dragDots} aria-hidden="true">⋮⋮</i>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className={styles.bottomTip}>
                 <strong>Você continua no controle</strong>

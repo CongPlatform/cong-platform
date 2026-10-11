@@ -146,15 +146,7 @@ export async function uploadInstitutionalMedia(
         )
         values ($1, $2, $3, $4, $5, $6, $7)
       `,
-      [
-        assetId,
-        organizationId,
-        userId,
-        storagePath,
-        name,
-        mimeType,
-        file.size,
-      ],
+      [assetId, organizationId, userId, storagePath, name, mimeType, file.size],
     );
 
     const { data, error: signedUrlError } = await bucket().createSignedUrl(

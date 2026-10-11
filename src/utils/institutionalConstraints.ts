@@ -9,7 +9,7 @@ export const FREE_EDITOR_CONSTRAINTS: InstitutionalEditorConstraints = {
   minWidthPercent: 8,
   maxWidthPercent: 240,
   minFontSize: 10,
-  maxFontSize: 96,
+  maxFontSize: 160,
   maxOffset: 100,
 };
 

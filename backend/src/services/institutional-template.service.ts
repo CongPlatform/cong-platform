@@ -1,6 +1,10 @@
 import type { PoolClient } from "pg";
 
 import pool from "../config/database.js";
+import {
+  hasPlatformCapability,
+  NATIVE_DESIGNS_CAPABILITY,
+} from "./platform-capability.service.js";
 import { AppError } from "../utils/app-error.js";
 import {
   institutionalTemplateDefinitionSchema,
@@ -14,6 +18,7 @@ export interface InstitutionalTemplateSummary {
   name: string;
   description: string;
   category: string;
+  familyKey: string | null;
   isSystem: boolean;
   isExample: boolean;
   definition?: InstitutionalTemplateDefinition;
@@ -112,10 +117,8 @@ async function assertTemplateVariantsPublished(
         on v.id = vv.variant_id
       where vv.id = any($1::uuid[])
         and vv.status = 'published'
-        and (
-          v.is_system = true
-          or (v.status = 'published' and v.visibility = 'public')
-        )
+        and v.status = 'published'
+        and v.visibility = 'public'
     `,
     [uniqueIds],
   );
@@ -145,6 +148,7 @@ export async function listInstitutionalTemplates(): Promise<InstitutionalTemplat
         name,
         description,
         category,
+        family_key as "familyKey",
         is_system as "isSystem",
         coalesce((definition ->> 'example')::boolean, false) as "isExample",
         definition
@@ -195,6 +199,11 @@ export async function listDesignerTemplates(
 
   try {
     const userId = await getActiveUserId(client, authUserId);
+    const canManageNative = await hasPlatformCapability(
+      client,
+      authUserId,
+      NATIVE_DESIGNS_CAPABILITY,
+    );
     const result = await client.query<DesignerInstitutionalTemplate>(
       `
         select
@@ -202,18 +211,22 @@ export async function listDesignerTemplates(
           name,
           description,
           category,
-          false as "isSystem",
-          false as "isExample",
+          family_key as "familyKey",
+          is_system as "isSystem",
+          coalesce((definition ->> 'example')::boolean, false) as "isExample",
           visibility,
           status,
           updated_at as "updatedAt",
           definition
         from public.institutional_templates
-        where owner_user_id = $1
-          and is_system = false
-        order by updated_at desc
+        where coalesce(family_key, '') <> 'legacy-retired'
+          and (
+            (owner_user_id = $1 and is_system = false)
+            or (is_system = true and $2::boolean = true)
+          )
+        order by is_system desc, updated_at desc
       `,
-      [userId],
+      [userId, canManageNative],
     );
 
     return result.rows.map((template) => ({
@@ -233,6 +246,11 @@ export async function getDesignerTemplate(
 
   try {
     const userId = await getActiveUserId(client, authUserId);
+    const canManageNative = await hasPlatformCapability(
+      client,
+      authUserId,
+      NATIVE_DESIGNS_CAPABILITY,
+    );
     const result = await client.query<DesignerInstitutionalTemplate>(
       `
         select
@@ -240,25 +258,28 @@ export async function getDesignerTemplate(
           name,
           description,
           category,
-          false as "isSystem",
-          false as "isExample",
+          family_key as "familyKey",
+          is_system as "isSystem",
+          coalesce((definition ->> 'example')::boolean, false) as "isExample",
           visibility,
           status,
           updated_at as "updatedAt",
           definition
         from public.institutional_templates
         where id = $1
-          and owner_user_id = $2
-          and is_system = false
+          and (
+            (owner_user_id = $2 and is_system = false)
+            or (is_system = true and $3::boolean = true)
+          )
         limit 1
       `,
-      [templateId, userId],
+      [templateId, userId, canManageNative],
     );
 
     const template = result.rows[0];
     if (!template) {
       throw new AppError(
-        "O template selecionado não pertence a este perfil de Designer.",
+        "O template selecionado não está disponível para edição.",
         404,
         "DESIGNER_TEMPLATE_NOT_FOUND",
       );
@@ -277,12 +298,29 @@ export async function createDesignerTemplate(
     description: string;
     category: string;
     definition: InstitutionalTemplateDefinition;
+    isSystem?: boolean;
   },
 ): Promise<DesignerInstitutionalTemplate> {
   const client = await pool.connect();
 
   try {
     const userId = await getActiveUserId(client, authUserId);
+    const isSystem = Boolean(input.isSystem);
+    if (isSystem) {
+      const allowed = await hasPlatformCapability(
+        client,
+        authUserId,
+        NATIVE_DESIGNS_CAPABILITY,
+      );
+      if (!allowed) {
+        throw new AppError(
+          "Você não tem permissão para criar templates nativos da CONG.",
+          403,
+          "NATIVE_DESIGNS_PERMISSION_REQUIRED",
+        );
+      }
+    }
+
     const definition = normalizeDefinition(input.definition);
     const result = await client.query<{ id: string }>(
       `
@@ -296,10 +334,17 @@ export async function createDesignerTemplate(
           status,
           definition
         )
-        values ($1, $2, $3, $4, false, 'private', 'draft', $5)
+        values ($1, $2, $3, $4, $5, 'private', 'draft', $6)
         returning id
       `,
-      [input.name, input.description, input.category, userId, definition],
+      [
+        input.name,
+        input.description,
+        input.category,
+        isSystem ? null : userId,
+        isSystem,
+        definition,
+      ],
     );
 
     const id = result.rows[0]?.id;
@@ -331,6 +376,11 @@ export async function updateDesignerTemplate(
 
   try {
     const userId = await getActiveUserId(client, authUserId);
+    const canManageNative = await hasPlatformCapability(
+      client,
+      authUserId,
+      NATIVE_DESIGNS_CAPABILITY,
+    );
     const definition = normalizeDefinition(input.definition);
     const result = await client.query<{ id: string }>(
       `
@@ -343,16 +393,26 @@ export async function updateDesignerTemplate(
           status = case when status = 'published' then 'draft' else status end,
           visibility = case when status = 'published' then 'private' else visibility end
         where id = $5
-          and owner_user_id = $6
-          and is_system = false
+          and (
+            (owner_user_id = $6 and is_system = false)
+            or (is_system = true and $7::boolean = true)
+          )
         returning id
       `,
-      [input.name, input.description, input.category, definition, templateId, userId],
+      [
+        input.name,
+        input.description,
+        input.category,
+        definition,
+        templateId,
+        userId,
+        canManageNative,
+      ],
     );
 
     if (!result.rows[0]) {
       throw new AppError(
-        "O template selecionado não pertence a este perfil de Designer.",
+        "O template selecionado não está disponível para edição.",
         404,
         "DESIGNER_TEMPLATE_NOT_FOUND",
       );
@@ -372,22 +432,29 @@ export async function publishDesignerTemplate(
 
   try {
     const userId = await getActiveUserId(client, authUserId);
+    const canManageNative = await hasPlatformCapability(
+      client,
+      authUserId,
+      NATIVE_DESIGNS_CAPABILITY,
+    );
     const currentResult = await client.query<{ definition: unknown }>(
       `
         select definition
         from public.institutional_templates
         where id = $1
-          and owner_user_id = $2
-          and is_system = false
+          and (
+            (owner_user_id = $2 and is_system = false)
+            or (is_system = true and $3::boolean = true)
+          )
         limit 1
       `,
-      [templateId, userId],
+      [templateId, userId, canManageNative],
     );
 
     const currentDefinition = currentResult.rows[0]?.definition;
     if (!currentDefinition) {
       throw new AppError(
-        "O template selecionado não pertence a este perfil de Designer.",
+        "O template selecionado não está disponível para publicação.",
         404,
         "DESIGNER_TEMPLATE_NOT_FOUND",
       );
@@ -403,16 +470,18 @@ export async function publishDesignerTemplate(
         update public.institutional_templates
         set status = 'published', visibility = 'public'
         where id = $1
-          and owner_user_id = $2
-          and is_system = false
+          and (
+            (owner_user_id = $2 and is_system = false)
+            or (is_system = true and $3::boolean = true)
+          )
         returning id
       `,
-      [templateId, userId],
+      [templateId, userId, canManageNative],
     );
 
     if (!result.rows[0]) {
       throw new AppError(
-        "O template selecionado não pertence a este perfil de Designer.",
+        "O template selecionado não está disponível para publicação.",
         404,
         "DESIGNER_TEMPLATE_NOT_FOUND",
       );
