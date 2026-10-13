@@ -1,7 +1,8 @@
 import styles from "./Footer.module.css";
+
 import { TransitionLink } from "../pageTransitionProvider/TransitionLink";
 
-import { FaGithub, FaLinkedin, FaYoutube, FaCommentDots } from "react-icons/fa";
+import { FaGithub, FaYoutube, FaInstagram, FaEnvelope } from "react-icons/fa";
 
 import logo from "../../assets/brand/logo-wordmark-dark.webp";
 
@@ -19,28 +20,27 @@ export default function Footer() {
 
           <div className={styles.socials}>
             <a
-              href="https://github.com/CongPlataform"
+              href="https://github.com/CongPlatform"
               target="_blank"
               rel="noopener noreferrer"
             >
               <FaGithub size={22} />
             </a>
+
+            <a href="mailto:congplatform@gmail.com">
+              <FaEnvelope size={22} />
+            </a>
+
             <a
-              href="https://discord.gg/cong"
+              href="https://www.instagram.com/cong.platform"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FaCommentDots size={22} />
+              <FaInstagram size={22} />
             </a>
+
             <a
-              href="https://linkedin.com/company/cong"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FaLinkedin size={22} />
-            </a>
-            <a
-              href="https://youtube.com/c/CongPlataform"
+              href="https://www.youtube.com/@CongPlatform"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -72,28 +72,25 @@ export default function Footer() {
           <h4>COMUNIDADE</h4>
 
           <a
-            href="https://github.com/CongPlataform"
+            href="https://github.com/CongPlatform"
             target="_blank"
             rel="noopener noreferrer"
           >
             GitHub
           </a>
+
+          <a href="mailto:congplatform@gmail.com">E-mail</a>
+
           <a
-            href="https://discord.gg/cong"
+            href="https://www.instagram.com/cong.platform"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Discord
+            Instagram
           </a>
+
           <a
-            href="https://linkedin.com/company/cong"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            LinkedIn
-          </a>
-          <a
-            href="https://youtube.com/c/CongPlataform"
+            href="https://www.youtube.com/@CongPlatform"
             target="_blank"
             rel="noopener noreferrer"
           >

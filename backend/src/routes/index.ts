@@ -4,6 +4,9 @@ import authRouter from "./auth.routes.js";
 import accountRouter from "./account.routes.js";
 import organizationRouter from "./organization.routes.js";
 import communityRouter from "./community.routes.js";
+import institutionalRouter from "./institutional.routes.js";
+import publicInstitutionalRouter from "./public-institutional.routes.js";
+import messagesRouter from "./messages.routes.js";
 
 const router = Router();
 
@@ -24,5 +27,8 @@ router.use("/api/auth", authRouter);
 router.use("/api/account", accountRouter);
 router.use("/api/organizations", organizationRouter);
 router.use("/api/community", communityRouter);
+router.use("/api/institutional", institutionalRouter);
+router.use("/api/public", publicInstitutionalRouter);
+router.use("/api/messages", messagesRouter);
 
 export default router;

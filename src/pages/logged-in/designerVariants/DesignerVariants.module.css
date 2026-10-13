@@ -1,0 +1,337 @@
+.page {
+  min-height: calc(100svh - var(--app-topbar-height, 64px));
+  padding: 28px clamp(20px, 3vw, 44px) 50px;
+  color: var(--color-slate-800);
+  background: var(--app-canvas, var(--color-slate-50));
+  font-family: var(--font-interface);
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.pageHeader > div {
+  max-width: 760px;
+}
+
+.pageHeader span {
+  color: var(--color-primary);
+  font-size: var(--font-xs);
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.pageHeader h1 {
+  margin: 4px 0 0;
+  color: var(--color-navy);
+  font-family: var(--font-interface);
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  letter-spacing: -0.035em;
+}
+
+.pageHeader p {
+  margin: 8px 0 0;
+  color: var(--color-slate-600);
+  line-height: var(--line-readable);
+}
+
+.pageHeader > button,
+.saveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 9px 13px;
+  border-radius: 10px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+}
+
+.error {
+  margin-bottom: 16px;
+  padding: 11px 13px;
+  border: 1px solid var(--color-red-200);
+  border-radius: 10px;
+  color: var(--color-danger-dark);
+  background: var(--color-danger-soft);
+  font-size: var(--font-sm);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.library,
+.builder {
+  border: 1px solid var(--color-slate-200);
+  border-radius: 16px;
+  background: var(--color-white);
+}
+
+.library {
+  align-self: start;
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+}
+
+.library > strong {
+  color: var(--color-navy);
+  font-size: var(--font-sm);
+}
+
+.library > span {
+  color: var(--color-slate-500);
+  font-size: var(--font-xs);
+}
+
+.variantList {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.variantList > p {
+  color: var(--color-slate-500);
+  font-size: var(--font-xs);
+}
+
+.variantCard {
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 11px;
+}
+
+.variantCard > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.variantCard strong {
+  overflow: hidden;
+  color: var(--color-navy);
+  font-size: var(--font-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.variantCard span {
+  color: var(--color-slate-500);
+  font-size: var(--font-2xs);
+}
+
+.variantActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.variantActions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 7px;
+  border-radius: 7px;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+  font-size: var(--font-2xs);
+  font-weight: var(--font-semibold);
+}
+
+.published {
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: var(--color-secondary-dark) !important;
+  background: var(--color-secondary-50);
+  font-weight: var(--font-semibold);
+}
+
+.builder {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.form {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 18px;
+  border-right: 1px solid var(--color-slate-200);
+}
+
+.form label,
+.form fieldset {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form label > span,
+.form legend,
+.availableFields > strong {
+  color: var(--color-navy);
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.form input,
+.form textarea,
+.form select {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 1px solid var(--color-slate-300);
+  border-radius: 9px;
+  color: var(--color-slate-800);
+  background: var(--color-white);
+  font-size: var(--font-sm);
+}
+
+.form textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.form label > small,
+.availableFields > small {
+  color: var(--color-slate-500);
+  font-size: var(--font-xs);
+  line-height: var(--line-normal);
+}
+
+.form fieldset {
+  border: 0;
+  padding: 0;
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.optionGrid button {
+  min-height: 38px;
+  padding: 7px 8px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 9px;
+  color: var(--color-slate-600);
+  background: var(--color-slate-50);
+  font-size: var(--font-xs);
+}
+
+.optionGrid .optionActive {
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+  font-weight: var(--font-semibold);
+}
+
+.twoColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.availableFields {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid var(--color-primary-100);
+  border-radius: 11px;
+  background: var(--color-blue-pale);
+}
+
+.availableFields > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.availableFields > div span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: var(--color-slate-700);
+  background: var(--color-white);
+  font-size: var(--font-2xs);
+}
+
+.saveButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.previewArea {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-slate-100);
+}
+
+.previewHeading {
+  display: grid;
+  gap: 2px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--color-slate-200);
+  background: var(--color-white);
+}
+
+.previewHeading strong {
+  color: var(--color-navy);
+  font-size: var(--font-sm);
+}
+
+.previewHeading span {
+  color: var(--color-slate-500);
+  font-size: var(--font-xs);
+}
+
+.preview {
+  min-width: 0;
+  overflow: auto;
+  padding: 28px;
+}
+
+.preview > section {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--color-white);
+  box-shadow: 0 12px 34px rgb(var(--color-navy-rgb) / 8%);
+}
+
+@media (max-width: 1180px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .library {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .builder {
+    grid-template-columns: 1fr;
+  }
+
+  .form {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-slate-200);
+  }
+}

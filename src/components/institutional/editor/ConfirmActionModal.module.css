@@ -1,0 +1,50 @@
+.content {
+  display: grid;
+  gap: 22px;
+}
+
+.description {
+  color: var(--color-slate-700);
+  font-family: var(--font-interface);
+  font-size: var(--font-sm);
+  line-height: var(--line-readable);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancel,
+.confirm,
+.danger {
+  min-height: 42px;
+  padding: 9px 15px;
+  border-radius: 10px;
+  font-family: var(--font-interface);
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+}
+
+.cancel {
+  color: var(--color-slate-700);
+  background: var(--color-slate-100);
+}
+
+.confirm {
+  color: var(--color-white);
+  background: var(--color-primary);
+}
+
+.danger {
+  color: var(--color-white);
+  background: var(--color-danger);
+}
+
+.cancel:disabled,
+.confirm:disabled,
+.danger:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}

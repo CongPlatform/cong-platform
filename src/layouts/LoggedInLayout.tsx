@@ -10,14 +10,18 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiCompass,
+  FiDroplet,
   FiFileText,
   FiFolder,
+  FiGlobe,
   FiHelpCircle,
   FiHome,
+  FiLayers,
   FiLogOut,
   FiMenu,
   FiMessageCircle,
   FiPlus,
+  FiPenTool,
   FiSearch,
   FiSettings,
   FiShield,
@@ -30,6 +34,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import CommunityNotificationsPanel from "../components/community/CommunityNotificationsPanel";
 import CommunitySearchPanel from "../components/community/CommunitySearchPanel";
+import WorkspaceSelector from "../components/workspace/WorkspaceSelector";
 import {
   getCommunityDiscovery,
   getCommunityNotifications,
@@ -38,11 +43,15 @@ import {
   type CommunitySearchPayload,
   type CommunitySearchResult,
 } from "../services/communityService";
+import { fetchGlobalMessageUnreadCount } from "../services/messagesService";
+import { getStoredAuthToken } from "../services/api";
+import { supabase } from "../services/supabase";
 
 import logoCompact from "../assets/brand/logo-mark.webp";
 import logoExtended from "../assets/brand/logo-wordmark-dark.webp";
 
 import { useAuth } from "../contexts/auth-context";
+import { useWorkspace } from "../contexts/workspace-context";
 
 import { buildDefaultAvatarUrl } from "../utils/avatar";
 
@@ -56,51 +65,14 @@ type NavItem = {
   action?: "notifications";
 };
 
-const MAIN_NAVIGATION: NavItem[] = [
-  {
-    label: "Comunidade",
-    icon: FiHome,
-    to: "/app/comunidade",
-  },
-  {
-    label: "Explorar",
-    icon: FiCompass,
-    to: "/em-construcao?feature=explorar",
-  },
-  {
-    label: "Projetos",
-    icon: FiFolder,
-    to: "/em-construcao?feature=projetos",
-  },
-  {
-    label: "Módulos",
-    icon: FiBox,
-    to: "/em-construcao",
-  },
-  {
-    label: "Eventos",
-    icon: FiCalendar,
-    to: "/em-construcao?feature=eventos",
-  },
-];
+const COMMUNITY_ITEM: NavItem = {
+  label: "Comunidade",
+  icon: FiHome,
+  to: "/app/comunidade",
+};
 
-const ACCOUNT_NAVIGATION: NavItem[] = [
-  {
-    label: "Mensagens",
-    icon: FiMessageCircle,
-    to: "/em-construcao",
-  },
-  {
-    label: "Notificações",
-    icon: FiBell,
-    to: "/em-construcao?feature=notificacoes",
-  },
-  {
-    label: "Meu perfil",
-    icon: FiUser,
-    to: "/app/minha-conta",
-  },
-];
+const MESSAGES_ITEM: NavItem = { label: "Mensagens", icon: FiMessageCircle, to: "/app/mensagens" };
+
 
 function NavEntry({
   item,
@@ -187,8 +159,10 @@ function TopbarAction({
 export default function LoggedInLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMessagesView = /^\/app\/mensagens(?:\/|$)/.test(location.pathname);
 
-  const { account, logout } = useAuth();
+  const { account, logout, user } = useAuth();
+  const { workspace } = useWorkspace();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -206,10 +180,22 @@ export default function LoggedInLayout() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [canModerateCommunity, setCanModerateCommunity] = useState(false);
+  const [messageUnreadCount, setMessageUnreadCount] = useState(0);
+  const [messageToast, setMessageToast] = useState(false);
+  const messageUnreadRef = useRef<number | null>(null);
+  const messagesPathRef = useRef(false);
   const profileAreaRef = useRef<HTMLDivElement>(null);
   const notificationAreaRef = useRef<HTMLDivElement>(null);
   const searchAreaRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    messagesPathRef.current = /^\/app\/mensagens(?:\/|$)/.test(location.pathname);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   const displayName = account?.displayName || account?.name || "Minha conta";
 
@@ -219,6 +205,122 @@ export default function LoggedInLayout() {
   const username = account?.username
     ? `@${account.username}`
     : (account?.authentication.email ?? "Minha conta");
+
+  const mainNavigation: NavItem[] = (() => {
+    if (workspace.kind === "organization") {
+      if (workspace.organization.organizationType === "ngo") {
+        return [
+          COMMUNITY_ITEM,
+          MESSAGES_ITEM,
+                    { label: "Sites", icon: FiGlobe, to: "/app/site-institucional" },
+          { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
+          { label: "Módulos", icon: FiBox, to: "/em-construcao?feature=modulos" },
+          { label: "Eventos", icon: FiCalendar, to: "/em-construcao?feature=eventos" },
+        ];
+      }
+
+      return [
+        COMMUNITY_ITEM,
+        MESSAGES_ITEM,
+        { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
+      ];
+    }
+
+    if (workspace.kind === "collaboration") {
+      if (workspace.profile.role === "designer") {
+        return [
+          COMMUNITY_ITEM,
+          MESSAGES_ITEM,
+          { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
+          { label: "Templates", icon: FiLayers, to: "/app/design/templates" },
+          { label: "Variações", icon: FiPenTool, to: "/app/design/variantes" },
+          { label: "Recursos visuais", icon: FiDroplet, to: "/app/design/recursos" },
+        ];
+      }
+
+      return [
+        COMMUNITY_ITEM,
+        MESSAGES_ITEM,
+        { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
+        { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
+        { label: "Eventos", icon: FiCalendar, to: "/em-construcao?feature=eventos" },
+      ];
+    }
+
+    return [
+      COMMUNITY_ITEM,
+      MESSAGES_ITEM,
+      { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
+    ];
+  })().map((item) => (item.to === "/app/mensagens" ? { ...item, badge: messageUnreadCount || undefined } : item));
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    let channelActive = false;
+
+    async function loadMessageBadges(notify = false) {
+      try {
+        const total = await fetchGlobalMessageUnreadCount();
+        if (cancelled) return;
+        if (notify && !messagesPathRef.current && messageUnreadRef.current !== null && total > messageUnreadRef.current) {
+          setMessageToast(true);
+        }
+        setMessageUnreadCount(total);
+        messageUnreadRef.current = total;
+      } catch {
+        // Offline / network error: keep the last known count.
+      }
+    }
+
+    void loadMessageBadges();
+    const channel = supabase
+      .channel(`cong:message-user:${user.id}`, { config: { private: true } })
+      .on("broadcast", { event: "message_changed" }, ({ payload }) => {
+        if (cancelled) return;
+        window.dispatchEvent(new CustomEvent("cong:messages-event", { detail: payload }));
+        void loadMessageBadges(true);
+      });
+
+    async function join() {
+      const token = getStoredAuthToken();
+      if (!token) {
+        window.dispatchEvent(new CustomEvent("cong:messages-status", { detail: "offline" }));
+        return;
+      }
+      await supabase.realtime.setAuth(token);
+      if (cancelled) return;
+      channel.subscribe((status, error) => {
+        if (cancelled) return;
+        const nextStatus = status === "SUBSCRIBED" ? "connected" : status === "CHANNEL_ERROR" || status === "TIMED_OUT" ? "offline" : "connecting";
+        if (status === "SUBSCRIBED") channelActive = true;
+        window.dispatchEvent(new CustomEvent("cong:messages-status", { detail: nextStatus }));
+        if (error) console.warn("CONG Realtime: assinatura de mensagens não estabelecida", error.message);
+        if (status === "SUBSCRIBED" && channelActive) void loadMessageBadges();
+      });
+    }
+    void join().catch((error: unknown) => {
+      console.warn("CONG Realtime: não foi possível conectar", error);
+      window.dispatchEvent(new CustomEvent("cong:messages-status", { detail: "offline" }));
+    });
+
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadMessageBadges();
+    }, 12000);
+    const refreshToken = window.setInterval(() => {
+      const token = getStoredAuthToken();
+      if (token) void supabase.realtime.setAuth(token);
+    }, 60000);
+    const onLocalChange = () => { void loadMessageBadges(); };
+    window.addEventListener("cong:messages-local-change", onLocalChange);
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+      window.clearInterval(refreshToken);
+      window.removeEventListener("cong:messages-local-change", onLocalChange);
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -360,6 +462,18 @@ export default function LoggedInLayout() {
       return location.pathname === "/app/moderacao";
     }
 
+    if (item.to === "/app/site-institucional") {
+      return location.pathname.startsWith("/app/site-institucional");
+    }
+
+    if (item.to === "/app/design/templates") {
+      return location.pathname.startsWith("/app/design/templates");
+    }
+
+    if (item.to === "/app/design/variantes") {
+      return location.pathname.startsWith("/app/design/variantes");
+    }
+
     if (item.to.startsWith("/em-construcao")) {
       const expected = new URLSearchParams(item.to.split("?")[1] ?? "").get(
         "feature",
@@ -424,7 +538,7 @@ export default function LoggedInLayout() {
     <div
       className={`${styles.shell} ${
         sidebarCollapsed ? styles.shellCollapsed : ""
-      }`}
+      } ${isMessagesView ? styles.shellMessages : ""}`}
     >
       <a className={styles.skipLink} href="#logged-main-content">
         Pular para o conteúdo
@@ -475,9 +589,17 @@ export default function LoggedInLayout() {
           </button>
         </div>
 
+        <WorkspaceSelector
+          collapsed={sidebarCollapsed}
+          onChanged={() => {
+            closeMobileMenu();
+            navigate("/app/comunidade");
+          }}
+        />
+
         <nav className={styles.sidebarNavigation}>
           <div className={styles.navigationGroup}>
-            {MAIN_NAVIGATION.map((item) => (
+            {mainNavigation.map((item) => (
               <NavEntry
                 key={item.label}
                 item={item}
@@ -504,21 +626,6 @@ export default function LoggedInLayout() {
             ) : null}
           </div>
 
-          <div className={styles.navigationDivider} />
-
-          <div className={styles.navigationGroup}>
-            {ACCOUNT_NAVIGATION.map((item) => (
-              <NavEntry
-                key={item.label}
-                item={item}
-                collapsed={sidebarCollapsed}
-                onNavigate={closeMobileMenu}
-                onNotifications={() => setNotificationsOpen(true)}
-                notificationCount={notifications.unreadCount}
-                activeOverride={navigationActive(item)}
-              />
-            ))}
-          </div>
         </nav>
 
         <div className={styles.sidebarFooter}>
@@ -572,8 +679,8 @@ export default function LoggedInLayout() {
         />
       ) : null}
 
-      <section className={styles.workspace}>
-        <header className={styles.topbar}>
+      <section className={`${styles.workspace} ${isMessagesView ? styles.workspaceMessages : ""}`}>
+        <header className={`${styles.topbar} ${isMessagesView ? styles.topbarMessages : ""}`}>
           <div className={styles.topbarStart}>
             <button
               type="button"
@@ -641,11 +748,26 @@ export default function LoggedInLayout() {
             <button
               type="button"
               className={styles.topbarCreateButton}
-              onClick={() => navigate("/app/comunidade?compose=general")}
+              onClick={() => {
+                if (workspace.kind === "organization" && workspace.organization.organizationType === "ngo") {
+                  navigate("/app/site-institucional?create=1");
+                  return;
+                }
+                if (workspace.kind === "collaboration" && workspace.profile.role === "designer") {
+                  navigate("/app/design/templates?create=1");
+                  return;
+                }
+                navigate("/app/comunidade?compose=general");
+              }}
             >
               <FiPlus aria-hidden="true" />
-
-              <span>Criar</span>
+              <span>
+                {workspace.kind === "organization" && workspace.organization.organizationType === "ngo"
+                  ? "Criar site"
+                  : workspace.kind === "collaboration" && workspace.profile.role === "designer"
+                    ? "Criar template"
+                    : "Criar"}
+              </span>
             </button>
 
             <div className={styles.notificationArea} ref={notificationAreaRef}>
@@ -804,10 +926,16 @@ export default function LoggedInLayout() {
 
         <div
           id="logged-main-content"
-          className={styles.workspaceContent}
+          className={`${styles.workspaceContent} ${isMessagesView ? styles.workspaceContentMessages : ""}`}
           tabIndex={-1}
         >
           <Outlet />
+          {messageToast && !isMessagesView ? (
+            <button type="button" className={styles.messageToast} onClick={() => { setMessageToast(false); navigate("/app/mensagens"); }}>
+              <FiMessageCircle aria-hidden="true" /> <span>Você recebeu uma nova mensagem</span>
+              <FiChevronRight aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
       </section>
     </div>

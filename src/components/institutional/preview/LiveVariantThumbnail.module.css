@@ -1,0 +1,23 @@
+.viewport {
+  position: relative;
+  height: 132px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--color-slate-50);
+}
+
+.scaled {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 920px;
+  min-height: 460px;
+  transform: scale(0.265);
+  transform-origin: top left;
+  background: var(--color-white);
+}
+
+.guard {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
