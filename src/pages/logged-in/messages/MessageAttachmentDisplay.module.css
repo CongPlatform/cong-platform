@@ -1,0 +1,13 @@
+.attachment { min-width:0; max-width:min(75vw,420px); }
+.previewButton { position:relative; display:block; padding:0; width:100%; max-width:420px; overflow:hidden; border:0; border-radius:10px; background:#eaf0f7; cursor:zoom-in; }
+.previewButton img,.previewButton video { display:block; width:100%; height:auto; max-height:320px; object-fit:contain; }
+.expandIcon { position:absolute; top:9px; right:9px; width:29px; height:29px; display:grid; place-items:center; border-radius:8px; background:rgb(15 36 61 / 75%); color:#fff; opacity:0; transition:opacity .15s; }
+.previewButton:hover .expandIcon,.previewButton:focus-visible .expandIcon { opacity:1; }
+.audioShell { min-width:215px; max-width:min(72vw,340px); padding:3px; border-radius:18px; background:#f7f9fc; }
+.player { width:100%; height:40px; display:block; }
+.loading { display:block; padding:8px 10px; color:#7890a9; font-size:12px; }
+.fileButton { min-width:190px; display:flex; width:100%; align-items:center; gap:10px; padding:11px; border:1px solid #dae4ee; border-radius:9px; background:#f8fafd; color:#294d78; cursor:pointer; font:inherit; text-align:left; font-size:12px; }
+.fileButton span { flex:1; min-width:0; overflow-wrap:anywhere; }
+.caption { margin:8px 9px 4px; color:#2e4867 !important; font-size:12px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; text-align:left; }
+@media(max-width:680px) { .attachment { max-width:75vw; } .audioShell { min-width:185px; } .previewButton img,.previewButton video { max-height:240px; } .expandIcon { opacity:.9; } }
+@media(prefers-reduced-motion:reduce) { .expandIcon { transition:none; } }

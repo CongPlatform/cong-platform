@@ -1,11 +1,17 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { FiAlignCenter, FiAlignLeft, FiAlignRight, FiArrowDown, FiArrowUp, FiHelpCircle, FiLayers, FiMinus, FiMoreHorizontal, FiMoreVertical, FiX } from "react-icons/fi";
+  FiAlignCenter,
+  FiAlignLeft,
+  FiAlignRight,
+  FiArrowDown,
+  FiArrowUp,
+  FiHelpCircle,
+  FiLayers,
+  FiMinus,
+  FiMoreHorizontal,
+  FiMoreVertical,
+  FiX,
+} from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 
 import BrandPanel from "../../../components/institutional/editor/BrandPanel";
@@ -18,7 +24,10 @@ import SectionLibrary from "../../../components/institutional/editor/SectionLibr
 import { useEditorSelection } from "../../../components/institutional/editor/useEditorSelection";
 import InstitutionalSiteView from "../../../components/institutional/renderer/InstitutionalSiteView";
 import ModalMensagem from "../../../components/modalMensagem/ModalMensagem";
-import { createDefaultSectionContent, getSectionDefinition } from "../../../data/institutional/sectionCatalog";
+import {
+  createDefaultSectionContent,
+  getSectionDefinition,
+} from "../../../data/institutional/sectionCatalog";
 import { ApiError } from "../../../services/api";
 import {
   addInstitutionalSection,
@@ -76,15 +85,16 @@ import {
   institutionalSourceNodeId,
   uniqueInstitutionalSourceNodeIds,
 } from "../../../utils/institutionalSelection";
-import {
-  buildNativeExampleSite,
-} from "../../../utils/institutionalPreview";
+import { buildNativeExampleSite } from "../../../utils/institutionalPreview";
 import { findNativeDesignFamilyByVisualStyle } from "../../../data/institutional/nativeDesignFamilies";
 
 import styles from "./InstitutionalEditor.module.css";
 
 type SavingState = "idle" | "saving" | "saved" | "error";
-type BrandDraft = Omit<InstitutionalBrand, "organizationId" | "publicSlug" | "logoAsset">;
+type BrandDraft = Omit<
+  InstitutionalBrand,
+  "organizationId" | "publicSlug" | "logoAsset"
+>;
 
 interface InstitutionalRecoveryDraft {
   version: 1;
@@ -166,9 +176,14 @@ export default function InstitutionalEditor() {
   const { siteId } = useParams<{ siteId: string }>();
   const [site, setSite] = useState<InstitutionalSite | null>(null);
   const [variants, setVariants] = useState<InstitutionalVariant[]>([]);
-  const [designResources, setDesignResources] = useState<InstitutionalDesignResources>({ palettes: [], frames: [] });
+  const [designResources, setDesignResources] =
+    useState<InstitutionalDesignResources>({ palettes: [], frames: [] });
   const {
-    selection: { sectionId: selectedSectionId, elementId: selectedElementId, elementIds: selectedElementIds },
+    selection: {
+      sectionId: selectedSectionId,
+      elementId: selectedElementId,
+      elementIds: selectedElementIds,
+    },
     setSectionId: setSelectedSectionId,
     setElementId: setSelectedElementId,
     setElementIds: setSelectedElementIds,
@@ -176,7 +191,9 @@ export default function InstitutionalEditor() {
     selectElements: selectEditorElements,
   } = useEditorSelection();
   const [propertiesOpen, setPropertiesOpen] = useState(false);
-  const [libraryCollapsed, setLibraryCollapsed] = useState(() => localStorage.getItem("cong:institutional-library-collapsed") === "1");
+  const [libraryCollapsed, setLibraryCollapsed] = useState(
+    () => localStorage.getItem("cong:institutional-library-collapsed") === "1",
+  );
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -191,7 +208,9 @@ export default function InstitutionalEditor() {
   const [suggestedPalette, setSuggestedPalette] = useState<string[]>([]);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-  const [unlockedSiteIds, setUnlockedSiteIds] = useState<Set<string>>(() => new Set());
+  const [unlockedSiteIds, setUnlockedSiteIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [pendingImageTarget, setPendingImageTarget] = useState<
     | { kind: "content"; sectionId: string; path: Array<string | number> }
     | { kind: "element"; sectionId: string; elementId: string }
@@ -200,8 +219,12 @@ export default function InstitutionalEditor() {
   const directImageInputRef = useRef<HTMLInputElement>(null);
   const saveTimersRef = useRef(new Map<string, number>());
   const settingsTimersRef = useRef(new Map<string, number>());
-  const pendingSaveContentRef = useRef(new Map<string, Record<string, unknown>>());
-  const pendingSaveSettingsRef = useRef(new Map<string, Record<string, unknown>>());
+  const pendingSaveContentRef = useRef(
+    new Map<string, Record<string, unknown>>(),
+  );
+  const pendingSaveSettingsRef = useRef(
+    new Map<string, Record<string, unknown>>(),
+  );
   const latestContentRef = useRef(new Map<string, Record<string, unknown>>());
   const latestSettingsRef = useRef(new Map<string, Record<string, unknown>>());
   const siteRef = useRef<InstitutionalSite | null>(null);
@@ -215,8 +238,13 @@ export default function InstitutionalEditor() {
     if (!siteId) return;
 
     const content = Object.fromEntries(pendingSaveContentRef.current.entries());
-    const settings = Object.fromEntries(pendingSaveSettingsRef.current.entries());
-    if (Object.keys(content).length === 0 && Object.keys(settings).length === 0) {
+    const settings = Object.fromEntries(
+      pendingSaveSettingsRef.current.entries(),
+    );
+    if (
+      Object.keys(content).length === 0 &&
+      Object.keys(settings).length === 0
+    ) {
       localStorage.removeItem(recoveryDraftKey(siteId));
       return;
     }
@@ -277,81 +305,87 @@ export default function InstitutionalEditor() {
     const timers = saveTimersRef.current;
     const settingsTimers = settingsTimersRef.current;
 
-    void Promise.all([getInstitutionalSite(siteId), getInstitutionalVariants(), getInstitutionalDesignResources()])
-      .then(async ([currentSite, availableVariants, availableDesignResources]) => {
-        if (!active) return;
+    void Promise.all([
+      getInstitutionalSite(siteId),
+      getInstitutionalVariants(),
+      getInstitutionalDesignResources(),
+    ])
+      .then(
+        async ([currentSite, availableVariants, availableDesignResources]) => {
+          if (!active) return;
 
-        const recoveryDraft = readRecoveryDraft(siteId);
-        const recoveredSite = recoveryDraft
-          ? applyRecoveryDraft(currentSite, recoveryDraft)
-          : currentSite;
+          const recoveryDraft = readRecoveryDraft(siteId);
+          const recoveredSite = recoveryDraft
+            ? applyRecoveryDraft(currentSite, recoveryDraft)
+            : currentSite;
 
-        adoptSite(recoveredSite);
-        setVariants(availableVariants);
-        setDesignResources(availableDesignResources);
+          adoptSite(recoveredSite);
+          setVariants(availableVariants);
+          setDesignResources(availableDesignResources);
 
-        if (!recoveryDraft) {
-          setSavingState("saved");
-          return;
-        }
+          if (!recoveryDraft) {
+            setSavingState("saved");
+            return;
+          }
 
-        const availableSectionIds = new Set(
-          currentSite.pages.flatMap((currentPage) =>
-            currentPage.sections.map((section) => section.id),
-          ),
-        );
-        const recoveredContent = Object.entries(recoveryDraft.content).filter(
-          ([sectionId]) => availableSectionIds.has(sectionId),
-        );
-        const recoveredSettings = Object.entries(recoveryDraft.settings).filter(
-          ([sectionId]) => availableSectionIds.has(sectionId),
-        );
-
-        recoveredContent.forEach(([sectionId, content]) => {
-          pendingSaveContentRef.current.set(sectionId, content);
-        });
-        recoveredSettings.forEach(([sectionId, settings]) => {
-          pendingSaveSettingsRef.current.set(sectionId, settings);
-        });
-
-        if (recoveredContent.length === 0 && recoveredSettings.length === 0) {
-          localStorage.removeItem(recoveryDraftKey(siteId));
-          setSavingState("saved");
-          return;
-        }
-
-        setSavingState("saving");
-        const sectionIds = new Set([
-          ...recoveredContent.map(([sectionId]) => sectionId),
-          ...recoveredSettings.map(([sectionId]) => sectionId),
-        ]);
-
-        try {
-          await Promise.all(
-            [...sectionIds].map((sectionId) =>
-              updateInstitutionalSection(sectionId, {
-                ...(recoveryDraft.content[sectionId]
-                  ? { content: recoveryDraft.content[sectionId] }
-                  : {}),
-                ...(recoveryDraft.settings[sectionId]
-                  ? { settings: recoveryDraft.settings[sectionId] }
-                  : {}),
-              }),
+          const availableSectionIds = new Set(
+            currentSite.pages.flatMap((currentPage) =>
+              currentPage.sections.map((section) => section.id),
             ),
           );
-          pendingSaveContentRef.current.clear();
-          pendingSaveSettingsRef.current.clear();
-          localStorage.removeItem(recoveryDraftKey(siteId));
-          if (active) setSavingState("saved");
-        } catch (caught) {
-          if (active) {
-            setSavingState("error");
-            setError(
-              `${messageFromError(caught)} Suas alterações locais continuam guardadas neste navegador.`,
-            );
+          const recoveredContent = Object.entries(recoveryDraft.content).filter(
+            ([sectionId]) => availableSectionIds.has(sectionId),
+          );
+          const recoveredSettings = Object.entries(
+            recoveryDraft.settings,
+          ).filter(([sectionId]) => availableSectionIds.has(sectionId));
+
+          recoveredContent.forEach(([sectionId, content]) => {
+            pendingSaveContentRef.current.set(sectionId, content);
+          });
+          recoveredSettings.forEach(([sectionId, settings]) => {
+            pendingSaveSettingsRef.current.set(sectionId, settings);
+          });
+
+          if (recoveredContent.length === 0 && recoveredSettings.length === 0) {
+            localStorage.removeItem(recoveryDraftKey(siteId));
+            setSavingState("saved");
+            return;
           }
-        }
-      })
+
+          setSavingState("saving");
+          const sectionIds = new Set([
+            ...recoveredContent.map(([sectionId]) => sectionId),
+            ...recoveredSettings.map(([sectionId]) => sectionId),
+          ]);
+
+          try {
+            await Promise.all(
+              [...sectionIds].map((sectionId) =>
+                updateInstitutionalSection(sectionId, {
+                  ...(recoveryDraft.content[sectionId]
+                    ? { content: recoveryDraft.content[sectionId] }
+                    : {}),
+                  ...(recoveryDraft.settings[sectionId]
+                    ? { settings: recoveryDraft.settings[sectionId] }
+                    : {}),
+                }),
+              ),
+            );
+            pendingSaveContentRef.current.clear();
+            pendingSaveSettingsRef.current.clear();
+            localStorage.removeItem(recoveryDraftKey(siteId));
+            if (active) setSavingState("saved");
+          } catch (caught) {
+            if (active) {
+              setSavingState("error");
+              setError(
+                `${messageFromError(caught)} Suas alterações locais continuam guardadas neste navegador.`,
+              );
+            }
+          }
+        },
+      )
       .catch((caught) => {
         if (active) setError(messageFromError(caught));
       })
@@ -368,8 +402,8 @@ export default function InstitutionalEditor() {
 
   const constraintsUnlocked = Boolean(
     siteId &&
-      (unlockedSiteIds.has(siteId) ||
-        sessionStorage.getItem(`cong:site:${siteId}:free-edit`) === "1"),
+    (unlockedSiteIds.has(siteId) ||
+      sessionStorage.getItem(`cong:site:${siteId}:free-edit`) === "1"),
   );
 
   const page = useMemo(
@@ -394,23 +428,38 @@ export default function InstitutionalEditor() {
 
   const showExampleView = Boolean(nativeFamily && exampleView);
   const renderedSite = useMemo(
-    () => site && nativeFamily && showExampleView ? buildNativeExampleSite(site, nativeFamily.id) : site,
+    () =>
+      site && nativeFamily && showExampleView
+        ? buildNativeExampleSite(site, nativeFamily.id)
+        : site,
     [nativeFamily, showExampleView, site],
   );
   const renderedPage = useMemo(
-    () => renderedSite?.pages.find((item) => item.isHome) ?? renderedSite?.pages[0] ?? null,
+    () =>
+      renderedSite?.pages.find((item) => item.isHome) ??
+      renderedSite?.pages[0] ??
+      null,
     [renderedSite],
   );
 
-  const changeExampleView = useCallback((next: boolean): void => {
-    setExampleView(next);
-    if (siteId) sessionStorage.setItem(`cong:site:${siteId}:example-view`, next ? "1" : "0");
-    setSelectedElementIds([]);
-    setSelectedSectionId(null);
-  }, [setSelectedElementIds, setSelectedSectionId, siteId]);
+  const changeExampleView = useCallback(
+    (next: boolean): void => {
+      setExampleView(next);
+      if (siteId)
+        sessionStorage.setItem(
+          `cong:site:${siteId}:example-view`,
+          next ? "1" : "0",
+        );
+      setSelectedElementIds([]);
+      setSelectedSectionId(null);
+    },
+    [setSelectedElementIds, setSelectedSectionId, siteId],
+  );
 
   const selectedSection = useMemo(
-    () => page?.sections.find((section) => section.id === selectedSectionId) ?? null,
+    () =>
+      page?.sections.find((section) => section.id === selectedSectionId) ??
+      null,
     [page, selectedSectionId],
   );
   const selectedElement = useMemo(() => {
@@ -422,7 +471,11 @@ export default function InstitutionalEditor() {
   }, [selectedElementId, selectedSection]);
 
   const selectedGroupId = useMemo(() => {
-    if (!selectedElement || (selectedElement.type !== "slot" && selectedElement.type !== "element")) return null;
+    if (
+      !selectedElement ||
+      (selectedElement.type !== "slot" && selectedElement.type !== "element")
+    )
+      return null;
     return selectedElement.style?.groupId ?? null;
   }, [selectedElement]);
 
@@ -438,7 +491,11 @@ export default function InstitutionalEditor() {
     function handleEscape(event: KeyboardEvent): void {
       if (event.key !== "Escape") return;
       const target = event.target;
-      if (target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) {
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      ) {
         return;
       }
       if (selectedElementId) {
@@ -452,17 +509,26 @@ export default function InstitutionalEditor() {
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [selectedElementId, selectedSectionId, setSelectedElementId, setSelectedSectionId]);
+  }, [
+    selectedElementId,
+    selectedSectionId,
+    setSelectedElementId,
+    setSelectedSectionId,
+  ]);
 
   const persistSectionContent = useCallback(
-    async (sectionId: string, content: Record<string, unknown>): Promise<void> => {
+    async (
+      sectionId: string,
+      content: Record<string, unknown>,
+    ): Promise<void> => {
       await updateInstitutionalSection(sectionId, { content });
       if (pendingSaveContentRef.current.get(sectionId) === content) {
         pendingSaveContentRef.current.delete(sectionId);
       }
       syncRecoveryDraft();
       setSavingState(
-        pendingSaveContentRef.current.size === 0 && pendingSaveSettingsRef.current.size === 0
+        pendingSaveContentRef.current.size === 0 &&
+          pendingSaveSettingsRef.current.size === 0
           ? "saved"
           : "saving",
       );
@@ -492,14 +558,18 @@ export default function InstitutionalEditor() {
     [persistSectionContent, syncRecoveryDraft],
   );
   const persistSectionSettings = useCallback(
-    async (sectionId: string, settings: Record<string, unknown>): Promise<void> => {
+    async (
+      sectionId: string,
+      settings: Record<string, unknown>,
+    ): Promise<void> => {
       await updateInstitutionalSection(sectionId, { settings });
       if (pendingSaveSettingsRef.current.get(sectionId) === settings) {
         pendingSaveSettingsRef.current.delete(sectionId);
       }
       syncRecoveryDraft();
       setSavingState(
-        pendingSaveContentRef.current.size === 0 && pendingSaveSettingsRef.current.size === 0
+        pendingSaveContentRef.current.size === 0 &&
+          pendingSaveSettingsRef.current.size === 0
           ? "saved"
           : "saving",
       );
@@ -536,7 +606,9 @@ export default function InstitutionalEditor() {
     settingsTimersRef.current.clear();
 
     const pendingContent = Array.from(pendingSaveContentRef.current.entries());
-    const pendingSettings = Array.from(pendingSaveSettingsRef.current.entries());
+    const pendingSettings = Array.from(
+      pendingSaveSettingsRef.current.entries(),
+    );
 
     if (pendingContent.length === 0 && pendingSettings.length === 0) {
       setSavingState("saved");
@@ -569,7 +641,6 @@ export default function InstitutionalEditor() {
     setSavingState("saved");
   }, [syncRecoveryDraft]);
 
-
   const syncHistoryState = useCallback((): void => {
     setHistoryState({
       undo: historyPastRef.current.length,
@@ -577,56 +648,62 @@ export default function InstitutionalEditor() {
     });
   }, []);
 
-  const recordHistory = useCallback((key: string): void => {
-    if (restoringHistoryRef.current) return;
-    const current = siteRef.current;
-    if (!current) return;
+  const recordHistory = useCallback(
+    (key: string): void => {
+      if (restoringHistoryRef.current) return;
+      const current = siteRef.current;
+      if (!current) return;
 
-    const now = Date.now();
-    const last = lastHistoryRef.current;
-    if (last && last.key === key && now - last.at < 850) {
+      const now = Date.now();
+      const last = lastHistoryRef.current;
+      if (last && last.key === key && now - last.at < 850) {
+        lastHistoryRef.current = { key, at: now };
+        return;
+      }
+
+      historyPastRef.current.push(cloneSiteSnapshot(current));
+      if (historyPastRef.current.length > 60) historyPastRef.current.shift();
+      historyFutureRef.current = [];
       lastHistoryRef.current = { key, at: now };
-      return;
-    }
+      syncHistoryState();
+    },
+    [syncHistoryState],
+  );
 
-    historyPastRef.current.push(cloneSiteSnapshot(current));
-    if (historyPastRef.current.length > 60) historyPastRef.current.shift();
-    historyFutureRef.current = [];
-    lastHistoryRef.current = { key, at: now };
-    syncHistoryState();
-  }, [syncHistoryState]);
+  const persistHistorySnapshot = useCallback(
+    async (snapshot: InstitutionalSite): Promise<void> => {
+      saveTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      settingsTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      saveTimersRef.current.clear();
+      settingsTimersRef.current.clear();
+      pendingSaveContentRef.current.clear();
+      pendingSaveSettingsRef.current.clear();
 
-  const persistHistorySnapshot = useCallback(async (snapshot: InstitutionalSite): Promise<void> => {
-    saveTimersRef.current.forEach((timer) => window.clearTimeout(timer));
-    settingsTimersRef.current.forEach((timer) => window.clearTimeout(timer));
-    saveTimersRef.current.clear();
-    settingsTimersRef.current.clear();
-    pendingSaveContentRef.current.clear();
-    pendingSaveSettingsRef.current.clear();
-
-    restoringHistoryRef.current = true;
-    adoptSite(snapshot);
-    setSavingState("saving");
-    try {
-      await Promise.all(
-        snapshot.pages.flatMap((snapshotPage) =>
-          snapshotPage.sections.map((section) =>
-            updateInstitutionalSection(section.id, {
-              content: section.content,
-              settings: section.settings,
-            }),
+      restoringHistoryRef.current = true;
+      adoptSite(snapshot);
+      setSavingState("saving");
+      try {
+        await Promise.all(
+          snapshot.pages.flatMap((snapshotPage) =>
+            snapshotPage.sections.map((section) =>
+              updateInstitutionalSection(section.id, {
+                content: section.content,
+                settings: section.settings,
+              }),
+            ),
           ),
-        ),
-      );
-      setSavingState("saved");
-    } catch (caught) {
-      setSavingState("error");
-      setError(messageFromError(caught));
-    } finally {
-      restoringHistoryRef.current = false;
-      lastHistoryRef.current = null;
-    }
-  }, [adoptSite]);
+        );
+        setSavingState("saved");
+      } catch (caught) {
+        setSavingState("error");
+        setError(messageFromError(caught));
+      } finally {
+        restoringHistoryRef.current = false;
+        lastHistoryRef.current = null;
+      }
+    },
+    [adoptSite],
+  );
 
   const undoHistory = useCallback(async (): Promise<void> => {
     const previous = historyPastRef.current.pop();
@@ -646,14 +723,17 @@ export default function InstitutionalEditor() {
     await persistHistorySnapshot(next);
   }, [persistHistorySnapshot, syncHistoryState]);
 
-
   const changeSectionContent = useCallback(
     (sectionId: string, path: Array<string | number>, value: unknown): void => {
       const currentContent = latestContentRef.current.get(sectionId);
       if (!currentContent) return;
 
       recordHistory(`content:${sectionId}:${path.join(".")}`);
-      const nextContent = setInstitutionalContentValue(currentContent, path, value);
+      const nextContent = setInstitutionalContentValue(
+        currentContent,
+        path,
+        value,
+      );
       latestContentRef.current.set(sectionId, nextContent);
       setSite((current) =>
         current
@@ -689,10 +769,13 @@ export default function InstitutionalEditor() {
       sectionId: string,
       updater: (layout: InstitutionalLayoutNode) => InstitutionalLayoutNode,
     ): void => {
-      const currentSection = page?.sections.find((section) => section.id === sectionId);
+      const currentSection = page?.sections.find(
+        (section) => section.id === sectionId,
+      );
       if (!currentSection) return;
 
-      const currentSettings = latestSettingsRef.current.get(sectionId) ?? currentSection.settings;
+      const currentSettings =
+        latestSettingsRef.current.get(sectionId) ?? currentSection.settings;
       const base = ensureLayoutNodeIds(
         effectiveSectionLayout(currentSection.layout, currentSettings),
       );
@@ -711,7 +794,9 @@ export default function InstitutionalEditor() {
       const sourceElementId = institutionalSourceNodeId(elementId);
       updateSectionLayout(sectionId, (layout) =>
         updateLayoutNode(layout, sourceElementId, (node) =>
-          node.type === "element" ? { ...node, value: value as InstitutionalElementValue } : node,
+          node.type === "element"
+            ? { ...node, value: value as InstitutionalElementValue }
+            : node,
         ),
       );
     },
@@ -719,10 +804,16 @@ export default function InstitutionalEditor() {
   );
 
   const applyElementStyle = useCallback(
-    (sectionId: string, elementId: string, style: Partial<InstitutionalElementStyle>): void => {
+    (
+      sectionId: string,
+      elementId: string,
+      style: Partial<InstitutionalElementStyle>,
+    ): void => {
       const sourceElementId = institutionalSourceNodeId(elementId);
       updateSectionLayout(sectionId, (layout) =>
-        updateLayoutNode(layout, sourceElementId, (node) => mergeElementStyle(node, style)),
+        updateLayoutNode(layout, sourceElementId, (node) =>
+          mergeElementStyle(node, style),
+        ),
       );
     },
     [updateSectionLayout],
@@ -741,22 +832,32 @@ export default function InstitutionalEditor() {
     [applyElementStyle],
   );
 
-  const reorderElementLayers = useCallback((sectionId: string, orderedElementIds: string[]): void => {
-    if (orderedElementIds.length === 0) return;
-    updateSectionLayout(sectionId, (layout) => {
-      let next = layout;
-      const count = Math.max(orderedElementIds.length - 1, 1);
-      orderedElementIds.forEach((elementId, index) => {
-        const zIndex = Math.round(50 - (70 * index) / count);
-        next = updateLayoutNode(next, institutionalSourceNodeId(elementId), (node) => mergeElementStyle(node, { zIndex }));
+  const reorderElementLayers = useCallback(
+    (sectionId: string, orderedElementIds: string[]): void => {
+      if (orderedElementIds.length === 0) return;
+      updateSectionLayout(sectionId, (layout) => {
+        let next = layout;
+        const count = Math.max(orderedElementIds.length - 1, 1);
+        orderedElementIds.forEach((elementId, index) => {
+          const zIndex = Math.round(50 - (70 * index) / count);
+          next = updateLayoutNode(
+            next,
+            institutionalSourceNodeId(elementId),
+            (node) => mergeElementStyle(node, { zIndex }),
+          );
+        });
+        return next;
       });
-      return next;
-    });
-  }, [updateSectionLayout]);
+    },
+    [updateSectionLayout],
+  );
 
-  const autoOrganizeSection = useCallback((sectionId: string): void => {
-    updateSectionLayout(sectionId, autoOrganizeInstitutionalLayout);
-  }, [updateSectionLayout]);
+  const autoOrganizeSection = useCallback(
+    (sectionId: string): void => {
+      updateSectionLayout(sectionId, autoOrganizeInstitutionalLayout);
+    },
+    [updateSectionLayout],
+  );
 
   const toggleEditingMode = useCallback((): void => {
     if (!siteId || !site?.sourceTemplateId) return;
@@ -773,7 +874,6 @@ export default function InstitutionalEditor() {
     setUnlockedSiteIds((current) => new Set(current).add(siteId));
   }, [constraintsUnlocked, site?.sourceTemplateId, siteId]);
 
-
   const moveElement = useCallback(
     (sectionId: string, elementId: string, direction: -1 | 1): void => {
       updateSectionLayout(sectionId, (layout) =>
@@ -785,7 +885,9 @@ export default function InstitutionalEditor() {
 
   const removeElement = useCallback(
     (sectionId: string, elementId: string): void => {
-      updateSectionLayout(sectionId, (layout) => removeLayoutNode(layout, institutionalSourceNodeId(elementId)));
+      updateSectionLayout(sectionId, (layout) =>
+        removeLayoutNode(layout, institutionalSourceNodeId(elementId)),
+      );
       setSelectedElementId(null);
     },
     [setSelectedElementId, updateSectionLayout],
@@ -798,49 +900,81 @@ export default function InstitutionalEditor() {
       removeLayoutNodes(layout, sourceIds),
     );
     setSelectedElementIds([]);
-  }, [selectedElementIds, selectedSectionId, setSelectedElementIds, updateSectionLayout]);
+  }, [
+    selectedElementIds,
+    selectedSectionId,
+    setSelectedElementIds,
+    updateSectionLayout,
+  ]);
 
-  const moveSelectedElements = useCallback((sectionId: string, deltaX: number, deltaY: number, explicitIds?: string[]): void => {
-    const ids = explicitIds && explicitIds.length > 1 ? explicitIds : selectedElementIds;
-    const sourceIds = uniqueInstitutionalSourceNodeIds(ids);
-    if (sourceIds.length <= 1) return;
-    updateSectionLayout(sectionId, (layout) =>
-      applyOffsetDeltaToLayoutNodes(layout, sourceIds, deltaX, deltaY),
-    );
-  }, [selectedElementIds, updateSectionLayout]);
+  const moveSelectedElements = useCallback(
+    (
+      sectionId: string,
+      deltaX: number,
+      deltaY: number,
+      explicitIds?: string[],
+    ): void => {
+      const ids =
+        explicitIds && explicitIds.length > 1
+          ? explicitIds
+          : selectedElementIds;
+      const sourceIds = uniqueInstitutionalSourceNodeIds(ids);
+      if (sourceIds.length <= 1) return;
+      updateSectionLayout(sectionId, (layout) =>
+        applyOffsetDeltaToLayoutNodes(layout, sourceIds, deltaX, deltaY),
+      );
+    },
+    [selectedElementIds, updateSectionLayout],
+  );
 
-  const handleSelectElement = useCallback((sectionId: string, elementId: string, additive = false): void => {
-    setSelectedSectionId(sectionId);
-    if (additive) {
-      selectEditorElement(sectionId, elementId, true);
+  const handleSelectElement = useCallback(
+    (sectionId: string, elementId: string, additive = false): void => {
+      setSelectedSectionId(sectionId);
+      if (additive) {
+        selectEditorElement(sectionId, elementId, true);
+        setPropertiesOpen(true);
+        return;
+      }
+
+      const section = page?.sections.find((item) => item.id === sectionId);
+      if (!section) {
+        selectEditorElement(sectionId, elementId, false);
+        setPropertiesOpen(true);
+        return;
+      }
+      const layout = ensureLayoutNodeIds(
+        effectiveSectionLayout(section.layout, section.settings),
+      );
+      const node = findLayoutNode(layout, institutionalSourceNodeId(elementId));
+      const groupId =
+        node && (node.type === "slot" || node.type === "element")
+          ? node.style?.groupId
+          : undefined;
+      if (groupId) {
+        const members = collectGroupMemberIds(layout, groupId).map((memberId) =>
+          institutionalSelectionIdForSource(memberId, elementId),
+        );
+        selectEditorElements(sectionId, [
+          ...members.filter((id) => id !== elementId),
+          elementId,
+        ]);
+      } else {
+        selectEditorElement(sectionId, elementId, false);
+      }
       setPropertiesOpen(true);
-      return;
-    }
-
-    const section = page?.sections.find((item) => item.id === sectionId);
-    if (!section) {
-      selectEditorElement(sectionId, elementId, false);
-      setPropertiesOpen(true);
-      return;
-    }
-    const layout = ensureLayoutNodeIds(effectiveSectionLayout(section.layout, section.settings));
-    const node = findLayoutNode(layout, institutionalSourceNodeId(elementId));
-    const groupId = node && (node.type === "slot" || node.type === "element") ? node.style?.groupId : undefined;
-    if (groupId) {
-      const members = collectGroupMemberIds(layout, groupId)
-        .map((memberId) => institutionalSelectionIdForSource(memberId, elementId));
-      selectEditorElements(sectionId, [...members.filter((id) => id !== elementId), elementId]);
-    } else {
-      selectEditorElement(sectionId, elementId, false);
-    }
-    setPropertiesOpen(true);
-  }, [page, selectEditorElement, selectEditorElements, setSelectedSectionId]);
+    },
+    [page, selectEditorElement, selectEditorElements, setSelectedSectionId],
+  );
 
   const groupSelectedElements = useCallback((): void => {
     if (!selectedSectionId || selectedElementIds.length < 2) return;
     let nextGroupId = "";
     updateSectionLayout(selectedSectionId, (layout) => {
-      const grouped = groupLayoutNodes(layout, uniqueInstitutionalSourceNodeIds(selectedElementIds), "manual");
+      const grouped = groupLayoutNodes(
+        layout,
+        uniqueInstitutionalSourceNodeIds(selectedElementIds),
+        "manual",
+      );
       nextGroupId = grouped.groupId;
       return grouped.layout;
     });
@@ -848,98 +982,190 @@ export default function InstitutionalEditor() {
       // Selection remains on the grouped members; future clicks on any member select the group.
       setSelectedElementIds(selectedElementIds);
     }
-  }, [selectedElementIds, selectedSectionId, setSelectedElementIds, updateSectionLayout]);
+  }, [
+    selectedElementIds,
+    selectedSectionId,
+    setSelectedElementIds,
+    updateSectionLayout,
+  ]);
 
   const ungroupSelectedElements = useCallback((): void => {
     if (!selectedSectionId || !selectedGroupId) return;
     const members = selectedElementId
-      ? selectedGroupMemberIds.map((memberId) => institutionalSelectionIdForSource(memberId, selectedElementId))
+      ? selectedGroupMemberIds.map((memberId) =>
+          institutionalSelectionIdForSource(memberId, selectedElementId),
+        )
       : selectedGroupMemberIds;
-    updateSectionLayout(selectedSectionId, (layout) => ungroupLayoutNodes(layout, selectedGroupId));
+    updateSectionLayout(selectedSectionId, (layout) =>
+      ungroupLayoutNodes(layout, selectedGroupId),
+    );
     setSelectedElementIds(members);
-  }, [selectedElementId, selectedGroupId, selectedGroupMemberIds, selectedSectionId, setSelectedElementIds, updateSectionLayout]);
+  }, [
+    selectedElementId,
+    selectedGroupId,
+    selectedGroupMemberIds,
+    selectedSectionId,
+    setSelectedElementIds,
+    updateSectionLayout,
+  ]);
 
-  const alignSelectedElements = useCallback((
-    axis: "horizontal" | "vertical",
-    mode: "start" | "center" | "end",
-  ): void => {
-    if (!selectedSectionId || selectedElementIds.length < 2 || typeof document === "undefined") return;
-    const items = selectedElementIds
-      .map((id) => {
-        const element = document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(id)}"]`);
-        return element ? { id, rect: element.getBoundingClientRect() } : null;
-      })
-      .filter((item): item is { id: string; rect: DOMRect } => Boolean(item));
-    if (items.length < 2) return;
+  const alignSelectedElements = useCallback(
+    (
+      axis: "horizontal" | "vertical",
+      mode: "start" | "center" | "end",
+    ): void => {
+      if (
+        !selectedSectionId ||
+        selectedElementIds.length < 2 ||
+        typeof document === "undefined"
+      )
+        return;
+      const items = selectedElementIds
+        .map((id) => {
+          const element = document.querySelector<HTMLElement>(
+            `[data-selection-id="${CSS.escape(id)}"]`,
+          );
+          return element ? { id, rect: element.getBoundingClientRect() } : null;
+        })
+        .filter((item): item is { id: string; rect: DOMRect } => Boolean(item));
+      if (items.length < 2) return;
 
-    const minLeft = Math.min(...items.map((item) => item.rect.left));
-    const maxRight = Math.max(...items.map((item) => item.rect.right));
-    const minTop = Math.min(...items.map((item) => item.rect.top));
-    const maxBottom = Math.max(...items.map((item) => item.rect.bottom));
-    const target = axis === "horizontal"
-      ? mode === "start" ? minLeft : mode === "end" ? maxRight : (minLeft + maxRight) / 2
-      : mode === "start" ? minTop : mode === "end" ? maxBottom : (minTop + maxBottom) / 2;
+      const minLeft = Math.min(...items.map((item) => item.rect.left));
+      const maxRight = Math.max(...items.map((item) => item.rect.right));
+      const minTop = Math.min(...items.map((item) => item.rect.top));
+      const maxBottom = Math.max(...items.map((item) => item.rect.bottom));
+      const target =
+        axis === "horizontal"
+          ? mode === "start"
+            ? minLeft
+            : mode === "end"
+              ? maxRight
+              : (minLeft + maxRight) / 2
+          : mode === "start"
+            ? minTop
+            : mode === "end"
+              ? maxBottom
+              : (minTop + maxBottom) / 2;
 
-    const deltas = items.map((item) => {
-      const current = axis === "horizontal"
-        ? mode === "start" ? item.rect.left : mode === "end" ? item.rect.right : item.rect.left + item.rect.width / 2
-        : mode === "start" ? item.rect.top : mode === "end" ? item.rect.bottom : item.rect.top + item.rect.height / 2;
-      return { id: item.id, dx: axis === "horizontal" ? target - current : 0, dy: axis === "vertical" ? target - current : 0 };
-    });
+      const deltas = items.map((item) => {
+        const current =
+          axis === "horizontal"
+            ? mode === "start"
+              ? item.rect.left
+              : mode === "end"
+                ? item.rect.right
+                : item.rect.left + item.rect.width / 2
+            : mode === "start"
+              ? item.rect.top
+              : mode === "end"
+                ? item.rect.bottom
+                : item.rect.top + item.rect.height / 2;
+        return {
+          id: item.id,
+          dx: axis === "horizontal" ? target - current : 0,
+          dy: axis === "vertical" ? target - current : 0,
+        };
+      });
 
-    updateSectionLayout(selectedSectionId, (layout) =>
-      deltas.reduce((nextLayout, delta) =>
-        updateLayoutNode(nextLayout, institutionalSourceNodeId(delta.id), (node) => {
-          if (node.type !== "slot" && node.type !== "element") return node;
-          return mergeElementStyle(node, {
-            offsetX: Math.round((node.style?.offsetX ?? 0) + delta.dx),
-            offsetY: Math.round((node.style?.offsetY ?? 0) + delta.dy),
-          });
-        }), layout),
-    );
-  }, [selectedElementIds, selectedSectionId, updateSectionLayout]);
+      updateSectionLayout(selectedSectionId, (layout) =>
+        deltas.reduce(
+          (nextLayout, delta) =>
+            updateLayoutNode(
+              nextLayout,
+              institutionalSourceNodeId(delta.id),
+              (node) => {
+                if (node.type !== "slot" && node.type !== "element")
+                  return node;
+                return mergeElementStyle(node, {
+                  offsetX: Math.round((node.style?.offsetX ?? 0) + delta.dx),
+                  offsetY: Math.round((node.style?.offsetY ?? 0) + delta.dy),
+                });
+              },
+            ),
+          layout,
+        ),
+      );
+    },
+    [selectedElementIds, selectedSectionId, updateSectionLayout],
+  );
 
-  const distributeSelectedElements = useCallback((axis: "horizontal" | "vertical"): void => {
-    if (!selectedSectionId || selectedElementIds.length < 3 || typeof document === "undefined") return;
-    const items = selectedElementIds
-      .map((id) => {
-        const element = document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(id)}"]`);
-        return element ? { id, rect: element.getBoundingClientRect() } : null;
-      })
-      .filter((item): item is { id: string; rect: DOMRect } => Boolean(item));
-    if (items.length < 3) return;
+  const distributeSelectedElements = useCallback(
+    (axis: "horizontal" | "vertical"): void => {
+      if (
+        !selectedSectionId ||
+        selectedElementIds.length < 3 ||
+        typeof document === "undefined"
+      )
+        return;
+      const items = selectedElementIds
+        .map((id) => {
+          const element = document.querySelector<HTMLElement>(
+            `[data-selection-id="${CSS.escape(id)}"]`,
+          );
+          return element ? { id, rect: element.getBoundingClientRect() } : null;
+        })
+        .filter((item): item is { id: string; rect: DOMRect } => Boolean(item));
+      if (items.length < 3) return;
 
-    const sorted = [...items].sort((a, b) => axis === "horizontal" ? a.rect.left - b.rect.left : a.rect.top - b.rect.top);
-    const first = sorted[0].rect;
-    const last = sorted[sorted.length - 1].rect;
-    const span = axis === "horizontal" ? last.right - first.left : last.bottom - first.top;
-    const totalSize = sorted.reduce((sum, item) => sum + (axis === "horizontal" ? item.rect.width : item.rect.height), 0);
-    const gap = (span - totalSize) / Math.max(sorted.length - 1, 1);
-    let cursor = axis === "horizontal" ? first.left : first.top;
-    const deltas = sorted.map((item) => {
-      const current = axis === "horizontal" ? item.rect.left : item.rect.top;
-      const delta = cursor - current;
-      cursor += (axis === "horizontal" ? item.rect.width : item.rect.height) + gap;
-      return { id: item.id, dx: axis === "horizontal" ? delta : 0, dy: axis === "vertical" ? delta : 0 };
-    });
+      const sorted = [...items].sort((a, b) =>
+        axis === "horizontal"
+          ? a.rect.left - b.rect.left
+          : a.rect.top - b.rect.top,
+      );
+      const first = sorted[0].rect;
+      const last = sorted[sorted.length - 1].rect;
+      const span =
+        axis === "horizontal"
+          ? last.right - first.left
+          : last.bottom - first.top;
+      const totalSize = sorted.reduce(
+        (sum, item) =>
+          sum + (axis === "horizontal" ? item.rect.width : item.rect.height),
+        0,
+      );
+      const gap = (span - totalSize) / Math.max(sorted.length - 1, 1);
+      let cursor = axis === "horizontal" ? first.left : first.top;
+      const deltas = sorted.map((item) => {
+        const current = axis === "horizontal" ? item.rect.left : item.rect.top;
+        const delta = cursor - current;
+        cursor +=
+          (axis === "horizontal" ? item.rect.width : item.rect.height) + gap;
+        return {
+          id: item.id,
+          dx: axis === "horizontal" ? delta : 0,
+          dy: axis === "vertical" ? delta : 0,
+        };
+      });
 
-    updateSectionLayout(selectedSectionId, (layout) =>
-      deltas.reduce((nextLayout, delta) =>
-        updateLayoutNode(nextLayout, institutionalSourceNodeId(delta.id), (node) => {
-          if (node.type !== "slot" && node.type !== "element") return node;
-          return mergeElementStyle(node, {
-            offsetX: Math.round((node.style?.offsetX ?? 0) + delta.dx),
-            offsetY: Math.round((node.style?.offsetY ?? 0) + delta.dy),
-          });
-        }), layout),
-    );
-  }, [selectedElementIds, selectedSectionId, updateSectionLayout]);
+      updateSectionLayout(selectedSectionId, (layout) =>
+        deltas.reduce(
+          (nextLayout, delta) =>
+            updateLayoutNode(
+              nextLayout,
+              institutionalSourceNodeId(delta.id),
+              (node) => {
+                if (node.type !== "slot" && node.type !== "element")
+                  return node;
+                return mergeElementStyle(node, {
+                  offsetX: Math.round((node.style?.offsetX ?? 0) + delta.dx),
+                  offsetY: Math.round((node.style?.offsetY ?? 0) + delta.dy),
+                });
+              },
+            ),
+          layout,
+        ),
+      );
+    },
+    [selectedElementIds, selectedSectionId, updateSectionLayout],
+  );
 
   useEffect(() => {
     function handleEditorShortcut(event: KeyboardEvent): void {
       const target = event.target;
-      const isEditingText = target instanceof HTMLElement &&
-        (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+      const isEditingText =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
       if (isEditingText) return;
 
       const modifier = event.ctrlKey || event.metaKey;
@@ -962,26 +1188,45 @@ export default function InstitutionalEditor() {
         return;
       }
 
-      if ((event.key === "Delete" || event.key === "Backspace") && selectedElementIds.length > 0) {
+      if (
+        (event.key === "Delete" || event.key === "Backspace") &&
+        selectedElementIds.length > 0
+      ) {
         event.preventDefault();
         removeSelectedElements();
         return;
       }
 
       if (!selectedSectionId || !selectedElementId || !selectedElement) return;
-      if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+      if (
+        !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)
+      )
+        return;
 
       event.preventDefault();
       const step = event.shiftKey ? 12 : 4;
-      const dx = event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0;
-      const dy = event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
+      const dx =
+        event.key === "ArrowLeft"
+          ? -step
+          : event.key === "ArrowRight"
+            ? step
+            : 0;
+      const dy =
+        event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
       if (selectedElementIds.length > 1) {
-        updateSectionLayout(selectedSectionId, (layout) => applyOffsetDeltaToLayoutNodes(layout, uniqueInstitutionalSourceNodeIds(selectedElementIds), dx, dy));
+        updateSectionLayout(selectedSectionId, (layout) =>
+          applyOffsetDeltaToLayoutNodes(
+            layout,
+            uniqueInstitutionalSourceNodeIds(selectedElementIds),
+            dx,
+            dy,
+          ),
+        );
         return;
       }
       const currentStyle =
         selectedElement.type === "slot" || selectedElement.type === "element"
-          ? selectedElement.style ?? {}
+          ? (selectedElement.style ?? {})
           : {};
       changeElementStyle(selectedSectionId, selectedElementId, {
         offsetX: (currentStyle.offsetX ?? 0) + dx,
@@ -1005,11 +1250,16 @@ export default function InstitutionalEditor() {
     updateSectionLayout,
   ]);
 
-
   const addElementToSection = useCallback(
-    (sectionId: string, elementType: InstitutionalElementType, initialValue?: string): void => {
+    (
+      sectionId: string,
+      elementType: InstitutionalElementType,
+      initialValue?: string,
+    ): void => {
       const element = createElementNode(elementType, initialValue);
-      updateSectionLayout(sectionId, (layout) => appendElement(layout, element));
+      updateSectionLayout(sectionId, (layout) =>
+        appendElement(layout, element),
+      );
       setSelectedSectionId(sectionId);
       if (element.type === "element") setSelectedElementId(element.id);
     },
@@ -1033,9 +1283,11 @@ export default function InstitutionalEditor() {
   ): void {
     const current = page?.sections.find((item) => item.id === sectionId);
     if (!current) return;
-    const currentSettings = latestSettingsRef.current.get(sectionId) ?? current.settings;
+    const currentSettings =
+      latestSettingsRef.current.get(sectionId) ?? current.settings;
     const currentStyle =
-      currentSettings.sectionStyle && typeof currentSettings.sectionStyle === "object"
+      currentSettings.sectionStyle &&
+      typeof currentSettings.sectionStyle === "object"
         ? (currentSettings.sectionStyle as InstitutionalSectionStyle)
         : {};
     changeSectionSettings(sectionId, {
@@ -1044,7 +1296,9 @@ export default function InstitutionalEditor() {
     });
   }
 
-  function changeAllSectionStyles(style: Partial<InstitutionalSectionStyle>): void {
+  function changeAllSectionStyles(
+    style: Partial<InstitutionalSectionStyle>,
+  ): void {
     if (!page) return;
     page.sections.forEach((section) => changeSectionStyle(section.id, style));
   }
@@ -1058,17 +1312,23 @@ export default function InstitutionalEditor() {
     if (
       sectionType === "site_header" &&
       site?.pages.some((candidatePage) =>
-        candidatePage.sections.some((section) => section.sectionType === "site_header"),
+        candidatePage.sections.some(
+          (section) => section.sectionType === "site_header",
+        ),
       )
     ) {
-      setError("Este site já possui um cabeçalho global. Edite o cabeçalho existente ou troque seu design.");
+      setError(
+        "Este site já possui um cabeçalho global. Edite o cabeçalho existente ou troque seu design.",
+      );
       return;
     }
     if (
       sectionType === "site_footer" &&
       page.sections.some((section) => section.sectionType === "site_footer")
     ) {
-      setError("Este site já possui um rodapé. Edite o rodapé existente ou troque sua variante.");
+      setError(
+        "Este site já possui um rodapé. Edite o rodapé existente ou troque sua variante.",
+      );
       return;
     }
     const variant = preferredVariantVersionId
@@ -1097,28 +1357,41 @@ export default function InstitutionalEditor() {
         },
       });
       let updatedPage = updated.pages.find((item) => item.id === page.id);
-      const createdSection = updatedPage?.sections.reduce<InstitutionalSection | null>(
-        (latest, section) => !latest || section.position > latest.position ? section : latest,
-        null,
-      ) ?? null;
+      const createdSection =
+        updatedPage?.sections.reduce<InstitutionalSection | null>(
+          (latest, section) =>
+            !latest || section.position > latest.position ? section : latest,
+          null,
+        ) ?? null;
 
       if (createdSection && sectionType !== "site_footer") {
-        const currentIds = updatedPage?.sections.map((section) => section.id) ?? [];
-        const withoutCreated = currentIds.filter((id) => id !== createdSection.id);
-        const footerId = updatedPage?.sections.find((section) => section.sectionType === "site_footer")?.id;
+        const currentIds =
+          updatedPage?.sections.map((section) => section.id) ?? [];
+        const withoutCreated = currentIds.filter(
+          (id) => id !== createdSection.id,
+        );
+        const footerId = updatedPage?.sections.find(
+          (section) => section.sectionType === "site_footer",
+        )?.id;
         const insertionIndex = beforeSectionId
           ? Math.max(0, withoutCreated.indexOf(beforeSectionId))
           : footerId
             ? Math.max(0, withoutCreated.indexOf(footerId))
             : withoutCreated.length;
         const nextIds = [...withoutCreated];
-        nextIds.splice(insertionIndex < 0 ? nextIds.length : insertionIndex, 0, createdSection.id);
+        nextIds.splice(
+          insertionIndex < 0 ? nextIds.length : insertionIndex,
+          0,
+          createdSection.id,
+        );
         updated = await reorderInstitutionalSections(page.id, nextIds);
         updatedPage = updated.pages.find((item) => item.id === page.id);
       }
 
       adoptSite(updated);
-      setSelectedSectionId(createdSection?.id ?? updatedPage?.sections.at(-1)?.id ?? null);
+      setSelectedSectionId(
+        createdSection?.id ?? updatedPage?.sections.at(-1)?.id ?? null,
+      );
       setSelectedElementId(null);
     } catch (caught) {
       setError(messageFromError(caught));
@@ -1127,13 +1400,18 @@ export default function InstitutionalEditor() {
     }
   }
 
-  async function changeVariant(sectionId: string, variantVersionId: string): Promise<void> {
+  async function changeVariant(
+    sectionId: string,
+    variantVersionId: string,
+  ): Promise<void> {
     const section = page?.sections.find((item) => item.id === sectionId);
     if (!section) return;
     setSavingState("saving");
     try {
       await flushPendingSectionSaves();
-      const selectedVariant = variants.find((item) => item.versionId === variantVersionId);
+      const selectedVariant = variants.find(
+        (item) => item.versionId === variantVersionId,
+      );
       const nextSettings = {
         ...section.settings,
         ...(selectedVariant ? defaultSettingsForVariant(selectedVariant) : {}),
@@ -1153,17 +1431,29 @@ export default function InstitutionalEditor() {
     }
   }
 
-  async function uploadImage(sectionId: string, path: Array<string | number>, file: File): Promise<void> {
+  async function uploadImage(
+    sectionId: string,
+    path: Array<string | number>,
+    file: File,
+  ): Promise<void> {
     setSavingState("saving");
     try {
       const asset = await uploadInstitutionalMedia(file);
-      changeSectionContent(sectionId, path, { assetId: asset.id, alt: "", url: asset.url });
+      changeSectionContent(sectionId, path, {
+        assetId: asset.id,
+        alt: "",
+        url: asset.url,
+      });
     } catch (caught) {
       setSavingState("error");
       setError(messageFromError(caught));
     }
   }
-  async function uploadSectionBackground(sectionId: string, file: File, applyToAll = false): Promise<void> {
+  async function uploadSectionBackground(
+    sectionId: string,
+    file: File,
+    applyToAll = false,
+  ): Promise<void> {
     setSavingState("saving");
     try {
       const asset = await uploadInstitutionalMedia(file);
@@ -1246,7 +1536,11 @@ export default function InstitutionalEditor() {
     if (!section) return;
     try {
       await flushPendingSectionSaves();
-      adoptSite(await updateInstitutionalSection(sectionId, { visible: !section.visible }));
+      adoptSite(
+        await updateInstitutionalSection(sectionId, {
+          visible: !section.visible,
+        }),
+      );
     } catch (caught) {
       setError(messageFromError(caught));
     }
@@ -1254,7 +1548,9 @@ export default function InstitutionalEditor() {
 
   async function reorder(sectionIds: string[]): Promise<void> {
     if (!page) return;
-    const footerId = page.sections.find((section) => section.sectionType === "site_footer")?.id;
+    const footerId = page.sections.find(
+      (section) => section.sectionType === "site_footer",
+    )?.id;
     const normalizedIds = footerId
       ? [...sectionIds.filter((id) => id !== footerId), footerId]
       : sectionIds;
@@ -1271,13 +1567,17 @@ export default function InstitutionalEditor() {
 
   function moveSectionByDirection(sectionId: string, direction: -1 | 1): void {
     if (!page) return;
-    const body = page.sections.filter((section) => section.sectionType !== "site_footer");
+    const body = page.sections.filter(
+      (section) => section.sectionType !== "site_footer",
+    );
     const index = body.findIndex((section) => section.id === sectionId);
     const target = index + direction;
     if (index < 0 || target < 0 || target >= body.length) return;
     const ids = body.map((section) => section.id);
     [ids[index], ids[target]] = [ids[target], ids[index]];
-    const footerId = page.sections.find((section) => section.sectionType === "site_footer")?.id;
+    const footerId = page.sections.find(
+      (section) => section.sectionType === "site_footer",
+    )?.id;
     void reorder(footerId ? [...ids, footerId] : ids);
   }
 
@@ -1288,7 +1588,15 @@ export default function InstitutionalEditor() {
     try {
       await flushPendingSectionSaves();
       const publication = await publishInstitutionalSite(site.id);
-      setSite((current) => current ? { ...current, publishedAt: publication.publishedAt, isPrimary: true } : current);
+      setSite((current) =>
+        current
+          ? {
+              ...current,
+              publishedAt: publication.publishedAt,
+              isPrimary: true,
+            }
+          : current,
+      );
       setPublishConfirmOpen(false);
     } catch (caught) {
       setError(messageFromError(caught));
@@ -1302,7 +1610,7 @@ export default function InstitutionalEditor() {
     setError("");
     try {
       const brand = await updateInstitutionalBrand(draft);
-      setSite((current) => current ? { ...current, brand } : current);
+      setSite((current) => (current ? { ...current, brand } : current));
       setBrandOpen(false);
     } catch (caught) {
       setError(messageFromError(caught));
@@ -1331,7 +1639,7 @@ export default function InstitutionalEditor() {
         headingFont: site.brand.headingFont,
         bodyFont: site.brand.bodyFont,
       });
-      setSite((current) => current ? { ...current, brand } : current);
+      setSite((current) => (current ? { ...current, brand } : current));
     } catch (caught) {
       setError(messageFromError(caught));
     } finally {
@@ -1355,7 +1663,7 @@ export default function InstitutionalEditor() {
         headingFont: site.brand.headingFont,
         bodyFont: site.brand.bodyFont,
       });
-      setSite((current) => current ? { ...current, brand } : current);
+      setSite((current) => (current ? { ...current, brand } : current));
     } catch (caught) {
       setError(messageFromError(caught));
     } finally {
@@ -1378,7 +1686,8 @@ export default function InstitutionalEditor() {
     return <div className={styles.loading}>Carregando editor...</div>;
   }
 
-  const canvasWidth = device === "mobile" ? "430px" : device === "tablet" ? "820px" : "100%";
+  const canvasWidth =
+    device === "mobile" ? "430px" : device === "tablet" ? "820px" : "100%";
 
   return (
     <div className={styles.editor} data-properties-open={propertiesOpen}>
@@ -1404,7 +1713,13 @@ export default function InstitutionalEditor() {
       {error ? (
         <div className={styles.errorBar}>
           <span>{error}</span>
-          <button type="button" onClick={() => setError("")} aria-label="Fechar aviso"><FiX /></button>
+          <button
+            type="button"
+            onClick={() => setError("")}
+            aria-label="Fechar aviso"
+          >
+            <FiX />
+          </button>
         </div>
       ) : null}
 
@@ -1422,29 +1737,41 @@ export default function InstitutionalEditor() {
           onToggleCollapsed={() => {
             setLibraryCollapsed((current) => {
               const next = !current;
-              localStorage.setItem("cong:institutional-library-collapsed", next ? "1" : "0");
+              localStorage.setItem(
+                "cong:institutional-library-collapsed",
+                next ? "1" : "0",
+              );
               return next;
             });
           }}
           onAddSection={(type, variantVersionId) => {
-            const selectedIndex = page.sections.findIndex((section) => section.id === selectedSectionId);
-            const nextSection = selectedIndex >= 0 ? page.sections[selectedIndex + 1] : undefined;
+            const selectedIndex = page.sections.findIndex(
+              (section) => section.id === selectedSectionId,
+            );
+            const nextSection =
+              selectedIndex >= 0 ? page.sections[selectedIndex + 1] : undefined;
             void addSection(type, variantVersionId, nextSection?.id ?? null);
           }}
           onAddElement={addElement}
           onSelectSection={(sectionId) => {
             setSelectedSectionId(sectionId);
             setSelectedElementId(null);
-            document.querySelector(`[data-section-id="${sectionId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+            document
+              .querySelector(`[data-section-id="${sectionId}"]`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" });
           }}
           onMoveSection={moveSectionByDirection}
-          onToggleSectionVisibility={(sectionId) => void toggleSection(sectionId)}
+          onToggleSectionVisibility={(sectionId) =>
+            void toggleSection(sectionId)
+          }
           onSelectElement={handleSelectElement}
           onElementStyleChange={changeElementStyle}
           onReorderLayers={reorderElementLayers}
           onSectionStyleChange={changeSectionStyle}
           onApplySectionStyleToAll={changeAllSectionStyles}
-          onUploadSectionBackground={(sectionId, file, applyToAll) => void uploadSectionBackground(sectionId, file, applyToAll)}
+          onUploadSectionBackground={(sectionId, file, applyToAll) =>
+            void uploadSectionBackground(sectionId, file, applyToAll)
+          }
           onAutoOrganizeSection={autoOrganizeSection}
         />
 
@@ -1462,60 +1789,203 @@ export default function InstitutionalEditor() {
             </div>
             <div className={styles.stageActions}>
               {nativeFamily ? (
-                <div className={styles.exampleModeSwitch} role="group" aria-label="Conteúdo exibido no canvas">
-                  <button type="button" data-active={showExampleView} onClick={() => changeExampleView(true)}>
+                <div
+                  className={styles.exampleModeSwitch}
+                  role="group"
+                  aria-label="Conteúdo exibido no canvas"
+                >
+                  <button
+                    type="button"
+                    data-active={showExampleView}
+                    onClick={() => changeExampleView(true)}
+                  >
                     <span>Exemplo do design</span>
                     <small>Cores e conteúdo fictícios</small>
                   </button>
-                  <button type="button" data-active={!showExampleView} onClick={() => changeExampleView(false)}>
+                  <button
+                    type="button"
+                    data-active={!showExampleView}
+                    onClick={() => changeExampleView(false)}
+                  >
                     <span>Minha organização</span>
                     <small>Minha marca e conteúdo</small>
                   </button>
                 </div>
               ) : null}
               {!showExampleView && selectedElementIds.length > 1 ? (
-                <div className={styles.selectionActions} aria-label="Ações da seleção">
+                <div
+                  className={styles.selectionActions}
+                  aria-label="Ações da seleção"
+                >
                   <span>{selectedElementIds.length} selecionados</span>
                   {!selectedGroupId ? (
-                    <div className={styles.selectionArrange} aria-label="Alinhar seleção">
-                      <button type="button" onClick={() => alignSelectedElements("horizontal", "start")} title="Alinhar à esquerda" aria-label="Alinhar à esquerda"><FiAlignLeft /></button>
-                      <button type="button" onClick={() => alignSelectedElements("horizontal", "center")} title="Centralizar horizontalmente" aria-label="Centralizar horizontalmente"><FiAlignCenter /></button>
-                      <button type="button" onClick={() => alignSelectedElements("horizontal", "end")} title="Alinhar à direita" aria-label="Alinhar à direita"><FiAlignRight /></button>
-                      <button type="button" onClick={() => alignSelectedElements("vertical", "start")} title="Alinhar ao topo" aria-label="Alinhar ao topo"><FiArrowUp /></button>
-                      <button type="button" onClick={() => alignSelectedElements("vertical", "center")} title="Centralizar verticalmente" aria-label="Centralizar verticalmente"><FiMinus /></button>
-                      <button type="button" onClick={() => alignSelectedElements("vertical", "end")} title="Alinhar à base" aria-label="Alinhar à base"><FiArrowDown /></button>
+                    <div
+                      className={styles.selectionArrange}
+                      aria-label="Alinhar seleção"
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          alignSelectedElements("horizontal", "start")
+                        }
+                        title="Alinhar à esquerda"
+                        aria-label="Alinhar à esquerda"
+                      >
+                        <FiAlignLeft />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          alignSelectedElements("horizontal", "center")
+                        }
+                        title="Centralizar horizontalmente"
+                        aria-label="Centralizar horizontalmente"
+                      >
+                        <FiAlignCenter />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          alignSelectedElements("horizontal", "end")
+                        }
+                        title="Alinhar à direita"
+                        aria-label="Alinhar à direita"
+                      >
+                        <FiAlignRight />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          alignSelectedElements("vertical", "start")
+                        }
+                        title="Alinhar ao topo"
+                        aria-label="Alinhar ao topo"
+                      >
+                        <FiArrowUp />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          alignSelectedElements("vertical", "center")
+                        }
+                        title="Centralizar verticalmente"
+                        aria-label="Centralizar verticalmente"
+                      >
+                        <FiMinus />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => alignSelectedElements("vertical", "end")}
+                        title="Alinhar à base"
+                        aria-label="Alinhar à base"
+                      >
+                        <FiArrowDown />
+                      </button>
                       {selectedElementIds.length >= 3 ? (
                         <>
-                          <button type="button" onClick={() => distributeSelectedElements("horizontal")} title="Distribuir horizontalmente" aria-label="Distribuir horizontalmente"><FiMoreHorizontal /></button>
-                          <button type="button" onClick={() => distributeSelectedElements("vertical")} title="Distribuir verticalmente" aria-label="Distribuir verticalmente"><FiMoreVertical /></button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              distributeSelectedElements("horizontal")
+                            }
+                            title="Distribuir horizontalmente"
+                            aria-label="Distribuir horizontalmente"
+                          >
+                            <FiMoreHorizontal />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              distributeSelectedElements("vertical")
+                            }
+                            title="Distribuir verticalmente"
+                            aria-label="Distribuir verticalmente"
+                          >
+                            <FiMoreVertical />
+                          </button>
                         </>
                       ) : null}
                     </div>
                   ) : null}
                   {selectedGroupId ? (
-                    <button type="button" onClick={ungroupSelectedElements} title="Desagrupar (Ctrl+Shift+G)"><FiLayers /> Desagrupar</button>
+                    <button
+                      type="button"
+                      onClick={ungroupSelectedElements}
+                      title="Desagrupar (Ctrl+Shift+G)"
+                    >
+                      <FiLayers /> Desagrupar
+                    </button>
                   ) : (
-                    <button type="button" onClick={groupSelectedElements} title="Agrupar (Ctrl+G)"><FiLayers /> Agrupar</button>
+                    <button
+                      type="button"
+                      onClick={groupSelectedElements}
+                      title="Agrupar (Ctrl+G)"
+                    >
+                      <FiLayers /> Agrupar
+                    </button>
                   )}
-                  <button type="button" className={styles.selectionDelete} onClick={removeSelectedElements} title="Excluir selecionados (Delete)">Excluir</button>
+                  <button
+                    type="button"
+                    className={styles.selectionDelete}
+                    onClick={removeSelectedElements}
+                    title="Excluir selecionados (Delete)"
+                  >
+                    Excluir
+                  </button>
                 </div>
               ) : null}
               {!showExampleView && site.sourceTemplateId ? (
-                <button type="button" className={styles.editingModeToggle} data-mode={constraintsUnlocked ? "free" : "guided"} onClick={toggleEditingMode} title={constraintsUnlocked ? "Voltar às proteções do modelo" : "Liberar movimentos e ajustes fora das recomendações"}>
-                  <span>{constraintsUnlocked ? "Modo livre" : "Modo guiado"}</span>
-                  <small>{constraintsUnlocked ? "Mais liberdade" : "Com recomendações"}</small>
+                <button
+                  type="button"
+                  className={styles.editingModeToggle}
+                  data-mode={constraintsUnlocked ? "free" : "guided"}
+                  onClick={toggleEditingMode}
+                  title={
+                    constraintsUnlocked
+                      ? "Voltar às proteções do modelo"
+                      : "Liberar movimentos e ajustes fora das recomendações"
+                  }
+                >
+                  <span>
+                    {constraintsUnlocked ? "Modo livre" : "Modo guiado"}
+                  </span>
+                  <small>
+                    {constraintsUnlocked
+                      ? "Mais liberdade"
+                      : "Com recomendações"}
+                  </small>
                 </button>
-              ) : !showExampleView ? <span className={styles.editingModeStatic}>Modo livre</span> : null}
-              <small>{device === "desktop" ? "Desktop" : device === "tablet" ? "Tablet" : "Celular"}</small>
+              ) : !showExampleView ? (
+                <span className={styles.editingModeStatic}>Modo livre</span>
+              ) : null}
+              <small>
+                {device === "desktop"
+                  ? "Desktop"
+                  : device === "tablet"
+                    ? "Tablet"
+                    : "Celular"}
+              </small>
             </div>
           </div>
           <div className={styles.canvasViewport}>
-            <div className={styles.canvas} style={{ width: canvasWidth }} data-cong-editor-device={device}>
+            <div
+              className={styles.canvas}
+              style={{ width: canvasWidth }}
+              data-cong-editor-device={device}
+            >
               {showExampleView ? (
                 <div className={styles.exampleCanvasNotice}>
                   <strong>Exemplo do design</strong>
-                  <span>Conteúdo, imagens ilustrativas e cores fictícias. Escolha “Minha organização” para editar seus dados.</span>
-                  <button type="button" onClick={() => changeExampleView(false)}>Editar meu site</button>
+                  <span>
+                    Conteúdo, imagens ilustrativas e cores fictícias. Escolha
+                    “Minha organização” para editar seus dados.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => changeExampleView(false)}
+                  >
+                    Editar meu site
+                  </button>
                 </div>
               ) : null}
               <InstitutionalSiteView
@@ -1523,7 +1993,11 @@ export default function InstitutionalEditor() {
                 page={renderedPage ?? page}
                 editor={!showExampleView}
                 responsiveSizeOverride={device}
-                editorConstraints={constraintsUnlocked ? FREE_EDITOR_CONSTRAINTS : site.editorConstraints}
+                editorConstraints={
+                  constraintsUnlocked
+                    ? FREE_EDITOR_CONSTRAINTS
+                    : site.editorConstraints
+                }
                 selectedSectionId={selectedSectionId}
                 selectedElementId={selectedElementId}
                 selectedElementIds={selectedElementIds}
@@ -1539,7 +2013,11 @@ export default function InstitutionalEditor() {
                 }}
                 onElementValueChange={changeElementValue}
                 onElementImageRequest={(sectionId, elementId) => {
-                  setPendingImageTarget({ kind: "element", sectionId, elementId });
+                  setPendingImageTarget({
+                    kind: "element",
+                    sectionId,
+                    elementId,
+                  });
                   directImageInputRef.current?.click();
                 }}
                 onElementStyleChange={changeElementStyle}
@@ -1549,11 +2027,27 @@ export default function InstitutionalEditor() {
                 onAddElementToSection={addElementToSection}
                 variants={variants}
                 busy={busy}
-                onAddSectionType={(sectionType, beforeSectionId, variantVersionId) => void addSection(sectionType, variantVersionId, beforeSectionId ?? null)}
-                onVariantChange={(sectionId, variantVersionId) => void changeVariant(sectionId, variantVersionId)}
-                onDuplicateSection={(sectionId) => void duplicateSection(sectionId)}
+                onAddSectionType={(
+                  sectionType,
+                  beforeSectionId,
+                  variantVersionId,
+                ) =>
+                  void addSection(
+                    sectionType,
+                    variantVersionId,
+                    beforeSectionId ?? null,
+                  )
+                }
+                onVariantChange={(sectionId, variantVersionId) =>
+                  void changeVariant(sectionId, variantVersionId)
+                }
+                onDuplicateSection={(sectionId) =>
+                  void duplicateSection(sectionId)
+                }
                 onDeleteSection={setDeleteTargetId}
-                onToggleSectionVisibility={(sectionId) => void toggleSection(sectionId)}
+                onToggleSectionVisibility={(sectionId) =>
+                  void toggleSection(sectionId)
+                }
                 onReorderSections={(sectionIds) => void reorder(sectionIds)}
               />
             </div>
@@ -1567,11 +2061,17 @@ export default function InstitutionalEditor() {
               variants={variants}
               onCollapse={() => setPropertiesOpen(false)}
               onContentChange={(path, value) => {
-                if (selectedSection) changeSectionContent(selectedSection.id, path, value);
+                if (selectedSection)
+                  changeSectionContent(selectedSection.id, path, value);
               }}
-              onVariantChange={(versionId) => selectedSection ? void changeVariant(selectedSection.id, versionId) : undefined}
+              onVariantChange={(versionId) =>
+                selectedSection
+                  ? void changeVariant(selectedSection.id, versionId)
+                  : undefined
+              }
               onUploadImage={(path, file) => {
-                if (selectedSection) void uploadImage(selectedSection.id, path, file);
+                if (selectedSection)
+                  void uploadImage(selectedSection.id, path, file);
               }}
               selectedElement={selectedElement}
               selectedElementDomId={selectedElementId}
@@ -1579,12 +2079,20 @@ export default function InstitutionalEditor() {
               designFrames={designResources.frames}
               onElementStyleChange={(style) => {
                 if (selectedSection && selectedElementId) {
-                  changeElementStyle(selectedSection.id, selectedElementId, style);
+                  changeElementStyle(
+                    selectedSection.id,
+                    selectedElementId,
+                    style,
+                  );
                 }
               }}
               onElementValueChange={(value) => {
                 if (selectedSection && selectedElementId) {
-                  changeElementValue(selectedSection.id, selectedElementId, value);
+                  changeElementValue(
+                    selectedSection.id,
+                    selectedElementId,
+                    value,
+                  );
                 }
               }}
               onRemoveElement={() => {
@@ -1593,10 +2101,12 @@ export default function InstitutionalEditor() {
                 }
               }}
               onSectionStyleChange={(style) => {
-                if (selectedSection) changeSectionStyle(selectedSection.id, style);
+                if (selectedSection)
+                  changeSectionStyle(selectedSection.id, style);
               }}
               onUploadSectionBackground={(file) => {
-                if (selectedSection) void uploadSectionBackground(selectedSection.id, file);
+                if (selectedSection)
+                  void uploadSectionBackground(selectedSection.id, file);
               }}
             />
           ) : (
@@ -1609,8 +2119,14 @@ export default function InstitutionalEditor() {
               title="Abrir propriedades"
             >
               <svg viewBox="0 0 40 112" aria-hidden="true" focusable="false">
-                <path className={styles.propertiesHandleShape} d="M38 1V34C38 42 30 44 25 49C22 52 20 55 20 56C20 57 22 60 25 63C30 68 38 70 38 78V111" />
-                <path className={styles.propertiesHandleChevron} d="M31 50L25 56L31 62" />
+                <path
+                  className={styles.propertiesHandleShape}
+                  d="M38 1V34C38 42 30 44 25 49C22 52 20 55 20 56C20 57 22 60 25 63C30 68 38 70 38 78V111"
+                />
+                <path
+                  className={styles.propertiesHandleChevron}
+                  d="M31 50L25 56L31 62"
+                />
               </svg>
             </button>
           )}
@@ -1649,11 +2165,17 @@ export default function InstitutionalEditor() {
           <div className={styles.previewHeader}>
             <div>
               <strong>Visualização do rascunho</strong>
-              <span>Dicas, seleções e controles de edição ficam ocultos aqui.</span>
+              <span>
+                Dicas, seleções e controles de edição ficam ocultos aqui.
+              </span>
             </div>
-            <button type="button" onClick={() => setPreviewOpen(false)}><FiX /> Fechar</button>
+            <button type="button" onClick={() => setPreviewOpen(false)}>
+              <FiX /> Fechar
+            </button>
           </div>
-          <div className={styles.previewBody}><InstitutionalSiteView site={site} page={page} /></div>
+          <div className={styles.previewBody}>
+            <InstitutionalSiteView site={site} page={page} />
+          </div>
         </div>
       ) : null}
 
@@ -1665,9 +2187,36 @@ export default function InstitutionalEditor() {
         onFechar={() => setHelpOpen(false)}
         mensagem={
           <ol className={styles.helpSteps}>
-            <li><FiHelpCircle /><div><strong>Adicione o que precisa.</strong><span>Escolha seções pelo significado, não por termos técnicos de layout.</span></div></li>
-            <li><FiHelpCircle /><div><strong>Edite no próprio site.</strong><span>Clique em textos e imagens. Contadores e recomendações aparecem perto do conteúdo.</span></div></li>
-            <li><FiHelpCircle /><div><strong>Reorganize sem medo.</strong><span>O site publicado só muda quando você confirmar uma nova publicação.</span></div></li>
+            <li>
+              <FiHelpCircle />
+              <div>
+                <strong>Adicione o que precisa.</strong>
+                <span>
+                  Escolha seções pelo significado, não por termos técnicos de
+                  layout.
+                </span>
+              </div>
+            </li>
+            <li>
+              <FiHelpCircle />
+              <div>
+                <strong>Edite no próprio site.</strong>
+                <span>
+                  Clique em textos e imagens. Contadores e recomendações
+                  aparecem perto do conteúdo.
+                </span>
+              </div>
+            </li>
+            <li>
+              <FiHelpCircle />
+              <div>
+                <strong>Reorganize sem medo.</strong>
+                <span>
+                  O site publicado só muda quando você confirmar uma nova
+                  publicação.
+                </span>
+              </div>
+            </li>
           </ol>
         }
       />
@@ -1699,14 +2248,19 @@ export default function InstitutionalEditor() {
 
       <ConfirmActionModal
         open={publishConfirmOpen}
-        title={site.publishedAt ? "Publicar uma nova versão?" : "Publicar este site?"}
+        title={
+          site.publishedAt ? "Publicar uma nova versão?" : "Publicar este site?"
+        }
         description={
           <>
-            Este site passará a ser o site público principal de <strong>{site.organization.name}</strong>.
-            Se outro site estiver publicado, ele será substituído como principal.
+            Este site passará a ser o site público principal de{" "}
+            <strong>{site.organization.name}</strong>. Se outro site estiver
+            publicado, ele será substituído como principal.
           </>
         }
-        confirmLabel={site.publishedAt ? "Publicar nova versão" : "Publicar site"}
+        confirmLabel={
+          site.publishedAt ? "Publicar nova versão" : "Publicar site"
+        }
         busy={publishing}
         onCancel={() => setPublishConfirmOpen(false)}
         onConfirm={() => void publish()}

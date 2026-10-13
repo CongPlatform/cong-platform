@@ -1,0 +1,109 @@
+.editor,
+.capture {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.previewSurface {
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+  max-height: 48vh;
+  overflow: hidden;
+  border: 1px dashed #c6d8eb;
+  background: #f7f9fc;
+  border-radius: 12px;
+}
+.previewSurface canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 45vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.adjustments {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.adjustments label {
+  display: grid;
+  gap: 5px;
+  color: #3e5776;
+  font-size: 12px;
+  font-weight: 700;
+}
+.adjustments select,
+.adjustments input {
+  max-width: 180px;
+  padding: 8px;
+  border: 1px solid #cbd8e9;
+  border-radius: 8px;
+}
+.adjustments button,
+.actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid #cedbea;
+  border-radius: 9px;
+  background: white;
+  color: #2c517c;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.actions button:first-child:not(:last-child) {
+  background: #edf4ff;
+  border-color: #adc9ed;
+}
+.actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.error {
+  margin: 0;
+  color: #a12638;
+  font-size: 12px;
+}
+.hint {
+  margin: 0;
+  color: #6a7a91;
+  font-size: 12px;
+}
+.capture audio {
+  width: 100%;
+}
+.cameraPreview {
+  display: block;
+  width: 100%;
+  max-height: 40vh;
+  border-radius: 12px;
+  object-fit: contain;
+  background: #162235;
+}
+.microphone {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  height: 140px;
+  background: #f4f7fb;
+  border-radius: 12px;
+  color: #396ba4;
+}
+.microphone svg {
+  width: 34px;
+  height: 34px;
+}

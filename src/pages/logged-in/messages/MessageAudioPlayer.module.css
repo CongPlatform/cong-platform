@@ -1,0 +1,10 @@
+.player { display:flex; align-items:center; gap:9px; width:min(330px, 66vw); min-width:180px; min-height:58px; background:#f3f7fc; border:1px solid #e2eaf4; border-radius:13px; padding:8px; color:#244e79; }
+.play { flex:none; display:grid; place-items:center; width:36px; height:36px; background:#2168b5; color:white; border:0; border-radius:50%; cursor:pointer; }
+.track { flex:1; min-width:0; display:grid; gap:2px; align-items:center; }
+.wave { display:flex; align-items:center; gap:2px; height:21px; overflow:hidden; }
+.wave i { flex:1; max-width:5px; min-width:2px; border-radius:3px; background:#9cbbdf; }
+.track input { margin:0; width:100%; height:7px; accent-color:#2168b5; cursor:pointer; }
+.track small { font-size:10px; color:#677e99; white-space:nowrap; }
+.speed { flex:none; border:0; background:#e5eef9; color:#2168b5; font-size:11px; font-weight:800; border-radius:8px; padding:6px; cursor:pointer; }
+.volume { flex:none; color:#8da8c5; }
+@media(max-width:680px){ .player { width:min(265px, 66vw); gap:5px; }.volume{display:none;} }

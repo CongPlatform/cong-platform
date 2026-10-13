@@ -82,6 +82,7 @@ const InstitutionalHome = lazy(
 const InstitutionalEditor = lazy(
   () => import("../pages/logged-in/institutional/InstitutionalEditor"),
 );
+const MessagesPage = lazy(() => import("../pages/logged-in/messages/MessagesPage"));
 const DesignerTemplates = lazy(
   () => import("../pages/logged-in/designerTemplates/DesignerTemplates"),
 );
@@ -189,6 +190,8 @@ export default function AppRoutes() {
                   element={<CommunityModerationPage />}
                 />
                 <Route path="/app/minha-conta" element={<Account />} />
+                <Route path="/app/mensagens" element={<MessagesPage scope="global" />} />
+                <Route path="/app/mensagens/organizacao" element={<WorkspaceRoute kind="organization" organizationType="ngo"><MessagesPage scope="organization" /></WorkspaceRoute>} />
                 <Route
                   path="/app/site-institucional"
                   element={
