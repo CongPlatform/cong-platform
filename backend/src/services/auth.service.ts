@@ -104,12 +104,16 @@ export async function completeOAuthUser(
     id: string;
     name: string;
     active: boolean;
+    selfDeactivatedAt: Date | null;
+    deletionRequestedAt: Date | null;
   }>(
     `
       select
         id,
         name,
-        active
+        active,
+        self_deactivated_at as "selfDeactivatedAt",
+        deletion_requested_at as "deletionRequestedAt"
       from public.users
       where auth_user_id = $1
       limit 1
@@ -121,7 +125,15 @@ export async function completeOAuthUser(
 
   if (existingUser) {
     if (!existingUser.active) {
-      throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+      if (existingUser.selfDeactivatedAt && !existingUser.deletionRequestedAt) {
+        await pool.query(
+          `update public.users set active = true, self_deactivated_at = null, updated_at = now()
+            where id = $1 and self_deactivated_at is not null and deletion_requested_at is null`,
+          [existingUser.id],
+        );
+      } else {
+        throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+      }
     }
 
     return {
@@ -372,12 +384,16 @@ export async function loginUser(input: LoginUserInput): Promise<LoggedUser> {
     id: string;
     name: string;
     active: boolean;
+    selfDeactivatedAt: Date | null;
+    deletionRequestedAt: Date | null;
   }>(
     `
       select
         id,
         name,
-        active
+        active,
+        self_deactivated_at as "selfDeactivatedAt",
+        deletion_requested_at as "deletionRequestedAt"
       from public.users
       where auth_user_id = $1
       limit 1
@@ -396,7 +412,15 @@ export async function loginUser(input: LoginUserInput): Promise<LoggedUser> {
   }
 
   if (!user.active) {
-    throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+    if (user.selfDeactivatedAt && !user.deletionRequestedAt) {
+      await pool.query(
+        `update public.users set active = true, self_deactivated_at = null, updated_at = now()
+          where id = $1 and self_deactivated_at is not null and deletion_requested_at is null`,
+        [user.id],
+      );
+    } else {
+      throw new AppError("User account is inactive", 403, "USER_INACTIVE");
+    }
   }
 
   return {

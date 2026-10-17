@@ -229,6 +229,12 @@ export async function sendConversationMessage(viewer:string,id:string,clientMess
       if(previous.rowCount)throw new AppError("Aguarde a aceitação do contato.",403,"MESSAGE_REQUEST_PENDING");
     }
     await ensureNoBlockedPeers(client,viewer,id);
+    if (meta.kind === "direct") {
+      const inactive = await client.query(`select 1 from public.message_conversation_participants p
+        join public.users u on u.id=p.user_id
+        where p.conversation_id=$1 and p.user_id<>$2 and u.active=false limit 1`, [id, viewer]);
+      if (inactive.rowCount) throw new AppError("Este contato desativou a conta e não pode receber novas mensagens.", 403, "MESSAGE_CONTACT_INACTIVE");
+    }
     if(attachmentId){
       if(meta.status!=="accepted")throw new AppError("Aceite o contato para enviar arquivos.",403,"MESSAGE_ATTACHMENT_PENDING");
       const found=await client.query(`select 1 from public.message_attachments where id=$1 and conversation_id=$2 and owner_id=$3 and linked_message_id is null`,[attachmentId,id,viewer]);
@@ -290,7 +296,7 @@ export async function createAttachmentGrant(viewer:string,id:string,ctx:MessageC
     const meta=await assertMember(client,viewer,id,ctx);if(meta.status!=="accepted")throw new AppError("Aceite o contato primeiro.",403,"MESSAGE_ATTACHMENT_PENDING");
     await ensureNoBlockedPeers(client,viewer,id);
     const key=randomUUID();const path=`${id}/${key}`;
-    const requestedMime=file.mimeType.toLowerCase().split(";", 1)[0] ?? "";
+    const requestedMime=file.mimeType.toLowerCase().split(";")[0]?.trim() ?? "";
     // Active content is always sent as a document; inline preview only uses a strict allowlist.
     const storageMime=permittedPreviewMimes.has(requestedMime)&&file.size<=5_000_000 ? requestedMime : "application/octet-stream";
     const signed=await supabaseAdmin.storage.from(bucket).createSignedUploadUrl(path);

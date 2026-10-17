@@ -507,7 +507,7 @@ const communityPostSelect = `
     content_moderation.state as "moderationState",
     content_moderation.reason as "moderationReason",
     content_moderation.updated_at as "moderatedAt",
-    coalesce(moderator.display_name, moderator.name) as "moderatorDisplayName"
+    null::text as "moderatorDisplayName"
 
   from public.community_posts cp
 
@@ -523,9 +523,6 @@ const communityPostSelect = `
   left join public.community_content_moderation content_moderation
     on content_moderation.target_type = 'post'
    and content_moderation.target_id = cp.id
-
-  left join public.users moderator
-    on moderator.id = content_moderation.updated_by_user_id
 
   left join public.community_post_general general_post
     on general_post.post_id = cp.id
@@ -3501,6 +3498,7 @@ export type CommunityNotificationType =
 export interface CommunityNotification {
   id: string;
   type: CommunityNotificationType;
+  moderationMessage: string | null;
   isRead: boolean;
   createdAt: Date;
   actor: {
@@ -3610,6 +3608,7 @@ export async function getCommunityNotifications(
          and not exists (
            select 1 from public.community_user_blocks block
            where n.actor_user_id is not null
+             and n.notification_type not in ('moderation_action', 'moderation_report')
              and ((block.blocker_user_id = $1 and block.blocked_user_id = n.actor_user_id)
                or (block.blocker_user_id = n.actor_user_id and block.blocked_user_id = $1))
          )`,
@@ -3621,6 +3620,7 @@ export async function getCommunityNotifications(
       isRead: boolean;
       createdAt: Date;
       actorUserId: string | null;
+      moderationMessage: string | null;
       actorDisplayName: string | null;
       actorUsername: string | null;
       actorAvatarPath: string | null;
@@ -3634,12 +3634,17 @@ export async function getCommunityNotifications(
           select
             n.id,
             n.notification_type as type,
+            n.moderation_message as "moderationMessage",
             n.is_read as "isRead",
             n.created_at as "createdAt",
-            actor.id as "actorUserId",
-            coalesce(actor.display_name, actor.name) as "actorDisplayName",
-            actor.username as "actorUsername",
-            actor.avatar_path as "actorAvatarPath",
+            case when n.notification_type in ('moderation_action', 'moderation_report')
+              then null else actor.id end as "actorUserId",
+            case when n.notification_type in ('moderation_action', 'moderation_report')
+              then null else coalesce(actor.display_name, actor.name) end as "actorDisplayName",
+            case when n.notification_type in ('moderation_action', 'moderation_report')
+              then null else actor.username end as "actorUsername",
+            case when n.notification_type in ('moderation_action', 'moderation_report')
+              then null else actor.avatar_path end as "actorAvatarPath",
             post.id as "postId",
             post.title as "postTitle",
             event.id as "eventId",
@@ -3653,6 +3658,7 @@ export async function getCommunityNotifications(
             and not exists (
               select 1 from public.community_user_blocks block
               where n.actor_user_id is not null
+                and n.notification_type not in ('moderation_action', 'moderation_report')
                 and ((block.blocker_user_id = $1 and block.blocked_user_id = n.actor_user_id)
                   or (block.blocker_user_id = n.actor_user_id and block.blocked_user_id = $1))
             )
@@ -3667,9 +3673,12 @@ export async function getCommunityNotifications(
       notifications: listResult.rows.map((row) => ({
         id: row.id,
         type: row.type,
+        moderationMessage: row.moderationMessage,
         isRead: row.isRead,
         createdAt: row.createdAt,
-        actor: row.actorUserId
+        // Defesa adicional: mesmo notificações antigas não podem revelar o autor
+        // da denúncia nem a identidade de quem aplicou a medida.
+        actor: row.type !== "moderation_action" && row.type !== "moderation_report" && row.actorUserId
           ? {
               userId: row.actorUserId,
               displayName: row.actorDisplayName ?? "Pessoa da comunidade",

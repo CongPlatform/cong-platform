@@ -158,3 +158,26 @@
     justify-self: start;
   }
 }
+
+.lifecycle { border-top: 1px solid #e3e9f2; }
+.lifecycleOptions { display: grid; gap: 12px; }
+.lifecycleOptions > div { display: flex; align-items: center; gap: 12px; padding: 15px; border-radius: 12px;
+  border: 1px solid #e3e9f2; background: #f8fbff; }
+.lifecycleOptions > div > svg { flex: none; font-size: 22px; color: #345f91; }
+.lifecycleOptions > div > div { min-width: 0; flex: 1; }
+.lifecycleOptions strong { color: #213e65; font-size: 13px; }
+.lifecycleOptions p { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: #59728a; }
+.lifecycleOptions button { flex: none; border: 1px solid #bcd0e8; color: #234c7a; background: #fff;
+  padding: 9px 13px; border-radius: 9px; cursor: pointer; font-weight: 700; font-size: 12px; }
+.lifecycleOptions button.dangerButton { border-color: #f0c5cc; color: #962e43; }
+.confirmDialog { display: grid; gap: 12px; color: #334b69; }
+.confirmDialog p { margin: 0; font-size: 13px; line-height: 1.65; }
+.confirmDialog label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
+.confirmDialog input { width: 100%; border: 1px solid #becfe5; border-radius: 9px; padding: 11px; font: inherit; }
+.confirmIcon { color: #ae4d39; font-size: 24px; }
+.confirmDialog .actionError { color: #9b2942; }
+.dialogButtons { display: flex; gap: 8px; justify-content: flex-end; }
+.dialogButtons button { border: 1px solid #cbd8e8; padding: 9px 15px; border-radius: 9px; cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; background: #fff; color: #264f80; }
+.dialogButtons .confirmDanger { background: #a33248; border-color: #a33248; color: white; }
+.dialogButtons button:disabled { cursor: not-allowed; opacity: .5; }
+@media(max-width:680px) { .lifecycleOptions > div { flex-wrap: wrap; } .lifecycleOptions > div > div { flex-basis: calc(100% - 42px); } .lifecycleOptions button { margin-left: 34px; } }

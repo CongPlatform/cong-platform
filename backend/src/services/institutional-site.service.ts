@@ -719,6 +719,13 @@ async function hydrateSnapshot(
   };
 }
 
+
+/** Insere o autor real da requisição no contexto transacional das triggers. */
+async function setAuditActor(client: PoolClient, authUserId: string): Promise<void> {
+  const userId = await getActiveUserId(client, authUserId);
+  await client.query("select set_config('cong.actor_user_id', $1, true)", [userId]);
+}
+
 export async function listInstitutionalSites(
   organizationId: string,
 ): Promise<InstitutionalSiteSummary[]> {
@@ -800,6 +807,7 @@ export async function createInstitutionalSite(
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const organization = await requireNgo(client, organizationId);
     const userId = await getActiveUserId(client, authUserId);
@@ -959,30 +967,34 @@ export async function renameInstitutionalSite(
   organizationId: string,
   siteId: string,
   name: string,
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
-
   try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
-    await client.query(
-      `update public.institutional_sites set name = $1 where id = $2`,
-      [name.trim(), siteId],
-    );
+    await client.query(`update public.institutional_sites set name = $1 where id = $2`, [name.trim(), siteId]);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
   } finally {
     client.release();
   }
-
   return getInstitutionalSite(organizationId, siteId);
 }
 
 export async function updateInstitutionalBrand(
   organizationId: string,
   input: Omit<BrandRow, "organizationId" | "publicSlug">,
+  authUserId: string,
 ): Promise<InstitutionalBrand> {
   const client = await pool.connect();
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
     await requireNgo(client, organizationId);
 
     if (input.logoAssetId) {
@@ -1077,6 +1089,7 @@ export async function addInstitutionalSection(
     content: unknown;
     settings?: unknown;
   },
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
 
@@ -1084,6 +1097,7 @@ export async function addInstitutionalSection(
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
     const page = await requirePage(client, organizationId, pageId);
     siteId = page.siteId;
 
@@ -1219,12 +1233,14 @@ export async function updateInstitutionalSection(
     content?: unknown;
     settings?: Record<string, unknown>;
   },
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
   let siteId: string;
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const section = await requireSection(client, organizationId, sectionId);
     siteId = section.siteId;
@@ -1286,12 +1302,14 @@ export async function updateInstitutionalSection(
 export async function duplicateInstitutionalSection(
   organizationId: string,
   sectionId: string,
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
   let siteId: string;
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const section = await requireSection(client, organizationId, sectionId);
     siteId = section.siteId;
@@ -1355,12 +1373,14 @@ export async function duplicateInstitutionalSection(
 export async function deleteInstitutionalSection(
   organizationId: string,
   sectionId: string,
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
   let siteId: string;
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const section = await requireSection(client, organizationId, sectionId);
     siteId = section.siteId;
@@ -1419,12 +1439,14 @@ export async function reorderInstitutionalSections(
   organizationId: string,
   pageId: string,
   sectionIds: string[],
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
   let siteId: string;
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
     const page = await requirePage(client, organizationId, pageId);
     siteId = page.siteId;
 
@@ -1504,6 +1526,7 @@ export async function publishInstitutionalSite(
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const userId = await getActiveUserId(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
@@ -1571,19 +1594,19 @@ export async function publishInstitutionalSite(
 export async function unpublishInstitutionalSite(
   organizationId: string,
   siteId: string,
+  authUserId: string,
 ): Promise<void> {
   const client = await pool.connect();
-
   try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
-    await client.query(
-      `
-        update public.institutional_sites
-        set published_at = null, is_primary = false
-        where id = $1
-      `,
-      [siteId],
-    );
+    await client.query(`update public.institutional_sites
+      set published_at = null, is_primary = false where id = $1`, [siteId]);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
   } finally {
     client.release();
   }
@@ -1592,15 +1615,18 @@ export async function unpublishInstitutionalSite(
 export async function deleteInstitutionalSite(
   organizationId: string,
   siteId: string,
+  authUserId: string,
 ): Promise<void> {
   const client = await pool.connect();
-
   try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
-    await client.query(
-      `delete from public.institutional_sites where id = $1 and organization_id = $2`,
-      [siteId, organizationId],
-    );
+    await client.query(`delete from public.institutional_sites where id = $1 and organization_id = $2`, [siteId, organizationId]);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
   } finally {
     client.release();
   }

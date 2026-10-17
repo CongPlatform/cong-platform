@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPatch, apiUpload } from "./api";
+import { apiDelete, apiGet, apiPatch, apiPost, apiUpload } from "./api";
 
 import type { CollaborationRole } from "./collaborationProfileService";
 import type { OnboardingRepresentation } from "./onboardingService";
@@ -122,4 +122,27 @@ export async function checkUsernameAvailability(
   return apiGet<UsernameAvailability>(
     `/account/me/username-availability?username=${encodeURIComponent(username)}`,
   );
+}
+
+
+export async function deactivateMyAccount(): Promise<void> {
+  await apiPost<void>("/account/me/deactivate");
+}
+
+export async function deleteMyAccount(): Promise<void> {
+  await apiPost<{ message: string }>("/account/me/delete");
+}
+
+
+export interface AccountDeletionQueueItem {
+  id: string;
+  displayName: string;
+  username: string | null;
+  requestedAt: string;
+  organizationMemberships: number;
+}
+
+export async function getAccountDeletionQueue(): Promise<AccountDeletionQueueItem[]> {
+  const response = await apiGet<{ requests: AccountDeletionQueueItem[] }>("/account/admin/deletion-requests");
+  return response.requests;
 }

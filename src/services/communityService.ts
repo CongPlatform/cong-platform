@@ -777,6 +777,7 @@ export type CommunityEventScope = "upcoming" | "past" | "mine";
 export interface CommunityNotification {
   id: string;
   type: CommunityNotificationType;
+  moderationMessage?: string | null;
   isRead: boolean;
   createdAt: string;
   actor: {
@@ -1013,6 +1014,9 @@ export interface CommunityModerationReport {
     excerpt: string | null;
     authorUserId: string | null;
   };
+  restriction: { status: "suspended" | "banned"; suspendedUntil: string | null } | null;
+  canRestrictUsers: boolean;
+  contentHidden: boolean;
 }
 
 export async function getCommunityModerationReports(
@@ -1026,8 +1030,10 @@ export async function getCommunityModerationReports(
 
 export async function reviewCommunityReport(
   reportId: string,
-  action: "review" | "dismiss" | "hide_content" | "restore_content",
+  action: "review" | "dismiss" | "hide_content" | "restore_content" | "warn_user" | "suspend_24h" | "suspend_7d" | "ban_user" | "lift_restriction",
   note = "",
+  guidance = "",
+  responseHours: 24 | 168 | null = null,
 ): Promise<void> {
-  await apiPatch(`/community/moderation/reports/${reportId}`, { action, note });
+  await apiPatch(`/community/moderation/reports/${reportId}`, { action, note, guidance, responseHours });
 }

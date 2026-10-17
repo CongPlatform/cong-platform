@@ -777,9 +777,7 @@ export default function CommunityPostCard({
             </span>
             <strong>Esta publicação não aparece mais para a comunidade.</strong>
             <p>
-              {post.moderation?.moderatorDisplayName
-                ? `${post.moderation.moderatorDisplayName} removeu esta publicação`
-                : "A equipe de moderação removeu esta publicação"}
+              {"A equipe de moderação da CONG removeu esta publicação"}
               {post.moderation?.reason
                 ? ` pelo motivo: ${post.moderation.reason}`
                 : "."}

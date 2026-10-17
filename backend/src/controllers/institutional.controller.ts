@@ -406,6 +406,7 @@ export async function renameSite(req: Request, res: Response): Promise<void> {
       organizationId,
       siteId,
       req.body.name,
+      res.locals.authUser.id,
     );
     res.status(200).json({ site });
   } catch (error) {
@@ -425,7 +426,7 @@ export async function updateBrand(req: Request, res: Response): Promise<void> {
       textColor: req.body.textColor,
       headingFont: req.body.headingFont,
       bodyFont: req.body.bodyFont,
-    });
+    }, res.locals.authUser.id);
     res.status(200).json({ brand });
   } catch (error) {
     handleError(error, res);
@@ -460,6 +461,7 @@ export async function addSection(req: Request, res: Response): Promise<void> {
       res.locals.organizationContext.organizationId,
       pageId,
       req.body,
+      res.locals.authUser.id,
     );
     res.status(201).json({ site });
   } catch (error) {
@@ -477,6 +479,7 @@ export async function updateSection(
       res.locals.organizationContext.organizationId,
       sectionId,
       req.body,
+      res.locals.authUser.id,
     );
     res.status(200).json({ site });
   } catch (error) {
@@ -493,6 +496,7 @@ export async function duplicateSection(
     const site = await duplicateInstitutionalSection(
       res.locals.organizationContext.organizationId,
       sectionId,
+      res.locals.authUser.id,
     );
     res.status(201).json({ site });
   } catch (error) {
@@ -509,6 +513,7 @@ export async function deleteSection(
     const site = await deleteInstitutionalSection(
       res.locals.organizationContext.organizationId,
       sectionId,
+      res.locals.authUser.id,
     );
     res.status(200).json({ site });
   } catch (error) {
@@ -526,6 +531,7 @@ export async function reorderSections(
       res.locals.organizationContext.organizationId,
       pageId,
       req.body.sectionIds,
+      res.locals.authUser.id,
     );
     res.status(200).json({ site });
   } catch (error) {
@@ -556,6 +562,7 @@ export async function unpublishSite(
     await unpublishInstitutionalSite(
       res.locals.organizationContext.organizationId,
       siteId,
+      res.locals.authUser.id,
     );
     res.status(204).send();
   } catch (error) {
@@ -569,6 +576,7 @@ export async function deleteSite(req: Request, res: Response): Promise<void> {
     await deleteInstitutionalSite(
       res.locals.organizationContext.organizationId,
       siteId,
+      res.locals.authUser.id,
     );
     res.status(204).send();
   } catch (error) {

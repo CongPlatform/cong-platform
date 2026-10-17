@@ -14,6 +14,7 @@ import {
   FiEdit2,
   FiLoader,
   FiMail,
+  FiShield,
   FiUser,
   FiUsers,
   FiX,
@@ -28,6 +29,7 @@ import { buildDefaultAvatarUrl } from "../../../utils/avatar";
 
 import AvatarUploader from "./components/AvatarUploader";
 import CollaborationProfilesSection from "./components/CollaborationProfilesSection";
+import AccountAccessSection from "./components/AccountAccessSection";
 import RepresentationsSection from "./components/RepresentationsSection";
 
 import styles from "./Account.module.css";
@@ -72,6 +74,11 @@ const SETTINGS_SECTIONS = [
     id: "representations",
     label: "Representações",
     icon: FiMail,
+  },
+  {
+    id: "security",
+    label: "Conta e segurança",
+    icon: FiShield,
   },
 ] as const;
 
@@ -161,7 +168,7 @@ export default function Account() {
 
   const requestedSection = searchParams.get("tab");
   const activeSection: SettingsSectionId =
-    requestedSection === "profiles" || requestedSection === "representations"
+    requestedSection === "profiles" || requestedSection === "representations" || requestedSection === "security"
       ? requestedSection
       : "overview";
   const [avatarUploaderOpen, setAvatarUploaderOpen] = useState(false);
@@ -722,6 +729,12 @@ export default function Account() {
 
         {saveSuccess && !editing && (
           <div className={styles.successMessage}>{saveSuccess}</div>
+        )}
+
+        {!editing && activeSection === "security" && (
+          <section className={styles.tabContent}>
+            <AccountAccessSection />
+          </section>
         )}
 
         {!editing && activeSection === "overview" && (
