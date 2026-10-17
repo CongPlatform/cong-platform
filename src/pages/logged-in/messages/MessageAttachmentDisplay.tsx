@@ -1,90 +1,47 @@
-import { useEffect, useState } from "react";
-import { FiDownload, FiExternalLink, FiFile, FiMaximize2 } from "react-icons/fi";
-import { downloadEncryptedAttachment, type MessageScope } from "../../../services/messagesService";
-import { decryptAttachment, type SecureAttachment } from "../../../services/messageAttachments";
+import { useEffect,useState } from "react";
+import { FiDownload,FiFile,FiMaximize2 } from "react-icons/fi";
 import MessageMediaViewer from "./MessageMediaViewer";
 import MessageAudioPlayer from "./MessageAudioPlayer";
+import { getMessageAttachmentLink, type MessageScope } from "../../../services/messagesService";
+import { MAX_INLINE_PREVIEW_BYTES,PREVIEW_IMAGE_TYPES,PREVIEW_VIDEO_TYPES,PREVIEW_AUDIO_TYPES } from "../../../services/messageAttachments";
 import styles from "./MessageAttachmentDisplay.module.css";
 
-/** The server stores encrypted bytes; the preview URL is created only after local decryption. */
-export default function MessageAttachmentDisplay({
-  attachment, scope, conversationId, onError,
-}: {
-  attachment: SecureAttachment;
-  scope: MessageScope;
-  conversationId: string;
-  onError: (reason: string) => void;
-}) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const category = attachment.mime.startsWith("image/") ? "image" : attachment.mime.startsWith("audio/") ? "audio" : attachment.mime.startsWith("video/") ? "video" : "other";
-
-  useEffect(() => {
-    let cancelled = false;
-    let objectUrl: string | null = null;
-    async function load() {
-      try {
-        const { ciphertext } = await downloadEncryptedAttachment(scope, conversationId, attachment.id);
-        const blob = await decryptAttachment(ciphertext, attachment);
-        objectUrl = URL.createObjectURL(blob);
-        if (!cancelled) setUrl(objectUrl);
-      } catch {
-        if (!cancelled) onError("Não foi possível abrir este anexo.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-    // The attachment identity and conversation are stable for this renderer instance.
+export default function MessageAttachmentDisplay({id,conversationId,scope,name,mime,size,caption,onError}:{
+ id:string;conversationId:string;scope:MessageScope;name:string;mime:string;size:number;caption?:string;onError:(text:string)=>void;
+}){
+  const [url,setUrl]=useState<string|null>(null);
+  const [viewer,setViewer]=useState(false);
+  const inline=size<=MAX_INLINE_PREVIEW_BYTES;
+  const image=inline&&PREVIEW_IMAGE_TYPES.has(mime);
+  const video=inline&&PREVIEW_VIDEO_TYPES.has(mime);
+  const audio=inline&&PREVIEW_AUDIO_TYPES.has(mime);
+  useEffect(()=>{
+    if(!image&&!video&&!audio)return;
+    let disposed=false;let localUrl:string|null=null;
+    void getMessageAttachmentLink(scope,conversationId,id).then(({url:remote})=>fetch(remote)).then(r=>{
+      if(!r.ok)throw new Error("Anexo indisponível.");return r.blob();
+    }).then(blob=>{if(disposed)return;localUrl=URL.createObjectURL(new Blob([blob],{type:mime}));setUrl(localUrl);}).catch(()=>{if(!disposed)onError("Falha ao abrir anexo.");});
+    return()=>{disposed=true;if(localUrl)URL.revokeObjectURL(localUrl);};
+    // One authorized request per attachment mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attachment.id, conversationId, scope]);
-
-  function download() {
-    if (!url) return;
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = attachment.name.replace(/[\\/]/g, "_");
-    anchor.click();
+  },[id,conversationId,scope]);
+  async function download(){
+    try{
+      const signed=await getMessageAttachmentLink(scope,conversationId,id);
+      const response=await fetch(signed.url);if(!response.ok)throw new Error();
+      const blob=await response.blob();const href=URL.createObjectURL(blob);
+      const link=document.createElement("a");link.href=href;link.download=name.replace(/[\\/]/g,"_");link.click();
+      window.setTimeout(()=>URL.revokeObjectURL(href),1000);
+    }catch{onError("Não foi possível baixar o arquivo.");}
   }
-
-  return (
-    <div className={styles.attachment} onClick={(event) => event.stopPropagation()}>
-      {loading ? <span className={styles.loading}>Abrindo mídia...</span> : null}
-      {category === "image" && url ? (
-        <button type="button" className={styles.previewButton} onClick={() => setOpen(true)} aria-label={`Ampliar foto: ${attachment.name}`}>
-          <img src={url} alt={attachment.caption || attachment.name} />
-          <span className={styles.expandIcon}><FiMaximize2 aria-hidden="true" /></span>
-        </button>
-      ) : null}
-      {category === "video" && url ? (
-        <button type="button" className={styles.previewButton} onClick={() => setOpen(true)} aria-label={`Reproduzir vídeo: ${attachment.name}`}>
-          <video src={url} preload="metadata" muted playsInline aria-hidden="true" />
-          <span className={styles.expandIcon}><FiExternalLink aria-hidden="true" /></span>
-        </button>
-      ) : null}
-      {category === "audio" && url ? (
-        <div className={styles.audioShell}>
-          <MessageAudioPlayer key={url} url={url} name={`Mensagem de voz: ${attachment.name}`} />
-        </div>
-      ) : null}
-      {category === "other" && !loading ? (
-        <button type="button" className={styles.fileButton} onClick={download} disabled={!url} aria-label={`Baixar ${attachment.name}`}>
-          <FiFile aria-hidden="true" />
-          <span>{attachment.name}</span>
-          <FiDownload aria-hidden="true" />
-        </button>
-      ) : null}
-      {attachment.caption && (category === "image" || category === "video") ? (
-        <p className={styles.caption}>{attachment.caption}</p>
-      ) : null}
-      {open && url && (category === "image" || category === "video") ? (
-        <MessageMediaViewer url={url} name={attachment.name} caption={attachment.caption} kind={category} onClose={() => setOpen(false)} />
-      ) : null}
-    </div>
-  );
+  return <div className={styles.wrapper} onClick={event=>event.stopPropagation()}>
+    {(image||video)&&url ? <button type="button" className={styles.preview} onClick={()=>setViewer(true)} title="Ampliar">
+       {image?<img src={url} alt={caption||name}/>:<video src={url} muted playsInline preload="metadata"/>}
+       <FiMaximize2 className={styles.expand}/>
+     </button> : null}
+    {audio&&url ? <MessageAudioPlayer url={url} name={name}/> : null}
+    {!image&&!video&&!audio ? <button className={styles.document} type="button" onClick={()=>void download()}><FiFile/><span>{name}<small>{(size/1_000_000).toFixed(2)} MB · Documento</small></span><FiDownload/></button>:null}
+    {(image||video||audio)&&!url?<div className={styles.loading}>Carregando mídia...</div>:null}
+    {viewer&&url&&(image||video) ? <MessageMediaViewer url={url} name={name} caption={caption} kind={image?"image":"video"} onClose={()=>setViewer(false)}/>:null}
+  </div>;
 }

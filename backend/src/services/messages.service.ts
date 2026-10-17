@@ -1,897 +1,400 @@
-import type { PoolClient } from "pg";
 import { randomUUID } from "node:crypto";
-import { supabaseAdmin } from "../config/supabase.js";
-import type { z } from "zod";
-import type {
-  encryptedPayloadSchema,
-  ecdhPublicKeySchema,
-} from "../validators/messages.validator.js";
-
+import type { PoolClient } from "pg";
 import pool from "../config/database.js";
-import { getAvatarPublicUrl } from "./avatar.service.js";
+import { supabaseAdmin } from "../config/supabase.js";
 import { AppError } from "../utils/app-error.js";
+import { getAvatarPublicUrl } from "./avatar.service.js";
 import { roleHasPermission } from "./authorization.service.js";
 import type { OrganizationContext } from "./organization.service.js";
 
-type Context =
-  | { scope: "global" }
-  | { scope: "organization"; organization: OrganizationContext };
-interface Viewer {
-  id: string;
+export type MessageContext = { scope: "global" } | { scope: "organization"; organization: OrganizationContext };
+interface ModuleSettings { enabled: boolean; directMessagesEnabled: boolean; readReceiptsEnabled: boolean }
+const defaults: ModuleSettings = { enabled: false, directMessagesEnabled: true, readReceiptsEnabled: true };
+const orgId = (ctx: MessageContext) => ctx.scope === "organization" ? ctx.organization.organizationId : null;
+const bucket = "cong-chat-files";
+const permittedPreviewMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg", "audio/wav", "video/webm", "video/mp4"]);
+
+export async function getMessageViewer(authId: string) {
+  const found = await pool.query<{id:string}>("select id from public.users where auth_user_id=$1 and active=true", [authId]);
+  if (!found.rows[0]) throw new AppError("Conta indisponível.",403,"MESSAGE_USER_INACTIVE");
+  return found.rows[0];
 }
-type EncryptedPayload = z.infer<typeof encryptedPayloadSchema>;
-type PublicKey = z.infer<typeof ecdhPublicKeySchema>;
-interface ModuleSettings {
-  enabled: boolean;
-  directMessagesEnabled: boolean;
-  readReceiptsEnabled: boolean;
+async function settingsFor(ctx: MessageContext): Promise<ModuleSettings> {
+  if (ctx.scope === "global") return {enabled:true,directMessagesEnabled:true,readReceiptsEnabled:true};
+  const result = await pool.query<{enabled:boolean;directMessagesEnabled:boolean;readReceiptsEnabled:boolean}>(
+    `select enabled,direct_messages_enabled as "directMessagesEnabled",read_receipts_enabled as "readReceiptsEnabled" from public.message_module_settings where organization_id=$1`,[orgId(ctx)]);
+  return result.rows[0] ?? defaults;
 }
-
-const settingsDefaults: ModuleSettings = {
-  enabled: false,
-  directMessagesEnabled: true,
-  readReceiptsEnabled: true,
-};
-
-function organizationId(context: Context): string | null {
-  return context.scope === "organization"
-    ? context.organization.organizationId
-    : null;
+export async function getMessageModuleSettings(org: OrganizationContext) {
+  const ctx: MessageContext = {scope:"organization", organization:org};
+  return {...await settingsFor(ctx), canManage: await roleHasPermission(org.roleId,"organization.manage")};
 }
-
-export async function getMessageViewer(authUserId: string): Promise<Viewer> {
-  const result = await pool.query<Viewer>(
-    `select id from public.users where auth_user_id = $1 and active = true limit 1`,
-    [authUserId],
-  );
-  if (!result.rows[0]) {
-    throw new AppError(
-      "Conta inexistente ou inativa.",
-      403,
-      "MESSAGE_USER_INACTIVE",
-    );
-  }
-  return result.rows[0];
+export async function updateMessageModuleSettings(org: OrganizationContext, changes: Partial<ModuleSettings>) {
+  if (!await roleHasPermission(org.roleId,"organization.manage")) throw new AppError("Sem permissão.",403,"MESSAGE_MANAGE_FORBIDDEN");
+  const next = {...await settingsFor({scope:"organization",organization:org}),...changes};
+  await pool.query(`insert into public.message_module_settings(organization_id,enabled,direct_messages_enabled,read_receipts_enabled)
+    values($1,$2,$3,$4) on conflict(organization_id) do update set enabled=excluded.enabled,
+    direct_messages_enabled=excluded.direct_messages_enabled,read_receipts_enabled=excluded.read_receipts_enabled`,
+    [org.organizationId,next.enabled,next.directMessagesEnabled,next.readReceiptsEnabled]);
+  return {...next,canManage:true};
 }
-
-async function settingsFor(
-  organization: OrganizationContext,
-): Promise<ModuleSettings> {
-  const result = await pool.query<ModuleSettings>(
-    `select enabled, direct_messages_enabled as "directMessagesEnabled",
-            read_receipts_enabled as "readReceiptsEnabled"
-       from public.message_module_settings where organization_id = $1`,
-    [organization.organizationId],
-  );
-  return result.rows[0] ?? settingsDefaults;
+async function enabled(ctx: MessageContext) {
+  if (ctx.scope === "organization" && !(await settingsFor(ctx)).enabled) throw new AppError("Módulo de mensagens desativado.",403,"MESSAGE_MODULE_DISABLED");
 }
-
-export async function getMessageModuleSettings(
-  organization: OrganizationContext,
-) {
-  const settings = await settingsFor(organization);
-  const canManage = await roleHasPermission(
-    organization.roleId,
-    "organization.manage",
-  );
-  return { ...settings, canManage };
+async function eligible(client: PoolClient, viewer: string, target: string, ctx: MessageContext) {
+  if (target === viewer) throw new AppError("Você não pode adicionar a si mesmo.",400,"MESSAGE_SELF");
+  const result = await client.query(`select 1 from public.users u where u.id=$1 and u.active
+    and ($2::uuid is null or exists(select 1 from public.organization_users ou where ou.user_id=u.id and ou.organization_id=$2 and ou.status='active'))
+    and not exists(select 1 from public.community_user_blocks b
+      where (b.blocker_user_id=$1 and b.blocked_user_id=$3) or (b.blocker_user_id=$3 and b.blocked_user_id=$1))`,
+    [target,orgId(ctx),viewer]);
+  if (!result.rowCount) throw new AppError("Pessoa indisponível ou bloqueada.",403,"MESSAGE_RECIPIENT_FORBIDDEN");
 }
-
-export async function updateMessageModuleSettings(
-  organization: OrganizationContext,
-  changes: Partial<ModuleSettings>,
-) {
-  const canManage = await roleHasPermission(
-    organization.roleId,
-    "organization.manage",
-  );
-  if (!canManage)
-    throw new AppError(
-      "Sem permissão para configurar o módulo.",
-      403,
-      "MESSAGE_MANAGE_FORBIDDEN",
-    );
-
-  const previous = await settingsFor(organization);
-  const next = { ...previous, ...changes };
-  await pool.query(
-    `insert into public.message_module_settings
-       (organization_id, enabled, direct_messages_enabled, read_receipts_enabled)
-     values ($1, $2, $3, $4)
-     on conflict (organization_id) do update set
-       enabled = excluded.enabled,
-       direct_messages_enabled = excluded.direct_messages_enabled,
-       read_receipts_enabled = excluded.read_receipts_enabled`,
-    [
-      organization.organizationId,
-      next.enabled,
-      next.directMessagesEnabled,
-      next.readReceiptsEnabled,
-    ],
-  );
-  return { ...next, canManage };
+async function assertMember(client: PoolClient, viewer: string, conversation: string, ctx: MessageContext) {
+  const found = await client.query<{kind:"group"|"direct";role:"owner"|"admin"|"member";status:string;createdBy:string|null;title:string|null}>(
+    `select c.kind,p.role,c.contact_status as status,c.created_by as "createdBy",c.title
+     from public.message_conversations c join public.message_conversation_participants p on p.conversation_id=c.id
+     where c.id=$1 and p.user_id=$2 and c.scope=$3 and c.organization_id is not distinct from $4::uuid
+     and ($4::uuid is null or exists(select 1 from public.organization_users ou where ou.user_id=$2 and ou.organization_id=$4 and ou.status='active'))`,
+    [conversation,viewer,ctx.scope,orgId(ctx)]);
+  if (!found.rows[0]) throw new AppError("Conversa indisponível.",404,"MESSAGE_NOT_FOUND");
+  return found.rows[0];
 }
-
-async function ensureScopeEnabled(context: Context): Promise<void> {
-  if (context.scope === "global") return;
-  const settings = await settingsFor(context.organization);
-  if (!settings.enabled || !settings.directMessagesEnabled) {
-    throw new AppError(
-      "Mensagens diretas não estão ativadas nesta organização.",
-      403,
-      "MESSAGE_MODULE_DISABLED",
-    );
-  }
+async function ensureNoBlockedPeers(client:PoolClient,viewer:string,conversation:string) {
+  const found = await client.query(`select 1 from public.message_conversation_participants p
+   join public.community_user_blocks b on (b.blocker_user_id=p.user_id and b.blocked_user_id=$1)
+      or (b.blocked_user_id=p.user_id and b.blocker_user_id=$1)
+   where p.conversation_id=$2 and p.user_id<>$1 limit 1`,[viewer,conversation]);
+  if(found.rowCount) throw new AppError("Há um bloqueio entre participantes.",403,"MESSAGE_BLOCKED");
 }
-
-async function ensureEligibleRecipient(
-  client: PoolClient,
-  viewerId: string,
-  recipientId: string,
-  context: Context,
-): Promise<void> {
-  if (viewerId === recipientId)
-    throw new AppError(
-      "Não é possível conversar consigo mesmo.",
-      400,
-      "MESSAGE_SELF_RECIPIENT",
-    );
-  const result = await client.query<{ id: string }>(
-    `select u.id from public.users u
-     where u.id = $1 and u.active = true
-     and ($2::uuid is null or exists (
-       select 1 from public.organization_users ou
-       where ou.user_id = u.id and ou.organization_id = $2 and ou.status = 'active'
-     ))
-     and not exists (
-       select 1 from public.community_user_blocks b
-       where (b.blocker_user_id = $1 and b.blocked_user_id = $3)
-          or (b.blocker_user_id = $3 and b.blocked_user_id = $1)
-     )`,
-    [recipientId, organizationId(context), viewerId],
-  );
-  if (!result.rows[0])
-    throw new AppError(
-      "Destinatário indisponível.",
-      404,
-      "MESSAGE_RECIPIENT_UNAVAILABLE",
-    );
+export async function findMessageRecipients(viewer:string,ctx:MessageContext,q:string) {
+  await enabled(ctx); if(q.trim().length<2) return [];
+  const rows = await pool.query<{id:string;name:string;username:string|null;avatarPath:string|null}>(
+    `select u.id,u.name,u.username,u.avatar_path as "avatarPath" from public.users u
+     where u.active and u.id<>$1 and (u.name ilike $2 or u.username ilike $2)
+     and ($3::uuid is null or exists(select 1 from public.organization_users ou where ou.user_id=u.id and ou.organization_id=$3 and ou.status='active'))
+     and not exists(select 1 from public.community_user_blocks b
+       where (b.blocker_user_id=u.id and b.blocked_user_id=$1) or (b.blocked_user_id=u.id and b.blocker_user_id=$1))
+     order by u.name limit 25`,[viewer,`%${q.trim().replace(/[\\%_]/g,"\\$&")}%`,orgId(ctx)]);
+  return rows.rows.map(({avatarPath,...rest})=>({...rest,avatarUrl:getAvatarPublicUrl(avatarPath)}));
 }
-
-async function ensureNotBlocked(
-  client: PoolClient,
-  first: string,
-  second: string,
-): Promise<void> {
-  const blocked = await client.query(
-    `select 1 from public.community_user_blocks
-     where (blocker_user_id = $1 and blocked_user_id = $2)
-        or (blocker_user_id = $2 and blocked_user_id = $1)
-     limit 1`,
-    [first, second],
-  );
-  if (blocked.rowCount)
-    throw new AppError(
-      "Não é possível enviar mensagens para este usuário.",
-      403,
-      "MESSAGE_CONTACT_BLOCKED",
-    );
+export async function startDirectConversation(viewer:string,target:string,ctx:MessageContext) {
+  await enabled(ctx);
+  if(ctx.scope==="organization" && !(await settingsFor(ctx)).directMessagesEnabled)
+    throw new AppError("Conversas diretas desativadas neste ambiente.",403,"MESSAGE_DIRECT_DISABLED");
+  const client=await pool.connect(); try {
+    await client.query("begin"); await eligible(client,viewer,target,ctx);
+    const pair=[viewer,target].sort().join(":");
+    const found=await client.query<{id:string}>(`insert into public.message_conversations(scope,organization_id,kind,direct_pair_key,created_by,contact_status)
+      values($1,$2,'direct',$3,$4,'pending') on conflict do nothing returning id`,[ctx.scope,orgId(ctx),pair,viewer]);
+    let id=found.rows[0]?.id;
+    if(!id){ const previous=await client.query<{id:string}>(`select id from public.message_conversations where scope=$1 and organization_id is not distinct from $2::uuid and direct_pair_key=$3`,[ctx.scope,orgId(ctx),pair]);id=previous.rows[0]?.id;}
+    if(!id) throw new Error("Could not create conversation");
+    await client.query(`insert into public.message_conversation_participants(conversation_id,user_id,role)
+      values($1,$2,'member'),($1,$3,'member') on conflict do nothing`,[id,viewer,target]);
+    await client.query("commit"); return {id};
+  }catch(e){await client.query("rollback");throw e;}finally{client.release();}
 }
-
-export async function findMessageRecipients(
-  viewerId: string,
-  context: Context,
-  query: string,
-) {
-  await ensureScopeEnabled(context);
-  if (query.trim().length < 2) return [];
-  const result = await pool.query<{
-    id: string;
-    name: string;
-    username: string | null;
-    avatarPath: string | null;
-  }>(
-    `select u.id, u.name, u.username, u.avatar_path as "avatarPath"
-     from public.users u
-     where u.active = true and u.id <> $1
-       and (u.name ilike $2 or u.username ilike $2)
-       and ($3::uuid is null or exists (
-         select 1 from public.organization_users ou
-         where ou.user_id = u.id and ou.organization_id = $3 and ou.status = 'active'
-       ))
-       and not exists (
-         select 1 from public.community_user_blocks b
-         where (b.blocker_user_id = $1 and b.blocked_user_id = u.id)
-            or (b.blocker_user_id = u.id and b.blocked_user_id = $1)
-       )
-     order by u.name asc limit 20`,
-    [
-      viewerId,
-      `%${query.trim().replace(/[\\%_]/g, "\\$&")}%`,
-      organizationId(context),
-    ],
-  );
-  return result.rows.map(({ avatarPath, ...row }) => ({
-    ...row,
-    avatarUrl: getAvatarPublicUrl(avatarPath),
-  }));
-}
-
-export async function startDirectConversation(
-  viewerId: string,
-  recipientId: string,
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
+export async function createGroupConversation(viewer:string,title:string,targets:string[],ctx:MessageContext,description:string|null=null){
+  await enabled(ctx); const ids=[...new Set(targets)].filter(id=>id!==viewer);
+  if(ids.length<1||ids.length>49)throw new AppError("Escolha de 1 a 49 participantes.",400,"MESSAGE_GROUP_SIZE");
+  const client=await pool.connect();try{
     await client.query("begin");
-    await ensureEligibleRecipient(client, viewerId, recipientId, context);
-    const directPairKey = [viewerId, recipientId].sort().join(":");
-    const created = await client.query<{ id: string }>(
-      `insert into public.message_conversations
-        (scope, organization_id, direct_pair_key, created_by, contact_status)
-       values ($1,$2,$3,$4,'pending')
-       on conflict do nothing returning id`,
-      [context.scope, organizationId(context), directPairKey, viewerId],
-    );
-    let conversationId = created.rows[0]?.id;
-    if (!conversationId) {
-      const existing = await client.query<{ id: string }>(
-        `select id from public.message_conversations
-         where scope = $1 and organization_id is not distinct from $2::uuid
-           and direct_pair_key = $3 limit 1`,
-        [context.scope, organizationId(context), directPairKey],
-      );
-      conversationId = existing.rows[0]?.id;
-    }
-    if (!conversationId) throw new Error("Conversation insert failed");
-    await client.query(
-      `insert into public.message_conversation_participants (conversation_id, user_id)
-       values ($1,$2), ($1,$3) on conflict do nothing`,
-      [conversationId, viewerId, recipientId],
-    );
-    await client.query("commit");
-    return { id: conversationId };
-  } catch (error) {
-    await client.query("rollback");
-    throw error;
-  } finally {
-    client.release();
-  }
+    for(const id of ids) await eligible(client,viewer,id,ctx);
+    const created=await client.query<{id:string}>(`insert into public.message_conversations(scope,organization_id,kind,title,description,created_by,contact_status)
+      values($1,$2,'group',$3,$4,$5,'accepted') returning id`,[ctx.scope,orgId(ctx),title,description,viewer]);
+    const id=created.rows[0]?.id;
+    if(!id)throw new Error("Could not create group");
+    for(const member of [viewer,...ids]) await client.query(`insert into public.message_conversation_participants(conversation_id,user_id,role)
+      values($1,$2,$3)`,[id,member,member===viewer?"owner":"member"]);
+    await client.query("commit");return{id};
+  }catch(e){await client.query("rollback");throw e;}finally{client.release();}
 }
-
-async function requireConversation(
-  client: PoolClient,
-  conversationId: string,
-  viewerId: string,
-  context: Context,
-): Promise<void> {
-  const result = await client.query<{ id: string }>(
-    `select c.id from public.message_conversations c
-     join public.message_conversation_participants p
-       on p.conversation_id = c.id and p.user_id = $2
-     where c.id = $1 and c.scope = $3 and c.organization_id is not distinct from $4::uuid
-       and ($4::uuid is null or exists (
-         select 1 from public.organization_users ou
-         where ou.user_id = $2 and ou.organization_id = $4 and ou.status = 'active'
-       ))`,
-    [conversationId, viewerId, context.scope, organizationId(context)],
-  );
-  if (!result.rows[0])
-    throw new AppError(
-      "Conversa não encontrada.",
-      404,
-      "MESSAGE_CONVERSATION_NOT_FOUND",
-    );
-}
-
-export async function respondToContactRequest(
-  viewerId: string,
-  conversationId: string,
-  decision: "accepted" | "rejected",
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
+export async function manageGroup(viewer:string,conversation:string,ctx:MessageContext,action:"add"|"remove"|"leave"|"rename"|"describe"|"promote"|"demote",userId?:string,title?:string) {
+  await enabled(ctx); const client=await pool.connect();try {
     await client.query("begin");
-    await requireConversation(client, conversationId, viewerId, context);
-    const updated = await client.query(
-      `update public.message_conversations
-         set contact_status = $1, contact_decided_at = now()
-       where id = $2 and contact_status = 'pending' and created_by <> $3
-       returning id`,
-      [decision, conversationId, viewerId],
-    );
-    if (!updated.rowCount)
-      throw new AppError(
-        "Esta solicitação não está disponível.",
-        409,
-        "MESSAGE_REQUEST_UNAVAILABLE",
-      );
-    await client.query("commit");
-    return { ok: true, contactStatus: decision };
-  } catch (error) {
-    await client.query("rollback");
-    throw error;
-  } finally {
-    client.release();
-  }
-}
-
-export async function deleteConversationMessage(
-  viewerId: string,
-  conversationId: string,
-  messageId: string,
-  mode: "me" | "everyone",
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
-    await client.query("begin");
-    await requireConversation(client, conversationId, viewerId, context);
-    const result = await client.query<{
-      senderUserId: string;
-      deletedForAllAt: Date | null;
-      createdAt: Date;
-    }>(
-      `select sender_user_id as "senderUserId", deleted_for_all_at as "deletedForAllAt", created_at as "createdAt"
-         from public.message_entries where id = $1 and conversation_id = $2 for update`,
-      [messageId, conversationId],
-    );
-    const message = result.rows[0];
-    if (!message)
-      throw new AppError("Mensagem não encontrada.", 404, "MESSAGE_NOT_FOUND");
-    if (mode === "me") {
-      await client.query(
-        `insert into public.message_hidden_entries (message_id, user_id) values ($1,$2) on conflict do nothing`,
-        [messageId, viewerId],
-      );
+    const meta=await assertMember(client,viewer,conversation,ctx);
+    if(meta.kind!=="group")throw new AppError("Apenas grupos.",400,"MESSAGE_NOT_GROUP");
+    if(action==="leave") {
+      if(meta.role==="owner") {
+        const successor=await client.query(`select user_id from public.message_conversation_participants where conversation_id=$1 and user_id<>$2
+          order by case role when 'admin' then 0 else 1 end,joined_at limit 1`,[conversation,viewer]);
+        if(successor.rows[0])await client.query(`update public.message_conversation_participants set role='owner' where conversation_id=$1 and user_id=$2`,[conversation,successor.rows[0].user_id]);
+      }
+      await client.query(`delete from public.message_conversation_participants where conversation_id=$1 and user_id=$2`,[conversation,viewer]);
+      const remaining=await client.query(`select 1 from public.message_conversation_participants where conversation_id=$1 limit 1`,[conversation]);
+      if(!remaining.rowCount)await client.query(`delete from public.message_conversations where id=$1`,[conversation]);
     } else {
-      if (message.senderUserId !== viewerId)
-        throw new AppError(
-          "Você só pode apagar suas próprias mensagens para todos.",
-          403,
-          "MESSAGE_DELETE_FORBIDDEN",
-        );
-      if (message.deletedForAllAt)
-        throw new AppError(
-          "Mensagem já apagada.",
-          409,
-          "MESSAGE_ALREADY_DELETED",
-        );
-      const age = Date.now() - new Date(message.createdAt).getTime();
-      if (age < 0 || age > 15 * 60_000)
-        throw new AppError(
-          "O prazo de 15 minutos para apagar para todos terminou.",
-          409,
-          "MESSAGE_DELETE_TIME_EXPIRED",
-        );
-      await client.query(
-        `update public.message_entries set encrypted_payload = null, deleted_for_all_at = now() where id = $1`,
-        [messageId],
-      );
+      if(!["owner","admin"].includes(meta.role))throw new AppError("Somente administradores.",403,"MESSAGE_GROUP_ADMIN_REQUIRED");
+      if(action==="rename") await client.query(`update public.message_conversations set title=$1 where id=$2`,[title,conversation]);
+      else if(action==="describe") await client.query(`update public.message_conversations set description=$1 where id=$2`,[title?.trim()||null,conversation]);
+      else if(action==="add" && userId){
+        const count=await client.query<{size:number}>(`select count(*)::int as size from public.message_conversation_participants where conversation_id=$1`,[conversation]);
+        if((count.rows[0]?.size??0)>=50)throw new AppError("O grupo atingiu o limite de 50 pessoas.",409,"MESSAGE_GROUP_FULL");
+        await eligible(client,viewer,userId,ctx);
+        const blocked=await client.query(`select 1 from public.community_user_blocks b
+           join public.message_conversation_participants p on p.user_id in (b.blocker_user_id,b.blocked_user_id)
+           where p.conversation_id=$1 and ((b.blocker_user_id=$2 and p.user_id=b.blocked_user_id)
+             or (b.blocked_user_id=$2 and p.user_id=b.blocker_user_id)) limit 1`,[conversation,userId]);
+        if(blocked.rowCount)throw new AppError("Esta pessoa não pode ser adicionada ao grupo.",403,"MESSAGE_GROUP_BLOCKED");
+        await client.query(`insert into public.message_conversation_participants(conversation_id,user_id) values($1,$2) on conflict do nothing`,[conversation,userId]);
+      }
+      else if((action==="promote"||action==="demote") && userId){
+        if(meta.role!=="owner")throw new AppError("Somente o responsável pode alterar administradores.",403,"MESSAGE_OWNER_REQUIRED");
+        await client.query(`update public.message_conversation_participants set role=$3
+          where conversation_id=$1 and user_id=$2 and role in ('admin','member')`,
+          [conversation,userId,action==="promote"?"admin":"member"]);
+      }
+      else if(action==="remove" && userId){
+        const victim=await client.query<{role:string}>(`select role from public.message_conversation_participants where conversation_id=$1 and user_id=$2`,[conversation,userId]);
+        if(!victim.rows[0] || victim.rows[0].role==="owner" || (meta.role==="admin"&&victim.rows[0].role==="admin")) throw new AppError("Você não pode remover esta pessoa.",403,"MESSAGE_GROUP_ROLE");
+        await client.query(`delete from public.message_conversation_participants where conversation_id=$1 and user_id=$2`,[conversation,userId]);
+      }
     }
-    const attachment =
-      mode === "everyone"
-        ? await client.query<{ storagePath: string }>(
-            `select storage_path as "storagePath" from public.message_attachments where linked_message_id = $1`,
-            [messageId],
-          )
-        : { rows: [] as { storagePath: string }[] };
-    await client.query("commit");
-    if (attachment.rows.length) {
-      void supabaseAdmin.storage
-        .from("cong-message-attachments")
-        .remove(attachment.rows.map((item) => item.storagePath))
-        .catch((error: unknown) =>
-          console.error("Encrypted attachment cleanup failed", error),
-        );
-    }
-    return { ok: true };
-  } catch (error) {
-    await client.query("rollback");
-    throw error;
-  } finally {
-    client.release();
-  }
+    await client.query(`update public.message_conversations set updated_at=now() where id=$1`,[conversation]);
+    await client.query("commit");return{ok:true};
+  }catch(e){await client.query("rollback");throw e;}finally{client.release();}
 }
-
-export async function uploadEncryptedMessageAttachment(
-  viewerId: string,
-  conversationId: string,
-  ciphertext: Buffer,
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
-    await requireConversation(client, conversationId, viewerId, context);
-    const accepted = await client.query(
-      `select 1 from public.message_conversations where id = $1 and contact_status = 'accepted'`,
-      [conversationId],
-    );
-    if (!accepted.rowCount)
-      throw new AppError(
-        "Aguarde a aceitação antes de enviar anexos.",
-        403,
-        "MESSAGE_REQUEST_PENDING",
-      );
-    const id = randomUUID();
-    const storagePath = `${conversationId}/${id}.bin`;
-    const bucket = supabaseAdmin.storage.from("cong-message-attachments");
-    const upload = await bucket.upload(storagePath, ciphertext, {
-      contentType: "application/octet-stream",
-      upsert: false,
-    });
-    if (upload.error)
-      throw new AppError(
-        "Não foi possível enviar o anexo.",
-        502,
-        "MESSAGE_ATTACHMENT_UPLOAD_FAILED",
-      );
-    try {
-      await client.query(
-        `insert into public.message_attachments (id, conversation_id, owner_id, storage_path)
-         values ($1,$2,$3,$4)`,
-        [id, conversationId, viewerId, storagePath],
-      );
-    } catch (error) {
-      await bucket.remove([storagePath]);
-      throw error;
-    }
-    return { attachmentId: id };
-  } finally {
-    client.release();
-  }
+export async function respondToContactRequest(viewer:string,id:string,decision:"accepted"|"rejected",ctx:MessageContext){
+  await enabled(ctx);const client=await pool.connect();try{
+    await assertMember(client,viewer,id,ctx);
+    const update=await client.query(`update public.message_conversations set contact_status=$1,contact_decided_at=now()
+      where id=$2 and kind='direct' and contact_status='pending' and created_by<>$3 returning id`,[decision,id,viewer]);
+    if(!update.rowCount)throw new AppError("Solicitação indisponível.",409,"MESSAGE_REQUEST_INVALID");
+    return{ok:true,contactStatus:decision};
+  }finally{client.release();}
 }
-
-export async function downloadEncryptedMessageAttachment(
-  viewerId: string,
-  conversationId: string,
-  attachmentId: string,
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
-    await requireConversation(client, conversationId, viewerId, context);
-    const found = await client.query<{ storagePath: string }>(
-      `select a.storage_path as "storagePath"
-         from public.message_attachments a
-         join public.message_entries m on m.id = a.linked_message_id
-        where a.id = $1 and a.conversation_id = $2 and m.deleted_for_all_at is null
-          and not exists (select 1 from public.message_hidden_entries h
-                           where h.message_id = m.id and h.user_id = $3)`,
-      [attachmentId, conversationId, viewerId],
-    );
-    if (!found.rows[0])
-      throw new AppError(
-        "Anexo indisponível.",
-        404,
-        "MESSAGE_ATTACHMENT_NOT_FOUND",
-      );
-    const { data, error } = await supabaseAdmin.storage
-      .from("cong-message-attachments")
-      .download(found.rows[0].storagePath);
-    if (error || !data)
-      throw new AppError(
-        "Não foi possível baixar o anexo.",
-        502,
-        "MESSAGE_ATTACHMENT_FETCH_FAILED",
-      );
-    return {
-      ciphertext: Buffer.from(await data.arrayBuffer()).toString("base64"),
-    };
-  } finally {
-    client.release();
-  }
-}
-
-export async function listMessageConversations(
-  viewerId: string,
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const result = await pool.query<{
-    id: string;
-    peerId: string;
-    peerName: string;
-    peerUsername: string | null;
-    avatarPath: string | null;
-    contactStatus: string;
-    createdBy: string | null;
-    lastMessage: string | null;
-    lastMessageAt: Date | null;
-    unreadCount: number;
-  }>(
-    `select c.id,
-       other_user.id as "peerId", other_user.name as "peerName",
-       other_user.username as "peerUsername", other_user.avatar_path as "avatarPath",
-       c.contact_status as "contactStatus", c.created_by as "createdBy",
-       null::text as "lastMessage", latest.created_at as "lastMessageAt",
-       (select count(*)::int from public.message_entries unread
-        where unread.conversation_id = c.id and unread.sender_user_id <> $1
-          and unread.deleted_for_all_at is null and unread.created_at > mine.last_read_at) as "unreadCount"
+export async function listMessageConversations(viewer:string,ctx:MessageContext) {
+  await enabled(ctx);
+  const result=await pool.query<{id:string;kind:"direct"|"group";title:string|null;peerId:string|null;peerName:string|null;peerUsername:string|null;avatarPath:string|null;groupAvatarPath:string|null;description:string|null;createdBy:string|null;contactStatus:string;lastMessage:string|null;lastMessageAt:Date|null;unreadCount:number;memberCount:number}>(
+    `select c.id,c.kind,c.title,other_user.id as "peerId",other_user.name as "peerName",other_user.username as "peerUsername",
+      other_user.avatar_path as "avatarPath",c.avatar_path as "groupAvatarPath",c.description,c.created_by as "createdBy",c.contact_status as "contactStatus",
+      latest.body as "lastMessage", latest.created_at as "lastMessageAt",
+      (select count(*)::int from public.message_entries e where e.conversation_id=c.id and e.sender_user_id<>$1
+        and e.created_at>mine.last_read_at and e.deleted_for_all_at is null) as "unreadCount",
+      (select count(*)::int from public.message_conversation_participants p2 where p2.conversation_id=c.id) as "memberCount"
      from public.message_conversations c
-     join public.message_conversation_participants mine
-       on mine.conversation_id = c.id and mine.user_id = $1
-     join public.message_conversation_participants other
-       on other.conversation_id = c.id and other.user_id <> $1
-     join public.users other_user on other_user.id = other.user_id and other_user.active = true
-     left join lateral (
-       select created_at from public.message_entries m
-       where m.conversation_id = c.id
-       order by created_at desc, id desc limit 1
-     ) latest on true
-     where c.scope = $2 and c.organization_id is not distinct from $3::uuid
-       and ($3::uuid is null or exists (
-         select 1 from public.organization_users ou
-         where ou.user_id = $1 and ou.organization_id = $3 and ou.status = 'active'
-       ))
-     order by coalesce(latest.created_at, c.created_at) desc limit 100`,
-    [viewerId, context.scope, organizationId(context)],
-  );
-  // A client that retrieved the inbox has received the encrypted message metadata.
-  // Receipt is recorded only when there are previously undelivered incoming messages.
-  await pool.query(
-    `update public.message_conversation_participants mine
-       set last_delivered_at = unread.latest_created_at
-      from (select m.conversation_id, max(m.created_at) as latest_created_at
-              from public.message_entries m
-             where m.sender_user_id <> $1 and m.deleted_for_all_at is null
-             group by m.conversation_id) unread
-     where mine.conversation_id = unread.conversation_id and mine.user_id = $1
-       and (mine.last_delivered_at is null or mine.last_delivered_at < unread.latest_created_at)
-       and exists (select 1 from public.message_conversations c where c.id = mine.conversation_id
-         and c.scope = $2 and c.organization_id is not distinct from $3::uuid)`,
-    [viewerId, context.scope, organizationId(context)],
-  );
-  return result.rows.map(({ avatarPath, ...row }) => ({
-    ...row,
-    avatarUrl: getAvatarPublicUrl(avatarPath),
-  }));
+     join public.message_conversation_participants mine on mine.conversation_id=c.id and mine.user_id=$1
+     left join public.message_conversation_participants other on other.conversation_id=c.id and other.user_id<>$1 and c.kind='direct'
+     left join public.users other_user on other_user.id=other.user_id and other_user.active
+     left join lateral (select body,created_at from public.message_entries m where m.conversation_id=c.id and m.deleted_for_all_at is null
+       order by created_at desc,id desc limit 1) latest on true
+     where c.scope=$2 and c.organization_id is not distinct from $3::uuid
+       and ($3::uuid is null or exists(select 1 from public.organization_users ou
+         where ou.user_id=$1 and ou.organization_id=$3 and ou.status='active'))
+     order by coalesce(latest.created_at,c.updated_at) desc limit 100`,[viewer,ctx.scope,orgId(ctx)]);
+  // Inbox retrieval acknowledges server delivery without marking the conversation as read.
+  await pool.query(`update public.message_conversation_participants mine set last_delivered_at=incoming.latest
+    from (select m.conversation_id,max(m.created_at) as latest from public.message_entries m
+      where m.sender_user_id<>$1 and m.deleted_for_all_at is null group by m.conversation_id) incoming
+    where mine.conversation_id=incoming.conversation_id and mine.user_id=$1
+      and (mine.last_delivered_at is null or mine.last_delivered_at<incoming.latest)
+      and exists(select 1 from public.message_conversations c where c.id=mine.conversation_id
+        and c.scope=$2 and c.organization_id is not distinct from $3::uuid)`,
+    [viewer,ctx.scope,orgId(ctx)]);
+  return Promise.all(result.rows.map(async ({avatarPath,groupAvatarPath,...row})=>({
+    ...row,avatarUrl:row.kind==="group" ? await signedGroupAvatar(groupAvatarPath) : getAvatarPublicUrl(avatarPath),
+  })));
 }
-
-export async function listConversationMessages(
-  viewerId: string,
-  conversationId: string,
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
-    await requireConversation(client, conversationId, viewerId, context);
-    const meta = await client.query<{
-      peerLastReadAt: Date | null;
-      peerLastDeliveredAt: Date | null;
-      readReceiptsEnabled: boolean;
-    }>(
-      `select peer.last_read_at as "peerLastReadAt", peer.last_delivered_at as "peerLastDeliveredAt",
-              case
-                when $3::uuid is null then true
-                else coalesce(settings.read_receipts_enabled, true)
-              end as "readReceiptsEnabled"
-         from public.message_conversation_participants mine
-         join public.message_conversation_participants peer
-           on peer.conversation_id = mine.conversation_id and peer.user_id <> mine.user_id
-         left join public.message_module_settings settings on settings.organization_id = $3::uuid
-        where mine.conversation_id = $1 and mine.user_id = $2
-        limit 1`,
-      [conversationId, viewerId, organizationId(context)],
-    );
-    const result = await client.query<{
-      id: string;
-      encryptedPayload: EncryptedPayload | null;
-      senderUserId: string;
-      senderName: string;
-      createdAt: Date;
-      deletedForAllAt: Date | null;
-      avatarPath: string | null;
-    }>(
-      `select m.id, m.encrypted_payload as "encryptedPayload", m.sender_user_id as "senderUserId",
-         u.name as "senderName", u.avatar_path as "avatarPath", m.created_at as "createdAt",
-         m.deleted_for_all_at as "deletedForAllAt"
-       from public.message_entries m join public.users u on u.id = m.sender_user_id
-       where m.conversation_id = $1
-         and not exists (select 1 from public.message_hidden_entries h
-                         where h.message_id = m.id and h.user_id = $2)
-       order by m.created_at desc, m.id desc limit 100`,
-      [conversationId, viewerId],
-    );
-    return {
-      messages: result.rows
-        .reverse()
-        .map(({ avatarPath, ...row }) => ({
-          ...row,
-          avatarUrl: getAvatarPublicUrl(avatarPath),
-        })),
-      receipt: {
-        peerLastReadAt: meta.rows[0]?.readReceiptsEnabled
-          ? (meta.rows[0]?.peerLastReadAt ?? null)
-          : null,
-        peerLastDeliveredAt: meta.rows[0]?.peerLastDeliveredAt ?? null,
-      },
-    };
-  } finally {
-    client.release();
-  }
+export async function listConversationMessages(viewer:string,id:string,ctx:MessageContext){
+  await enabled(ctx);const client=await pool.connect();try{
+    await assertMember(client,viewer,id,ctx);
+    const revealRead=(await settingsFor(ctx)).readReceiptsEnabled;
+    const result=await client.query(`select m.id,m.sender_user_id as "senderUserId",u.name as "senderName",u.avatar_path as "avatarPath",
+        m.body,m.attachment_id as "attachmentId",m.reply_to_id as "replyToId",m.created_at as "createdAt",m.deleted_for_all_at as "deletedForAllAt",
+        attachment.file_name as "attachmentName",attachment.mime_type as "attachmentMime",attachment.size_bytes::int as "attachmentSize",
+        reply.body as "replyBody",replyer.name as "replySenderName",
+        coalesce((select jsonb_agg(jsonb_build_object('emoji',r.emoji,'userId',r.user_id)) from public.message_reactions r where r.message_id=m.id),'[]'::jsonb) as reactions
+       from public.message_entries m join public.users u on u.id=m.sender_user_id
+       left join public.message_attachments attachment on attachment.id=m.attachment_id
+       left join public.message_entries reply on reply.id=m.reply_to_id
+       left join public.users replyer on replyer.id=reply.sender_user_id
+       where m.conversation_id=$1 and not exists(select 1 from public.message_hidden_entries h where h.message_id=m.id and h.user_id=$2)
+       order by m.created_at desc,m.id desc limit 100`,[id,viewer]);
+    const peers=await client.query<{userId:string;name:string;avatarPath:string|null;role:string;lastReadAt:Date|null;lastDeliveredAt:Date|null}>(
+      `select p.user_id as "userId",u.name,u.avatar_path as "avatarPath",p.role,p.last_read_at as "lastReadAt",p.last_delivered_at as "lastDeliveredAt"
+       from public.message_conversation_participants p join public.users u on u.id=p.user_id
+       where p.conversation_id=$1`,[id]);
+    return {messages:result.rows.reverse().map(({avatarPath,...row})=>({...row,avatarUrl:getAvatarPublicUrl(avatarPath)})),
+      participants:peers.rows.map(({avatarPath,...row})=>({...row,lastReadAt:revealRead||row.userId===viewer?row.lastReadAt:null,avatarUrl:getAvatarPublicUrl(avatarPath)}))};
+  }finally{client.release();}
 }
-
-export async function getOwnMessageIdentity(userId: string) {
-  const result = await pool.query<{ publicKey: PublicKey; keyVersion: number }>(
-    `select public_key as "publicKey", key_version as "keyVersion"
-     from public.message_identity_keys where user_id = $1`,
-    [userId],
-  );
-  return result.rows[0] ?? null;
+export async function sendConversationMessage(viewer:string,id:string,clientMessageId:string,body:string,ctx:MessageContext,attachmentId?:string,replyToId?:string){
+  await enabled(ctx);const client=await pool.connect();try{
+    await client.query("begin");const meta=await assertMember(client,viewer,id,ctx);
+    if(meta.status==="rejected")throw new AppError("Solicitação recusada.",403,"MESSAGE_REJECTED");
+    if(meta.status==="pending"){
+      if(meta.createdBy!==viewer)throw new AppError("Aceite a solicitação para responder.",403,"MESSAGE_REQUEST_PENDING");
+      const previous=await client.query(`select 1 from public.message_entries where conversation_id=$1 limit 1`,[id]);
+      if(previous.rowCount)throw new AppError("Aguarde a aceitação do contato.",403,"MESSAGE_REQUEST_PENDING");
+    }
+    await ensureNoBlockedPeers(client,viewer,id);
+    if(attachmentId){
+      if(meta.status!=="accepted")throw new AppError("Aceite o contato para enviar arquivos.",403,"MESSAGE_ATTACHMENT_PENDING");
+      const found=await client.query(`select 1 from public.message_attachments where id=$1 and conversation_id=$2 and owner_id=$3 and linked_message_id is null`,[attachmentId,id,viewer]);
+      if(!found.rowCount)throw new AppError("Anexo inválido.",403,"MESSAGE_ATTACHMENT_FORBIDDEN");
+    }
+    if(replyToId){const found=await client.query(`select 1 from public.message_entries where id=$1 and conversation_id=$2`,[replyToId,id]);
+      if(!found.rowCount)throw new AppError("Resposta inválida.",400,"MESSAGE_REPLY_INVALID");}
+    const created=await client.query<{id:string}>(`insert into public.message_entries(conversation_id,sender_user_id,client_message_id,body,attachment_id,reply_to_id)
+      values($1,$2,$3,$4,$5,$6) on conflict(sender_user_id,client_message_id) do nothing returning id`,[id,viewer,clientMessageId,body,attachmentId??null,replyToId??null]);
+    if(attachmentId && created.rows[0]) await client.query(`update public.message_attachments set linked_message_id=$1 where id=$2`,[created.rows[0].id,attachmentId]);
+    await client.query("commit");return{ok:true};
+  }catch(e){await client.query("rollback");throw e;}finally{client.release();}
 }
-
-// The first device to register becomes authoritative. Never silently replace its key.
-export async function registerMessageIdentity(
-  userId: string,
-  publicKey: PublicKey,
-) {
-  await pool.query(
-    `insert into public.message_identity_keys (user_id, public_key) values ($1, $2::jsonb)
-     on conflict (user_id) do nothing`,
-    [userId, JSON.stringify(publicKey)],
-  );
-  return getOwnMessageIdentity(userId);
+export async function markConversationRead(viewer:string,id:string,ctx:MessageContext){
+  await enabled(ctx);const client=await pool.connect();try{
+    await assertMember(client,viewer,id,ctx);
+    await client.query(`update public.message_conversation_participants set last_read_at=now(),last_delivered_at=now()
+      where conversation_id=$1 and user_id=$2 and exists(select 1 from public.message_entries m
+        where m.conversation_id=$1 and m.sender_user_id<>$2 and m.created_at>last_read_at)`,[id,viewer]);
+    return{ok:true};
+  }finally{client.release();}
 }
-
-export async function resetMessageIdentity(
-  userId: string,
-  publicKey: PublicKey,
-) {
-  await pool.query(
-    `insert into public.message_identity_keys (user_id, public_key)
-     values ($1, $2::jsonb) on conflict (user_id) do update
-     set public_key = excluded.public_key,
-         key_version = message_identity_keys.key_version + 1,
-         updated_at = now()`,
-    [userId, JSON.stringify(publicKey)],
-  );
-  return getOwnMessageIdentity(userId);
-}
-
-export async function getConversationKeys(
-  viewerId: string,
-  conversationId: string,
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
-    await requireConversation(client, conversationId, viewerId, context);
-    const result = await client.query<{
-      userId: string;
-      publicKey: PublicKey | null;
-      keyVersion: number | null;
-    }>(
-      `select p.user_id as "userId", k.public_key as "publicKey", k.key_version as "keyVersion"
-       from public.message_conversation_participants p
-       left join public.message_identity_keys k on k.user_id = p.user_id
-       where p.conversation_id = $1 order by p.user_id`,
-      [conversationId],
-    );
-    return result.rows;
-  } finally {
-    client.release();
-  }
-}
-
-export async function sendConversationMessage(
-  viewerId: string,
-  conversationId: string,
-  clientMessageId: string,
-  encryptedPayload: EncryptedPayload,
-  context: Context,
-  attachmentId?: string,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
-    await client.query("begin");
-    await requireConversation(client, conversationId, viewerId, context);
-    const consent = await client.query<{
-      contactStatus: string;
-      createdBy: string | null;
-    }>(
-      `select contact_status as "contactStatus", created_by as "createdBy"
-         from public.message_conversations where id = $1 for update`,
-      [conversationId],
-    );
-    const relationship = consent.rows[0];
-    if (!relationship || relationship.contactStatus === "rejected") {
-      throw new AppError(
-        "Contato indisponível.",
-        403,
-        "MESSAGE_REQUEST_REJECTED",
-      );
+export async function deleteConversationMessage(viewer:string,id:string,msg:string,mode:"me"|"everyone",ctx:MessageContext){
+  await enabled(ctx);const client=await pool.connect();try{
+    await client.query("begin");await assertMember(client,viewer,id,ctx);
+    const found=await client.query<{sender:string;createdAt:Date;deleted:Date|null}>(`select sender_user_id as sender,created_at as "createdAt",deleted_for_all_at as deleted from public.message_entries
+      where id=$1 and conversation_id=$2 for update`,[msg,id]);
+    if(!found.rows[0])throw new AppError("Mensagem indisponível.",404,"MESSAGE_NOT_FOUND");
+    let attachmentPath: string | null = null;
+    if(mode==="me")await client.query(`insert into public.message_hidden_entries(message_id,user_id) values($1,$2) on conflict do nothing`,[msg,viewer]);
+    else{
+      const attachment=await client.query<{storagePath:string}>(`select storage_path as "storagePath" from public.message_attachments where linked_message_id=$1`,[msg]);
+      attachmentPath=attachment.rows[0]?.storagePath??null;
+      if(found.rows[0].sender!==viewer)throw new AppError("Você só pode apagar suas mensagens.",403,"MESSAGE_DELETE_FORBIDDEN");
+      if(Date.now()-new Date(found.rows[0].createdAt).getTime()>15*60_000)throw new AppError("Prazo de 15 minutos encerrado.",409,"MESSAGE_DELETE_EXPIRED");
+      await client.query(`update public.message_entries set body='',attachment_id=null,deleted_for_all_at=now() where id=$1`,[msg]);
     }
-    if (relationship.contactStatus === "pending") {
-      if (relationship.createdBy !== viewerId) {
-        throw new AppError(
-          "Aceite a solicitação antes de responder.",
-          403,
-          "MESSAGE_REQUEST_PENDING",
-        );
-      }
-      const hasMessage = await client.query(
-        `select 1 from public.message_entries where conversation_id = $1 limit 1`,
-        [conversationId],
-      );
-      if (hasMessage.rowCount) {
-        throw new AppError(
-          "Aguarde a aceitação antes de enviar outra mensagem.",
-          403,
-          "MESSAGE_REQUEST_PENDING",
-        );
-      }
-    }
-    const people = await client.query<{
-      userId: string;
-      keyVersion: number | null;
-    }>(
-      `select p.user_id as "userId", k.key_version as "keyVersion"
-       from public.message_conversation_participants p
-       left join public.message_identity_keys k on k.user_id = p.user_id
-       where p.conversation_id = $1 order by p.user_id for share of p`,
-      [conversationId],
-    );
-    if (
-      people.rows.length !== 2 ||
-      !people.rows.some((p) => p.userId === viewerId)
-    ) {
-      throw new AppError(
-        "Participantes da conversa inválidos.",
-        409,
-        "MESSAGE_INVALID_PARTICIPANTS",
-      );
-    }
-    const recipient = people.rows.find((p) => p.userId !== viewerId);
-    if (!recipient || !recipient.keyVersion) {
-      throw new AppError(
-        "O destinatário ainda não ativou as mensagens seguras.",
-        409,
-        "MESSAGE_RECIPIENT_KEY_MISSING",
-      );
-    }
-    await ensureEligibleRecipient(client, viewerId, recipient.userId, context);
-    await ensureNotBlocked(client, viewerId, recipient.userId);
-    const expected = people.rows.map((person) => ({
-      userId: person.userId,
-      keyVersion: person.keyVersion,
-    }));
-    const supplied = encryptedPayload.boxes;
-    if (
-      expected.some(
-        (person) =>
-          !person.keyVersion ||
-          supplied.filter(
-            (box) =>
-              box.userId === person.userId &&
-              box.keyVersion === person.keyVersion,
-          ).length !== 1,
-      )
-    ) {
-      throw new AppError(
-        "As chaves de um participante mudaram. Recarregue a conversa.",
-        409,
-        "MESSAGE_KEY_VERSION_CONFLICT",
-      );
-    }
-    if (encryptedPayload.nonce !== clientMessageId) {
-      throw new AppError(
-        "Identificador de mensagem inválido.",
-        400,
-        "MESSAGE_INVALID_NONCE",
-      );
-    }
-    const inserted = await client.query<{
-      id: string;
-      encryptedPayload: EncryptedPayload;
-      senderUserId: string;
-      createdAt: Date;
-    }>(
-      `insert into public.message_entries (conversation_id, sender_user_id, client_message_id, encrypted_payload)
-       values ($1, $2, $3, $4::jsonb)
-       on conflict (sender_user_id, client_message_id) do nothing
-       returning id, encrypted_payload as "encryptedPayload", sender_user_id as "senderUserId", created_at as "createdAt"`,
-      [
-        conversationId,
-        viewerId,
-        clientMessageId,
-        JSON.stringify(encryptedPayload),
-      ],
-    );
-    if (!inserted.rows[0]) {
-      const existing = await client.query<{
-        id: string;
-        encryptedPayload: EncryptedPayload;
-        senderUserId: string;
-        createdAt: Date;
-      }>(
-        `select id, encrypted_payload as "encryptedPayload", sender_user_id as "senderUserId",
-           created_at as "createdAt" from public.message_entries
-         where sender_user_id = $1 and client_message_id = $2 and conversation_id = $3
-          and encrypted_payload = $4::jsonb`,
-        [
-          viewerId,
-          clientMessageId,
-          conversationId,
-          JSON.stringify(encryptedPayload),
-        ],
-      );
-      if (!existing.rows[0]) {
-        throw new AppError(
-          "Identificador de mensagem já utilizado.",
-          409,
-          "MESSAGE_DUPLICATE_NONCE",
-        );
-      }
-      await client.query("commit");
-      return existing.rows[0];
-    }
-    if (attachmentId) {
-      const linked = await client.query(
-        `update public.message_attachments set linked_message_id = $1
-         where id = $2 and conversation_id = $3 and owner_id = $4 and linked_message_id is null
-         returning id`,
-        [inserted.rows[0].id, attachmentId, conversationId, viewerId],
-      );
-      if (!linked.rowCount)
-        throw new AppError(
-          "Anexo inválido ou já utilizado.",
-          409,
-          "MESSAGE_ATTACHMENT_UNAVAILABLE",
-        );
-    }
-    await client.query(
-      `update public.message_conversations set updated_at = now() where id = $1`,
-      [conversationId],
-    );
     await client.query("commit");
-    return inserted.rows[0];
-  } catch (error) {
-    await client.query("rollback");
-    throw error;
-  } finally {
-    client.release();
-  }
+    if(attachmentPath){
+      const removed=await supabaseAdmin.storage.from(bucket).remove([attachmentPath]);
+      if(removed.error)console.warn("CONG chat: limpeza de arquivo adiada",removed.error.message);
+      else await pool.query(`delete from public.message_attachments where linked_message_id=$1`,[msg]).catch(error=>console.warn("CONG chat: arquivo removido, registro pendente",error));
+    }
+    return{ok:true};
+  }catch(e){await client.query("rollback").catch(()=>undefined);throw e;}finally{client.release();}
+}
+export async function toggleMessageReaction(viewer:string,id:string,msg:string,emoji:string,ctx:MessageContext){
+  await enabled(ctx);const client=await pool.connect();try{
+    await client.query("begin");await assertMember(client,viewer,id,ctx);
+    const found=await client.query(`select 1 from public.message_entries where id=$1 and conversation_id=$2 and deleted_for_all_at is null`,[msg,id]);
+    if(!found.rowCount)throw new AppError("Mensagem indisponível.",404,"MESSAGE_NOT_FOUND");
+    const removed=await client.query(`delete from public.message_reactions where message_id=$1 and user_id=$2 and emoji=$3`,[msg,viewer,emoji]);
+    if(!removed.rowCount)await client.query(`insert into public.message_reactions(message_id,user_id,emoji) values($1,$2,$3)`,[msg,viewer,emoji]);
+    await client.query("commit");return{ok:true};
+  }catch(e){await client.query("rollback");throw e;}finally{client.release();}
+}
+export async function createAttachmentGrant(viewer:string,id:string,ctx:MessageContext,file:{fileName:string;mimeType:string;size:number}){
+  await enabled(ctx);const client=await pool.connect();try{
+    const meta=await assertMember(client,viewer,id,ctx);if(meta.status!=="accepted")throw new AppError("Aceite o contato primeiro.",403,"MESSAGE_ATTACHMENT_PENDING");
+    await ensureNoBlockedPeers(client,viewer,id);
+    const key=randomUUID();const path=`${id}/${key}`;
+    const requestedMime=file.mimeType.toLowerCase().split(";", 1)[0] ?? "";
+    // Active content is always sent as a document; inline preview only uses a strict allowlist.
+    const storageMime=permittedPreviewMimes.has(requestedMime)&&file.size<=5_000_000 ? requestedMime : "application/octet-stream";
+    const signed=await supabaseAdmin.storage.from(bucket).createSignedUploadUrl(path);
+    if(signed.error||!signed.data)throw new AppError("Falha ao preparar upload.",502,"MESSAGE_UPLOAD_FAILED");
+    const stored=await client.query<{id:string}>(`insert into public.message_attachments(conversation_id,owner_id,storage_path,file_name,mime_type,size_bytes)
+       values($1,$2,$3,$4,$5,$6) returning id`,[id,viewer,path,file.fileName,storageMime,file.size]);
+    const attachmentId=stored.rows[0]?.id;
+    if(!attachmentId)throw new Error("Attachment registration failed");
+    return{attachmentId,path,token:signed.data.token,bucket};
+  }finally{client.release();}
+}
+export async function getAttachmentUrl(viewer:string,id:string,attachment:string,ctx:MessageContext){
+  await enabled(ctx);const client=await pool.connect();try{
+    await assertMember(client,viewer,id,ctx);
+    const found=await client.query<{storagePath:string;name:string;mime:string;size:number}>(`select a.storage_path as "storagePath",a.file_name as name,a.mime_type as mime,a.size_bytes::int as size
+      from public.message_attachments a join public.message_entries m on m.attachment_id=a.id and m.deleted_for_all_at is null
+      where a.id=$1 and a.conversation_id=$2 and not exists(select 1 from public.message_hidden_entries h where h.message_id=m.id and h.user_id=$3)`,[attachment,id,viewer]);
+    const item=found.rows[0];
+    if(!item)throw new AppError("Arquivo indisponível.",404,"MESSAGE_ATTACHMENT_NOT_FOUND");
+    const signed=await supabaseAdmin.storage.from(bucket).createSignedUrl(item.storagePath,60);
+    if(signed.error||!signed.data?.signedUrl)throw new AppError("Não foi possível abrir o arquivo.",502,"MESSAGE_DOWNLOAD_FAILED");
+    return{url:signed.data.signedUrl,name:item.name,mime:item.mime,size:item.size};
+  }finally{client.release();}
 }
 
-export async function markConversationRead(
-  viewerId: string,
-  conversationId: string,
-  context: Context,
-) {
-  await ensureScopeEnabled(context);
-  const client = await pool.connect();
-  try {
-    await requireConversation(client, conversationId, viewerId, context);
-    await client.query(
-      `update public.message_conversation_participants mine
-          set last_read_at = unread.latest_created_at
-         from (
-           select max(created_at) as latest_created_at
-             from public.message_entries
-            where conversation_id = $1
-              and sender_user_id <> $2
-         ) unread
-        where mine.conversation_id = $1
-          and mine.user_id = $2
-          and unread.latest_created_at is not null
-          and mine.last_read_at < unread.latest_created_at`,
-      [conversationId, viewerId],
-    );
-    return { ok: true };
-  } finally {
+// Group pictures are private. Authorization is enforced before this helper is called.
+// Cache short-lived signed URLs so inbox polling does not regenerate them every 6 seconds.
+const groupAvatarCache=new Map<string,{url:string;until:number}>();
+async function signedGroupAvatar(path:string|null):Promise<string|null>{
+  if(!path)return null;
+  const previous=groupAvatarCache.get(path);
+  if(previous&&previous.until>Date.now())return previous.url;
+  const {data,error}=await supabaseAdmin.storage.from(bucket).createSignedUrl(path,3600);
+  if(error||!data?.signedUrl)return null;
+  if(groupAvatarCache.size>250)groupAvatarCache.clear();
+  groupAvatarCache.set(path,{url:data.signedUrl,until:Date.now()+10*60_000});
+  return data.signedUrl;
+}
+function verifyImage(data:Buffer,mime:string):string{
+  if(data.length<16||data.length>2_000_000)throw new AppError("A foto deve ter até 2 MB.",413,"MESSAGE_GROUP_PHOTO_LIMIT");
+  const jpg=mime==="image/jpeg"&&data[0]===0xff&&data[1]===0xd8&&data[2]===0xff;
+  const png=mime==="image/png"&&data.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+  const webp=mime==="image/webp"&&data.toString("ascii",0,4)==="RIFF"&&data.toString("ascii",8,12)==="WEBP";
+  if(!jpg&&!png&&!webp)throw new AppError("Use uma imagem JPG, PNG ou WebP válida.",400,"MESSAGE_GROUP_PHOTO_TYPE");
+  return jpg?"jpg":png?"png":"webp";
+}
+export async function uploadGroupPhoto(viewer:string,id:string,ctx:MessageContext,file:Express.Multer.File){
+  await enabled(ctx);
+  const client=await pool.connect();
+  let nextPath:string|null=null;
+  let previousPath:string|null=null;
+  try{
+    const meta=await assertMember(client,viewer,id,ctx);
+    if(meta.kind!=="group"||meta.role==="member")throw new AppError("Somente administradores podem alterar a foto.",403,"MESSAGE_GROUP_ADMIN_REQUIRED");
+    const ext=verifyImage(file.buffer,file.mimetype);
+    nextPath=`group-avatars/${id}/${randomUUID()}.${ext}`;
+    const uploaded=await supabaseAdmin.storage.from(bucket).upload(nextPath,file.buffer,{contentType:file.mimetype,cacheControl:"3600",upsert:false});
+    if(uploaded.error)throw new AppError("Não foi possível enviar a foto.",502,"MESSAGE_GROUP_PHOTO_UPLOAD");
+    const existing=await client.query<{path:string|null}>(`select avatar_path as path from public.message_conversations where id=$1`,[id]);
+    const changed=await client.query(`update public.message_conversations c set avatar_path=$1,updated_at=now()
+      where c.id=$2 and exists(select 1 from public.message_conversation_participants p
+      where p.conversation_id=c.id and p.user_id=$3 and p.role in ('owner','admin'))`,[nextPath,id,viewer]);
+    if(!changed.rowCount)throw new AppError("Grupo não encontrado.",404,"MESSAGE_NOT_FOUND");
+    previousPath=existing.rows[0]?.path??null;
+    return {avatarUrl:await signedGroupAvatar(nextPath)};
+  }catch(e){if(nextPath)await supabaseAdmin.storage.from(bucket).remove([nextPath]).catch(()=>undefined);throw e;}
+  finally{
     client.release();
+    if(previousPath){
+      const cleanup=await supabaseAdmin.storage.from(bucket).remove([previousPath]).catch(()=>null);
+      if(!cleanup||cleanup.error)console.warn("CONG chat: foto antiga pendente de limpeza");
+    }
   }
 }
-
-export type MessageContext = Context;
+export async function deleteGroupPhoto(viewer:string,id:string,ctx:MessageContext){
+  await enabled(ctx);const client=await pool.connect();try{
+    const meta=await assertMember(client,viewer,id,ctx);
+    if(meta.kind!=="group"||meta.role==="member")throw new AppError("Somente administradores podem alterar a foto.",403,"MESSAGE_GROUP_ADMIN_REQUIRED");
+    const old=await client.query<{path:string|null}>(`select avatar_path as path from public.message_conversations where id=$1`,[id]);
+    const removed=await client.query(`update public.message_conversations c set avatar_path=null,updated_at=now()
+      where c.id=$1 and exists(select 1 from public.message_conversation_participants p
+      where p.conversation_id=c.id and p.user_id=$2 and p.role in ('owner','admin'))`,[id,viewer]);
+    if(!removed.rowCount)throw new AppError("Grupo indisponível.",404,"MESSAGE_NOT_FOUND");
+    if(old.rows[0]?.path){
+      const cleanup=await supabaseAdmin.storage.from(bucket).remove([old.rows[0].path]).catch(()=>null);
+      if(!cleanup||cleanup.error)console.warn("CONG chat: foto removida do banco, pendente no armazenamento");
+    }
+    return{ok:true};
+  }finally{client.release();}
+}
+export async function listConversationMedia(viewer:string,id:string,ctx:MessageContext,offset:number){
+  await enabled(ctx);const client=await pool.connect();try{
+    await assertMember(client,viewer,id,ctx);
+    const result=await client.query<{id:string;messageId:string;name:string;mime:string;size:number;createdAt:Date;storagePath:string}>(
+      `select a.id,m.id as "messageId",a.file_name as name,a.mime_type as mime,a.size_bytes::int as size,
+         m.created_at as "createdAt",a.storage_path as "storagePath"
+       from public.message_attachments a join public.message_entries m on m.attachment_id=a.id
+       where a.conversation_id=$1 and m.deleted_for_all_at is null
+       and not exists(select 1 from public.message_hidden_entries h where h.message_id=m.id and h.user_id=$2)
+       order by m.created_at desc,m.id desc limit 31 offset $3`,[id,viewer,offset]);
+    const items=result.rows.slice(0,30);
+    const signed=items.length?await supabaseAdmin.storage.from(bucket).createSignedUrls(items.map(x=>x.storagePath),600):null;
+    if(signed?.error)throw new AppError("Não foi possível abrir as mídias.",502,"MESSAGE_MEDIA_FAILED");
+    return{items:items.map((item,i)=>({id:item.id,messageId:item.messageId,name:item.name,mime:item.mime,
+      size:item.size,createdAt:item.createdAt,url:signed?.data?.[i]?.signedUrl??null})),hasMore:result.rows.length>30};
+  }finally{client.release();}
+}
