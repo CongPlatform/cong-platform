@@ -124,7 +124,6 @@ export async function checkUsernameAvailability(
   );
 }
 
-
 export async function deactivateMyAccount(): Promise<void> {
   await apiPost<void>("/account/me/deactivate");
 }
@@ -132,7 +131,6 @@ export async function deactivateMyAccount(): Promise<void> {
 export async function deleteMyAccount(): Promise<void> {
   await apiPost<{ message: string }>("/account/me/delete");
 }
-
 
 export interface AccountDeletionQueueItem {
   id: string;
@@ -142,7 +140,11 @@ export interface AccountDeletionQueueItem {
   organizationMemberships: number;
 }
 
-export async function getAccountDeletionQueue(): Promise<AccountDeletionQueueItem[]> {
-  const response = await apiGet<{ requests: AccountDeletionQueueItem[] }>("/account/admin/deletion-requests");
+export async function getAccountDeletionQueue(): Promise<
+  AccountDeletionQueueItem[]
+> {
+  const response = await apiGet<{ requests: AccountDeletionQueueItem[] }>(
+    "/account/admin/deletion-requests",
+  );
   return response.requests;
 }

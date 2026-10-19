@@ -38,19 +38,38 @@ export interface SecurityRetainedIdentity {
   retentionReason: string;
   retainedUntil: string;
 }
-export function getSecurityEvents(userId?: string): Promise<SecurityAuditEvent[]> {
+export function getSecurityEvents(
+  userId?: string,
+): Promise<SecurityAuditEvent[]> {
   const query = userId ? `?userId=${encodeURIComponent(userId)}` : "";
-  return apiGet<{ events: SecurityAuditEvent[] }>(`/admin/security-audit/events${query}`).then(v => v.events);
+  return apiGet<{ events: SecurityAuditEvent[] }>(
+    `/admin/security-audit/events${query}`,
+  ).then((v) => v.events);
 }
-export function getSecurityCases(userId?: string): Promise<SecurityCaseEvidence[]> {
+export function getSecurityCases(
+  userId?: string,
+): Promise<SecurityCaseEvidence[]> {
   const query = userId ? `?userId=${encodeURIComponent(userId)}` : "";
-  return apiGet<{ cases: SecurityCaseEvidence[] }>(`/admin/security-audit/cases${query}`).then(v => v.cases);
+  return apiGet<{ cases: SecurityCaseEvidence[] }>(
+    `/admin/security-audit/cases${query}`,
+  ).then((v) => v.cases);
 }
-export function revealSecurityIdentity(userId: string, reason: string): Promise<SecurityRetainedIdentity | null> {
+export function revealSecurityIdentity(
+  userId: string,
+  reason: string,
+): Promise<SecurityRetainedIdentity | null> {
   return apiPost<{ identity: SecurityRetainedIdentity | null }>(
-    `/admin/security-audit/identities/${encodeURIComponent(userId)}/reveal`, { reason },
-  ).then(v => v.identity);
+    `/admin/security-audit/identities/${encodeURIComponent(userId)}/reveal`,
+    { reason },
+  ).then((v) => v.identity);
 }
-export async function reviewArchivedSecurityCase(reportId: string, decision: string, note: string): Promise<void> {
-  await apiPost(`/admin/security-audit/cases/${encodeURIComponent(reportId)}/review`, { decision, note });
+export async function reviewArchivedSecurityCase(
+  reportId: string,
+  decision: string,
+  note: string,
+): Promise<void> {
+  await apiPost(
+    `/admin/security-audit/cases/${encodeURIComponent(reportId)}/review`,
+    { decision, note },
+  );
 }

@@ -82,7 +82,9 @@ const InstitutionalHome = lazy(
 const InstitutionalEditor = lazy(
   () => import("../pages/logged-in/institutional/InstitutionalEditor"),
 );
-const MessagesPage = lazy(() => import("../pages/logged-in/messages/MessagesPage"));
+const MessagesPage = lazy(
+  () => import("../pages/logged-in/messages/MessagesPage"),
+);
 const DesignerTemplates = lazy(
   () => import("../pages/logged-in/designerTemplates/DesignerTemplates"),
 );
@@ -97,14 +99,21 @@ const DesignerAssets = lazy(
 );
 
 export default function AppRoutes() {
-  const publicSiteSlug = institutionalSlugFromHostname(window.location.hostname);
+  const publicSiteSlug = institutionalSlugFromHostname(
+    window.location.hostname,
+  );
 
   if (publicSiteSlug) {
     return (
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            <Route path="*" element={<PublicInstitutionalSite slugOverride={publicSiteSlug} />} />
+            <Route
+              path="*"
+              element={
+                <PublicInstitutionalSite slugOverride={publicSiteSlug} />
+              }
+            />
           </Routes>
         </Suspense>
       </BrowserRouter>
@@ -138,7 +147,7 @@ export default function AppRoutes() {
             <Route path="/signup" element={<Register />} />
             <Route path="/recuperar-senha" element={<RecoverPassword />} />
             <Route path="/redefinir-senha" element={<ResetPassword />} />
-            
+
             <Route path="/verifique-seu-email" element={<VerifyEmail />} />
             <Route path="/auth/confirm" element={<AuthConfirm />} />
 
@@ -146,6 +155,10 @@ export default function AppRoutes() {
             <Route path="/oauth-callback" element={<OAuthCallback />} />
 
             <Route path="/o/:slug" element={<PublicInstitutionalSite />} />
+            <Route
+              path="/o/:slug/:pageSlug"
+              element={<PublicInstitutionalSite />}
+            />
 
             {/* ==================================================
                 ÁREA AUTENTICADA
@@ -190,8 +203,18 @@ export default function AppRoutes() {
                   element={<CommunityModerationPage />}
                 />
                 <Route path="/app/minha-conta" element={<Account />} />
-                <Route path="/app/mensagens" element={<MessagesPage scope="global" />} />
-                <Route path="/app/mensagens/organizacao" element={<WorkspaceRoute kind="organization" organizationType="ngo"><MessagesPage scope="organization" /></WorkspaceRoute>} />
+                <Route
+                  path="/app/mensagens"
+                  element={<MessagesPage scope="global" />}
+                />
+                <Route
+                  path="/app/mensagens/organizacao"
+                  element={
+                    <WorkspaceRoute kind="organization" organizationType="ngo">
+                      <MessagesPage scope="organization" />
+                    </WorkspaceRoute>
+                  }
+                />
                 <Route
                   path="/app/site-institucional"
                   element={
@@ -211,7 +234,10 @@ export default function AppRoutes() {
                 <Route
                   path="/app/design/templates"
                   element={
-                    <WorkspaceRoute kind="collaboration" collaborationRole="designer">
+                    <WorkspaceRoute
+                      kind="collaboration"
+                      collaborationRole="designer"
+                    >
                       <DesignerTemplates />
                     </WorkspaceRoute>
                   }
@@ -219,7 +245,10 @@ export default function AppRoutes() {
                 <Route
                   path="/app/design/templates/:templateId"
                   element={
-                    <WorkspaceRoute kind="collaboration" collaborationRole="designer">
+                    <WorkspaceRoute
+                      kind="collaboration"
+                      collaborationRole="designer"
+                    >
                       <DesignerTemplateEditor />
                     </WorkspaceRoute>
                   }
@@ -227,7 +256,10 @@ export default function AppRoutes() {
                 <Route
                   path="/app/design/variantes"
                   element={
-                    <WorkspaceRoute kind="collaboration" collaborationRole="designer">
+                    <WorkspaceRoute
+                      kind="collaboration"
+                      collaborationRole="designer"
+                    >
                       <DesignerVariants />
                     </WorkspaceRoute>
                   }
@@ -235,7 +267,10 @@ export default function AppRoutes() {
                 <Route
                   path="/app/design/recursos"
                   element={
-                    <WorkspaceRoute kind="collaboration" collaborationRole="designer">
+                    <WorkspaceRoute
+                      kind="collaboration"
+                      collaborationRole="designer"
+                    >
                       <DesignerAssets />
                     </WorkspaceRoute>
                   }

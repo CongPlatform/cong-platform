@@ -1,17 +1,24 @@
-import { useRef } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import { getInstitutionalIconDefinition } from "../../../data/institutional/iconLibrary";
 
 import type {
   InstitutionalAction,
   InstitutionalElementStyle,
   InstitutionalImageValue,
+  InstitutionalFaqValue,
+  InstitutionalProgressValue,
   InstitutionalLayoutNode,
 } from "../../../services/institutionalService";
 import InlineTextEditor from "../shared/InlineTextEditor";
+import { safeInstitutionalHref } from "../../../utils/institutionalLinks";
 import FloatingCanvasHint from "./FloatingCanvasHint";
 import ImageMedia from "./ImageMedia";
+import { CampaignCard, DataChart, MediaGallery, StoryTabs, VideoEmbed } from "./RichElements";
+import { ActionGrid, CommunityTimeline, DonationChoices, TestimonialSlider } from "./ExperienceBlocks";
+import type { InstitutionalCampaignValue, InstitutionalGalleryValue, InstitutionalVideoValue, InstitutionalChartValue, InstitutionalStoryTabsValue, InstitutionalActionGridValue, InstitutionalDonationChoicesValue, InstitutionalTestimonialsValue, InstitutionalTimelineValue } from "../../../services/institutionalService";
 
 import styles from "./InstitutionalRenderer.module.css";
+import richStyles from "./RichVariants.module.css";
 
 function asAction(value: unknown): InstitutionalAction {
   if (
@@ -68,6 +75,18 @@ export default function ElementRenderer({
 }) {
   const type = node.elementType;
   const textAnchorRef = useRef<HTMLDivElement>(null);
+  function renderRich(content: ReactNode) {
+    const hasCustomColor = node.style?.color?.startsWith("#");
+    const customPalette = hasCustomColor && type !== "data_chart"
+      ? {
+          "--org-primary": node.style!.color,
+          "--org-accent": node.style!.color,
+          "--org-background": node.style?.backgroundColor?.startsWith("#") ? node.style.backgroundColor : "#ffffff",
+        } as CSSProperties
+      : undefined;
+    return <div className={richStyles.richModel} style={customPalette} data-rich-variant={node.style?.graphicVariant ?? "standard"}>{content}</div>;
+  }
+
 
   if (type === "divider") return <hr className={styles.customDivider} />;
   if (type === "spacer") return <div className={styles.customSpacer} aria-hidden="true" />;
@@ -98,7 +117,7 @@ export default function ElementRenderer({
   if (type === "button") {
     const action = asAction(node.value);
     if (!editable) {
-      return <a href={action.href} className={styles.primaryAction} data-font-target="true">{action.label}</a>;
+      return <a href={safeInstitutionalHref(action.href) ?? "#"} className={styles.primaryAction} data-font-target="true">{action.label}</a>;
     }
     return (
       <InlineTextEditor
@@ -112,6 +131,13 @@ export default function ElementRenderer({
   }
 
   if (type === "icon") {
+    const iconValue = typeof node.value === "string" ? node.value : "";
+    const external = iconValue.match(/^iconify:(lucide|tabler|ph):([a-z0-9-]{1,90})$/);
+    if (external) {
+      return <span className={styles.customIcon} data-icon-id={iconValue}>
+        <img src={`https://api.iconify.design/${external[1]}/${external[2]}.svg`} alt="" loading="lazy" width={48} height={48} />
+      </span>;
+    }
     const definition = getInstitutionalIconDefinition(node.value);
     const Icon = definition.icon;
     const strokeWidth = Math.max(0.5, Math.min(4, node.style?.iconStrokeWidth ?? 2));
@@ -155,6 +181,62 @@ export default function ElementRenderer({
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">{path}</svg>
       </span>
     );
+  }
+
+  // Rich elements share the exact same visual component in preview and publication.
+  // Their controls live in the contextual property dialog, never inside the canvas.
+  if (type === "faq") {
+    const value = node.value && typeof node.value === "object" && "items" in node.value
+      ? node.value as InstitutionalFaqValue : { items: [] };
+    return renderRich(<div className={styles.faqBlock} aria-label="Perguntas frequentes">
+      {value.items.map((item) => <details className={styles.faqItem} key={item.id}>
+        <summary>{item.question}<span aria-hidden="true">+</span></summary>
+        <div className={styles.faqAnswer}>{item.answer}</div>
+      </details>)}
+    </div>);
+  }
+
+  if (type === "progress") {
+    const value = node.value && typeof node.value === "object" && "percent" in node.value
+      ? node.value as InstitutionalProgressValue : { label: "Meta", percent: 0, detail: "" };
+    const percent = Number.isFinite(value.percent) ? Math.max(0, Math.min(100, value.percent)) : 0;
+    return renderRich(<div className={styles.progressBlock}>
+      <div className={styles.progressHeading}><strong>{value.label}</strong><strong>{percent}%</strong></div>
+      <div className={styles.progressTrack} role="progressbar" aria-label={value.label}
+        aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+        <div className={styles.progressFill} style={{ width: `${percent}%` }} />
+      </div>
+      {value.detail ? <p className={styles.progressDetail}>{value.detail}</p> : null}
+    </div>);
+  }
+
+  if (type === "campaign_card" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "campaign_card") {
+    return renderRich(<CampaignCard value={node.value as InstitutionalCampaignValue} editable={false} />);
+  }
+  if (type === "media_gallery" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "media_gallery") {
+    return renderRich(<MediaGallery value={node.value as InstitutionalGalleryValue} editable={false} />);
+  }
+  if (type === "video_embed" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "video_embed") {
+    return renderRich(<VideoEmbed value={node.value as InstitutionalVideoValue} editable={false} />);
+  }
+  if (type === "data_chart" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "data_chart") {
+    return renderRich(<DataChart value={node.value as InstitutionalChartValue} editable={false} />);
+  }
+  if (type === "story_tabs" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "story_tabs") {
+    return renderRich(<StoryTabs value={node.value as InstitutionalStoryTabsValue} editable={false} />);
+  }
+
+  if (type === "community_timeline" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "community_timeline") {
+    return renderRich(<CommunityTimeline value={node.value as InstitutionalTimelineValue} />);
+  }
+  if (type === "testimonial_slider" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "testimonial_slider") {
+    return renderRich(<TestimonialSlider value={node.value as InstitutionalTestimonialsValue} />);
+  }
+  if (type === "action_grid" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "action_grid") {
+    return renderRich(<ActionGrid value={node.value as InstitutionalActionGridValue} />);
+  }
+  if (type === "donation_choices" && node.value && typeof node.value === "object" && "kind" in node.value && node.value.kind === "donation_choices") {
+    return renderRich(<DonationChoices value={node.value as InstitutionalDonationChoicesValue} />);
   }
 
   if (type === "metric") {

@@ -36,8 +36,10 @@ export function exceedsEditorConstraints(
   const offsetX = next.offsetX ?? 0;
   const offsetY = next.offsetY ?? 0;
 
-  const minWidth = elementConstraints?.minWidthPercent ?? constraints.minWidthPercent;
-  const maxWidth = elementConstraints?.maxWidthPercent ?? constraints.maxWidthPercent;
+  const minWidth =
+    elementConstraints?.minWidthPercent ?? constraints.minWidthPercent;
+  const maxWidth =
+    elementConstraints?.maxWidthPercent ?? constraints.maxWidthPercent;
   const minFont = elementConstraints?.minFontSize ?? constraints.minFontSize;
   const maxFont = elementConstraints?.maxFontSize ?? constraints.maxFontSize;
 
@@ -49,8 +51,16 @@ export function exceedsEditorConstraints(
   }
 
   if (next.heightPx !== undefined) {
-    if (elementConstraints?.minHeightPx !== undefined && next.heightPx < elementConstraints.minHeightPx) return true;
-    if (elementConstraints?.maxHeightPx !== undefined && next.heightPx > elementConstraints.maxHeightPx) return true;
+    if (
+      elementConstraints?.minHeightPx !== undefined &&
+      next.heightPx < elementConstraints.minHeightPx
+    )
+      return true;
+    if (
+      elementConstraints?.maxHeightPx !== undefined &&
+      next.heightPx > elementConstraints.maxHeightPx
+    )
+      return true;
   }
   // Movimentos que permanecem dentro da seção são controlados visualmente pelo canvas.
   // O limite do modelo só volta a participar quando a pessoa escolhe, de forma explícita,

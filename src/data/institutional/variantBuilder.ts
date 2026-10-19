@@ -234,33 +234,44 @@ function buildCustomLayout(
 function buildHeaderLayout(
   settings: VariantLayoutSettings,
 ): InstitutionalLayoutNode {
-  return {
-    type: "columns",
-    ratio: "1:2",
-    gap: settings.gap,
-    children: [
-      stack([slot("brandLogo", "brandLogo"), slot("brandLabel", "itemTitle")], {
-        gap: "small",
-        align: "start",
-      }),
-      {
-        type: "stack",
-        gap: "small",
-        align: "end",
-        direction: "row",
-        children: [
-          {
-            type: "repeat",
-            source: "links",
-            columns: 4,
-            gap: "small",
-            item: slot("href", "navLink"),
-          },
-          slot("primaryAction", "primaryAction"),
-        ],
-      },
-    ],
+  const brand = stack(
+    [slot("brandLogo", "brandLogo"), slot("brandLabel", "itemTitle")],
+    {
+      gap: "small",
+      align: settings.composition === "centered" ? "center" : "start",
+    },
+  );
+  const navigation: InstitutionalLayoutNode = {
+    type: "repeat",
+    source: "links",
+    columns: 4,
+    gap: "small",
+    item: slot("href", "navLink"),
   };
+  const links = stack([navigation, slot("primaryAction", "primaryAction")], {
+    gap: "small",
+    align: "center",
+  });
+  if (settings.composition === "centered") {
+    return stack([brand, links], { gap: "medium", align: "center" });
+  }
+  if (settings.composition === "media-left") {
+    return {
+      type: "columns",
+      ratio: "1:2",
+      gap: "medium",
+      children: [brand, links],
+    };
+  }
+  if (settings.composition === "media-right") {
+    return {
+      type: "columns",
+      ratio: "2:1",
+      gap: "medium",
+      children: [links, brand],
+    };
+  }
+  return stack([brand, links], { gap: "small", align: "stretch" });
 }
 
 function buildFooterLayout(

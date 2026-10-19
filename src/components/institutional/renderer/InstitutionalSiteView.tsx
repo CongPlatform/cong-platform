@@ -1,4 +1,11 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type DragEvent,
+} from "react";
 
 import { getSectionDefinition } from "../../../data/institutional/sectionCatalog";
 import type {
@@ -12,6 +19,11 @@ import type {
   InstitutionalVariant,
 } from "../../../services/institutionalService";
 import { buildBrandCssVariables } from "../../../utils/institutionalColors";
+import {
+  designSystemCssVariables,
+  resolveDesignSystem,
+} from "../../../features/site-builder/design-system/designTokens";
+import { ensureFontsLoaded } from "../../../features/site-builder/design-system/fontCatalog";
 import { withCongBrandFallback } from "../../../utils/institutionalPreview";
 import SectionDesignPicker from "../editor/SectionDesignPicker";
 import SectionInsertControl from "../editor/SectionInsertControl";
@@ -80,22 +92,55 @@ export default function InstitutionalSiteView({
     value: unknown,
   ) => void;
   onImageRequest?: (sectionId: string, path: Array<string | number>) => void;
-  onImageFile?: (sectionId: string, path: Array<string | number>, file: File) => void;
+  onImageFile?: (
+    sectionId: string,
+    path: Array<string | number>,
+    file: File,
+  ) => void;
   selectedElementId?: string | null;
   selectedElementIds?: string[];
-  onSelectElement?: (sectionId: string, elementId: string, additive?: boolean) => void;
-  onElementValueChange?: (sectionId: string, elementId: string, value: unknown) => void;
+  onSelectElement?: (
+    sectionId: string,
+    elementId: string,
+    additive?: boolean,
+  ) => void;
+  onElementValueChange?: (
+    sectionId: string,
+    elementId: string,
+    value: unknown,
+  ) => void;
   onElementImageRequest?: (sectionId: string, elementId: string) => void;
-  onElementImageFile?: (sectionId: string, elementId: string, file: File) => void;
-  onElementStyleChange?: (sectionId: string, elementId: string, style: Partial<InstitutionalElementStyle>) => void;
-  onMoveSelection?: (sectionId: string, deltaX: number, deltaY: number, elementIds?: string[]) => void;
-  onMoveElement?: (sectionId: string, elementId: string, direction: -1 | 1) => void;
+  onElementImageFile?: (
+    sectionId: string,
+    elementId: string,
+    file: File,
+  ) => void;
+  onElementStyleChange?: (
+    sectionId: string,
+    elementId: string,
+    style: Partial<InstitutionalElementStyle>,
+  ) => void;
+  onMoveSelection?: (
+    sectionId: string,
+    deltaX: number,
+    deltaY: number,
+    elementIds?: string[],
+  ) => void;
+  onMoveElement?: (
+    sectionId: string,
+    elementId: string,
+    direction: -1 | 1,
+  ) => void;
   onRemoveElement?: (sectionId: string, elementId: string) => void;
   onCopyElement?: () => void;
   onCutElement?: () => void;
   onPasteElement?: () => void;
   onDuplicateElement?: () => void;
-  onAddElementToSection?: (sectionId: string, elementType: InstitutionalElementType, initialValue?: string) => void;
+  onAddElementToSection?: (
+    sectionId: string,
+    elementType: InstitutionalElementType,
+    initialValue?: string,
+  ) => void;
   variants?: InstitutionalVariant[];
   busy?: boolean;
   onAddSectionType?: (
@@ -115,28 +160,50 @@ export default function InstitutionalSiteView({
 }) {
   const siteRef = useRef<HTMLDivElement>(null);
   const [designSectionId, setDesignSectionId] = useState<string | null>(null);
-  const [measuredResponsiveSize, setMeasuredResponsiveSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [measuredResponsiveSize, setMeasuredResponsiveSize] = useState<
+    "desktop" | "tablet" | "mobile"
+  >("desktop");
   const responsiveSize = responsiveSizeOverride ?? measuredResponsiveSize;
   const brand = withCongBrandFallback(site.brand);
-  const activeEditorConstraints = editorConstraints ?? (editor ? site.editorConstraints : undefined);
+  useEffect(() => {
+    const design = resolveDesignSystem(brand);
+    ensureFontsLoaded([
+      design.headingFamily,
+      design.bodyFamily,
+      ...Object.values(design.textStyles ?? {}).flatMap((item) =>
+        item ? [item.family] : [],
+      ),
+    ]);
+  }, [brand]);
+  const activeEditorConstraints =
+    editorConstraints ?? (editor ? site.editorConstraints : undefined);
   const style = {
     ...buildBrandCssVariables(brand),
-    "--org-heading-font": fontValue(brand.headingFont),
-    "--org-body-font": fontValue(brand.bodyFont),
+    ...designSystemCssVariables(brand, fontValue),
   } as CSSProperties;
 
   const visibleSections = editor
     ? page.sections
     : page.sections.filter((section) => section.visible);
 
-  const globalHeader = site.pages
-    .flatMap((candidatePage) => candidatePage.sections)
-    .find((section) => section.sectionType === "site_header" && (editor || section.visible)) ?? null;
-  const globalFooter = site.pages
-    .flatMap((candidatePage) => candidatePage.sections)
-    .find((section) => section.sectionType === "site_footer" && (editor || section.visible)) ?? null;
+  const globalHeader =
+    site.pages
+      .flatMap((candidatePage) => candidatePage.sections)
+      .find(
+        (section) =>
+          section.sectionType === "site_header" && (editor || section.visible),
+      ) ?? null;
+  const globalFooter =
+    site.pages
+      .flatMap((candidatePage) => candidatePage.sections)
+      .find(
+        (section) =>
+          section.sectionType === "site_footer" && (editor || section.visible),
+      ) ?? null;
   const bodySections = visibleSections.filter(
-    (section) => section.sectionType !== "site_header" && section.sectionType !== "site_footer",
+    (section) =>
+      section.sectionType !== "site_header" &&
+      section.sectionType !== "site_footer",
   );
   const footerSections = globalFooter ? [globalFooter] : [];
 
@@ -150,8 +217,11 @@ export default function InstitutionalSiteView({
 
     const update = () => {
       const width = element.getBoundingClientRect().width;
-      const next = width <= 720 ? "mobile" : width <= 1040 ? "tablet" : "desktop";
-      setMeasuredResponsiveSize((current) => current === next ? current : next);
+      const next =
+        width <= 720 ? "mobile" : width <= 1040 ? "tablet" : "desktop";
+      setMeasuredResponsiveSize((current) =>
+        current === next ? current : next,
+      );
     };
 
     update();
@@ -171,9 +241,13 @@ export default function InstitutionalSiteView({
   ): void {
     event.preventDefault();
 
-    const sectionType = event.dataTransfer.getData("application/x-cong-section-type");
+    const sectionType = event.dataTransfer.getData(
+      "application/x-cong-section-type",
+    );
     if (sectionType && onAddSectionType) {
-      const variantVersionId = event.dataTransfer.getData("application/x-cong-variant-version") || undefined;
+      const variantVersionId =
+        event.dataTransfer.getData("application/x-cong-variant-version") ||
+        undefined;
       event.stopPropagation();
       onAddSectionType(
         sectionType as InstitutionalSection["sectionType"],
@@ -203,7 +277,16 @@ export default function InstitutionalSiteView({
   }
 
   return (
-    <div ref={siteRef} className={styles.site} style={style} data-responsive-size={responsiveSize}>
+    <div
+      ref={siteRef}
+      className={styles.site}
+      style={style}
+      data-responsive-size={responsiveSize}
+      data-cong-custom-heading={
+        resolveDesignSystem(brand).headingFamily !== "legacy"
+      }
+      data-cong-custom-body={resolveDesignSystem(brand).bodyFamily !== "legacy"}
+    >
       {globalHeader ? (
         editor ? (
           <SectionFrame
@@ -215,20 +298,24 @@ export default function InstitutionalSiteView({
             designOpen={designSectionId === globalHeader.id}
             onToggleDesign={() => {
               onSelectSection?.(globalHeader.id);
-              setDesignSectionId((current) => current === globalHeader.id ? null : globalHeader.id);
+              setDesignSectionId((current) =>
+                current === globalHeader.id ? null : globalHeader.id,
+              );
             }}
-            designPicker={onVariantChange ? (
-              <SectionDesignPicker
-                section={globalHeader}
-                brand={brand}
-                variants={variants}
-                busy={busy}
-                onSelect={(variantVersionId) => {
-                  onVariantChange(globalHeader.id, variantVersionId);
-                  setDesignSectionId(null);
-                }}
-              />
-            ) : undefined}
+            designPicker={
+              onVariantChange ? (
+                <SectionDesignPicker
+                  section={globalHeader}
+                  brand={brand}
+                  variants={variants}
+                  busy={busy}
+                  onSelect={(variantVersionId) => {
+                    onVariantChange(globalHeader.id, variantVersionId);
+                    setDesignSectionId(null);
+                  }}
+                />
+              ) : undefined
+            }
             onSelect={() => {
               setDesignSectionId(null);
               onSelectSection?.(globalHeader.id);
@@ -239,26 +326,56 @@ export default function InstitutionalSiteView({
             allowVisibilityToggle={false}
             allowDuplicate={false}
             allowDelete={false}
-            onElementDrop={(elementType, initialValue) => onAddElementToSection?.(globalHeader.id, elementType as InstitutionalElementType, initialValue)}
+            onElementDrop={(elementType, initialValue) =>
+              onAddElementToSection?.(
+                globalHeader.id,
+                elementType as InstitutionalElementType,
+                initialValue,
+              )
+            }
           >
             <SectionRenderer
               section={globalHeader}
               brand={brand}
               editable
               showGuidance={selectedSectionId === globalHeader.id}
-              onValueChange={(path, value) => onSectionValueChange?.(globalHeader.id, path, value)}
+              onValueChange={(path, value) =>
+                onSectionValueChange?.(globalHeader.id, path, value)
+              }
               onImageRequest={(path) => onImageRequest?.(globalHeader.id, path)}
-              onImageFile={(path, file) => onImageFile?.(globalHeader.id, path, file)}
-              selectedElementId={selectedSectionId === globalHeader.id ? selectedElementId : null}
-              selectedElementIds={selectedSectionId === globalHeader.id ? selectedElementIds : []}
-              onSelectElement={(elementId, additive) => onSelectElement?.(globalHeader.id, elementId, additive)}
-              onElementValueChange={(elementId, value) => onElementValueChange?.(globalHeader.id, elementId, value)}
-              onElementImageRequest={(elementId) => onElementImageRequest?.(globalHeader.id, elementId)}
-              onElementImageFile={(elementId, file) => onElementImageFile?.(globalHeader.id, elementId, file)}
-              onElementStyleChange={(elementId, elementStyle) => onElementStyleChange?.(globalHeader.id, elementId, elementStyle)}
-              onMoveSelection={(deltaX, deltaY, elementIds) => onMoveSelection?.(globalHeader.id, deltaX, deltaY, elementIds)}
-              onMoveElement={(elementId, direction) => onMoveElement?.(globalHeader.id, elementId, direction)}
-              onRemoveElement={(elementId) => onRemoveElement?.(globalHeader.id, elementId)}
+              onImageFile={(path, file) =>
+                onImageFile?.(globalHeader.id, path, file)
+              }
+              selectedElementId={
+                selectedSectionId === globalHeader.id ? selectedElementId : null
+              }
+              selectedElementIds={
+                selectedSectionId === globalHeader.id ? selectedElementIds : []
+              }
+              onSelectElement={(elementId, additive) =>
+                onSelectElement?.(globalHeader.id, elementId, additive)
+              }
+              onElementValueChange={(elementId, value) =>
+                onElementValueChange?.(globalHeader.id, elementId, value)
+              }
+              onElementImageRequest={(elementId) =>
+                onElementImageRequest?.(globalHeader.id, elementId)
+              }
+              onElementImageFile={(elementId, file) =>
+                onElementImageFile?.(globalHeader.id, elementId, file)
+              }
+              onElementStyleChange={(elementId, elementStyle) =>
+                onElementStyleChange?.(globalHeader.id, elementId, elementStyle)
+              }
+              onMoveSelection={(deltaX, deltaY, elementIds) =>
+                onMoveSelection?.(globalHeader.id, deltaX, deltaY, elementIds)
+              }
+              onMoveElement={(elementId, direction) =>
+                onMoveElement?.(globalHeader.id, elementId, direction)
+              }
+              onRemoveElement={(elementId) =>
+                onRemoveElement?.(globalHeader.id, elementId)
+              }
               onCopyElement={onCopyElement}
               onCutElement={onCutElement}
               onPasteElement={onPasteElement}
@@ -268,11 +385,19 @@ export default function InstitutionalSiteView({
             />
           </SectionFrame>
         ) : (
-          <SectionRenderer key={globalHeader.id} section={globalHeader} brand={brand} />
+          <SectionRenderer
+            key={globalHeader.id}
+            section={globalHeader}
+            brand={brand}
+          />
         )
       ) : (
         <header className={styles.header}>
-          <a className={styles.brand} href="#top" onClick={editor ? (event) => event.preventDefault() : undefined}>
+          <a
+            className={styles.brand}
+            href="#top"
+            onClick={editor ? (event) => event.preventDefault() : undefined}
+          >
             {brand.logoAsset?.url ? (
               <img src={brand.logoAsset.url} alt="" />
             ) : (
@@ -283,16 +408,24 @@ export default function InstitutionalSiteView({
             <strong>{site.organization.name}</strong>
           </a>
 
-          <nav className={styles.navigation} aria-label="Navegação institucional">
-            {bodySections.filter((section) => section.sectionType !== "custom_content").slice(0, 5).map((section) => (
-              <a
-                key={section.id}
-                href={`#section-${section.id}`}
-                onClick={editor ? (event) => event.preventDefault() : undefined}
-              >
-                {getSectionDefinition(section.sectionType).name}
-              </a>
-            ))}
+          <nav
+            className={styles.navigation}
+            aria-label="Navegação institucional"
+          >
+            {bodySections
+              .filter((section) => section.sectionType !== "custom_content")
+              .slice(0, 5)
+              .map((section) => (
+                <a
+                  key={section.id}
+                  href={`#section-${section.id}`}
+                  onClick={
+                    editor ? (event) => event.preventDefault() : undefined
+                  }
+                >
+                  {getSectionDefinition(section.sectionType).name}
+                </a>
+              ))}
           </nav>
         </header>
       )}
@@ -300,24 +433,48 @@ export default function InstitutionalSiteView({
       <main
         id="top"
         onClick={editor ? () => setDesignSectionId(null) : undefined}
-        onDragOver={editor && onAddSectionType ? (event) => {
-          if (!event.dataTransfer.types.includes("application/x-cong-section-type")) return;
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "copy";
-        } : undefined}
-        onDrop={editor && onAddSectionType ? (event) => {
-          const sectionType = event.dataTransfer.getData("application/x-cong-section-type");
-          const variantVersionId = event.dataTransfer.getData("application/x-cong-variant-version") || undefined;
-          if (!sectionType) return;
-          event.preventDefault();
-          event.stopPropagation();
-          onAddSectionType(sectionType as InstitutionalSection["sectionType"], null, variantVersionId);
-        } : undefined}
+        onDragOver={
+          editor && onAddSectionType
+            ? (event) => {
+                if (
+                  !event.dataTransfer.types.includes(
+                    "application/x-cong-section-type",
+                  )
+                )
+                  return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+              }
+            : undefined
+        }
+        onDrop={
+          editor && onAddSectionType
+            ? (event) => {
+                const sectionType = event.dataTransfer.getData(
+                  "application/x-cong-section-type",
+                );
+                const variantVersionId =
+                  event.dataTransfer.getData(
+                    "application/x-cong-variant-version",
+                  ) || undefined;
+                if (!sectionType) return;
+                event.preventDefault();
+                event.stopPropagation();
+                onAddSectionType(
+                  sectionType as InstitutionalSection["sectionType"],
+                  null,
+                  variantVersionId,
+                );
+              }
+            : undefined
+        }
       >
         {editor && onAddSectionType ? (
           <SectionInsertControl
             variants={variants}
-            onAdd={(sectionType) => onAddSectionType(sectionType, bodySections[0]?.id ?? null)}
+            onAdd={(sectionType) =>
+              onAddSectionType(sectionType, bodySections[0]?.id ?? null)
+            }
           />
         ) : null}
 
@@ -328,19 +485,43 @@ export default function InstitutionalSiteView({
               brand={brand}
               editable={Boolean(editor)}
               showGuidance={Boolean(editor) && selectedSectionId === section.id}
-              onValueChange={(path, value) => onSectionValueChange?.(section.id, path, value)}
+              onValueChange={(path, value) =>
+                onSectionValueChange?.(section.id, path, value)
+              }
               onImageRequest={(path) => onImageRequest?.(section.id, path)}
-              onImageFile={(path, file) => onImageFile?.(section.id, path, file)}
-              selectedElementId={selectedSectionId === section.id ? selectedElementId : null}
-              selectedElementIds={selectedSectionId === section.id ? selectedElementIds : []}
-              onSelectElement={(elementId, additive) => onSelectElement?.(section.id, elementId, additive)}
-              onElementValueChange={(elementId, value) => onElementValueChange?.(section.id, elementId, value)}
-              onElementImageRequest={(elementId) => onElementImageRequest?.(section.id, elementId)}
-              onElementImageFile={(elementId, file) => onElementImageFile?.(section.id, elementId, file)}
-              onElementStyleChange={(elementId, elementStyle) => onElementStyleChange?.(section.id, elementId, elementStyle)}
-              onMoveSelection={(deltaX, deltaY, elementIds) => onMoveSelection?.(section.id, deltaX, deltaY, elementIds)}
-              onMoveElement={(elementId, direction) => onMoveElement?.(section.id, elementId, direction)}
-              onRemoveElement={(elementId) => onRemoveElement?.(section.id, elementId)}
+              onImageFile={(path, file) =>
+                onImageFile?.(section.id, path, file)
+              }
+              selectedElementId={
+                selectedSectionId === section.id ? selectedElementId : null
+              }
+              selectedElementIds={
+                selectedSectionId === section.id ? selectedElementIds : []
+              }
+              onSelectElement={(elementId, additive) =>
+                onSelectElement?.(section.id, elementId, additive)
+              }
+              onElementValueChange={(elementId, value) =>
+                onElementValueChange?.(section.id, elementId, value)
+              }
+              onElementImageRequest={(elementId) =>
+                onElementImageRequest?.(section.id, elementId)
+              }
+              onElementImageFile={(elementId, file) =>
+                onElementImageFile?.(section.id, elementId, file)
+              }
+              onElementStyleChange={(elementId, elementStyle) =>
+                onElementStyleChange?.(section.id, elementId, elementStyle)
+              }
+              onMoveSelection={(deltaX, deltaY, elementIds) =>
+                onMoveSelection?.(section.id, deltaX, deltaY, elementIds)
+              }
+              onMoveElement={(elementId, direction) =>
+                onMoveElement?.(section.id, elementId, direction)
+              }
+              onRemoveElement={(elementId) =>
+                onRemoveElement?.(section.id, elementId)
+              }
               onCopyElement={onCopyElement}
               onCutElement={onCutElement}
               onPasteElement={onPasteElement}
@@ -366,20 +547,24 @@ export default function InstitutionalSiteView({
                 designOpen={designOpen}
                 onToggleDesign={() => {
                   onSelectSection?.(section.id);
-                  setDesignSectionId((current) => current === section.id ? null : section.id);
+                  setDesignSectionId((current) =>
+                    current === section.id ? null : section.id,
+                  );
                 }}
-                designPicker={onVariantChange ? (
-                  <SectionDesignPicker
-                    section={section}
-                    brand={brand}
-                    variants={variants}
-                    busy={busy}
-                    onSelect={(variantVersionId) => {
-                      onVariantChange(section.id, variantVersionId);
-                      setDesignSectionId(null);
-                    }}
-                  />
-                ) : undefined}
+                designPicker={
+                  onVariantChange ? (
+                    <SectionDesignPicker
+                      section={section}
+                      brand={brand}
+                      variants={variants}
+                      busy={busy}
+                      onSelect={(variantVersionId) => {
+                        onVariantChange(section.id, variantVersionId);
+                        setDesignSectionId(null);
+                      }}
+                    />
+                  ) : undefined
+                }
                 onSelect={() => {
                   setDesignSectionId(null);
                   onSelectSection?.(section.id);
@@ -390,23 +575,37 @@ export default function InstitutionalSiteView({
                 allowVisibilityToggle={allowVisibilityToggle}
                 onDragStart={(event) => {
                   event.dataTransfer.effectAllowed = "move";
-                  event.dataTransfer.setData("application/x-cong-section", section.id);
+                  event.dataTransfer.setData(
+                    "application/x-cong-section",
+                    section.id,
+                  );
                 }}
                 onDragOver={(event) => {
                   event.preventDefault();
-                  event.dataTransfer.dropEffect = event.dataTransfer.types.includes("application/x-cong-section-type")
-                    ? "copy"
-                    : "move";
+                  event.dataTransfer.dropEffect =
+                    event.dataTransfer.types.includes(
+                      "application/x-cong-section-type",
+                    )
+                      ? "copy"
+                      : "move";
                 }}
                 onDrop={(event) => handleDrop(event, section)}
-                onElementDrop={(elementType, initialValue) => onAddElementToSection?.(section.id, elementType as InstitutionalElementType, initialValue)}
+                onElementDrop={(elementType, initialValue) =>
+                  onAddElementToSection?.(
+                    section.id,
+                    elementType as InstitutionalElementType,
+                    initialValue,
+                  )
+                }
               >
                 {rendered}
               </SectionFrame>
               {onAddSectionType ? (
                 <SectionInsertControl
                   variants={variants}
-                  onAdd={(sectionType) => onAddSectionType(sectionType, nextSectionId)}
+                  onAdd={(sectionType) =>
+                    onAddSectionType(sectionType, nextSectionId)
+                  }
                 />
               ) : null}
             </div>
@@ -421,19 +620,41 @@ export default function InstitutionalSiteView({
             brand={brand}
             editable={Boolean(editor)}
             showGuidance={Boolean(editor) && selectedSectionId === section.id}
-            onValueChange={(path, value) => onSectionValueChange?.(section.id, path, value)}
+            onValueChange={(path, value) =>
+              onSectionValueChange?.(section.id, path, value)
+            }
             onImageRequest={(path) => onImageRequest?.(section.id, path)}
             onImageFile={(path, file) => onImageFile?.(section.id, path, file)}
-            selectedElementId={selectedSectionId === section.id ? selectedElementId : null}
-            selectedElementIds={selectedSectionId === section.id ? selectedElementIds : []}
-            onSelectElement={(elementId, additive) => onSelectElement?.(section.id, elementId, additive)}
-            onElementValueChange={(elementId, value) => onElementValueChange?.(section.id, elementId, value)}
-            onElementImageRequest={(elementId) => onElementImageRequest?.(section.id, elementId)}
-            onElementImageFile={(elementId, file) => onElementImageFile?.(section.id, elementId, file)}
-            onElementStyleChange={(elementId, elementStyle) => onElementStyleChange?.(section.id, elementId, elementStyle)}
-            onMoveSelection={(deltaX, deltaY, elementIds) => onMoveSelection?.(section.id, deltaX, deltaY, elementIds)}
-            onMoveElement={(elementId, direction) => onMoveElement?.(section.id, elementId, direction)}
-            onRemoveElement={(elementId) => onRemoveElement?.(section.id, elementId)}
+            selectedElementId={
+              selectedSectionId === section.id ? selectedElementId : null
+            }
+            selectedElementIds={
+              selectedSectionId === section.id ? selectedElementIds : []
+            }
+            onSelectElement={(elementId, additive) =>
+              onSelectElement?.(section.id, elementId, additive)
+            }
+            onElementValueChange={(elementId, value) =>
+              onElementValueChange?.(section.id, elementId, value)
+            }
+            onElementImageRequest={(elementId) =>
+              onElementImageRequest?.(section.id, elementId)
+            }
+            onElementImageFile={(elementId, file) =>
+              onElementImageFile?.(section.id, elementId, file)
+            }
+            onElementStyleChange={(elementId, elementStyle) =>
+              onElementStyleChange?.(section.id, elementId, elementStyle)
+            }
+            onMoveSelection={(deltaX, deltaY, elementIds) =>
+              onMoveSelection?.(section.id, deltaX, deltaY, elementIds)
+            }
+            onMoveElement={(elementId, direction) =>
+              onMoveElement?.(section.id, elementId, direction)
+            }
+            onRemoveElement={(elementId) =>
+              onRemoveElement?.(section.id, elementId)
+            }
             onCopyElement={onCopyElement}
             onCutElement={onCutElement}
             onPasteElement={onPasteElement}
@@ -456,20 +677,24 @@ export default function InstitutionalSiteView({
             designOpen={designSectionId === section.id}
             onToggleDesign={() => {
               onSelectSection?.(section.id);
-              setDesignSectionId((current) => current === section.id ? null : section.id);
+              setDesignSectionId((current) =>
+                current === section.id ? null : section.id,
+              );
             }}
-            designPicker={onVariantChange ? (
-              <SectionDesignPicker
-                section={section}
-                brand={brand}
-                variants={variants}
-                busy={busy}
-                onSelect={(variantVersionId) => {
-                  onVariantChange(section.id, variantVersionId);
-                  setDesignSectionId(null);
-                }}
-              />
-            ) : undefined}
+            designPicker={
+              onVariantChange ? (
+                <SectionDesignPicker
+                  section={section}
+                  brand={brand}
+                  variants={variants}
+                  busy={busy}
+                  onSelect={(variantVersionId) => {
+                    onVariantChange(section.id, variantVersionId);
+                    setDesignSectionId(null);
+                  }}
+                />
+              ) : undefined
+            }
             onSelect={() => {
               setDesignSectionId(null);
               onSelectSection?.(section.id);
@@ -480,13 +705,18 @@ export default function InstitutionalSiteView({
             allowVisibilityToggle={false}
             allowDuplicate={false}
             allowDelete={false}
-            onElementDrop={(elementType, initialValue) => onAddElementToSection?.(section.id, elementType as InstitutionalElementType, initialValue)}
+            onElementDrop={(elementType, initialValue) =>
+              onAddElementToSection?.(
+                section.id,
+                elementType as InstitutionalElementType,
+                initialValue,
+              )
+            }
           >
             {rendered}
           </SectionFrame>
         );
       })}
-
     </div>
   );
 }

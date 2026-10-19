@@ -237,48 +237,81 @@ export async function removeAvatar(
   }
 }
 
-
-export async function deactivateMe(_req: Request, res: Response): Promise<void> {
+export async function deactivateMe(
+  _req: Request,
+  res: Response,
+): Promise<void> {
   try {
     await selfDeactivateAccount(res.locals.authUser.id);
     res.status(204).send();
   } catch (error) {
     if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message, code: error.code });
+      res
+        .status(error.statusCode)
+        .json({ error: error.message, code: error.code });
       return;
     }
     console.error("Falha ao desativar conta:", error);
-    res.status(500).json({ error: "Não foi possível desativar a conta.", code: "INTERNAL_SERVER_ERROR" });
+    res
+      .status(500)
+      .json({
+        error: "Não foi possível desativar a conta.",
+        code: "INTERNAL_SERVER_ERROR",
+      });
   }
 }
 
-export async function requestDeletionMe(_req: Request, res: Response): Promise<void> {
+export async function requestDeletionMe(
+  _req: Request,
+  res: Response,
+): Promise<void> {
   try {
     await requestOwnAccountDeletion(res.locals.authUser.id);
-    res.status(202).json({ message: "Solicitação de exclusão registrada. Sua conta está bloqueada enquanto verificamos vínculos e dados relacionados." });
+    res
+      .status(202)
+      .json({
+        message:
+          "Solicitação de exclusão registrada. Sua conta está bloqueada enquanto verificamos vínculos e dados relacionados.",
+      });
   } catch (error) {
     if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message, code: error.code });
+      res
+        .status(error.statusCode)
+        .json({ error: error.message, code: error.code });
       return;
     }
     console.error("Falha ao solicitar exclusão:", error);
-    res.status(500).json({ error: "Não foi possível solicitar a exclusão.", code: "INTERNAL_SERVER_ERROR" });
+    res
+      .status(500)
+      .json({
+        error: "Não foi possível solicitar a exclusão.",
+        code: "INTERNAL_SERVER_ERROR",
+      });
   }
 }
 
-
 /** Acesso exclusivo de platform_admin; não exclui nem desbloqueia contas. */
-export async function adminListDeletionRequests(_req: Request, res: Response): Promise<void> {
+export async function adminListDeletionRequests(
+  _req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const requests = await listAccountDeletionQueue(res.locals.authUser.id);
     res.status(200).json({ requests });
   } catch (error) {
     if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message, code: error.code });
+      res
+        .status(error.statusCode)
+        .json({ error: error.message, code: error.code });
       return;
     }
     console.error("Erro ao listar solicitações de exclusão:", error);
-    res.status(500).json({ error: "Não foi possível listar solicitações de exclusão.", code: "INTERNAL_SERVER_ERROR" });
+    res
+      .status(500)
+      .json({
+        error: "Não foi possível listar solicitações de exclusão.",
+        code: "INTERNAL_SERVER_ERROR",
+      });
   }
 }
 
@@ -286,13 +319,26 @@ export async function adminListDeletionRequests(_req: Request, res: Response): P
 export async function deleteMe(_req: Request, res: Response): Promise<void> {
   try {
     await deleteOwnAccount(res.locals.authUser.id);
-    res.status(200).json({ message: "Sua conta foi excluída. Dados institucionais de organizações foram preservados." });
+    res
+      .status(200)
+      .json({
+        message:
+          "Sua conta foi excluída. Dados institucionais de organizações foram preservados.",
+      });
   } catch (error) {
     if (error instanceof AppError) {
-      res.status(error.statusCode).json({ error: error.message, code: error.code });
+      res
+        .status(error.statusCode)
+        .json({ error: error.message, code: error.code });
       return;
     }
     console.error("Falha na exclusão automática da conta:", error);
-    res.status(500).json({ error: "Não foi possível concluir a exclusão. Tente novamente ou contate o suporte.", code: "ACCOUNT_DELETE_FAILED" });
+    res
+      .status(500)
+      .json({
+        error:
+          "Não foi possível concluir a exclusão. Tente novamente ou contate o suporte.",
+        code: "ACCOUNT_DELETE_FAILED",
+      });
   }
 }

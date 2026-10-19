@@ -434,7 +434,6 @@ export default function AuthConfirm() {
 
             <span className={styles.shadow} />
           </div>
-
         </aside>
       </section>
 

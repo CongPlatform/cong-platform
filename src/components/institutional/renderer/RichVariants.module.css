@@ -1,0 +1,20 @@
+/* The same preset treatments apply in the library, canvas and public site. */
+.richModel{width:100%;min-width:0;max-width:100%;container-type:inline-size;--preset-border:color-mix(in srgb,var(--org-primary,#335e8b) 14%,transparent)}
+.richModel > :is(section,div){min-width:0;max-width:100%}
+.richModel[data-rich-variant="compact"] > :is(section,div){border-radius:17px!important;box-shadow:0 7px 24px color-mix(in srgb,var(--org-primary,#335e8b) 6%,transparent)!important}
+.richModel[data-rich-variant="compact"] :is(h3,h4){letter-spacing:-.025em;font-size:clamp(1.1rem,2.6cqw,1.85rem)}
+.richModel[data-rich-variant="compact"] :is(p,blockquote){line-height:1.5}
+.richModel[data-rich-variant="compact"] :is(figure,article){border-radius:13px}
+.richModel[data-rich-variant="spotlight"] > :is(section,div){border-radius:28px;isolation:isolate;box-shadow:0 18px 50px color-mix(in srgb,var(--org-primary,#335e8b) 14%,transparent)}
+.richModel[data-rich-variant="spotlight"] :is(h3,h4){letter-spacing:-.048em;text-wrap:balance}
+.richModel[data-rich-variant="spotlight"] :is(button,a){transition:transform .16s ease,filter .16s ease}
+.richModel[data-rich-variant="spotlight"] :is(button,a):hover{filter:brightness(1.08)}
+.richModel[data-rich-variant="editorial"] > :is(section,div){position:relative;border:1px solid var(--preset-border);border-radius:25px;box-shadow:0 18px 50px color-mix(in srgb,var(--org-primary,#335e8b) 9%,transparent)}
+.richModel[data-rich-variant="editorial"] > :is(section,div)::before{content:"";position:absolute;z-index:1;pointer-events:none;left:0;top:0;width:clamp(56px,17cqw,130px);height:5px;border-radius:0 0 7px 0;background:var(--org-accent,#f0ba46)}
+.richModel[data-rich-variant="editorial"] :is(h3,h4){font-family:var(--org-heading-font,inherit);letter-spacing:-.045em;text-wrap:balance}
+.richModel[data-rich-variant="editorial"] :is(p,blockquote){max-width:69ch}
+.richModel[data-rich-variant="editorial"] :is(figure,article){border-radius:20px}
+/* Empty media is a purposeful frame, even inside narrow grid layouts. */
+.richModel :is(img,video,iframe){max-width:100%}
+@container (max-width:440px){.richModel[data-rich-variant="editorial"] > :is(section,div){border-radius:17px}}
+@media(prefers-reduced-motion:reduce){.richModel :is(button,a){transition:none!important}}

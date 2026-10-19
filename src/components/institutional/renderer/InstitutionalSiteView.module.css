@@ -15,8 +15,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 14px clamp(24px, 5vw, 72px);
+  gap: calc(24px * var(--org-space-scale, 1));
+  padding: calc(14px * var(--org-space-scale, 1)) clamp(24px, 5vw, 72px);
   border-bottom: 1px solid
     color-mix(in srgb, var(--org-text, var(--color-navy)) 10%, transparent);
   background: color-mix(
@@ -39,7 +39,7 @@
   flex: none;
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--org-radius-card, 12px);
   object-fit: contain;
 }
 

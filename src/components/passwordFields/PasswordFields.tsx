@@ -20,10 +20,7 @@ import {
 import gsap from "gsap";
 
 import styles from "./PasswordFields.module.css";
-import {
-  type BreachStatus,
-  analysePassword,
-} from "./passwordUtils";
+import { type BreachStatus, analysePassword } from "./passwordUtils";
 
 type PasswordVaultProps = {
   tier: number;
@@ -1087,8 +1084,6 @@ export default function PasswordFields({
           <p className={styles.capsWarning}>Caps Lock está ativado.</p>
         )}
 
-
-
         {passwordTouched && (
           <p id={passwordErrorId} className={styles.fieldError} role="alert">
             {passwordError}
@@ -1098,7 +1093,6 @@ export default function PasswordFields({
 
       <div className={styles.field}>
         <label htmlFor={confirmPasswordId}>Confirmar senha</label>
-
         <div
           className={`${styles.inputWrap} ${
             confirmPasswordTouched && confirmPasswordError
@@ -1147,7 +1141,6 @@ export default function PasswordFields({
             )}
           </button>
         </div>
-
         <div
           id={`${confirmPasswordId}-status`}
           className={styles.matchStatus}
@@ -1167,7 +1160,6 @@ export default function PasswordFields({
             </span>
           )}
         </div>
-
         {confirmPasswordTouched && (
           <p
             id={confirmPasswordErrorId}
@@ -1177,8 +1169,6 @@ export default function PasswordFields({
             {confirmPasswordError}
           </p>
         )}
-
-
         <div
           id={`${passwordId}-status`}
           className={`${styles.vaultFeedback} ${styles[`tier${passwordAnalysis.tier}`]}`}
@@ -1210,7 +1200,6 @@ export default function PasswordFields({
             </small>
           </div>
         </div>
-
         <div className={styles.breachLine} aria-live="polite">
           {breachStatus.state === "checking" && (
             <span className={styles.breachChecking}>
@@ -1239,7 +1228,8 @@ export default function PasswordFields({
               concluída agora.
             </span>
           )}
-        </div>      </div>
+        </div>{" "}
+      </div>
     </div>
   );
 }

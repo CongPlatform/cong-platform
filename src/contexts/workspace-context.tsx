@@ -20,17 +20,25 @@ export interface WorkspaceContextValue {
   workspace: ActiveWorkspace;
   switchingWorkspace: boolean;
   selectPersonalWorkspace: () => Promise<void>;
-  selectCollaborationWorkspace: (profile: CollaborationProfile) => Promise<void>;
-  selectOrganizationWorkspace: (organization: AccessibleOrganization) => Promise<void>;
+  selectCollaborationWorkspace: (
+    profile: CollaborationProfile,
+  ) => Promise<void>;
+  selectOrganizationWorkspace: (
+    organization: AccessibleOrganization,
+  ) => Promise<void>;
 }
 
-export const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
+export const WorkspaceContext = createContext<WorkspaceContextValue | null>(
+  null,
+);
 
 export function useWorkspace(): WorkspaceContextValue {
   const context = useContext(WorkspaceContext);
 
   if (!context) {
-    throw new Error("useWorkspace precisa ser utilizado dentro de WorkspaceProvider.");
+    throw new Error(
+      "useWorkspace precisa ser utilizado dentro de WorkspaceProvider.",
+    );
   }
 
   return context;

@@ -65,7 +65,11 @@ export default function CommunityReportModal({
       onSubmitted?.();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível enviar a denúncia.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível enviar a denúncia.",
+      );
     } finally {
       setBusy(false);
     }
@@ -85,27 +89,49 @@ export default function CommunityReportModal({
         if (event.target === event.currentTarget && !busy) onClose();
       }}
     >
-      <section className={styles.modal} onMouseDown={(event) => event.stopPropagation()}>
+      <section
+        className={styles.modal}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <header>
-          <span className={styles.alertIcon}><FiAlertTriangle /></span>
+          <span className={styles.alertIcon}>
+            <FiAlertTriangle />
+          </span>
           <div>
             <h2 id="community-report-title">Denunciar</h2>
             <p>{targetLabel}</p>
           </div>
-          <button type="button" className={styles.close} onClick={onClose} disabled={busy} aria-label="Fechar">
+          <button
+            type="button"
+            className={styles.close}
+            onClick={onClose}
+            disabled={busy}
+            aria-label="Fechar"
+          >
             <FiX />
           </button>
         </header>
 
         <label className={styles.field}>
           <span>Motivo</span>
-          <select value={reason} onChange={(event) => setReason(event.target.value as CommunityReportReason)}>
-            {reasons.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          <select
+            value={reason}
+            onChange={(event) =>
+              setReason(event.target.value as CommunityReportReason)
+            }
+          >
+            {reasons.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
           </select>
         </label>
 
         <label className={styles.field}>
-          <span>Contexto adicional <small>opcional</small></span>
+          <span>
+            Contexto adicional <small>opcional</small>
+          </span>
           <textarea
             value={details}
             onChange={(event) => setDetails(event.target.value.slice(0, 1200))}
@@ -116,12 +142,29 @@ export default function CommunityReportModal({
         </label>
 
         <p id="community-report-note" className={styles.note}>
-          A denúncia será registrada para análise. Denúncias repetidas do mesmo conteúdo não são aceitas.
+          A denúncia será registrada para análise. Denúncias repetidas do mesmo
+          conteúdo não são aceitas.
         </p>
-        {error ? <div className={styles.error} role="alert">{error}</div> : null}
+        {error ? (
+          <div className={styles.error} role="alert">
+            {error}
+          </div>
+        ) : null}
         <footer>
-          <button type="button" className={styles.cancel} onClick={onClose} disabled={busy}>Cancelar</button>
-          <button type="button" className={styles.submit} onClick={() => void submit()} disabled={busy}>
+          <button
+            type="button"
+            className={styles.cancel}
+            onClick={onClose}
+            disabled={busy}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className={styles.submit}
+            onClick={() => void submit()}
+            disabled={busy}
+          >
             {busy ? "Enviando..." : "Enviar denúncia"}
           </button>
         </footer>

@@ -9,7 +9,9 @@ import type {
   InstitutionalVariant,
 } from "../services/institutionalService";
 
-const recommendedVariantNames: Partial<Record<InstitutionalSectionType, string[]>> = {
+const recommendedVariantNames: Partial<
+  Record<InstitutionalSectionType, string[]>
+> = {
   site_header: nativeDesignFamilies.map((family) => family.name),
   organization_intro: nativeDesignFamilies.map((family) => family.name),
   organization_about: nativeDesignFamilies.map((family) => family.name),
@@ -86,7 +88,9 @@ const visualStyleByVariantName: Record<string, string> = {
 export function defaultSettingsForVariant(
   variant: InstitutionalVariant,
 ): Record<string, unknown> {
-  const family = findNativeDesignFamilyById(variant.familyKey) ?? findNativeDesignFamilyByName(variant.name);
+  const family =
+    findNativeDesignFamilyById(variant.familyKey) ??
+    findNativeDesignFamilyByName(variant.name);
   const visualStyle = family
     ? nativeFamilyVisualStyle(family.id, variant.sectionType)
     : visualStyleByVariantName[variant.name];
@@ -94,9 +98,17 @@ export function defaultSettingsForVariant(
 
   const header = variant.sectionType === "site_header";
   const generous = variant.sectionType === "organization_intro";
-  const normalWidth = variant.sectionType === "organization_contact" || variant.name === "História editorial";
-  const familyBackground = family && ["territorio-vivo", "essencial", "pulso", "profundezas"].includes(family.id)
-    && ["organization_intro", "custom_content", "site_footer"].includes(variant.sectionType)
+  const normalWidth =
+    variant.sectionType === "organization_contact" ||
+    variant.name === "História editorial";
+  const familyBackground =
+    family &&
+    ["territorio-vivo", "essencial", "pulso", "profundezas"].includes(
+      family.id,
+    ) &&
+    ["organization_intro", "custom_content", "site_footer"].includes(
+      variant.sectionType,
+    )
       ? "primary"
       : variant.sectionType === "site_footer"
         ? "primary"

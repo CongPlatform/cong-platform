@@ -1,0 +1,22 @@
+.bar {display:flex; align-items:center; gap:6px; min-height:52px; padding:7px 16px; border-bottom:1px solid var(--color-slate-200); background:#fff; color:#17243b; overflow:hidden;}
+.pages {display:flex; gap:5px; min-width:0; overflow-x:auto; flex:1; scrollbar-width:thin;}
+.page,.active,.add,.iconButton {border:1px solid transparent; border-radius:8px; padding:8px 11px; display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap; font:600 12px/1.2 var(--font-interface); cursor:pointer;}
+.page {background:transparent; color:#526174;}.page:hover {background:#f2f5fa;}
+.active {background:#eaf0fc; border-color:#bfd2f5; color:#1d4588;}.active svg,.page svg {flex:none;}
+.add {border-color:#dbe3ef; background:#fff; color:#203d70;}.add:hover,.iconButton:hover {background:#f0f5ff;}
+.iconButton {border-color:#e0e6f0; background:#fff; padding:9px;}
+.bar button:disabled {opacity:.55; cursor:not-allowed;}
+.backdrop {position:fixed; inset:0; z-index:1000; background:rgb(17 28 48 / 0.58);display:grid;place-items:center;padding:20px;}
+.modal {background:#fff; border-radius:16px; width:min(540px,100%); padding:24px;box-shadow:0 16px 64px rgb(0 0 0 / .2);display:grid;gap:16px; font-family:var(--font-interface);}
+.modalTitle {display:flex;justify-content:space-between;align-items:center;font-size:20px;}
+.modalTitle button {background:none; cursor:pointer; padding:6px;}
+.modal label {display:grid;gap:7px;font-size:13px;font-weight:650;}
+.modal input {width:100%;min-width:0;border:1px solid #d7deea;border-radius:9px;padding:11px 12px;font:inherit;font-weight:400;}
+.modal input:focus {outline:2px solid #4b79d1;outline-offset:1px;}
+.slugRow {display:flex;align-items:center;gap:6px;}.slugRow span {color:#738398;}
+.hint {font-size:12px;color:#66768d;line-height:1.6;margin:0;}
+.error {font-size:13px;color:#a11728;margin:0;}
+.actions {display:flex; gap:7px; flex-wrap:wrap;align-items:center;}
+.actions button {display:inline-flex;align-items:center;gap:5px;padding:9px 11px;border:1px solid #d7deea;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;background:#fff;}
+.actions .save {background:#192d50;color:white;border-color:#192d50;}.actions .delete {color:#b5282d;}.spacer {flex:1;}
+@media(max-width:720px){.bar{padding:6px;gap:4px}.add{font-size:0}.add svg{font-size:18px}.modal{padding:18px}.actions{gap:4px}.actions .spacer{flex-basis:100%}}

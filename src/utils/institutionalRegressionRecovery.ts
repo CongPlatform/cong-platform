@@ -98,7 +98,10 @@ const PROJECT_IMAGE_STYLE_RECOVERY: Record<string, JsonObject> = {
   },
 };
 
-function repairProjectsSettings(settings: Record<string, unknown>): { settings: Record<string, unknown>; changed: boolean } {
+function repairProjectsSettings(settings: Record<string, unknown>): {
+  settings: Record<string, unknown>;
+  changed: boolean;
+} {
   const next = cloneJson(settings);
   const root = next as JsonObject;
   const layoutOverride = getObject(root, "layoutOverride");
@@ -108,15 +111,29 @@ function repairProjectsSettings(settings: Record<string, unknown>): { settings: 
   const children = getArray(layoutOverride, "children");
   if (!children) return { settings, changed: false };
 
-  const buttonOne = children.find((child) => isRecord(child) && child.id === PROJECT_BUTTON_ONE_ID);
-  const buttonTwo = children.find((child) => isRecord(child) && child.id === PROJECT_BUTTON_TWO_ID);
-  const buttonOneStyle = isRecord(buttonOne) ? getObject(buttonOne, "style") : null;
-  const buttonTwoStyle = isRecord(buttonTwo) ? getObject(buttonTwo, "style") : null;
+  const buttonOne = children.find(
+    (child) => isRecord(child) && child.id === PROJECT_BUTTON_ONE_ID,
+  );
+  const buttonTwo = children.find(
+    (child) => isRecord(child) && child.id === PROJECT_BUTTON_TWO_ID,
+  );
+  const buttonOneStyle = isRecord(buttonOne)
+    ? getObject(buttonOne, "style")
+    : null;
+  const buttonTwoStyle = isRecord(buttonTwo)
+    ? getObject(buttonTwo, "style")
+    : null;
 
   const migrationDetected = Boolean(
-    (buttonOneStyle && (buttonOneStyle.positionMode === "anchored" || buttonOneStyle.anchorSource === "items")) ||
-    (buttonTwoStyle && (buttonTwoStyle.positionMode === "anchored" || buttonTwoStyle.anchorSource === "items")) ||
-    Object.values(instanceStyles).some((value) => isRecord(value) && "offsetReferenceWidth" in value),
+    (buttonOneStyle &&
+      (buttonOneStyle.positionMode === "anchored" ||
+        buttonOneStyle.anchorSource === "items")) ||
+    (buttonTwoStyle &&
+      (buttonTwoStyle.positionMode === "anchored" ||
+        buttonTwoStyle.anchorSource === "items")) ||
+    Object.values(instanceStyles).some(
+      (value) => isRecord(value) && "offsetReferenceWidth" in value,
+    ),
   );
 
   if (!migrationDetected) return { settings, changed: false };
@@ -148,7 +165,10 @@ function repairProjectsSettings(settings: Record<string, unknown>): { settings: 
   return { settings: next, changed: true };
 }
 
-function repairImpactSettings(settings: Record<string, unknown>): { settings: Record<string, unknown>; changed: boolean } {
+function repairImpactSettings(settings: Record<string, unknown>): {
+  settings: Record<string, unknown>;
+  changed: boolean;
+} {
   const next = cloneJson(settings);
   const root = next as JsonObject;
   const instanceStyles = getObject(root, "instanceElementStyles");
@@ -158,7 +178,9 @@ function repairImpactSettings(settings: Record<string, unknown>): { settings: Re
   const metricStyle = instanceStyles[key];
   if (!isRecord(metricStyle)) return { settings, changed: false };
 
-  const migrationDetected = metricStyle.positionMode === "flow" || "offsetReferenceWidth" in metricStyle;
+  const migrationDetected =
+    metricStyle.positionMode === "flow" ||
+    "offsetReferenceWidth" in metricStyle;
   if (!migrationDetected) return { settings, changed: false };
 
   clearResponsiveMigrationMetadata(metricStyle);
@@ -183,7 +205,10 @@ export function repairPhase2LayoutRegression(site: InstitutionalSite): {
   const pages = site.pages.map((page) => {
     let pageChanged = false;
     const sections = page.sections.map((section) => {
-      if (section.id === PROJECTS_SECTION_ID && section.settings.visualStyle === "profundezas-projects") {
+      if (
+        section.id === PROJECTS_SECTION_ID &&
+        section.settings.visualStyle === "profundezas-projects"
+      ) {
         const repaired = repairProjectsSettings(section.settings);
         if (repaired.changed) {
           pageChanged = true;
@@ -193,7 +218,10 @@ export function repairPhase2LayoutRegression(site: InstitutionalSite): {
         }
       }
 
-      if (section.id === IMPACT_SECTION_ID && section.settings.visualStyle === "profundezas-impact") {
+      if (
+        section.id === IMPACT_SECTION_ID &&
+        section.settings.visualStyle === "profundezas-impact"
+      ) {
         const repaired = repairImpactSettings(section.settings);
         if (repaired.changed) {
           pageChanged = true;

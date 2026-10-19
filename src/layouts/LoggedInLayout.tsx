@@ -71,8 +71,11 @@ const COMMUNITY_ITEM: NavItem = {
   to: "/app/comunidade",
 };
 
-const MESSAGES_ITEM: NavItem = { label: "Mensagens", icon: FiMessageCircle, to: "/app/mensagens" };
-
+const MESSAGES_ITEM: NavItem = {
+  label: "Mensagens",
+  icon: FiMessageCircle,
+  to: "/app/mensagens",
+};
 
 function NavEntry({
   item,
@@ -190,7 +193,9 @@ export default function LoggedInLayout() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    messagesPathRef.current = /^\/app\/mensagens(?:\/|$)/.test(location.pathname);
+    messagesPathRef.current = /^\/app\/mensagens(?:\/|$)/.test(
+      location.pathname,
+    );
   }, [location.pathname]);
 
   useEffect(() => {
@@ -212,17 +217,33 @@ export default function LoggedInLayout() {
         return [
           COMMUNITY_ITEM,
           MESSAGES_ITEM,
-                    { label: "Sites", icon: FiGlobe, to: "/app/site-institucional" },
-          { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
-          { label: "Módulos", icon: FiBox, to: "/em-construcao?feature=modulos" },
-          { label: "Eventos", icon: FiCalendar, to: "/em-construcao?feature=eventos" },
+          { label: "Sites", icon: FiGlobe, to: "/app/site-institucional" },
+          {
+            label: "Projetos",
+            icon: FiFolder,
+            to: "/em-construcao?feature=projetos",
+          },
+          {
+            label: "Módulos",
+            icon: FiBox,
+            to: "/em-construcao?feature=modulos",
+          },
+          {
+            label: "Eventos",
+            icon: FiCalendar,
+            to: "/em-construcao?feature=eventos",
+          },
         ];
       }
 
       return [
         COMMUNITY_ITEM,
         MESSAGES_ITEM,
-        { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
+        {
+          label: "Projetos",
+          icon: FiFolder,
+          to: "/em-construcao?feature=projetos",
+        },
       ];
     }
 
@@ -231,28 +252,56 @@ export default function LoggedInLayout() {
         return [
           COMMUNITY_ITEM,
           MESSAGES_ITEM,
-          { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
+          {
+            label: "Explorar",
+            icon: FiCompass,
+            to: "/em-construcao?feature=explorar",
+          },
           { label: "Templates", icon: FiLayers, to: "/app/design/templates" },
           { label: "Variações", icon: FiPenTool, to: "/app/design/variantes" },
-          { label: "Recursos visuais", icon: FiDroplet, to: "/app/design/recursos" },
+          {
+            label: "Recursos visuais",
+            icon: FiDroplet,
+            to: "/app/design/recursos",
+          },
         ];
       }
 
       return [
         COMMUNITY_ITEM,
         MESSAGES_ITEM,
-        { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
-        { label: "Projetos", icon: FiFolder, to: "/em-construcao?feature=projetos" },
-        { label: "Eventos", icon: FiCalendar, to: "/em-construcao?feature=eventos" },
+        {
+          label: "Explorar",
+          icon: FiCompass,
+          to: "/em-construcao?feature=explorar",
+        },
+        {
+          label: "Projetos",
+          icon: FiFolder,
+          to: "/em-construcao?feature=projetos",
+        },
+        {
+          label: "Eventos",
+          icon: FiCalendar,
+          to: "/em-construcao?feature=eventos",
+        },
       ];
     }
 
     return [
       COMMUNITY_ITEM,
       MESSAGES_ITEM,
-      { label: "Explorar", icon: FiCompass, to: "/em-construcao?feature=explorar" },
+      {
+        label: "Explorar",
+        icon: FiCompass,
+        to: "/em-construcao?feature=explorar",
+      },
     ];
-  })().map((item) => (item.to === "/app/mensagens" ? { ...item, badge: messageUnreadCount || undefined } : item));
+  })().map((item) =>
+    item.to === "/app/mensagens"
+      ? { ...item, badge: messageUnreadCount || undefined }
+      : item,
+  );
 
   useEffect(() => {
     if (!user?.id) return;
@@ -263,7 +312,12 @@ export default function LoggedInLayout() {
       try {
         const total = await fetchGlobalMessageUnreadCount();
         if (cancelled) return;
-        if (notify && !messagesPathRef.current && messageUnreadRef.current !== null && total > messageUnreadRef.current) {
+        if (
+          notify &&
+          !messagesPathRef.current &&
+          messageUnreadRef.current !== null &&
+          total > messageUnreadRef.current
+        ) {
           setMessageToast(true);
         }
         setMessageUnreadCount(total);
@@ -278,30 +332,47 @@ export default function LoggedInLayout() {
       .channel(`cong:message-user:${user.id}`, { config: { private: true } })
       .on("broadcast", { event: "message_changed" }, ({ payload }) => {
         if (cancelled) return;
-        window.dispatchEvent(new CustomEvent("cong:messages-event", { detail: payload }));
+        window.dispatchEvent(
+          new CustomEvent("cong:messages-event", { detail: payload }),
+        );
         void loadMessageBadges(true);
       });
 
     async function join() {
       const token = getStoredAuthToken();
       if (!token) {
-        window.dispatchEvent(new CustomEvent("cong:messages-status", { detail: "offline" }));
+        window.dispatchEvent(
+          new CustomEvent("cong:messages-status", { detail: "offline" }),
+        );
         return;
       }
       await supabase.realtime.setAuth(token);
       if (cancelled) return;
       channel.subscribe((status, error) => {
         if (cancelled) return;
-        const nextStatus = status === "SUBSCRIBED" ? "connected" : status === "CHANNEL_ERROR" || status === "TIMED_OUT" ? "offline" : "connecting";
+        const nextStatus =
+          status === "SUBSCRIBED"
+            ? "connected"
+            : status === "CHANNEL_ERROR" || status === "TIMED_OUT"
+              ? "offline"
+              : "connecting";
         if (status === "SUBSCRIBED") channelActive = true;
-        window.dispatchEvent(new CustomEvent("cong:messages-status", { detail: nextStatus }));
-        if (error) console.warn("CONG Realtime: assinatura de mensagens não estabelecida", error.message);
+        window.dispatchEvent(
+          new CustomEvent("cong:messages-status", { detail: nextStatus }),
+        );
+        if (error)
+          console.warn(
+            "CONG Realtime: assinatura de mensagens não estabelecida",
+            error.message,
+          );
         if (status === "SUBSCRIBED" && channelActive) void loadMessageBadges();
       });
     }
     void join().catch((error: unknown) => {
       console.warn("CONG Realtime: não foi possível conectar", error);
-      window.dispatchEvent(new CustomEvent("cong:messages-status", { detail: "offline" }));
+      window.dispatchEvent(
+        new CustomEvent("cong:messages-status", { detail: "offline" }),
+      );
     });
 
     const poll = window.setInterval(() => {
@@ -311,7 +382,9 @@ export default function LoggedInLayout() {
       const token = getStoredAuthToken();
       if (token) void supabase.realtime.setAuth(token);
     }, 60000);
-    const onLocalChange = () => { void loadMessageBadges(); };
+    const onLocalChange = () => {
+      void loadMessageBadges();
+    };
     window.addEventListener("cong:messages-local-change", onLocalChange);
     return () => {
       cancelled = true;
@@ -625,7 +698,6 @@ export default function LoggedInLayout() {
               />
             ) : null}
           </div>
-
         </nav>
 
         <div className={styles.sidebarFooter}>
@@ -679,8 +751,12 @@ export default function LoggedInLayout() {
         />
       ) : null}
 
-      <section className={`${styles.workspace} ${isMessagesView ? styles.workspaceMessages : ""}`}>
-        <header className={`${styles.topbar} ${isMessagesView ? styles.topbarMessages : ""}`}>
+      <section
+        className={`${styles.workspace} ${isMessagesView ? styles.workspaceMessages : ""}`}
+      >
+        <header
+          className={`${styles.topbar} ${isMessagesView ? styles.topbarMessages : ""}`}
+        >
           <div className={styles.topbarStart}>
             <button
               type="button"
@@ -749,11 +825,17 @@ export default function LoggedInLayout() {
               type="button"
               className={styles.topbarCreateButton}
               onClick={() => {
-                if (workspace.kind === "organization" && workspace.organization.organizationType === "ngo") {
+                if (
+                  workspace.kind === "organization" &&
+                  workspace.organization.organizationType === "ngo"
+                ) {
                   navigate("/app/site-institucional?create=1");
                   return;
                 }
-                if (workspace.kind === "collaboration" && workspace.profile.role === "designer") {
+                if (
+                  workspace.kind === "collaboration" &&
+                  workspace.profile.role === "designer"
+                ) {
                   navigate("/app/design/templates?create=1");
                   return;
                 }
@@ -762,9 +844,11 @@ export default function LoggedInLayout() {
             >
               <FiPlus aria-hidden="true" />
               <span>
-                {workspace.kind === "organization" && workspace.organization.organizationType === "ngo"
+                {workspace.kind === "organization" &&
+                workspace.organization.organizationType === "ngo"
                   ? "Criar site"
-                  : workspace.kind === "collaboration" && workspace.profile.role === "designer"
+                  : workspace.kind === "collaboration" &&
+                      workspace.profile.role === "designer"
                     ? "Criar template"
                     : "Criar"}
               </span>
@@ -931,8 +1015,16 @@ export default function LoggedInLayout() {
         >
           <Outlet />
           {messageToast && !isMessagesView ? (
-            <button type="button" className={styles.messageToast} onClick={() => { setMessageToast(false); navigate("/app/mensagens"); }}>
-              <FiMessageCircle aria-hidden="true" /> <span>Você recebeu uma nova mensagem</span>
+            <button
+              type="button"
+              className={styles.messageToast}
+              onClick={() => {
+                setMessageToast(false);
+                navigate("/app/mensagens");
+              }}
+            >
+              <FiMessageCircle aria-hidden="true" />{" "}
+              <span>Você recebeu uma nova mensagem</span>
               <FiChevronRight aria-hidden="true" />
             </button>
           ) : null}

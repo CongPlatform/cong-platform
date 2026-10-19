@@ -1,7 +1,10 @@
 import pool from "../config/database.js";
 import { AppError } from "../utils/app-error.js";
 import { getAvatarPublicUrl } from "./avatar.service.js";
-import { emailModerationDecision, emailNewCommunityReport } from "./moderation-email.service.js";
+import {
+  emailModerationDecision,
+  emailNewCommunityReport,
+} from "./moderation-email.service.js";
 
 export type CommunitySearchResultType =
   "post" | "user" | "organization" | "event";
@@ -53,7 +56,10 @@ export interface CommunityModerationReport {
     excerpt: string | null;
     authorUserId: string | null;
   };
-  restriction: { status: "suspended" | "banned"; suspendedUntil: Date | null } | null;
+  restriction: {
+    status: "suspended" | "banned";
+    suspendedUntil: Date | null;
+  } | null;
   canRestrictUsers: boolean;
   contentHidden: boolean;
 }
@@ -391,7 +397,6 @@ export async function blockCommunityUser(
   } finally {
     client.release();
   }
-
 }
 
 export async function unblockCommunityUser(
@@ -536,9 +541,16 @@ export async function createCommunityReport(
     await notifyCommunityModerators(viewer.id, report.id, input);
     // O registro e o aviso interno já existem mesmo se o provedor de e-mail falhar.
     try {
-      await emailNewCommunityReport({ reportId: report.id, reporterUserId: viewer.id, targetType: input.targetType });
+      await emailNewCommunityReport({
+        reportId: report.id,
+        reporterUserId: viewer.id,
+        targetType: input.targetType,
+      });
     } catch (error) {
-      console.error("Não foi possível consultar os e-mails dos moderadores", { reportId: report.id, error });
+      console.error("Não foi possível consultar os e-mails dos moderadores", {
+        reportId: report.id,
+        error,
+      });
     }
     return report;
   } catch (error) {
@@ -627,18 +639,18 @@ export async function listCommunityModerationReports(
 
   try {
     return await Promise.all(
-    result.rows.map(async (row): Promise<CommunityModerationReport> => {
-      let targetLabel = "Conteúdo indisponível";
-      let targetExcerpt: string | null = null;
-      let targetAuthorUserId: string | null = null;
+      result.rows.map(async (row): Promise<CommunityModerationReport> => {
+        let targetLabel = "Conteúdo indisponível";
+        let targetExcerpt: string | null = null;
+        let targetAuthorUserId: string | null = null;
 
-      if (row.postId) {
-        const target = await pool.query<{
-          title: string;
-          excerpt: string | null;
-          authorUserId: string;
-        }>(
-          `
+        if (row.postId) {
+          const target = await pool.query<{
+            title: string;
+            excerpt: string | null;
+            authorUserId: string;
+          }>(
+            `
             select
               title,
               left(coalesce(nullif(description, ''), nullif(content, ''), title), 320) as excerpt,
@@ -647,19 +659,19 @@ export async function listCommunityModerationReports(
             where id = $1
             limit 1
           `,
-          [row.postId],
-        );
-        if (target.rows[0]) {
-          targetLabel = target.rows[0].title;
-          targetExcerpt = target.rows[0].excerpt;
-          targetAuthorUserId = target.rows[0].authorUserId;
-        }
-      } else if (row.commentId) {
-        const target = await pool.query<{
-          content: string;
-          authorUserId: string;
-        }>(
-          `
+            [row.postId],
+          );
+          if (target.rows[0]) {
+            targetLabel = target.rows[0].title;
+            targetExcerpt = target.rows[0].excerpt;
+            targetAuthorUserId = target.rows[0].authorUserId;
+          }
+        } else if (row.commentId) {
+          const target = await pool.query<{
+            content: string;
+            authorUserId: string;
+          }>(
+            `
             select
               left(content, 320) as content,
               author_user_id as "authorUserId"
@@ -667,20 +679,20 @@ export async function listCommunityModerationReports(
             where id = $1
             limit 1
           `,
-          [row.commentId],
-        );
-        if (target.rows[0]) {
-          targetLabel =
-            target.rows[0].content.slice(0, 120) || "Comentário denunciado";
-          targetExcerpt = target.rows[0].content;
-          targetAuthorUserId = target.rows[0].authorUserId;
-        }
-      } else if (row.reportedUserId) {
-        const target = await pool.query<{
-          displayName: string;
-          username: string | null;
-        }>(
-          `
+            [row.commentId],
+          );
+          if (target.rows[0]) {
+            targetLabel =
+              target.rows[0].content.slice(0, 120) || "Comentário denunciado";
+            targetExcerpt = target.rows[0].content;
+            targetAuthorUserId = target.rows[0].authorUserId;
+          }
+        } else if (row.reportedUserId) {
+          const target = await pool.query<{
+            displayName: string;
+            username: string | null;
+          }>(
+            `
             select
               coalesce(display_name, name) as "displayName",
               username
@@ -688,55 +700,66 @@ export async function listCommunityModerationReports(
             where id = $1
             limit 1
           `,
-          [row.reportedUserId],
-        );
-        if (target.rows[0]) {
-          targetLabel = target.rows[0].displayName;
-          targetExcerpt = target.rows[0].username
-            ? `@${target.rows[0].username}`
-            : null;
-          targetAuthorUserId = row.reportedUserId;
+            [row.reportedUserId],
+          );
+          if (target.rows[0]) {
+            targetLabel = target.rows[0].displayName;
+            targetExcerpt = target.rows[0].username
+              ? `@${target.rows[0].username}`
+              : null;
+            targetAuthorUserId = row.reportedUserId;
+          }
         }
-      }
 
-      const restriction = targetAuthorUserId && canRestrictUsers ? await pool.query<{
-        status: "suspended" | "banned"; suspendedUntil: Date | null;
-      }>(`select status, suspended_until as "suspendedUntil"
+        const restriction =
+          targetAuthorUserId && canRestrictUsers
+            ? await pool.query<{
+                status: "suspended" | "banned";
+                suspendedUntil: Date | null;
+              }>(
+                `select status, suspended_until as "suspendedUntil"
           from public.community_user_sanctions
           where user_id = $1 and (status = 'banned' or suspended_until > now())`,
-          [targetAuthorUserId]) : null;
-      const contentState = (row.postId || row.commentId) ? await pool.query<{ state: string }>(
-        `select state from public.community_content_moderation
+                [targetAuthorUserId],
+              )
+            : null;
+        const contentState =
+          row.postId || row.commentId
+            ? await pool.query<{ state: string }>(
+                `select state from public.community_content_moderation
          where target_type = $1 and target_id = $2 limit 1`,
-        [row.postId ? "post" : "comment", row.postId ?? row.commentId],
-      ) : null;
-      return {
-        contentHidden: contentState?.rows[0]?.state === "hidden",
-        restriction: restriction?.rows[0] ?? null,
-        canRestrictUsers,
-        id: row.id,
-        targetType: row.postId ? "post" : row.commentId ? "comment" : "user",
-        targetId: row.postId ?? row.commentId ?? row.reportedUserId ?? "",
-        reason: row.reason,
-        details: row.details,
-        status: row.status,
-        createdAt: row.createdAt,
-        reporter: {
-          id: row.reporterId,
-          displayName: row.reporterName,
-          username: row.reporterUsername,
-        },
-        target: {
-          label: targetLabel,
-          excerpt: targetExcerpt,
-          authorUserId: targetAuthorUserId,
-        },
-      };
-    }),
-  );
+                [row.postId ? "post" : "comment", row.postId ?? row.commentId],
+              )
+            : null;
+        return {
+          contentHidden: contentState?.rows[0]?.state === "hidden",
+          restriction: restriction?.rows[0] ?? null,
+          canRestrictUsers,
+          id: row.id,
+          targetType: row.postId ? "post" : row.commentId ? "comment" : "user",
+          targetId: row.postId ?? row.commentId ?? row.reportedUserId ?? "",
+          reason: row.reason,
+          details: row.details,
+          status: row.status,
+          createdAt: row.createdAt,
+          reporter: {
+            id: row.reporterId,
+            displayName: row.reporterName,
+            username: row.reporterUsername,
+          },
+          target: {
+            label: targetLabel,
+            excerpt: targetExcerpt,
+            authorUserId: targetAuthorUserId,
+          },
+        };
+      }),
+    );
   } catch (error) {
-    const code = typeof error === "object" && error !== null && "code" in error
-      ? String((error as { code?: unknown }).code ?? "") : "";
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? String((error as { code?: unknown }).code ?? "")
+        : "";
     if (code === "42P01" || code === "42703") {
       console.error("Estrutura SQL de moderação incompleta", { code });
       throw new AppError(
@@ -752,7 +775,16 @@ export async function listCommunityModerationReports(
 export async function reviewCommunityReport(
   authUserId: string,
   reportId: string,
-  action: "review" | "dismiss" | "hide_content" | "restore_content" | "warn_user" | "suspend_24h" | "suspend_7d" | "ban_user" | "lift_restriction",
+  action:
+    | "review"
+    | "dismiss"
+    | "hide_content"
+    | "restore_content"
+    | "warn_user"
+    | "suspend_24h"
+    | "suspend_7d"
+    | "ban_user"
+    | "lift_restriction",
   note = "",
   guidance = "",
   responseHours: 24 | 168 | null = null,
@@ -832,38 +864,83 @@ export async function reviewCommunityReport(
     );
   }
   if (responseHours !== null && responseHours !== 24 && responseHours !== 168) {
-    throw new AppError("Prazo de resposta inválido.", 400, "MODERATION_DEADLINE_INVALID");
+    throw new AppError(
+      "Prazo de resposta inválido.",
+      400,
+      "MODERATION_DEADLINE_INVALID",
+    );
   }
   if (guidance.trim().length > 600) {
-    throw new AppError("As orientações devem ter até 600 caracteres.", 400, "MODERATION_GUIDANCE_TOO_LONG");
+    throw new AppError(
+      "As orientações devem ter até 600 caracteres.",
+      400,
+      "MODERATION_GUIDANCE_TOO_LONG",
+    );
   }
-  const userAction = ["warn_user", "suspend_24h", "suspend_7d", "ban_user", "lift_restriction"].includes(action);
-  const restricting = ["suspend_24h", "suspend_7d", "ban_user", "lift_restriction"].includes(action);
+  const userAction = [
+    "warn_user",
+    "suspend_24h",
+    "suspend_7d",
+    "ban_user",
+    "lift_restriction",
+  ].includes(action);
+  const restricting = [
+    "suspend_24h",
+    "suspend_7d",
+    "ban_user",
+    "lift_restriction",
+  ].includes(action);
   if (userAction && !report.targetAuthorUserId) {
-    throw new AppError("A denúncia não possui um usuário válido.", 400, "COMMUNITY_TARGET_INVALID");
+    throw new AppError(
+      "A denúncia não possui um usuário válido.",
+      400,
+      "COMMUNITY_TARGET_INVALID",
+    );
   }
   if (userAction && (note.trim().length < 5 || note.trim().length > 1200)) {
-    throw new AppError("Informe um motivo de pelo menos 5 caracteres.", 400, "MODERATION_REASON_REQUIRED");
+    throw new AppError(
+      "Informe um motivo de pelo menos 5 caracteres.",
+      400,
+      "MODERATION_REASON_REQUIRED",
+    );
   }
   if (userAction && report.targetAuthorUserId === moderator.id) {
-    throw new AppError("Não é permitido moderar a própria conta.", 403, "MODERATION_SELF_FORBIDDEN");
+    throw new AppError(
+      "Não é permitido moderar a própria conta.",
+      403,
+      "MODERATION_SELF_FORBIDDEN",
+    );
   }
   if (userAction) {
     const target = await pool.query<{ role: string | null }>(
       `select r.code as role from public.users u left join public.roles r on r.id = u.platform_role_id where u.id = $1`,
       [report.targetAuthorUserId],
     );
-    if (!target.rows[0]) throw new AppError("Usuário não encontrado.", 404, "COMMUNITY_TARGET_NOT_FOUND");
+    if (!target.rows[0])
+      throw new AppError(
+        "Usuário não encontrado.",
+        404,
+        "COMMUNITY_TARGET_NOT_FOUND",
+      );
     if (target.rows[0].role === "platform_admin") {
-      throw new AppError("Contas administradoras não podem ser sancionadas por este painel.", 403, "MODERATION_ADMIN_PROTECTED");
+      throw new AppError(
+        "Contas administradoras não podem ser sancionadas por este painel.",
+        403,
+        "MODERATION_ADMIN_PROTECTED",
+      );
     }
     if (restricting && target.rows[0].role === "community_moderator") {
       const admin = await pool.query<{ allowed: boolean }>(
         `select exists(select 1 from public.users u join public.roles r on r.id = u.platform_role_id
-         where u.id = $1 and r.code = 'platform_admin') as allowed`, [moderator.id],
+         where u.id = $1 and r.code = 'platform_admin') as allowed`,
+        [moderator.id],
       );
       if (!admin.rows[0]?.allowed) {
-        throw new AppError("Apenas administradores podem restringir contas de moderadores.", 403, "MODERATION_MODERATOR_PROTECTED");
+        throw new AppError(
+          "Apenas administradores podem restringir contas de moderadores.",
+          403,
+          "MODERATION_MODERATOR_PROTECTED",
+        );
       }
     }
   }
@@ -872,43 +949,94 @@ export async function reviewCommunityReport(
     await client.query("begin");
     // Serializa decisões e rejeita repetição: um relatório resolvido não pode
     // ser "revisado" infinitamente nem receber a mesma sanção duas vezes.
-    const locked = await client.query<{ status: CommunityModerationReport["status"] }>(
-      `select status from public.community_reports where id = $1 for update`, [reportId],
-    );
+    const locked = await client.query<{
+      status: CommunityModerationReport["status"];
+    }>(`select status from public.community_reports where id = $1 for update`, [
+      reportId,
+    ]);
     const previousStatus = locked.rows[0]?.status;
-    if (!previousStatus) throw new AppError("Denúncia não encontrada.", 404, "COMMUNITY_REPORT_NOT_FOUND");
-    const reversible = action === "lift_restriction" || action === "restore_content";
-    const escalation = previousStatus === "reviewed" && userAction && action !== "lift_restriction";
-    if (previousStatus !== "pending" && !(reversible && previousStatus === "actioned") && !escalation) {
-      throw new AppError("Esta denúncia já foi concluída. Atualize a lista para consultar a decisão.", 409, "COMMUNITY_REPORT_ALREADY_RESOLVED");
+    if (!previousStatus)
+      throw new AppError(
+        "Denúncia não encontrada.",
+        404,
+        "COMMUNITY_REPORT_NOT_FOUND",
+      );
+    const reversible =
+      action === "lift_restriction" || action === "restore_content";
+    const escalation =
+      previousStatus === "reviewed" &&
+      userAction &&
+      action !== "lift_restriction";
+    if (
+      previousStatus !== "pending" &&
+      !(reversible && previousStatus === "actioned") &&
+      !escalation
+    ) {
+      throw new AppError(
+        "Esta denúncia já foi concluída. Atualize a lista para consultar a decisão.",
+        409,
+        "COMMUNITY_REPORT_ALREADY_RESOLVED",
+      );
     }
-    if (["suspend_24h", "suspend_7d", "ban_user"].includes(action) && report.targetAuthorUserId) {
-      const existing = await client.query<{ status: string; suspendedUntil: Date | null }>(
+    if (
+      ["suspend_24h", "suspend_7d", "ban_user"].includes(action) &&
+      report.targetAuthorUserId
+    ) {
+      const existing = await client.query<{
+        status: string;
+        suspendedUntil: Date | null;
+      }>(
         `select status, suspended_until as "suspendedUntil" from public.community_user_sanctions
-         where user_id = $1 for update`, [report.targetAuthorUserId],
+         where user_id = $1 for update`,
+        [report.targetAuthorUserId],
       );
       if (existing.rows[0]?.status === "banned") {
-        throw new AppError("A conta já está banida. Reavalie a restrição existente.", 409, "MODERATION_ALREADY_BANNED");
+        throw new AppError(
+          "A conta já está banida. Reavalie a restrição existente.",
+          409,
+          "MODERATION_ALREADY_BANNED",
+        );
       }
     }
     if (action === "lift_restriction") {
-      if (!report.targetAuthorUserId) throw new AppError("Usuário inválido.", 400, "COMMUNITY_TARGET_INVALID");
-      const activeSanction = await client.query(`select 1 from public.community_user_sanctions
+      if (!report.targetAuthorUserId)
+        throw new AppError(
+          "Usuário inválido.",
+          400,
+          "COMMUNITY_TARGET_INVALID",
+        );
+      const activeSanction = await client.query(
+        `select 1 from public.community_user_sanctions
         where user_id = $1 and (status = 'banned' or suspended_until > now()) for update`,
-        [report.targetAuthorUserId]);
-      if (!activeSanction.rowCount) throw new AppError("Esta conta não possui restrição ativa.", 409, "MODERATION_NOT_RESTRICTED");
+        [report.targetAuthorUserId],
+      );
+      if (!activeSanction.rowCount)
+        throw new AppError(
+          "Esta conta não possui restrição ativa.",
+          409,
+          "MODERATION_NOT_RESTRICTED",
+        );
     }
     if (action === "restore_content") {
-      const visibleState = await client.query(`select 1 from public.community_content_moderation
+      const visibleState = await client.query(
+        `select 1 from public.community_content_moderation
         where target_type = $1 and target_id = $2 and state = 'hidden' for update`,
-        [report.postId ? "post" : "comment", report.postId ?? report.commentId]);
-      if (!visibleState.rowCount) throw new AppError("O conteúdo já está visível.", 409, "MODERATION_CONTENT_ALREADY_VISIBLE");
+        [report.postId ? "post" : "comment", report.postId ?? report.commentId],
+      );
+      if (!visibleState.rowCount)
+        throw new AppError(
+          "O conteúdo já está visível.",
+          409,
+          "MODERATION_CONTENT_ALREADY_VISIBLE",
+        );
     }
     const status =
       action === "dismiss"
         ? "dismissed"
-        : action === "hide_content" || action === "restore_content" || userAction ||
-          (action === "review" && Boolean(report.postId || report.commentId))
+        : action === "hide_content" ||
+            action === "restore_content" ||
+            userAction ||
+            (action === "review" && Boolean(report.postId || report.commentId))
           ? "actioned"
           : "reviewed";
     await client.query(
@@ -937,7 +1065,13 @@ export async function reviewCommunityReport(
     // Uma denúncia procedente sobre publicação/comentário deve retirar o
     // conteúdo da comunidade na mesma transação que registra a decisão.
     // Dispensar não oculta; restaurar continua sendo uma ação explícita.
-    const contentDecision = ["review", "warn_user", "suspend_24h", "suspend_7d", "ban_user"].includes(action);
+    const contentDecision = [
+      "review",
+      "warn_user",
+      "suspend_24h",
+      "suspend_7d",
+      "ban_user",
+    ].includes(action);
     if (contentDecision && (report.postId || report.commentId)) {
       const targetType = report.postId ? "post" : "comment";
       const targetId = report.postId ?? report.commentId;
@@ -948,7 +1082,13 @@ export async function reviewCommunityReport(
          on conflict (target_type, target_id) do update
            set state = 'hidden', reason = excluded.reason, source = 'manual',
                updated_by_user_id = excluded.updated_by_user_id, updated_at = now()`,
-        [targetType, targetId, note.trim().slice(0, 1200) || 'Denúncia analisada e considerada procedente.', moderator.id],
+        [
+          targetType,
+          targetId,
+          note.trim().slice(0, 1200) ||
+            "Denúncia analisada e considerada procedente.",
+          moderator.id,
+        ],
       );
       await notifyModerationTarget(client, {
         recipientUserId: report.targetAuthorUserId,
@@ -962,7 +1102,10 @@ export async function reviewCommunityReport(
     // A ocultação por limite de denúncias é provisória. Assim que as denúncias
     // forem revisadas e a contagem voltar abaixo do limite, reexiba somente
     // conteúdos ocultados AUTOMATICAMENTE; nunca desfaça decisão manual.
-    if ((action === "dismiss" || action === "review") && (report.postId || report.commentId)) {
+    if (
+      (action === "dismiss" || action === "review") &&
+      (report.postId || report.commentId)
+    ) {
       const targetType = report.postId ? "post" : "comment";
       const targetId = report.postId ?? report.commentId;
       const reportColumn = report.postId ? "post_id" : "comment_id";
@@ -995,38 +1138,82 @@ export async function reviewCommunityReport(
       }
     }
     if (userAction && report.targetAuthorUserId) {
-      if (["suspend_24h", "suspend_7d", "ban_user"].includes(action) && report.targetAuthorUserId) {
-      const existing = await client.query<{ status: string; suspendedUntil: Date | null }>(
-        `select status, suspended_until as "suspendedUntil" from public.community_user_sanctions
-         where user_id = $1 for update`, [report.targetAuthorUserId],
-      );
-      if (existing.rows[0]?.status === "banned") {
-        throw new AppError("A conta já está banida. Reavalie a restrição existente.", 409, "MODERATION_ALREADY_BANNED");
+      if (
+        ["suspend_24h", "suspend_7d", "ban_user"].includes(action) &&
+        report.targetAuthorUserId
+      ) {
+        const existing = await client.query<{
+          status: string;
+          suspendedUntil: Date | null;
+        }>(
+          `select status, suspended_until as "suspendedUntil" from public.community_user_sanctions
+         where user_id = $1 for update`,
+          [report.targetAuthorUserId],
+        );
+        if (existing.rows[0]?.status === "banned") {
+          throw new AppError(
+            "A conta já está banida. Reavalie a restrição existente.",
+            409,
+            "MODERATION_ALREADY_BANNED",
+          );
+        }
       }
-    }
-    if (action === "lift_restriction") {
-        await client.query(`delete from public.community_user_sanctions where user_id = $1`, [report.targetAuthorUserId]);
+      if (action === "lift_restriction") {
+        await client.query(
+          `delete from public.community_user_sanctions where user_id = $1`,
+          [report.targetAuthorUserId],
+        );
       } else if (restricting) {
-        const hours = action === "suspend_24h" ? 24 : action === "suspend_7d" ? 168 : null;
-        await client.query(`insert into public.community_user_sanctions
+        const hours =
+          action === "suspend_24h" ? 24 : action === "suspend_7d" ? 168 : null;
+        await client.query(
+          `insert into public.community_user_sanctions
           (user_id, status, suspended_until, reason, updated_by_user_id)
           values ($1,$2,case when $3::int is null then null else now() + ($3::int * interval '1 hour') end,$4,$5)
           on conflict (user_id) do update set status = excluded.status,
             suspended_until = excluded.suspended_until, reason = excluded.reason,
             updated_by_user_id = excluded.updated_by_user_id, updated_at = now()`,
-          [report.targetAuthorUserId, action === "ban_user" ? "banned" : "suspended", hours, note.trim(), moderator.id]);
+          [
+            report.targetAuthorUserId,
+            action === "ban_user" ? "banned" : "suspended",
+            hours,
+            note.trim(),
+            moderator.id,
+          ],
+        );
       }
       // A identidade de quem aplicou a medida fica somente na auditoria administrativa.
       // Não incluir moderator.id nas notificações entregues ao usuário afetado.
-      await client.query(`insert into public.community_notifications
+      await client.query(
+        `insert into public.community_notifications
         (user_id, actor_user_id, notification_type, dedupe_key, moderation_message)
         values ($1, null, 'moderation_action', $2, $3)`,
-        [report.targetAuthorUserId, `moderation:${reportId}:${action}:${Date.now()}`,
-         `${action === "warn_user" ? "Advertência" : action === "ban_user" ? "Banimento" : action === "lift_restriction" ? "Restrição removida" : "Suspensão"}: ${note.trim()}`]);
+        [
+          report.targetAuthorUserId,
+          `moderation:${reportId}:${action}:${Date.now()}`,
+          `${action === "warn_user" ? "Advertência" : action === "ban_user" ? "Banimento" : action === "lift_restriction" ? "Restrição removida" : "Suspensão"}: ${note.trim()}`,
+        ],
+      );
     }
     await client.query(
       `insert into public.community_moderation_actions (report_id, moderator_user_id, action, note) values ($1,$2,$3,$4)`,
-      [reportId, moderator.id, action, [note.trim(), guidance.trim() ? `Orientação ao destinatário: ${guidance.trim()}` : "", responseHours ? `Prazo informativo de resposta: ${responseHours / 24} dia(s)` : ""].filter(Boolean).join("\n").slice(0, 1200)],
+      [
+        reportId,
+        moderator.id,
+        action,
+        [
+          note.trim(),
+          guidance.trim()
+            ? `Orientação ao destinatário: ${guidance.trim()}`
+            : "",
+          responseHours
+            ? `Prazo informativo de resposta: ${responseHours / 24} dia(s)`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+          .slice(0, 1200),
+      ],
     );
     if (action === "hide_content" || action === "restore_content") {
       await notifyModerationTarget(client, {
@@ -1046,19 +1233,43 @@ export async function reviewCommunityReport(
     client.release();
   }
   // O e-mail só é disparado após a transação ser confirmada.
-  if (report.targetAuthorUserId && ["warn_user", "suspend_24h", "suspend_7d", "ban_user", "lift_restriction", "hide_content", "restore_content"].includes(action)) {
+  if (
+    report.targetAuthorUserId &&
+    [
+      "warn_user",
+      "suspend_24h",
+      "suspend_7d",
+      "ban_user",
+      "lift_restriction",
+      "hide_content",
+      "restore_content",
+    ].includes(action)
+  ) {
     await emailModerationDecision({
       reportId,
       recipientUserId: report.targetAuthorUserId,
-      action: action as "warn_user" | "suspend_24h" | "suspend_7d" | "ban_user" | "lift_restriction" | "hide_content" | "restore_content",
+      action: action as
+        | "warn_user"
+        | "suspend_24h"
+        | "suspend_7d"
+        | "ban_user"
+        | "lift_restriction"
+        | "hide_content"
+        | "restore_content",
       reason: note,
       guidance,
       responseHours,
     });
-  } else if (action === "review" && (report.postId || report.commentId) && report.targetAuthorUserId) {
+  } else if (
+    action === "review" &&
+    (report.postId || report.commentId) &&
+    report.targetAuthorUserId
+  ) {
     await emailModerationDecision({
-      reportId, recipientUserId: report.targetAuthorUserId,
-      action: "hide_content", reason: note,
+      reportId,
+      recipientUserId: report.targetAuthorUserId,
+      action: "hide_content",
+      reason: note,
     });
   }
 }

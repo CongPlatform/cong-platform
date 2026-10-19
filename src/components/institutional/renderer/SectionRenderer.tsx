@@ -33,6 +33,7 @@ export default function SectionRenderer({
   brand,
   editable = false,
   showGuidance = false,
+  showEmptyMediaPreview = false,
   selectedElementId,
   selectedElementIds = [],
   onSelectElement,
@@ -57,6 +58,7 @@ export default function SectionRenderer({
   brand?: InstitutionalBrand;
   editable?: boolean;
   showGuidance?: boolean;
+  showEmptyMediaPreview?: boolean;
   selectedElementId?: string | null;
   selectedElementIds?: string[];
   onSelectElement?: (elementId: string, additive?: boolean) => void;
@@ -121,6 +123,9 @@ export default function SectionRenderer({
     ? "#ffffff"
     : null;
   const effectiveSectionBackground = imageTreatmentForeground ? "#091c30" : footerBackground ?? resolvedBackground ?? brand?.backgroundColor;
+  const solidForeground = !imageBackground && resolvedBackground && brand
+    ? nearestAccessibleColor(brand.textColor ?? "#15273d", resolvedBackground, 4.5)
+    : null;
   const primaryBase = brand?.primaryColor ?? "#1366c4";
   const secondaryBase = brand?.secondaryColor ?? "#04523c";
   const accentBase = brand?.accentColor ?? "#f7b534";
@@ -182,6 +187,7 @@ export default function SectionRenderer({
     ...(imageBackground ? { backgroundSize: "cover" } : {}),
     ...(imageBackground ? { backgroundPosition: `${sectionStyle.backgroundPositionX ?? 50}% ${sectionStyle.backgroundPositionY ?? 50}%` } : {}),
     ...(imageTreatmentForeground ? { "--org-text": imageTreatmentForeground, "--org-primary": imageTreatmentForeground } : {}),
+    ...(solidForeground ? { "--org-text": solidForeground } : {}),
     ...(footerForeground ? { "--section-foreground": footerForeground } : {}),
   } as CSSProperties;
 
@@ -193,6 +199,7 @@ export default function SectionRenderer({
       data-spacing={sectionStyle.spacing ?? "normal"}
       data-content-width={sectionStyle.contentWidth ?? "normal"}
       data-visual-style={visualStyle}
+      data-composition={typeof section.settings.compositionId === "string" ? section.settings.compositionId : undefined}
       data-design-family={designFamily?.id}
       data-background-treatment={imageBackground ? treatment : undefined}
       data-has-background-image={imageBackground ? "true" : "false"}
@@ -227,6 +234,7 @@ export default function SectionRenderer({
           editable={editable}
           sectionDefinition={getSectionDefinition(section.sectionType)}
           showGuidance={showGuidance}
+          showEmptyMediaPreview={showEmptyMediaPreview}
           selectedElementId={selectedElementId}
           selectedElementIds={selectedElementIds}
           onSelectElement={onSelectElement}

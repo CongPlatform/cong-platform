@@ -41,6 +41,7 @@ export default function ImageMedia({
   presentation = "image",
   editable,
   selected,
+  showEmptyMediaPreview = false,
   style = {},
   guidance,
   onRequest,
@@ -53,6 +54,7 @@ export default function ImageMedia({
   presentation?: string;
   editable: boolean;
   selected: boolean;
+  showEmptyMediaPreview?: boolean;
   style?: InstitutionalElementStyle;
   guidance?: { title: string; text?: string; note?: string } | null;
   onRequest?: () => void;
@@ -149,7 +151,16 @@ export default function ImageMedia({
   }
 
   if (!image?.url) {
-    if (!editable) return null;
+    if (!editable && !showEmptyMediaPreview) return null;
+    if (!editable && showEmptyMediaPreview) {
+      return (
+        <div className={`${styles.imageMediaFrame} ${styles[presentation] ?? ""} ${styles.mediaPreviewPlaceholder}`}
+          style={frameStyle} data-frame={imageFrame} data-aspect={imageAspect} aria-label="Espaço reservado para imagem da organização" role="img">
+          <FiImage aria-hidden="true" />
+          <span>Sua imagem aqui</span>
+        </div>
+      );
+    }
     return (
       <div
         ref={hintAnchorRef}
@@ -164,7 +175,12 @@ export default function ImageMedia({
       >
         <button
           type="button"
-          className={`${styles.imagePlaceholder} ${styles[presentation] ?? ""}`}
+          className={`${styles.imagePlaceholder} ${styles.imageMediaFrame} ${styles[presentation] ?? ""}`}
+          data-frame={imageFrame}
+          data-aspect={imageAspect}
+          data-custom-height={style.heightPx !== undefined}
+          data-media-empty="true"
+          style={frameStyle}
           onClick={(event) => {
             event.stopPropagation();
             onRequest?.();

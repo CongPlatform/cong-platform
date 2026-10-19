@@ -501,11 +501,21 @@ function SiteCard({
 
   return (
     <article className={styles.siteCard}>
-      <button type="button" className={styles.sitePreview} onClick={onPreview} aria-label={`Visualizar ${site.name}`} disabled={!previewSite}>
-        {previewSite ? <LiveSiteThumbnail site={previewSite} height={220} sourceWidth={1180} /> : <div className={styles.previewLoading}>Preparando prévia real…</div>}
+      <div className={styles.sitePreview}>
+        <div inert>
+          {previewSite ? <LiveSiteThumbnail site={previewSite} height={220} sourceWidth={1180} /> : <div className={styles.previewLoading}>Preparando prévia real…</div>}
+        </div>
         {published ? <div className={styles.livePreviewTag}><FiGlobe /> No ar</div> : null}
-        {previewSite ? <span className={styles.previewOverlay}><FiMaximize2 /> Visualizar site</span> : null}
-      </button>
+        <button
+          type="button"
+          className={styles.previewTrigger}
+          onClick={onPreview}
+          aria-label={`Visualizar ${site.name}`}
+          disabled={!previewSite}
+        >
+          {previewSite ? <span className={styles.previewOverlay}><FiMaximize2 /> Visualizar site</span> : null}
+        </button>
+      </div>
 
       <div className={styles.siteCardBody}>
         <div className={styles.siteCardTitleRow}>
@@ -554,15 +564,25 @@ function TemplateCard({
 
   return (
     <article className={styles.templateCard}>
-      <button type="button" className={styles.templatePreview} onClick={onPreview} aria-label={`Visualizar modelo ${template.name}`}>
-        {preview ? <LiveSiteThumbnail site={preview} height={218} sourceWidth={1180} /> : <div className={styles.previewLoading}>Prévia disponível ao abrir</div>}
+      <div className={styles.templatePreview}>
+        <div inert>
+          {preview ? <LiveSiteThumbnail site={preview} height={218} sourceWidth={1180} /> : <div className={styles.previewLoading}>Prévia disponível ao abrir</div>}
+        </div>
         {example ? <span className={styles.exampleTag}>Exemplo fictício</span> : null}
-        {preview ? <span className={styles.previewOverlay}><FiMaximize2 /> Ver site completo</span> : null}
-      </button>
+        <button
+          type="button"
+          className={styles.previewTrigger}
+          onClick={onPreview}
+          aria-label={`Visualizar modelo ${template.name}`}
+        >
+          {preview ? <span className={styles.previewOverlay}><FiMaximize2 /> Ver site completo</span> : null}
+        </button>
+      </div>
       <div className={styles.templateBody}>
         <div className={styles.templateIdentity}>
           <span className={styles.templateCategory}>{template.category}</span>
           <h3>{template.name}</h3>
+          <small>{template.definition?.pages.length ?? 1} páginas prontas para editar</small>
         </div>
         <div className={styles.templateActions}>
           <button type="button" className={styles.previewTemplateButton} onClick={onPreview}><FiMaximize2 /> Visualizar</button>

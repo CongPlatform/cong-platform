@@ -23,10 +23,22 @@ const optionalUrl = z
   .union([z.string().trim().url().max(1000), z.literal("")])
   .default("");
 
+const safeHrefSchema = z.string().trim().min(1).max(500).refine((href) => {
+  if (/[\u0000-\u001f\\]/.test(href)) return false;
+  if (/^#[A-Za-z0-9_:-]*$/.test(href)) return true;
+  if (/^\/(?!\/)[A-Za-z0-9/_?#%&=+.-]*$/.test(href)) return true;
+  if (/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(href)) return true;
+  if (/^tel:[+()0-9. -]+$/i.test(href)) return true;
+  try {
+    const parsed = new URL(href);
+    return ["https:", "http:"].includes(parsed.protocol) && Boolean(parsed.hostname) && !parsed.username && !parsed.password;
+  } catch { return false; }
+}, "Use um endereço interno, HTTPS, HTTP, e-mail ou telefone válido.");
+
 const actionSchema = z
   .object({
     label: z.string().trim().min(1).max(80),
-    href: z.string().trim().min(1).max(500),
+    href: safeHrefSchema,
   })
   .strict();
 
@@ -104,7 +116,7 @@ const navigationLinkSchema = z
   .object({
     id: z.string().uuid(),
     label: z.string().trim().min(1).max(60),
-    href: z.string().trim().min(1).max(500),
+    href: safeHrefSchema,
   })
   .strict();
 
@@ -234,6 +246,17 @@ const elementTypeSchema = z.enum([
   "shape",
   "metric",
   "quote",
+  "faq",
+  "progress",
+  "campaign_card",
+  "media_gallery",
+  "video_embed",
+  "data_chart",
+  "story_tabs",
+  "community_timeline",
+  "testimonial_slider",
+  "action_grid",
+  "donation_choices",
   "divider",
   "spacer",
 ]);
@@ -273,11 +296,17 @@ const semanticColorSchema = z.enum([
   "background.deep",
 ]);
 const elementColorSchema = z.union([semanticColorSchema, colorSchema]);
+/** Match the frontend catalog: no untrusted CSS font declarations. */
+const googleFontFamilies = ["Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins", "Nunito Sans", "Nunito", "Raleway", "Work Sans", "DM Sans", "Manrope", "Outfit", "Rubik", "Urbanist", "Quicksand", "Mulish", "Cabin", "Karla", "Figtree", "Josefin Sans", "Ubuntu", "Source Sans 3", "Public Sans", "Plus Jakarta Sans", "Barlow", "Barlow Condensed", "Space Grotesk", "Sora", "Playfair Display", "Merriweather", "Lora", "Libre Baskerville", "Cormorant Garamond", "EB Garamond", "DM Serif Display", "Crimson Pro", "Alegreya", "Fraunces", "Prata", "Bitter", "Spectral", "Abril Fatface", "Bebas Neue", "Oswald", "Anton", "Archivo Black", "Pacifico", "Caveat", "Dancing Script", "Patrick Hand", "Great Vibes"] as const;
+
 const elementStyleSchema = z
   .object({
+    graphicVariant: z.enum(["editorial", "compact", "spotlight"]).optional(),
     size: elementSizeSchema.optional(),
     width: elementWidthSchema.optional(),
     fontSize: z.number().min(10).max(160).optional(),
+    fontFamily: z.enum(googleFontFamilies).optional(),
+    fontPreset: z.enum(["display", "heading", "subheading", "body", "caption", "button"]).optional(),
     widthPercent: z.number().min(8).max(240).optional(),
     heightPx: z.number().min(24).max(1400).optional(),
     offsetX: z.number().min(-1200).max(1200).optional(),
@@ -401,11 +430,129 @@ const elementMetricValueSchema = z
   })
   .strict();
 
+const illustrationSchema = z.enum(["comunidade", "essencial", "horizonte", "sereno", "conexao", "vozes"]);
+const campaignCardValueSchema = z.object({
+  kind: z.literal("campaign_card"),
+  tag: z.string().trim().max(64),
+  title: z.string().trim().max(140),
+  description: z.string().trim().max(600),
+  image: nullableImageSchema,
+  illustration: illustrationSchema.optional(),
+  raised: z.number().finite().min(0).max(1_000_000_000),
+  goal: z.number().finite().min(1).max(1_000_000_000),
+  unit: z.string().trim().min(1).max(24),
+  action: actionSchema,
+}).strict();
+const mediaGalleryValueSchema = z.object({
+  kind: z.literal("media_gallery"),
+  title: z.string().trim().max(140),
+  items: z.array(z.object({
+    id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,120}$/), image: nullableImageSchema,
+    caption: z.string().trim().max(160),
+    illustration: illustrationSchema.optional(),
+    focalX: z.number().finite().min(0).max(100),
+    focalY: z.number().finite().min(0).max(100),
+  }).strict()).min(1).max(10),
+}).strict();
+const videoEmbedValueSchema = z.object({
+  kind: z.literal("video_embed"),
+  title: z.string().trim().max(140),
+  caption: z.string().trim().max(300),
+  url: z.string().trim().max(500).refine((raw) => {
+    if (raw === "") return true;
+    try {
+      const url = new URL(raw);
+      if (url.protocol !== "https:" || url.username || url.password || url.port) return false;
+      const host = url.hostname.toLowerCase();
+      if (host === "cdn.pixabay.com") return /^\/video\/[A-Za-z0-9/_-]+\.mp4$/.test(url.pathname) && !url.search;
+      return ["youtube.com", "www.youtube.com", "youtu.be", "www.youtube-nocookie.com", "vimeo.com", "www.vimeo.com", "player.vimeo.com"].includes(host);
+    } catch { return false; }
+  }, "Informe um link HTTPS do YouTube ou Vimeo."),
+}).strict();
+const dataChartValueSchema = z.object({
+  kind: z.literal("data_chart"),
+  title: z.string().trim().max(140),
+  subtitle: z.string().trim().max(300),
+  format: z.enum(["bar", "donut", "columns", "line"]),
+  unit: z.string().trim().max(30),
+  items: z.array(z.object({
+    id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,120}$/), label: z.string().trim().max(80),
+    value: z.number().finite().min(0).max(1_000_000_000),
+  }).strict()).min(1).max(8),
+}).strict();
+const storyTabsValueSchema = z.object({
+  kind: z.literal("story_tabs"),
+  title: z.string().trim().max(140),
+  items: z.array(z.object({
+    id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,120}$/), title: z.string().trim().max(90),
+    description: z.string().trim().max(1000),
+  }).strict()).min(1).max(8),
+}).strict();
+
+const communityTimelineValueSchema = z.object({
+  kind: z.literal("community_timeline"),
+  title: z.string().trim().max(140), eyebrow: z.string().trim().max(90),
+  items: z.array(z.object({
+    id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,120}$/), year: z.string().trim().max(36),
+    title: z.string().trim().max(130), description: z.string().trim().max(450),
+  }).strict()).min(1).max(10),
+}).strict();
+const testimonialSliderValueSchema = z.object({
+  kind: z.literal("testimonial_slider"),
+  title: z.string().trim().max(140), subtitle: z.string().trim().max(300),
+  items: z.array(z.object({
+    id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,120}$/), quote: z.string().trim().max(650),
+    author: z.string().trim().max(100), role: z.string().trim().max(100),
+  }).strict()).min(1).max(10),
+}).strict();
+const actionGridValueSchema = z.object({
+  kind: z.literal("action_grid"),
+  title: z.string().trim().max(140), subtitle: z.string().trim().max(300),
+  items: z.array(z.object({
+    id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,120}$/), eyebrow: z.string().trim().max(56),
+    title: z.string().trim().max(120), description: z.string().trim().max(380),
+    icon: z.enum(["heart", "hand", "book", "home", "globe", "users"]),
+    action: actionSchema,
+  }).strict()).min(1).max(8),
+}).strict();
+const donationChoicesValueSchema = z.object({
+  kind: z.literal("donation_choices"),
+  title: z.string().trim().max(140), subtitle: z.string().trim().max(300),
+  currency: z.literal("R$"),
+  items: z.array(z.object({
+    id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,120}$/), amount: z.number().finite().min(1).max(1_000_000),
+    description: z.string().trim().max(130),
+  }).strict()).min(1).max(8),
+  action: actionSchema,
+  trustNote: z.string().trim().max(240),
+}).strict();
+
 const elementValueSchema = z.union([
   z.string().max(5000),
   actionSchema,
   imageSchema,
   elementMetricValueSchema,
+  z.object({
+    items: z.array(z.object({
+      id: z.string().trim().regex(/^[A-Za-z0-9_-]{1,120}$/),
+      question: z.string().trim().max(240),
+      answer: z.string().trim().max(2000),
+    }).strict()).min(1).max(12),
+  }).strict(),
+  z.object({
+    label: z.string().trim().max(160),
+    percent: z.number().finite().min(0).max(100),
+    detail: z.string().trim().max(240),
+  }).strict(),
+  campaignCardValueSchema,
+  mediaGalleryValueSchema,
+  videoEmbedValueSchema,
+  dataChartValueSchema,
+  storyTabsValueSchema,
+  communityTimelineValueSchema,
+  testimonialSliderValueSchema,
+  actionGridValueSchema,
+  donationChoicesValueSchema,
   z.null(),
 ]);
 
@@ -544,6 +691,18 @@ export function parseInstitutionalSectionSettings(
   return institutionalSectionSettingsSchema.parse(settings ?? {}) as Record<string, unknown>;
 }
 
+// Páginas são unidades de publicação do mesmo site (slugs exclusivos por site).
+export const createInstitutionalPageSchema = z.object({
+  title: z.string().trim().min(2).max(100),
+  slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(70),
+}).strict();
+
+export const updateInstitutionalPageSchema = z.object({
+  title: z.string().trim().min(2).max(100).optional(),
+  slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(70).optional(),
+  isHome: z.boolean().optional(),
+}).strict().refine((value) => Object.keys(value).length > 0, { message: "Informe ao menos uma alteração." });
+
 export const createInstitutionalSiteSchema = z
   .object({
     name: z.string().trim().min(2).max(100),
@@ -557,6 +716,39 @@ export const renameInstitutionalSiteSchema = z
   })
   .strict();
 
+const visualFontSchema = z.union([
+  z.enum(["legacy", "sans", "editorial", "humanist", "rounded"]),
+  z.enum(googleFontFamilies),
+]);
+const typeStyleSchema = z.object({
+  family: visualFontSchema,
+  size: z.number().int().min(10).max(160),
+  weight: z.union([z.literal(400), z.literal(500), z.literal(600), z.literal(700), z.literal(800)]),
+}).strict();
+const textStylesSchema = z.object({
+  display: typeStyleSchema.optional(),
+  heading: typeStyleSchema.optional(),
+  subheading: typeStyleSchema.optional(),
+  body: typeStyleSchema.optional(),
+  caption: typeStyleSchema.optional(),
+  button: typeStyleSchema.optional(),
+}).strict();
+
+export const institutionalDesignSystemSchema = z.object({
+  headingFamily: visualFontSchema,
+  bodyFamily: visualFontSchema,
+  textStyles: textStylesSchema.optional(),
+  logos: z.object({
+    compact: z.string().uuid().nullable().optional(),
+    light: z.string().uuid().nullable().optional(),
+    dark: z.string().uuid().nullable().optional(),
+  }).strict().optional(),
+  headingScale: z.enum(["compact", "standard", "expressive"]),
+  bodyScale: z.enum(["compact", "standard", "relaxed"]),
+  spacing: z.enum(["compact", "standard", "spacious"]),
+  corners: z.enum(["original", "square", "subtle", "rounded"]),
+}).strict();
+
 export const updateBrandProfileSchema = z
   .object({
     logoAssetId: z.string().uuid().nullable().optional(),
@@ -567,6 +759,7 @@ export const updateBrandProfileSchema = z
     textColor: colorSchema,
     headingFont: z.enum(["brand", "interface", "system"]),
     bodyFont: z.enum(["brand", "interface", "system"]),
+    designSystem: institutionalDesignSystemSchema.optional(),
   })
   .strict();
 
