@@ -11,8 +11,9 @@ export function institutionalSelectionId(
   return `${sourceNodeId}${INSTANCE_SEPARATOR}${suffix}`;
 }
 
-
-export function isInstitutionalInstanceSelectionId(selectionId: string): boolean {
+export function isInstitutionalInstanceSelectionId(
+  selectionId: string,
+): boolean {
   return selectionId.includes(INSTANCE_SEPARATOR);
 }
 
@@ -21,7 +22,9 @@ export function institutionalSourceNodeId(selectionId: string): string {
   return index < 0 ? selectionId : selectionId.slice(0, index);
 }
 
-export function uniqueInstitutionalSourceNodeIds(selectionIds: string[]): string[] {
+export function uniqueInstitutionalSourceNodeIds(
+  selectionIds: string[],
+): string[] {
   return [...new Set(selectionIds.map(institutionalSourceNodeId))];
 }
 

@@ -57,7 +57,10 @@ export interface DesignerInstitutionalTemplate extends InstitutionalTemplateSumm
   definition: InstitutionalTemplateDefinition;
 }
 
-async function getActiveUserId(client: PoolClient, authUserId: string): Promise<string> {
+async function getActiveUserId(
+  client: PoolClient,
+  authUserId: string,
+): Promise<string> {
   const result = await client.query<{ id: string }>(
     `select id from public.users where auth_user_id = $1 and active = true limit 1`,
     [authUserId],
@@ -76,7 +79,9 @@ function normalizeDefinition(input: unknown): InstitutionalTemplateDefinition {
 
   return {
     ...(parsed.example === undefined ? {} : { example: parsed.example }),
-    ...(parsed.editorConstraints === undefined ? {} : { editorConstraints: parsed.editorConstraints }),
+    ...(parsed.editorConstraints === undefined
+      ? {}
+      : { editorConstraints: parsed.editorConstraints }),
     pages: parsed.pages.map((page) => ({
       title: page.title,
       slug: page.slug,
@@ -84,7 +89,10 @@ function normalizeDefinition(input: unknown): InstitutionalTemplateDefinition {
       sections: page.sections.map((section) => ({
         sectionType: section.sectionType,
         variantVersionId: section.variantVersionId,
-        content: parseInstitutionalSectionContent(section.sectionType, section.content),
+        content: parseInstitutionalSectionContent(
+          section.sectionType,
+          section.content,
+        ),
         ...(section.settings
           ? { settings: parseInstitutionalSectionSettings(section.settings) }
           : {}),
@@ -106,8 +114,13 @@ async function assertTemplateVariantsPublished(
 
   if (references.length === 0) return;
 
-  const uniqueIds = [...new Set(references.map((reference) => reference.versionId))];
-  const result = await client.query<{ versionId: string; sectionType: InstitutionalSectionType }>(
+  const uniqueIds = [
+    ...new Set(references.map((reference) => reference.versionId)),
+  ];
+  const result = await client.query<{
+    versionId: string;
+    sectionType: InstitutionalSectionType;
+  }>(
     `
       select
         vv.id as "versionId",
@@ -140,7 +153,9 @@ async function assertTemplateVariantsPublished(
   }
 }
 
-export async function listInstitutionalTemplates(): Promise<InstitutionalTemplateSummary[]> {
+export async function listInstitutionalTemplates(): Promise<
+  InstitutionalTemplateSummary[]
+> {
   const result = await pool.query<InstitutionalTemplateSummary>(
     `
       select
@@ -161,7 +176,9 @@ export async function listInstitutionalTemplates(): Promise<InstitutionalTemplat
 
   return result.rows.map((template) => ({
     ...template,
-    ...(template.definition ? { definition: normalizeDefinition(template.definition) } : {}),
+    ...(template.definition
+      ? { definition: normalizeDefinition(template.definition) }
+      : {}),
   }));
 }
 
@@ -285,7 +302,10 @@ export async function getDesignerTemplate(
       );
     }
 
-    return { ...template, definition: normalizeDefinition(template.definition) };
+    return {
+      ...template,
+      definition: normalizeDefinition(template.definition),
+    };
   } finally {
     client.release();
   }

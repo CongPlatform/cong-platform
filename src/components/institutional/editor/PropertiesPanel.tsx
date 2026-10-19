@@ -40,11 +40,31 @@ import type {
   InstitutionalColorRole,
   InstitutionalColorValue,
 } from "../../../services/institutionalService";
-import { contrastRatio, nearestAccessibleColor } from "../../../utils/institutionalPalette";
-import { brandRoleHex, deriveColorTone, institutionalColorRoles, institutionalColorTones, parseSemanticColor, resolveInstitutionalColor } from "../../../utils/institutionalColors";
-import { collectionItemLabel, createInstitutionalCollectionItem } from "../../../utils/institutionalCollections";
+import {
+  contrastRatio,
+  nearestAccessibleColor,
+} from "../../../utils/institutionalPalette";
+import {
+  brandRoleHex,
+  deriveColorTone,
+  institutionalColorRoles,
+  institutionalColorTones,
+  parseSemanticColor,
+  resolveInstitutionalColor,
+} from "../../../utils/institutionalColors";
+import {
+  collectionItemLabel,
+  createInstitutionalCollectionItem,
+} from "../../../utils/institutionalCollections";
 
 import ColorPickerControl from "./ColorPickerControl";
+import RichElementInspector, {
+  CommonsSearch,
+  isRichElement,
+} from "./RichElementInspector";
+import { uploadInstitutionalMedia } from "../../../services/institutionalService";
+import freeMediaStyles from "./RichElementInspector.module.css";
+import FontFamilyPicker from "./FontFamilyPicker";
 import ImageFramePicker from "./ImageFramePicker";
 import styles from "./PropertiesPanel.module.css";
 
@@ -116,6 +136,7 @@ function ImageField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const image = asImage(value);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <div className={styles.imageField}>
@@ -134,6 +155,15 @@ function ImageField({
             <FiUpload /> {image ? "Trocar imagem" : "Enviar imagem"}
           </button>
         ) : null}
+        {allowUpload ? (
+          <button
+            type="button"
+            onClick={() => setSearchOpen((previous) => !previous)}
+            aria-expanded={searchOpen}
+          >
+            <FiImage /> {searchOpen ? "Fechar acervo" : "Acervo gratuito"}
+          </button>
+        ) : null}
         {image ? (
           <button type="button" onClick={() => onChange(path, null)}>
             <FiTrash2 /> Remover
@@ -141,20 +171,36 @@ function ImageField({
         ) : null}
       </div>
 
+      {searchOpen ? (
+        <div className={freeMediaStyles.commons}>
+          <CommonsSearch
+            onChosen={async (file, label) => {
+              const asset = await uploadInstitutionalMedia(file);
+              onChange(path, {
+                assetId: asset.id,
+                url: asset.url,
+                alt: label.slice(0, 240),
+              });
+              setSearchOpen(false);
+            }}
+          />
+        </div>
+      ) : null}
+
       {allowUpload ? (
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        hidden
-        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-          const file = event.target.files?.[0];
-          if (file) {
-            onUploadImage(path, file);
-          }
-          event.target.value = "";
-        }}
-      />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          hidden
+          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            if (file) {
+              onUploadImage(path, file);
+            }
+            event.target.value = "";
+          }}
+        />
       ) : null}
 
       <small>
@@ -236,7 +282,11 @@ function ActionField({
           placeholder="#contato ou https://..."
         />
       </label>
-      <button type="button" className={styles.removeInlineButton} onClick={() => onChange(path, null)}>
+      <button
+        type="button"
+        className={styles.removeInlineButton}
+        onClick={() => onChange(path, null)}
+      >
         Remover ação
       </button>
     </div>
@@ -290,7 +340,11 @@ function CollectionEditor({
         <div className={styles.collectionItem} key={String(item.id ?? index)}>
           <div className={styles.collectionHeader}>
             <strong>Item {index + 1}</strong>
-            <button type="button" onClick={() => removeItem(index)} aria-label={`Remover item ${index + 1}`}>
+            <button
+              type="button"
+              onClick={() => removeItem(index)}
+              aria-label={`Remover item ${index + 1}`}
+            >
               <FiTrash2 />
             </button>
           </div>
@@ -299,19 +353,39 @@ function CollectionEditor({
             <>
               <label className={styles.field}>
                 <span>Nome do projeto</span>
-                <input value={String(item.title ?? "")} onChange={(event) => updateItem(index, "title", event.target.value)} />
+                <input
+                  value={String(item.title ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "title", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Categoria</span>
-                <input value={String(item.category ?? "")} onChange={(event) => updateItem(index, "category", event.target.value)} />
+                <input
+                  value={String(item.category ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "category", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Descrição</span>
-                <textarea value={String(item.description ?? "")} onChange={(event) => updateItem(index, "description", event.target.value)} />
+                <textarea
+                  value={String(item.description ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "description", event.target.value)
+                  }
+                />
               </label>
               <ImageField
                 value={item.image}
-                field={{ key: "image", label: "Imagem", kind: "image", imageRatio: "16:10" }}
+                field={{
+                  key: "image",
+                  label: "Imagem",
+                  kind: "image",
+                  imageRatio: "16:10",
+                }}
                 path={[field.key, index, "image"]}
                 onChange={onChange}
                 onUploadImage={onUploadImage}
@@ -332,19 +406,39 @@ function CollectionEditor({
             <>
               <label className={styles.field}>
                 <span>Valor</span>
-                <input value={String(item.value ?? "")} onChange={(event) => updateItem(index, "value", event.target.value)} />
+                <input
+                  value={String(item.value ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "value", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>O que o número representa</span>
-                <input value={String(item.label ?? "")} onChange={(event) => updateItem(index, "label", event.target.value)} />
+                <input
+                  value={String(item.label ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "label", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Período</span>
-                <input value={String(item.period ?? "")} onChange={(event) => updateItem(index, "period", event.target.value)} />
+                <input
+                  value={String(item.period ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "period", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Fonte ou observação</span>
-                <input value={String(item.source ?? "")} onChange={(event) => updateItem(index, "source", event.target.value)} />
+                <input
+                  value={String(item.source ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "source", event.target.value)
+                  }
+                />
               </label>
             </>
           ) : null}
@@ -353,7 +447,12 @@ function CollectionEditor({
             <>
               <label className={styles.field}>
                 <span>Tipo</span>
-                <select value={String(item.kind ?? "other")} onChange={(event) => updateItem(index, "kind", event.target.value)}>
+                <select
+                  value={String(item.kind ?? "other")}
+                  onChange={(event) =>
+                    updateItem(index, "kind", event.target.value)
+                  }
+                >
                   <option value="donate">Doação</option>
                   <option value="volunteer">Voluntariado</option>
                   <option value="partner">Parceria</option>
@@ -364,11 +463,21 @@ function CollectionEditor({
               </label>
               <label className={styles.field}>
                 <span>Título</span>
-                <input value={String(item.title ?? "")} onChange={(event) => updateItem(index, "title", event.target.value)} />
+                <input
+                  value={String(item.title ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "title", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Descrição</span>
-                <textarea value={String(item.description ?? "")} onChange={(event) => updateItem(index, "description", event.target.value)} />
+                <textarea
+                  value={String(item.description ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "description", event.target.value)
+                  }
+                />
               </label>
               <div className={styles.fieldGroup}>
                 <span className={styles.groupTitle}>Ação</span>
@@ -385,7 +494,12 @@ function CollectionEditor({
             <>
               <label className={styles.field}>
                 <span>Categoria</span>
-                <select value={String(item.category ?? "other")} onChange={(event) => updateItem(index, "category", event.target.value)}>
+                <select
+                  value={String(item.category ?? "other")}
+                  onChange={(event) =>
+                    updateItem(index, "category", event.target.value)
+                  }
+                >
                   <option value="report">Relatório</option>
                   <option value="accountability">Prestação de contas</option>
                   <option value="financial">Financeiro</option>
@@ -397,19 +511,40 @@ function CollectionEditor({
               </label>
               <label className={styles.field}>
                 <span>Título</span>
-                <input value={String(item.title ?? "")} onChange={(event) => updateItem(index, "title", event.target.value)} />
+                <input
+                  value={String(item.title ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "title", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Descrição</span>
-                <textarea value={String(item.description ?? "")} onChange={(event) => updateItem(index, "description", event.target.value)} />
+                <textarea
+                  value={String(item.description ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "description", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Período</span>
-                <input value={String(item.period ?? "")} onChange={(event) => updateItem(index, "period", event.target.value)} />
+                <input
+                  value={String(item.period ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "period", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Link do documento</span>
-                <input value={String(item.url ?? "")} onChange={(event) => updateItem(index, "url", event.target.value)} placeholder="https://..." />
+                <input
+                  value={String(item.url ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "url", event.target.value)
+                  }
+                  placeholder="https://..."
+                />
               </label>
             </>
           ) : null}
@@ -418,11 +553,22 @@ function CollectionEditor({
             <>
               <label className={styles.field}>
                 <span>Nome</span>
-                <input value={String(item.label ?? "")} onChange={(event) => updateItem(index, "label", event.target.value)} />
+                <input
+                  value={String(item.label ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "label", event.target.value)
+                  }
+                />
               </label>
               <label className={styles.field}>
                 <span>Link</span>
-                <input value={String(item.url ?? "")} onChange={(event) => updateItem(index, "url", event.target.value)} placeholder="https://..." />
+                <input
+                  value={String(item.url ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "url", event.target.value)
+                  }
+                  placeholder="https://..."
+                />
               </label>
             </>
           ) : null}
@@ -431,11 +577,23 @@ function CollectionEditor({
             <>
               <label className={styles.field}>
                 <span>Texto no menu</span>
-                <input value={String(item.label ?? "")} onChange={(event) => updateItem(index, "label", event.target.value)} placeholder="Ex.: Projetos" />
+                <input
+                  value={String(item.label ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "label", event.target.value)
+                  }
+                  placeholder="Ex.: Projetos"
+                />
               </label>
               <label className={styles.field}>
                 <span>Destino</span>
-                <input value={String(item.href ?? "")} onChange={(event) => updateItem(index, "href", event.target.value)} placeholder="#projetos ou https://..." />
+                <input
+                  value={String(item.href ?? "")}
+                  onChange={(event) =>
+                    updateItem(index, "href", event.target.value)
+                  }
+                  placeholder="#projetos ou https://..."
+                />
               </label>
             </>
           ) : null}
@@ -445,7 +603,12 @@ function CollectionEditor({
       <button
         type="button"
         className={styles.addItemButton}
-        onClick={() => onChange([field.key], [...items, createInstitutionalCollectionItem(itemType)])}
+        onClick={() =>
+          onChange(
+            [field.key],
+            [...items, createInstitutionalCollectionItem(itemType)],
+          )
+        }
       >
         <FiPlus /> Adicionar {collectionItemLabel(itemType)}
       </button>
@@ -453,14 +616,14 @@ function CollectionEditor({
   );
 }
 
-
 function resolveElementColor(
-  value: InstitutionalElementStyle["color"] | InstitutionalElementStyle["backgroundColor"],
+  value:
+    | InstitutionalElementStyle["color"]
+    | InstitutionalElementStyle["backgroundColor"],
   brand: InstitutionalBrand | undefined,
 ): string | null {
   return resolveInstitutionalColor(value, brand) ?? null;
 }
-
 
 function SemanticColorChoices({
   value,
@@ -473,8 +636,11 @@ function SemanticColorChoices({
   onChange: (value: InstitutionalColorValue) => void;
   roles?: InstitutionalColorRole[];
 }) {
-  const parsed = value && !value.startsWith("#") ? parseSemanticColor(value) : null;
-  const [activeRole, setActiveRole] = useState<InstitutionalColorRole>(parsed?.role ?? roles[0] ?? "primary");
+  const parsed =
+    value && !value.startsWith("#") ? parseSemanticColor(value) : null;
+  const [activeRole, setActiveRole] = useState<InstitutionalColorRole>(
+    parsed?.role ?? roles[0] ?? "primary",
+  );
   if (!brand) return null;
 
   return (
@@ -487,10 +653,25 @@ function SemanticColorChoices({
               type="button"
               key={role}
               data-active={parsed?.role === role && parsed.tone === "base"}
-              onClick={() => { setActiveRole(role); onChange(role); }}
-              title={role === "primary" ? "Principal" : role === "secondary" ? "Secundária" : role === "accent" ? "Destaque" : role === "background" ? "Fundo" : "Texto"}
+              onClick={() => {
+                setActiveRole(role);
+                onChange(role);
+              }}
+              title={
+                role === "primary"
+                  ? "Principal"
+                  : role === "secondary"
+                    ? "Secundária"
+                    : role === "accent"
+                      ? "Destaque"
+                      : role === "background"
+                        ? "Fundo"
+                        : "Texto"
+              }
               aria-label={`Usar ${role}`}
-            ><span style={{ background: hex }} /></button>
+            >
+              <span style={{ background: hex }} />
+            </button>
           );
         })}
       </div>
@@ -504,11 +685,25 @@ function SemanticColorChoices({
               <button
                 type="button"
                 key={tone}
-                data-active={value === token || (tone === "base" && value === activeRole)}
+                data-active={
+                  value === token || (tone === "base" && value === activeRole)
+                }
                 onClick={() => onChange(token)}
-                title={tone === "soft" ? "Suave" : tone === "light" ? "Clara" : tone === "base" ? "Original" : tone === "strong" ? "Forte" : "Profunda"}
+                title={
+                  tone === "soft"
+                    ? "Suave"
+                    : tone === "light"
+                      ? "Clara"
+                      : tone === "base"
+                        ? "Original"
+                        : tone === "strong"
+                          ? "Forte"
+                          : "Profunda"
+                }
                 aria-label={`Usar variação ${tone}`}
-              ><span style={{ background: hex }} /></button>
+              >
+                <span style={{ background: hex }} />
+              </button>
             );
           })}
         </div>
@@ -519,16 +714,40 @@ function SemanticColorChoices({
 
 function effectiveFontSize(style: InstitutionalElementStyle): number {
   if (style.fontSize !== undefined) return style.fontSize;
-  const fallback: Record<NonNullable<InstitutionalElementStyle["size"]>, number> = {
-    xs: 12, sm: 14, md: 16, lg: 20, xl: 26, "2xl": 38, "3xl": 56,
+  const fallback: Record<
+    NonNullable<InstitutionalElementStyle["size"]>,
+    number
+  > = {
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 20,
+    xl: 26,
+    "2xl": 38,
+    "3xl": 56,
   };
   return style.size ? fallback[style.size] : 16;
 }
 
-function isTextBoxNode(node: Extract<InstitutionalLayoutNode, { type: "slot" | "element" }>): boolean {
-  if (node.type === "element") return ["heading", "text", "quote"].includes(node.elementType);
+function isTextBoxNode(
+  node: Extract<InstitutionalLayoutNode, { type: "slot" | "element" }>,
+): boolean {
+  if (node.type === "element")
+    return ["heading", "text", "quote"].includes(node.elementType);
   const presentation = node.presentation ?? "body";
-  return ["display", "heading", "lead", "body", "caption", "itemTitle", "itemBody", "contactLine", "eyebrow", "metricValue", "metricLabel"].includes(presentation);
+  return [
+    "display",
+    "heading",
+    "lead",
+    "body",
+    "caption",
+    "itemTitle",
+    "itemBody",
+    "contactLine",
+    "eyebrow",
+    "metricValue",
+    "metricLabel",
+  ].includes(presentation);
 }
 
 function bestReadableElementColor(
@@ -536,7 +755,11 @@ function bestReadableElementColor(
   foreground: string,
   minimumRatio = 4.5,
 ): InstitutionalElementStyle["color"] {
-  return nearestAccessibleColor(foreground, background, minimumRatio) as `#${string}`;
+  return nearestAccessibleColor(
+    foreground,
+    background,
+    minimumRatio,
+  ) as `#${string}`;
 }
 
 function ElementOptions({
@@ -566,34 +789,59 @@ function ElementOptions({
 }) {
   const editableNode = node.type === "slot" || node.type === "element";
   const style = editableNode ? (node.style ?? {}) : {};
-  const [renderedMetrics, setRenderedMetrics] = useState<{ fontSize: number | null; foreground: string | null; background: string | null; radiusPx: number | null }>({
-    fontSize: null, foreground: null, background: null, radiusPx: null,
+  const [renderedMetrics, setRenderedMetrics] = useState<{
+    fontSize: number | null;
+    foreground: string | null;
+    background: string | null;
+    radiusPx: number | null;
+  }>({
+    fontSize: null,
+    foreground: null,
+    background: null,
+    radiusPx: null,
   });
   const [iconQuery, setIconQuery] = useState("");
-  const [iconCategory, setIconCategory] = useState<InstitutionalIconCategory>("all");
+  const [iconCategory, setIconCategory] =
+    useState<InstitutionalIconCategory>("all");
 
   useLayoutEffect(() => {
     if (!domSelectionId || typeof document === "undefined") return;
-    const shell = document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(domSelectionId)}"]`);
+    const shell = document.querySelector<HTMLElement>(
+      `[data-selection-id="${CSS.escape(domSelectionId)}"]`,
+    );
     if (!shell) return;
 
     const parseRgb = (value: string): string | null => {
-      const match = value.match(/rgba?\(\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)/i);
+      const match = value.match(
+        /rgba?\(\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)\s*[, ]\s*(\d+(?:\.\d+)?)/i,
+      );
       if (!match) return /^#[0-9a-f]{6}$/i.test(value) ? value : null;
-      return `#${[match[1], match[2], match[3]].map((part) => Math.max(0, Math.min(255, Math.round(Number(part)))).toString(16).padStart(2, "0")).join("")}`;
+      return `#${[match[1], match[2], match[3]]
+        .map((part) =>
+          Math.max(0, Math.min(255, Math.round(Number(part))))
+            .toString(16)
+            .padStart(2, "0"),
+        )
+        .join("")}`;
     };
 
     let frame = 0;
     const measure = () => {
       if (frame) window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        const target = shell.querySelector<HTMLElement>("[data-font-target='true']") ?? shell;
+        const target =
+          shell.querySelector<HTMLElement>("[data-font-target='true']") ??
+          shell;
         const computed = window.getComputedStyle(target);
         let background: string | null = null;
         let current: HTMLElement | null = target;
         while (current) {
           const raw = window.getComputedStyle(current).backgroundColor;
-          if (raw && raw !== "transparent" && !/rgba\([^)]*,\s*0(?:\.0+)?\)$/.test(raw)) {
+          if (
+            raw &&
+            raw !== "transparent" &&
+            !/rgba\([^)]*,\s*0(?:\.0+)?\)$/.test(raw)
+          ) {
             background = parseRgb(raw);
             if (background) break;
           }
@@ -604,12 +852,19 @@ function ElementOptions({
         const borderRadius = Number.parseFloat(computed.borderTopLeftRadius);
         setRenderedMetrics((previous) => {
           const next = {
-            fontSize: Number.isFinite(fontSize) ? Math.round(fontSize * 10) / 10 : null,
+            fontSize: Number.isFinite(fontSize)
+              ? Math.round(fontSize * 10) / 10
+              : null,
             foreground: parseRgb(computed.color),
             background,
-            radiusPx: Number.isFinite(borderRadius) ? Math.round(borderRadius * 10) / 10 : null,
+            radiusPx: Number.isFinite(borderRadius)
+              ? Math.round(borderRadius * 10) / 10
+              : null,
           };
-          return previous.fontSize === next.fontSize && previous.foreground === next.foreground && previous.background === next.background && previous.radiusPx === next.radiusPx
+          return previous.fontSize === next.fontSize &&
+            previous.foreground === next.foreground &&
+            previous.background === next.background &&
+            previous.radiusPx === next.radiusPx
             ? previous
             : next;
         });
@@ -617,7 +872,10 @@ function ElementOptions({
     };
 
     measure();
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    const observer =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(measure)
+        : null;
     observer?.observe(shell);
     window.addEventListener("resize", measure);
     return () => {
@@ -625,30 +883,52 @@ function ElementOptions({
       window.removeEventListener("resize", measure);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [domSelectionId, style.fontSize, style.size, style.color, style.backgroundColor, style.widthPercent, style.heightPx, brand, sectionBackground]);
+  }, [
+    domSelectionId,
+    style.fontSize,
+    style.size,
+    style.color,
+    style.backgroundColor,
+    style.widthPercent,
+    style.heightPx,
+    brand,
+    sectionBackground,
+  ]);
 
   if (!editableNode) return null;
 
   const custom = node.type === "element";
   const imageNode =
     (node.type === "element" && node.elementType === "image") ||
-    (node.type === "slot" && ["image", "heroImage", "wideImage", "cardImage", "brandLogo"].includes(node.presentation ?? ""));
+    (node.type === "slot" &&
+      ["image", "heroImage", "wideImage", "cardImage", "brandLogo"].includes(
+        node.presentation ?? "",
+      ));
   const textBoxNode = isTextBoxNode(node);
   const shapeNode = custom && node.elementType === "shape";
   const iconNode = custom && node.elementType === "icon";
   const buttonNode =
     (custom && node.elementType === "button") ||
-    (node.type === "slot" && ["primaryAction", "secondaryAction"].includes(node.presentation ?? ""));
+    (node.type === "slot" &&
+      ["primaryAction", "secondaryAction"].includes(node.presentation ?? ""));
   const currentFontSize = renderedMetrics.fontSize ?? effectiveFontSize(style);
-  const currentButtonRadius = style.radius ?? (
-    renderedMetrics.radiusPx === null ? "pill" :
-      renderedMetrics.radiusPx <= 1 ? "none" :
-        renderedMetrics.radiusPx <= 8 ? "small" :
-          renderedMetrics.radiusPx <= 15 ? "medium" :
-            renderedMetrics.radiusPx <= 32 ? "large" : "pill"
-  );
-  const currentBoxWidth = style.widthPercent ?? (style.width && style.width !== "auto" ? Number(style.width) : undefined);
-  const actionBackground = buttonNode ? brand?.accentColor ?? null : null;
+  const currentButtonRadius =
+    style.radius ??
+    (renderedMetrics.radiusPx === null
+      ? "pill"
+      : renderedMetrics.radiusPx <= 1
+        ? "none"
+        : renderedMetrics.radiusPx <= 8
+          ? "small"
+          : renderedMetrics.radiusPx <= 15
+            ? "medium"
+            : renderedMetrics.radiusPx <= 32
+              ? "large"
+              : "pill");
+  const currentBoxWidth =
+    style.widthPercent ??
+    (style.width && style.width !== "auto" ? Number(style.width) : undefined);
+  const actionBackground = buttonNode ? (brand?.accentColor ?? null) : null;
   const effectiveBackground =
     renderedMetrics.background ??
     resolveElementColor(style.backgroundColor, brand) ??
@@ -656,45 +936,76 @@ function ElementOptions({
     resolveElementColor(sectionBackground, brand) ??
     brand?.backgroundColor ??
     null;
-  const effectiveText = renderedMetrics.foreground ?? resolveElementColor(style.color ?? "text", brand);
-  const contrast = effectiveText && effectiveBackground
-    ? contrastRatio(effectiveText, effectiveBackground)
-    : null;
+  const effectiveText =
+    renderedMetrics.foreground ??
+    resolveElementColor(style.color ?? "text", brand);
+  const contrast =
+    effectiveText && effectiveBackground
+      ? contrastRatio(effectiveText, effectiveBackground)
+      : null;
   const contrastThreshold = currentFontSize >= 24 ? 3 : 4.5;
   const contrastPass = contrast === null || contrast >= contrastThreshold;
   const constraints = node.constraints ?? {};
   const widthDefault = currentBoxWidth;
   const fontDefault = currentFontSize;
   const heightDefault = style.heightPx;
-  const selectedIcon = iconNode ? getInstitutionalIconDefinition(node.value) : null;
-  const filteredIconOptions = iconNode ? filterInstitutionalIcons(iconQuery, iconCategory) : [];
+  const selectedIcon = iconNode
+    ? getInstitutionalIconDefinition(node.value)
+    : null;
+  const filteredIconOptions = iconNode
+    ? filterInstitutionalIcons(iconQuery, iconCategory)
+    : [];
 
-  function changeConstraints(patch: Partial<InstitutionalElementConstraints>): void {
+  function changeConstraints(
+    patch: Partial<InstitutionalElementConstraints>,
+  ): void {
     if (!onConstraintsChange) return;
     const next = { ...constraints, ...patch };
-    if (next.minWidthPercent !== undefined && next.maxWidthPercent !== undefined && next.minWidthPercent > next.maxWidthPercent) {
-      if (patch.minWidthPercent !== undefined) next.maxWidthPercent = next.minWidthPercent;
+    if (
+      next.minWidthPercent !== undefined &&
+      next.maxWidthPercent !== undefined &&
+      next.minWidthPercent > next.maxWidthPercent
+    ) {
+      if (patch.minWidthPercent !== undefined)
+        next.maxWidthPercent = next.minWidthPercent;
       else next.minWidthPercent = next.maxWidthPercent;
     }
-    if (next.minHeightPx !== undefined && next.maxHeightPx !== undefined && next.minHeightPx > next.maxHeightPx) {
+    if (
+      next.minHeightPx !== undefined &&
+      next.maxHeightPx !== undefined &&
+      next.minHeightPx > next.maxHeightPx
+    ) {
       if (patch.minHeightPx !== undefined) next.maxHeightPx = next.minHeightPx;
       else next.minHeightPx = next.maxHeightPx;
     }
-    if (next.minFontSize !== undefined && next.maxFontSize !== undefined && next.minFontSize > next.maxFontSize) {
+    if (
+      next.minFontSize !== undefined &&
+      next.maxFontSize !== undefined &&
+      next.minFontSize > next.maxFontSize
+    ) {
       if (patch.minFontSize !== undefined) next.maxFontSize = next.minFontSize;
       else next.minFontSize = next.maxFontSize;
     }
     onConstraintsChange(next);
   }
 
-  function alignCurrentElement(axis: "horizontal" | "vertical", value: "start" | "center" | "end"): void {
+  function alignCurrentElement(
+    axis: "horizontal" | "vertical",
+    value: "start" | "center" | "end",
+  ): void {
     if (!node.id || typeof document === "undefined") return;
     const element = domSelectionId
-      ? document.querySelector<HTMLElement>(`[data-selection-id="${CSS.escape(domSelectionId)}"]`)
-      : Array.from(document.querySelectorAll<HTMLElement>("[data-cong-node-id]"))
-          .find((candidate) => candidate.dataset.congNodeId === node.id);
+      ? document.querySelector<HTMLElement>(
+          `[data-selection-id="${CSS.escape(domSelectionId)}"]`,
+        )
+      : Array.from(
+          document.querySelectorAll<HTMLElement>("[data-cong-node-id]"),
+        ).find((candidate) => candidate.dataset.congNodeId === node.id);
     if (!element) return;
-    const container = element.parentElement?.closest<HTMLElement>("[data-layout-container='true']") ?? element.parentElement;
+    const container =
+      element.parentElement?.closest<HTMLElement>(
+        "[data-layout-container='true']",
+      ) ?? element.parentElement;
     if (!container) return;
 
     const elementRect = element.getBoundingClientRect();
@@ -706,25 +1017,39 @@ function ElementOptions({
     const paddingBottom = Number.parseFloat(computed.paddingBottom) || 0;
     const innerLeft = containerRect.left + paddingLeft;
     const innerTop = containerRect.top + paddingTop;
-    const innerWidth = Math.max(0, containerRect.width - paddingLeft - paddingRight);
-    const innerHeight = Math.max(0, containerRect.height - paddingTop - paddingBottom);
+    const innerWidth = Math.max(
+      0,
+      containerRect.width - paddingLeft - paddingRight,
+    );
+    const innerHeight = Math.max(
+      0,
+      containerRect.height - paddingTop - paddingBottom,
+    );
 
     if (axis === "horizontal") {
-      const targetLeft = value === "start"
-        ? innerLeft
-        : value === "center"
-          ? innerLeft + (innerWidth - elementRect.width) / 2
-          : innerLeft + innerWidth - elementRect.width;
-      onStyleChange({ offsetX: Math.round((style.offsetX ?? 0) + (targetLeft - elementRect.left)) });
+      const targetLeft =
+        value === "start"
+          ? innerLeft
+          : value === "center"
+            ? innerLeft + (innerWidth - elementRect.width) / 2
+            : innerLeft + innerWidth - elementRect.width;
+      onStyleChange({
+        offsetX: Math.round(
+          (style.offsetX ?? 0) + (targetLeft - elementRect.left),
+        ),
+      });
       return;
     }
 
-    const targetTop = value === "start"
-      ? innerTop
-      : value === "center"
-        ? innerTop + (innerHeight - elementRect.height) / 2
-        : innerTop + innerHeight - elementRect.height;
-    onStyleChange({ offsetY: Math.round((style.offsetY ?? 0) + (targetTop - elementRect.top)) });
+    const targetTop =
+      value === "start"
+        ? innerTop
+        : value === "center"
+          ? innerTop + (innerHeight - elementRect.height) / 2
+          : innerTop + innerHeight - elementRect.height;
+    onStyleChange({
+      offsetY: Math.round((style.offsetY ?? 0) + (targetTop - elementRect.top)),
+    });
   }
 
   return (
@@ -739,6 +1064,14 @@ function ElementOptions({
           Remover
         </button>
       </div>
+
+      {isRichElement(node) ? (
+        <RichElementInspector
+          key={node.id}
+          node={node}
+          onChange={onValueChange}
+        />
+      ) : null}
 
       {custom && ["heading", "text", "quote"].includes(node.elementType) ? (
         <label className={styles.field}>
@@ -756,20 +1089,24 @@ function ElementOptions({
             <span>Texto do botão</span>
             <input
               value={asAction(node.value)?.label ?? ""}
-              onChange={(event) => onValueChange({
-                label: event.target.value,
-                href: asAction(node.value)?.href ?? "#",
-              })}
+              onChange={(event) =>
+                onValueChange({
+                  label: event.target.value,
+                  href: asAction(node.value)?.href ?? "#",
+                })
+              }
             />
           </label>
           <label className={styles.field}>
             <span>Destino</span>
             <input
               value={asAction(node.value)?.href ?? "#"}
-              onChange={(event) => onValueChange({
-                label: asAction(node.value)?.label ?? "Saiba mais",
-                href: event.target.value,
-              })}
+              onChange={(event) =>
+                onValueChange({
+                  label: asAction(node.value)?.label ?? "Saiba mais",
+                  href: event.target.value,
+                })
+              }
             />
           </label>
         </>
@@ -780,41 +1117,78 @@ function ElementOptions({
           <div className={styles.visualOptionGroup}>
             <span className={styles.visualOptionTitle}>Formato do botão</span>
             <div className={styles.buttonShapePicker}>
-              {([
-                ["none", "Reto"],
-                ["small", "Suave"],
-                ["medium", "Arredondado"],
-                ["large", "Curvo"],
-                ["pill", "Pílula"],
-              ] as const).map(([radius, label]) => (
-                <button type="button" key={radius} data-active={currentButtonRadius === radius} onClick={() => onStyleChange({ radius })}>
+              {(
+                [
+                  ["none", "Reto"],
+                  ["small", "Suave"],
+                  ["medium", "Arredondado"],
+                  ["large", "Curvo"],
+                  ["pill", "Pílula"],
+                ] as const
+              ).map(([radius, label]) => (
+                <button
+                  type="button"
+                  key={radius}
+                  data-active={currentButtonRadius === radius}
+                  onClick={() => onStyleChange({ radius })}
+                >
                   <i data-radius={radius} aria-hidden="true" />
                   <span>{label}</span>
                 </button>
               ))}
             </div>
-            <small className={styles.humanHint}>Arraste por praticamente toda a área do botão. As alças mudam largura e altura em qualquer direção.</small>
+            <small className={styles.humanHint}>
+              Arraste por praticamente toda a área do botão. As alças mudam
+              largura e altura em qualquer direção.
+            </small>
           </div>
           <div className={styles.compactGrid}>
             <label className={styles.field}>
               <span>Largura</span>
               <div className={styles.unitInput}>
-                <input type="number" min="8" max="240" value={currentBoxWidth ?? ""} placeholder="Auto" onChange={(event) => {
-                  if (event.target.value === "") { onStyleChange({ widthPercent: undefined, width: "auto" }); return; }
-                  const next = Number(event.target.value);
-                  if (Number.isFinite(next)) onStyleChange({ widthPercent: Math.min(240, Math.max(8, next)), width: undefined });
-                }} />
+                <input
+                  type="number"
+                  min="8"
+                  max="240"
+                  value={currentBoxWidth ?? ""}
+                  placeholder="Auto"
+                  onChange={(event) => {
+                    if (event.target.value === "") {
+                      onStyleChange({ widthPercent: undefined, width: "auto" });
+                      return;
+                    }
+                    const next = Number(event.target.value);
+                    if (Number.isFinite(next))
+                      onStyleChange({
+                        widthPercent: Math.min(240, Math.max(8, next)),
+                        width: undefined,
+                      });
+                  }}
+                />
                 <span>%</span>
               </div>
             </label>
             <label className={styles.field}>
               <span>Altura</span>
               <div className={styles.unitInput}>
-                <input type="number" min="32" max="420" value={style.heightPx ?? ""} placeholder="Auto" onChange={(event) => {
-                  if (event.target.value === "") { onStyleChange({ heightPx: undefined }); return; }
-                  const next = Number(event.target.value);
-                  if (Number.isFinite(next)) onStyleChange({ heightPx: Math.min(420, Math.max(32, next)) });
-                }} />
+                <input
+                  type="number"
+                  min="32"
+                  max="420"
+                  value={style.heightPx ?? ""}
+                  placeholder="Auto"
+                  onChange={(event) => {
+                    if (event.target.value === "") {
+                      onStyleChange({ heightPx: undefined });
+                      return;
+                    }
+                    const next = Number(event.target.value);
+                    if (Number.isFinite(next))
+                      onStyleChange({
+                        heightPx: Math.min(420, Math.max(32, next)),
+                      });
+                  }}
+                />
                 <span>px</span>
               </div>
             </label>
@@ -827,21 +1201,42 @@ function ElementOptions({
           <label className={styles.field}>
             <span>Valor</span>
             <input
-              value={node.value && typeof node.value === "object" ? String((node.value as { value?: string }).value ?? "") : ""}
-              onChange={(event) => onValueChange({
-                value: event.target.value,
-                label: node.value && typeof node.value === "object" ? String((node.value as { label?: string }).label ?? "Resultado") : "Resultado",
-              })}
+              value={
+                node.value && typeof node.value === "object"
+                  ? String((node.value as { value?: string }).value ?? "")
+                  : ""
+              }
+              onChange={(event) =>
+                onValueChange({
+                  value: event.target.value,
+                  label:
+                    node.value && typeof node.value === "object"
+                      ? String(
+                          (node.value as { label?: string }).label ??
+                            "Resultado",
+                        )
+                      : "Resultado",
+                })
+              }
             />
           </label>
           <label className={styles.field}>
             <span>Legenda</span>
             <input
-              value={node.value && typeof node.value === "object" ? String((node.value as { label?: string }).label ?? "") : ""}
-              onChange={(event) => onValueChange({
-                value: node.value && typeof node.value === "object" ? String((node.value as { value?: string }).value ?? "0") : "0",
-                label: event.target.value,
-              })}
+              value={
+                node.value && typeof node.value === "object"
+                  ? String((node.value as { label?: string }).label ?? "")
+                  : ""
+              }
+              onChange={(event) =>
+                onValueChange({
+                  value:
+                    node.value && typeof node.value === "object"
+                      ? String((node.value as { value?: string }).value ?? "0")
+                      : "0",
+                  label: event.target.value,
+                })
+              }
             />
           </label>
         </>
@@ -850,24 +1245,52 @@ function ElementOptions({
       {iconNode ? (
         <div className={styles.iconInspector}>
           <div className={styles.iconInspectorHeading}>
-            <span className={styles.iconInspectorPreview}>{selectedIcon ? (() => { const Icon = selectedIcon.icon; return <Icon aria-hidden="true" />; })() : null}</span>
-            <div><strong>{selectedIcon?.label ?? "Ícone"}</strong><small>Biblioteca Lucide · vetor SVG</small></div>
+            <span className={styles.iconInspectorPreview}>
+              {selectedIcon
+                ? (() => {
+                    const Icon = selectedIcon.icon;
+                    return <Icon aria-hidden="true" />;
+                  })()
+                : null}
+            </span>
+            <div>
+              <strong>{selectedIcon?.label ?? "Ícone"}</strong>
+              <small>Biblioteca Lucide · vetor SVG</small>
+            </div>
           </div>
           <label className={styles.iconSearchField}>
             <span>Trocar ícone</span>
-            <input value={iconQuery} onChange={(event) => setIconQuery(event.target.value)} placeholder="Buscar por nome ou tema" />
+            <input
+              value={iconQuery}
+              onChange={(event) => setIconQuery(event.target.value)}
+              placeholder="Buscar por nome ou tema"
+            />
           </label>
           <div className={styles.iconInspectorCategories}>
             {institutionalIconCategories.map((item) => (
-              <button type="button" key={item.id} data-active={iconCategory === item.id} onClick={() => setIconCategory(item.id)}>{item.label}</button>
+              <button
+                type="button"
+                key={item.id}
+                data-active={iconCategory === item.id}
+                onClick={() => setIconCategory(item.id)}
+              >
+                {item.label}
+              </button>
             ))}
           </div>
           <div className={styles.iconInspectorGrid}>
             {filteredIconOptions.map((item) => {
               const Icon = item.icon;
               return (
-                <button type="button" key={item.id} data-active={selectedIcon?.id === item.id} onClick={() => onValueChange(item.id)} title={item.label}>
-                  <Icon aria-hidden="true" /><span>{item.label}</span>
+                <button
+                  type="button"
+                  key={item.id}
+                  data-active={selectedIcon?.id === item.id}
+                  onClick={() => onValueChange(item.id)}
+                  title={item.label}
+                >
+                  <Icon aria-hidden="true" />
+                  <span>{item.label}</span>
                 </button>
               );
             })}
@@ -891,7 +1314,12 @@ function ElementOptions({
               ["blob", "Orgânica"],
               ["line", "Linha"],
             ].map(([value, label]) => (
-              <button type="button" key={value} data-active={node.value === value} onClick={() => onValueChange(value)}>
+              <button
+                type="button"
+                key={value}
+                data-active={node.value === value}
+                onClick={() => onValueChange(value)}
+              >
                 <i data-shape={value} aria-hidden="true" />
                 <span>{label}</span>
               </button>
@@ -900,32 +1328,100 @@ function ElementOptions({
         </div>
       ) : null}
 
-
       {shapeNode ? (
         <div className={styles.shapeColorControls}>
           <div className={styles.colorOptions}>
             <span>Preenchimento</span>
             <div>
-              {(["primary", "secondary", "accent", "background"] as const).map((color) => (
-                <button type="button" key={color} data-active={style.backgroundColor === color} onClick={() => onStyleChange({ backgroundColor: color })} aria-label={`Usar preenchimento ${color}`} style={{ background: resolveElementColor(color, brand) ?? undefined }} />
-              ))}
-              <ColorPickerControl value={resolveElementColor(style.backgroundColor, brand) ?? brand?.accentColor ?? "#F7B534"} onChange={(hex) => onStyleChange({ backgroundColor: hex })} label="Preenchimento personalizado" compact />
+              {(["primary", "secondary", "accent", "background"] as const).map(
+                (color) => (
+                  <button
+                    type="button"
+                    key={color}
+                    data-active={style.backgroundColor === color}
+                    onClick={() => onStyleChange({ backgroundColor: color })}
+                    aria-label={`Usar preenchimento ${color}`}
+                    style={{
+                      background:
+                        resolveElementColor(color, brand) ?? undefined,
+                    }}
+                  />
+                ),
+              )}
+              <ColorPickerControl
+                value={
+                  resolveElementColor(style.backgroundColor, brand) ??
+                  brand?.accentColor ??
+                  "#F7B534"
+                }
+                onChange={(hex) => onStyleChange({ backgroundColor: hex })}
+                label="Preenchimento personalizado"
+                compact
+              />
             </div>
-            <SemanticColorChoices value={style.backgroundColor} brand={brand} onChange={(backgroundColor) => onStyleChange({ backgroundColor })} roles={["primary", "secondary", "accent", "background"]} />
+            <SemanticColorChoices
+              value={style.backgroundColor}
+              brand={brand}
+              onChange={(backgroundColor) => onStyleChange({ backgroundColor })}
+              roles={["primary", "secondary", "accent", "background"]}
+            />
           </div>
           <div className={styles.colorOptions}>
             <span>Contorno</span>
             <div>
-              {(["text", "primary", "secondary", "accent"] as const).map((color) => (
-                <button type="button" key={color} data-active={style.color === color} onClick={() => onStyleChange({ color })} aria-label={`Usar contorno ${color}`} style={{ background: resolveElementColor(color, brand) ?? undefined }} />
-              ))}
-              <ColorPickerControl value={resolveElementColor(style.color, brand) ?? brand?.primaryColor ?? "#3864BE"} onChange={(hex) => onStyleChange({ color: hex })} label="Contorno personalizado" compact />
+              {(["text", "primary", "secondary", "accent"] as const).map(
+                (color) => (
+                  <button
+                    type="button"
+                    key={color}
+                    data-active={style.color === color}
+                    onClick={() => onStyleChange({ color })}
+                    aria-label={`Usar contorno ${color}`}
+                    style={{
+                      background:
+                        resolveElementColor(color, brand) ?? undefined,
+                    }}
+                  />
+                ),
+              )}
+              <ColorPickerControl
+                value={
+                  resolveElementColor(style.color, brand) ??
+                  brand?.primaryColor ??
+                  "#3864BE"
+                }
+                onChange={(hex) => onStyleChange({ color: hex })}
+                label="Contorno personalizado"
+                compact
+              />
             </div>
-            <SemanticColorChoices value={style.color} brand={brand} onChange={(color) => onStyleChange({ color })} roles={["text", "primary", "secondary", "accent"]} />
+            <SemanticColorChoices
+              value={style.color}
+              brand={brand}
+              onChange={(color) => onStyleChange({ color })}
+              roles={["text", "primary", "secondary", "accent"]}
+            />
           </div>
           <label className={styles.field}>
             <span>Espessura do contorno</span>
-            <div className={styles.unitInput}><input type="number" min="0" max="20" step="1" value={style.strokeWidth ?? 0} onChange={(event) => onStyleChange({ strokeWidth: Math.max(0, Math.min(20, Number(event.target.value) || 0)) })} /><span>px</span></div>
+            <div className={styles.unitInput}>
+              <input
+                type="number"
+                min="0"
+                max="20"
+                step="1"
+                value={style.strokeWidth ?? 0}
+                onChange={(event) =>
+                  onStyleChange({
+                    strokeWidth: Math.max(
+                      0,
+                      Math.min(20, Number(event.target.value) || 0),
+                    ),
+                  })
+                }
+              />
+              <span>px</span>
+            </div>
           </label>
         </div>
       ) : null}
@@ -936,62 +1432,197 @@ function ElementOptions({
             <label className={styles.field}>
               <span>Largura</span>
               <div className={styles.unitInput}>
-                <input type="number" min="4" max="240" value={currentBoxWidth ?? ""} placeholder="Auto" onChange={(event) => {
-                  if (event.target.value === "") { onStyleChange({ widthPercent: undefined, width: "auto" }); return; }
-                  const next = Number(event.target.value);
-                  if (Number.isFinite(next)) onStyleChange({ widthPercent: Math.min(240, Math.max(4, next)), width: undefined });
-                }} />
+                <input
+                  type="number"
+                  min="4"
+                  max="240"
+                  value={currentBoxWidth ?? ""}
+                  placeholder="Auto"
+                  onChange={(event) => {
+                    if (event.target.value === "") {
+                      onStyleChange({ widthPercent: undefined, width: "auto" });
+                      return;
+                    }
+                    const next = Number(event.target.value);
+                    if (Number.isFinite(next))
+                      onStyleChange({
+                        widthPercent: Math.min(240, Math.max(4, next)),
+                        width: undefined,
+                      });
+                  }}
+                />
                 <span>%</span>
               </div>
             </label>
             <label className={styles.field}>
               <span>Altura</span>
               <div className={styles.unitInput}>
-                <input type="number" min="8" max="1200" value={style.heightPx ?? 120} onChange={(event) => {
-                  const next = Number(event.target.value);
-                  if (Number.isFinite(next)) onStyleChange({ heightPx: Math.min(1200, Math.max(8, next)) });
-                }} />
+                <input
+                  type="number"
+                  min="8"
+                  max="1200"
+                  value={style.heightPx ?? 120}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    if (Number.isFinite(next))
+                      onStyleChange({
+                        heightPx: Math.min(1200, Math.max(8, next)),
+                      });
+                  }}
+                />
                 <span>px</span>
               </div>
             </label>
           </div>
-          <small className={styles.humanHint}>Quadrado e círculo não ficam presos à proporção: arraste as alças para transformá-los em retângulo ou elipse.</small>
-          {!["circle", "triangle", "diamond", "pentagon", "hexagon", "star", "arrow", "blob", "line"].includes(String(node.value)) ? (
+          <small className={styles.humanHint}>
+            Quadrado e círculo não ficam presos à proporção: arraste as alças
+            para transformá-los em retângulo ou elipse.
+          </small>
+          {![
+            "circle",
+            "triangle",
+            "diamond",
+            "pentagon",
+            "hexagon",
+            "star",
+            "arrow",
+            "blob",
+            "line",
+          ].includes(String(node.value)) ? (
             <label className={styles.field}>
-              <span>Arredondamento · {Math.round(style.shapeRadius ?? 8)}%</span>
-              <input type="range" min="0" max="50" step="1" value={style.shapeRadius ?? 8} onChange={(event) => onStyleChange({ shapeRadius: Number(event.target.value) })} />
+              <span>
+                Arredondamento · {Math.round(style.shapeRadius ?? 8)}%
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                step="1"
+                value={style.shapeRadius ?? 8}
+                onChange={(event) =>
+                  onStyleChange({ shapeRadius: Number(event.target.value) })
+                }
+              />
             </label>
           ) : null}
           <label className={styles.field}>
             <span>Opacidade · {Math.round((style.opacity ?? 1) * 100)}%</span>
-            <input type="range" min="0.05" max="1" step="0.05" value={style.opacity ?? 1} onChange={(event) => onStyleChange({ opacity: Number(event.target.value) })} />
+            <input
+              type="range"
+              min="0.05"
+              max="1"
+              step="0.05"
+              value={style.opacity ?? 1}
+              onChange={(event) =>
+                onStyleChange({ opacity: Number(event.target.value) })
+              }
+            />
           </label>
           <label className={styles.field}>
             <span>Rotação · {Math.round(style.rotation ?? 0)}°</span>
-            <input type="range" min="-180" max="180" step="1" value={style.rotation ?? 0} onChange={(event) => onStyleChange({ rotation: Number(event.target.value) })} />
+            <input
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              value={style.rotation ?? 0}
+              onChange={(event) =>
+                onStyleChange({ rotation: Number(event.target.value) })
+              }
+            />
           </label>
         </div>
       ) : iconNode ? (
         <div className={styles.iconGeometryControls}>
           <label className={styles.field}>
             <span>Tamanho · {Math.round(style.iconSizePx ?? 48)}px</span>
-            <input type="range" min="12" max="240" step="1" value={style.iconSizePx ?? 48} onChange={(event) => onStyleChange({ iconSizePx: Number(event.target.value) })} />
+            <input
+              type="range"
+              min="12"
+              max="240"
+              step="1"
+              value={style.iconSizePx ?? 48}
+              onChange={(event) =>
+                onStyleChange({ iconSizePx: Number(event.target.value) })
+              }
+            />
           </label>
           <label className={styles.field}>
             <span>Espessura · {(style.iconStrokeWidth ?? 2).toFixed(1)}</span>
-            <input type="range" min="0.5" max="4" step="0.25" value={style.iconStrokeWidth ?? 2} onChange={(event) => onStyleChange({ iconStrokeWidth: Number(event.target.value) })} />
+            <input
+              type="range"
+              min="0.5"
+              max="4"
+              step="0.25"
+              value={style.iconStrokeWidth ?? 2}
+              onChange={(event) =>
+                onStyleChange({ iconStrokeWidth: Number(event.target.value) })
+              }
+            />
           </label>
           <label className={styles.field}>
             <span>Opacidade · {Math.round((style.opacity ?? 1) * 100)}%</span>
-            <input type="range" min="0.05" max="1" step="0.05" value={style.opacity ?? 1} onChange={(event) => onStyleChange({ opacity: Number(event.target.value) })} />
+            <input
+              type="range"
+              min="0.05"
+              max="1"
+              step="0.05"
+              value={style.opacity ?? 1}
+              onChange={(event) =>
+                onStyleChange({ opacity: Number(event.target.value) })
+              }
+            />
           </label>
           <label className={styles.field}>
             <span>Rotação · {Math.round(style.rotation ?? 0)}°</span>
-            <input type="range" min="-180" max="180" step="1" value={style.rotation ?? 0} onChange={(event) => onStyleChange({ rotation: Number(event.target.value) })} />
+            <input
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              value={style.rotation ?? 0}
+              onChange={(event) =>
+                onStyleChange({ rotation: Number(event.target.value) })
+              }
+            />
           </label>
         </div>
       ) : textBoxNode ? (
         <div className={styles.textBoxControls}>
+          <FontFamilyPicker
+            value={style.fontFamily ?? "legacy"}
+            label="Fonte deste texto"
+            onChange={(value) =>
+              onStyleChange({
+                fontFamily: value === "legacy" ? undefined : value,
+                fontPreset: undefined,
+              })
+            }
+          />
+          {brand ? (
+            <label className={styles.field}>
+              <span>Estilo da minha marca</span>
+              <select
+                value={style.fontPreset ?? ""}
+                onChange={(event) =>
+                  onStyleChange({
+                    fontPreset: (event.target.value ||
+                      undefined) as InstitutionalElementStyle["fontPreset"],
+                    fontFamily: undefined,
+                    fontSize: undefined,
+                  })
+                }
+              >
+                <option value="">Sem vínculo</option>
+                <option value="display">Título principal</option>
+                <option value="heading">Título de seção</option>
+                <option value="subheading">Subtítulo</option>
+                <option value="body">Corpo do texto</option>
+                <option value="caption">Legenda</option>
+                <option value="button">Botão</option>
+              </select>
+            </label>
+          ) : null}
           <div className={styles.compactGrid}>
             <label className={styles.field}>
               <span>Tamanho do texto</span>
@@ -1004,7 +1635,10 @@ function ElementOptions({
                   value={currentFontSize}
                   onChange={(event) => {
                     const value = Number(event.target.value);
-                    if (Number.isFinite(value)) onStyleChange({ fontSize: Math.min(160, Math.max(10, value)) });
+                    if (Number.isFinite(value))
+                      onStyleChange({
+                        fontSize: Math.min(160, Math.max(10, value)),
+                      });
                   }}
                 />
                 <span>px</span>
@@ -1027,7 +1661,11 @@ function ElementOptions({
                       return;
                     }
                     const value = Number(event.target.value);
-                    if (Number.isFinite(value)) onStyleChange({ widthPercent: Math.min(240, Math.max(8, value)), width: undefined });
+                    if (Number.isFinite(value))
+                      onStyleChange({
+                        widthPercent: Math.min(240, Math.max(8, value)),
+                        width: undefined,
+                      });
                   }}
                 />
                 <span>%</span>
@@ -1035,17 +1673,51 @@ function ElementOptions({
             </label>
           </div>
 
-          <div className={styles.textBoxPresets} aria-label="Larguras rápidas da caixa de texto">
-            <button type="button" data-active={currentBoxWidth === undefined} onClick={() => onStyleChange({ widthPercent: undefined, width: "auto" })}>Auto</button>
+          <div
+            className={styles.textBoxPresets}
+            aria-label="Larguras rápidas da caixa de texto"
+          >
+            <button
+              type="button"
+              data-active={currentBoxWidth === undefined}
+              onClick={() =>
+                onStyleChange({ widthPercent: undefined, width: "auto" })
+              }
+            >
+              Auto
+            </button>
             {[25, 50, 75, 100, 150].map((width) => (
-              <button type="button" key={width} data-active={Math.round(currentBoxWidth ?? -1) === width} onClick={() => onStyleChange({ widthPercent: width, width: undefined })}>{width}%</button>
+              <button
+                type="button"
+                key={width}
+                data-active={Math.round(currentBoxWidth ?? -1) === width}
+                onClick={() =>
+                  onStyleChange({ widthPercent: width, width: undefined })
+                }
+              >
+                {width}%
+              </button>
             ))}
           </div>
 
           <div className={styles.textBoxHelp}>
             <strong>Fonte e caixa são independentes.</strong>
-            <span>{style.fontSize === undefined ? `O design está usando ${Math.round(currentFontSize)} px neste tamanho de tela. ` : ""}Arraste as alças laterais para mudar somente a largura e a quebra das linhas. No modo livre a caixa pode ultrapassar a coluna original.</span>
-            {style.fontSize !== undefined ? <button type="button" onClick={() => onStyleChange({ fontSize: undefined })}>Usar tamanho do design</button> : null}
+            <span>
+              {style.fontSize === undefined
+                ? `O design está usando ${Math.round(currentFontSize)} px neste tamanho de tela. `
+                : ""}
+              Arraste as alças laterais para mudar somente a largura e a quebra
+              das linhas. No modo livre a caixa pode ultrapassar a coluna
+              original.
+            </span>
+            {style.fontSize !== undefined ? (
+              <button
+                type="button"
+                onClick={() => onStyleChange({ fontSize: undefined })}
+              >
+                Usar tamanho do design
+              </button>
+            ) : null}
           </div>
         </div>
       ) : imageNode ? (
@@ -1067,7 +1739,11 @@ function ElementOptions({
                       return;
                     }
                     const value = Number(event.target.value);
-                    if (Number.isFinite(value)) onStyleChange({ widthPercent: Math.min(240, Math.max(10, value)), width: undefined });
+                    if (Number.isFinite(value))
+                      onStyleChange({
+                        widthPercent: Math.min(240, Math.max(10, value)),
+                        width: undefined,
+                      });
                   }}
                 />
                 <span>%</span>
@@ -1090,7 +1766,10 @@ function ElementOptions({
                       return;
                     }
                     const value = Number(event.target.value);
-                    if (Number.isFinite(value)) onStyleChange({ heightPx: Math.min(1400, Math.max(80, value)) });
+                    if (Number.isFinite(value))
+                      onStyleChange({
+                        heightPx: Math.min(1400, Math.max(80, value)),
+                      });
                   }}
                 />
                 <span>px</span>
@@ -1098,16 +1777,38 @@ function ElementOptions({
             </label>
           </div>
 
-          <div className={styles.textBoxPresets} aria-label="Larguras rápidas da moldura">
+          <div
+            className={styles.textBoxPresets}
+            aria-label="Larguras rápidas da moldura"
+          >
             {[25, 50, 75, 100].map((width) => (
-              <button type="button" key={width} data-active={Math.round(currentBoxWidth ?? -1) === width} onClick={() => onStyleChange({ widthPercent: width, width: undefined })}>{width}%</button>
+              <button
+                type="button"
+                key={width}
+                data-active={Math.round(currentBoxWidth ?? -1) === width}
+                onClick={() =>
+                  onStyleChange({ widthPercent: width, width: undefined })
+                }
+              >
+                {width}%
+              </button>
             ))}
-            <button type="button" data-active={style.heightPx === undefined} onClick={() => onStyleChange({ heightPx: undefined })}>Altura auto</button>
+            <button
+              type="button"
+              data-active={style.heightPx === undefined}
+              onClick={() => onStyleChange({ heightPx: undefined })}
+            >
+              Altura auto
+            </button>
           </div>
 
           <div className={styles.textBoxHelp}>
             <strong>Moldura e foto são independentes.</strong>
-            <span>As alças mudam o espaço ocupado pela moldura. Dê duplo clique na foto ou use “Ajustar foto” para mover o enquadramento sem deslocar o elemento.</span>
+            <span>
+              As alças mudam o espaço ocupado pela moldura. Dê duplo clique na
+              foto ou use “Ajustar foto” para mover o enquadramento sem deslocar
+              o elemento.
+            </span>
           </div>
         </div>
       ) : (
@@ -1116,7 +1817,11 @@ function ElementOptions({
             <span>Tamanho</span>
             <select
               value={style.size ?? "md"}
-              onChange={(event) => onStyleChange({ size: event.target.value as InstitutionalElementStyle["size"] })}
+              onChange={(event) =>
+                onStyleChange({
+                  size: event.target.value as InstitutionalElementStyle["size"],
+                })
+              }
             >
               <option value="xs">Muito pequeno</option>
               <option value="sm">Pequeno</option>
@@ -1132,7 +1837,13 @@ function ElementOptions({
             <span>Largura</span>
             <select
               value={style.width ?? "100"}
-              onChange={(event) => onStyleChange({ width: event.target.value as InstitutionalElementStyle["width"], widthPercent: undefined })}
+              onChange={(event) =>
+                onStyleChange({
+                  width: event.target
+                    .value as InstitutionalElementStyle["width"],
+                  widthPercent: undefined,
+                })
+              }
             >
               <option value="auto">Automática</option>
               <option value="25">25%</option>
@@ -1152,7 +1863,12 @@ function ElementOptions({
           <div className={styles.sectionAppearanceBody}>
             <div className={styles.visualOptionGroup}>
               <span className={styles.visualOptionTitle}>Forma da foto</span>
-              <ImageFramePicker style={style} frames={designFrames} previewImageUrl={previewImageUrl} onChange={onStyleChange} />
+              <ImageFramePicker
+                style={style}
+                frames={designFrames}
+                previewImageUrl={previewImageUrl}
+                onChange={onStyleChange}
+              />
             </div>
 
             <div className={styles.visualOptionGroup}>
@@ -1165,62 +1881,139 @@ function ElementOptions({
                   ["16:9", "Panorâmica", "▬"],
                   ["portrait", "Retrato", "▯"],
                 ].map(([value, label, icon]) => (
-                  <button type="button" key={value} data-active={(style.imageAspect ?? "auto") === value} onClick={() => onStyleChange({ imageAspect: value as NonNullable<InstitutionalElementStyle["imageAspect"]>, heightPx: undefined })}>
-                    <b>{icon}</b><span>{label}</span>
+                  <button
+                    type="button"
+                    key={value}
+                    data-active={(style.imageAspect ?? "auto") === value}
+                    onClick={() =>
+                      onStyleChange({
+                        imageAspect: value as NonNullable<
+                          InstitutionalElementStyle["imageAspect"]
+                        >,
+                        heightPx: undefined,
+                      })
+                    }
+                  >
+                    <b>{icon}</b>
+                    <span>{label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div className={styles.fitPicker}>
-              <button type="button" data-active={(style.imageFit ?? "cover") === "cover"} onClick={() => onStyleChange({ imageFit: "cover" })}>
-                <span className={styles.fitPreview} data-mode="cover" /><strong>Preencher espaço</strong><small>A foto ocupa toda a moldura.</small>
+              <button
+                type="button"
+                data-active={(style.imageFit ?? "cover") === "cover"}
+                onClick={() => onStyleChange({ imageFit: "cover" })}
+              >
+                <span className={styles.fitPreview} data-mode="cover" />
+                <strong>Preencher espaço</strong>
+                <small>A foto ocupa toda a moldura.</small>
               </button>
-              <button type="button" data-active={(style.imageFit ?? "cover") === "contain"} onClick={() => onStyleChange({ imageFit: "contain" })}>
-                <span className={styles.fitPreview} data-mode="contain" /><strong>Mostrar inteira</strong><small>Evita cortar partes da foto.</small>
+              <button
+                type="button"
+                data-active={(style.imageFit ?? "cover") === "contain"}
+                onClick={() => onStyleChange({ imageFit: "contain" })}
+              >
+                <span className={styles.fitPreview} data-mode="contain" />
+                <strong>Mostrar inteira</strong>
+                <small>Evita cortar partes da foto.</small>
               </button>
             </div>
 
             <label className={styles.field}>
-              <span>Aproximar foto · {Math.round((style.imageZoom ?? 1) * 100)}%</span>
-              <input type="range" min="1" max="3" step="0.05" value={style.imageZoom ?? 1} onChange={(event) => onStyleChange({ imageZoom: Number(event.target.value) })} />
+              <span>
+                Aproximar foto · {Math.round((style.imageZoom ?? 1) * 100)}%
+              </span>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.05"
+                value={style.imageZoom ?? 1}
+                onChange={(event) =>
+                  onStyleChange({ imageZoom: Number(event.target.value) })
+                }
+              />
             </label>
 
             <div className={styles.visualOptionGroup}>
-              <span className={styles.visualOptionTitle}>Enquadramento rápido</span>
-              <div className={styles.focalGrid} aria-label="Posição principal da foto">
-                {[25, 50, 75].flatMap((y) => [25, 50, 75].map((x) => (
-                  <button type="button" key={`${x}-${y}`} data-active={Math.abs((style.focalX ?? 50) - x) < 13 && Math.abs((style.focalY ?? 50) - y) < 13} onClick={() => onStyleChange({ focalX: x, focalY: y })} aria-label={`Focar em ${x === 25 ? "esquerda" : x === 75 ? "direita" : "centro"}, ${y === 25 ? "topo" : y === 75 ? "base" : "meio"}`} />
-                )))}
+              <span className={styles.visualOptionTitle}>
+                Enquadramento rápido
+              </span>
+              <div
+                className={styles.focalGrid}
+                aria-label="Posição principal da foto"
+              >
+                {[25, 50, 75].flatMap((y) =>
+                  [25, 50, 75].map((x) => (
+                    <button
+                      type="button"
+                      key={`${x}-${y}`}
+                      data-active={
+                        Math.abs((style.focalX ?? 50) - x) < 13 &&
+                        Math.abs((style.focalY ?? 50) - y) < 13
+                      }
+                      onClick={() => onStyleChange({ focalX: x, focalY: y })}
+                      aria-label={`Focar em ${x === 25 ? "esquerda" : x === 75 ? "direita" : "centro"}, ${y === 25 ? "topo" : y === 75 ? "base" : "meio"}`}
+                    />
+                  )),
+                )}
               </div>
-              <small className={styles.humanHint}>Dê duplo clique na foto (ou use “Ajustar foto”) e então arraste o enquadramento no canvas.</small>
+              <small className={styles.humanHint}>
+                Dê duplo clique na foto (ou use “Ajustar foto”) e então arraste
+                o enquadramento no canvas.
+              </small>
             </div>
 
             <div className={styles.visualOptionGroup}>
               <span className={styles.visualOptionTitle}>Cor sobre a foto</span>
               <div className={styles.overlayRow}>
                 <div className={styles.colorChoices}>
-                  {(["primary", "secondary", "accent", "text"] as const).map((color) => (
-                    <button
-                      type="button"
-                      key={color}
-                      data-color={color}
-                      data-active={style.overlayColor === color}
-                      onClick={() => onStyleChange({ overlayColor: color })}
-                      aria-label={`Usar cor recomendada ${color}`}
-                      style={{ background: resolveElementColor(color, brand) ?? undefined }}
-                    />
-                  ))}
+                  {(["primary", "secondary", "accent", "text"] as const).map(
+                    (color) => (
+                      <button
+                        type="button"
+                        key={color}
+                        data-color={color}
+                        data-active={style.overlayColor === color}
+                        onClick={() => onStyleChange({ overlayColor: color })}
+                        aria-label={`Usar cor recomendada ${color}`}
+                        style={{
+                          background:
+                            resolveElementColor(color, brand) ?? undefined,
+                        }}
+                      />
+                    ),
+                  )}
                   <ColorPickerControl
-                    value={resolveElementColor(style.overlayColor, brand) ?? "#000000"}
+                    value={
+                      resolveElementColor(style.overlayColor, brand) ??
+                      "#000000"
+                    }
                     onChange={(hex) => onStyleChange({ overlayColor: hex })}
                     label="Cor sobre a foto"
                     compact
                   />
                 </div>
                 <label className={styles.field}>
-                  <span>Intensidade · {Math.round((style.overlayOpacity ?? 0) * 100)}%</span>
-                  <input type="range" min="0" max="0.8" step="0.05" value={style.overlayOpacity ?? 0} onChange={(event) => onStyleChange({ overlayOpacity: Number(event.target.value) })} />
+                  <span>
+                    Intensidade ·{" "}
+                    {Math.round((style.overlayOpacity ?? 0) * 100)}%
+                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="0.8"
+                    step="0.05"
+                    value={style.overlayOpacity ?? 0}
+                    onChange={(event) =>
+                      onStyleChange({
+                        overlayOpacity: Number(event.target.value),
+                      })
+                    }
+                  />
                 </label>
               </div>
             </div>
@@ -1228,17 +2021,28 @@ function ElementOptions({
         </details>
       ) : null}
 
-      {(textBoxNode || buttonNode) ? (
+      {textBoxNode || buttonNode ? (
         <div className={styles.visualOptionGroup}>
           <span className={styles.visualOptionTitle}>Alinhar texto</span>
           <div className={styles.alignmentPicker}>
-            {([
-              ["left", "Esquerda", <FiAlignLeft key="left" />],
-              ["center", "Centro", <FiAlignCenter key="center" />],
-              ["right", "Direita", <FiAlignRight key="right" />],
-              ["justify", "Justificar", <FiAlignJustify key="justify" />],
-            ] as const).map(([value, label, icon]) => (
-              <button type="button" key={value} data-active={(style.align ?? "left") === value} onClick={() => onStyleChange({ align: value })} title={label}><b>{icon}</b><span>{label}</span></button>
+            {(
+              [
+                ["left", "Esquerda", <FiAlignLeft key="left" />],
+                ["center", "Centro", <FiAlignCenter key="center" />],
+                ["right", "Direita", <FiAlignRight key="right" />],
+                ["justify", "Justificar", <FiAlignJustify key="justify" />],
+              ] as const
+            ).map(([value, label, icon]) => (
+              <button
+                type="button"
+                key={value}
+                data-active={(style.align ?? "left") === value}
+                onClick={() => onStyleChange({ align: value })}
+                title={label}
+              >
+                <b>{icon}</b>
+                <span>{label}</span>
+              </button>
             ))}
           </div>
         </div>
@@ -1246,78 +2050,194 @@ function ElementOptions({
 
       <div className={styles.visualOptionGroup}>
         <span className={styles.visualOptionTitle}>Alinhar onde já está</span>
-        <small className={styles.humanHint}>Só corrige um eixo por vez. O outro permanece exatamente onde está.</small>
+        <small className={styles.humanHint}>
+          Só corrige um eixo por vez. O outro permanece exatamente onde está.
+        </small>
         <div className={styles.alignObjectGrid}>
-          <button type="button" onClick={() => alignCurrentElement("horizontal", "start")}><b>←</b><span>Esquerda</span></button>
-          <button type="button" onClick={() => alignCurrentElement("horizontal", "center")}><b>↔</b><span>Centro</span></button>
-          <button type="button" onClick={() => alignCurrentElement("horizontal", "end")}><b>→</b><span>Direita</span></button>
-          <button type="button" onClick={() => alignCurrentElement("vertical", "start")}><b>↑</b><span>Topo</span></button>
-          <button type="button" onClick={() => alignCurrentElement("vertical", "center")}><b>↕</b><span>Meio</span></button>
-          <button type="button" onClick={() => alignCurrentElement("vertical", "end")}><b>↓</b><span>Base</span></button>
+          <button
+            type="button"
+            onClick={() => alignCurrentElement("horizontal", "start")}
+          >
+            <b>←</b>
+            <span>Esquerda</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => alignCurrentElement("horizontal", "center")}
+          >
+            <b>↔</b>
+            <span>Centro</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => alignCurrentElement("horizontal", "end")}
+          >
+            <b>→</b>
+            <span>Direita</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => alignCurrentElement("vertical", "start")}
+          >
+            <b>↑</b>
+            <span>Topo</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => alignCurrentElement("vertical", "center")}
+          >
+            <b>↕</b>
+            <span>Meio</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => alignCurrentElement("vertical", "end")}
+          >
+            <b>↓</b>
+            <span>Base</span>
+          </button>
         </div>
       </div>
 
       <div className={styles.visualOptionGroup}>
         <span className={styles.visualOptionTitle}>Posição no fluxo</span>
         <div className={styles.placementPicker}>
-          <button type="button" data-active={style.placement === "left"} onClick={() => onStyleChange({ placement: "left", offsetX: 0 })}>À esquerda</button>
-          <button type="button" data-active={style.placement === "center"} onClick={() => onStyleChange({ placement: "center", offsetX: 0 })}>Centralizar</button>
-          <button type="button" data-active={style.placement === "right"} onClick={() => onStyleChange({ placement: "right", offsetX: 0 })}>À direita</button>
+          <button
+            type="button"
+            data-active={style.placement === "left"}
+            onClick={() => onStyleChange({ placement: "left", offsetX: 0 })}
+          >
+            À esquerda
+          </button>
+          <button
+            type="button"
+            data-active={style.placement === "center"}
+            onClick={() => onStyleChange({ placement: "center", offsetX: 0 })}
+          >
+            Centralizar
+          </button>
+          <button
+            type="button"
+            data-active={style.placement === "right"}
+            onClick={() => onStyleChange({ placement: "right", offsetX: 0 })}
+          >
+            À direita
+          </button>
         </div>
-        <button type="button" className={styles.resetPosition} onClick={() => onStyleChange({ offsetX: 0, offsetY: 0 })}>Voltar para a posição original</button>
+        <button
+          type="button"
+          className={styles.resetPosition}
+          onClick={() => onStyleChange({ offsetX: 0, offsetY: 0 })}
+        >
+          Voltar para a posição original
+        </button>
       </div>
 
       <div className={styles.layerQuickControls}>
-        <button type="button" onClick={() => onStyleChange({ zIndex: Math.max(-20, (style.zIndex ?? 0) - 1) })}>Enviar para trás</button>
-        <button type="button" onClick={() => onStyleChange({ zIndex: Math.min(20, (style.zIndex ?? 0) + 1) })}>Trazer para frente</button>
-        <button type="button" data-active={Boolean(style.locked)} onClick={() => onStyleChange({ locked: !style.locked })}>{style.locked ? <FiUnlock /> : <FiLock />}{style.locked ? "Destravar" : "Travar"}</button>
-        <button type="button" data-active={Boolean(style.hidden)} onClick={() => onStyleChange({ hidden: !style.hidden })}>{style.hidden ? <FiEye /> : <FiEyeOff />}{style.hidden ? "Mostrar" : "Ocultar"}</button>
+        <button
+          type="button"
+          onClick={() =>
+            onStyleChange({ zIndex: Math.max(-20, (style.zIndex ?? 0) - 1) })
+          }
+        >
+          Enviar para trás
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            onStyleChange({ zIndex: Math.min(20, (style.zIndex ?? 0) + 1) })
+          }
+        >
+          Trazer para frente
+        </button>
+        <button
+          type="button"
+          data-active={Boolean(style.locked)}
+          onClick={() => onStyleChange({ locked: !style.locked })}
+        >
+          {style.locked ? <FiUnlock /> : <FiLock />}
+          {style.locked ? "Destravar" : "Travar"}
+        </button>
+        <button
+          type="button"
+          data-active={Boolean(style.hidden)}
+          onClick={() => onStyleChange({ hidden: !style.hidden })}
+        >
+          {style.hidden ? <FiEye /> : <FiEyeOff />}
+          {style.hidden ? "Mostrar" : "Ocultar"}
+        </button>
       </div>
 
       {!imageNode && !shapeNode ? (
-      <div className={styles.colorOptions}>
-        <span>Cor</span>
-        <div>
-          {(["text", "primary", "secondary", "accent"] as const).map((color) => (
-            <button
-              type="button"
-              key={color}
-              data-color={color}
-              data-active={style.color === color}
-              onClick={() => onStyleChange({ color })}
-              aria-label={`Usar cor ${color}`}
-              style={{ background: resolveElementColor(color, brand) ?? undefined }}
+        <div className={styles.colorOptions}>
+          <span>Cor</span>
+          <div>
+            {(["text", "primary", "secondary", "accent"] as const).map(
+              (color) => (
+                <button
+                  type="button"
+                  key={color}
+                  data-color={color}
+                  data-active={style.color === color}
+                  onClick={() => onStyleChange({ color })}
+                  aria-label={`Usar cor ${color}`}
+                  style={{
+                    background: resolveElementColor(color, brand) ?? undefined,
+                  }}
+                />
+              ),
+            )}
+            <SemanticColorChoices
+              value={style.color}
+              brand={brand}
+              onChange={(color) => onStyleChange({ color })}
+              roles={["text", "primary", "secondary", "accent"]}
             />
-          ))}
-          <SemanticColorChoices value={style.color} brand={brand} onChange={(color) => onStyleChange({ color })} roles={["text", "primary", "secondary", "accent"]} />
-          <ColorPickerControl
-            value={resolveElementColor(style.color, brand) ?? brand?.textColor ?? "#091C30"}
-            onChange={(hex) => onStyleChange({ color: hex })}
-            label="Cor personalizada"
-            compact
-          />
+            <ColorPickerControl
+              value={
+                resolveElementColor(style.color, brand) ??
+                brand?.textColor ??
+                "#091C30"
+              }
+              onChange={(hex) => onStyleChange({ color: hex })}
+              label="Cor personalizada"
+              compact
+            />
+          </div>
         </div>
-      </div>
       ) : null}
 
       {custom && node.elementType === "button" ? (
         <div className={styles.colorOptions}>
           <span>Fundo do botão</span>
           <div>
-            {(["primary", "secondary", "accent", "background"] as const).map((color) => (
-              <button
-                type="button"
-                key={color}
-                data-color={color}
-                data-active={style.backgroundColor === color}
-                onClick={() => onStyleChange({ backgroundColor: color })}
-                aria-label={`Usar fundo ${color}`}
-                style={{ background: resolveElementColor(color, brand) ?? undefined }}
-              />
-            ))}
-            <SemanticColorChoices value={style.backgroundColor} brand={brand} onChange={(backgroundColor) => onStyleChange({ backgroundColor })} roles={["primary", "secondary", "accent", "background"]} />
+            {(["primary", "secondary", "accent", "background"] as const).map(
+              (color) => (
+                <button
+                  type="button"
+                  key={color}
+                  data-color={color}
+                  data-active={style.backgroundColor === color}
+                  onClick={() => onStyleChange({ backgroundColor: color })}
+                  aria-label={`Usar fundo ${color}`}
+                  style={{
+                    background: resolveElementColor(color, brand) ?? undefined,
+                  }}
+                />
+              ),
+            )}
+            <SemanticColorChoices
+              value={style.backgroundColor}
+              brand={brand}
+              onChange={(backgroundColor) => onStyleChange({ backgroundColor })}
+              roles={["primary", "secondary", "accent", "background"]}
+            />
             <ColorPickerControl
-              value={resolveElementColor(style.backgroundColor, brand) ?? brand?.accentColor ?? "#F7B534"}
+              value={
+                resolveElementColor(style.backgroundColor, brand) ??
+                brand?.accentColor ??
+                "#F7B534"
+              }
               onChange={(hex) => onStyleChange({ backgroundColor: hex })}
               label="Fundo personalizado"
               compact
@@ -1328,12 +2248,33 @@ function ElementOptions({
 
       {!imageNode && !shapeNode && !iconNode && contrast !== null ? (
         contrastPass ? (
-          <div className={styles.readingOk}><FiCheck /><span>Boa leitura</span></div>
+          <div className={styles.readingOk}>
+            <FiCheck />
+            <span>Boa leitura</span>
+          </div>
         ) : (
           <div className={styles.contrastNotice} data-pass="false">
             <strong>Esse texto pode ficar difícil de ler</strong>
-            <span>A cor está muito próxima do fundo. Você pode continuar assim ou usar uma combinação mais segura.</span>
-            {effectiveBackground ? <button type="button" onClick={() => onStyleChange({ color: bestReadableElementColor(effectiveBackground, effectiveText ?? brand?.textColor ?? "#091c30", contrastThreshold) })}>Melhorar automaticamente</button> : null}
+            <span>
+              A cor está muito próxima do fundo. Você pode continuar assim ou
+              usar uma combinação mais segura.
+            </span>
+            {effectiveBackground ? (
+              <button
+                type="button"
+                onClick={() =>
+                  onStyleChange({
+                    color: bestReadableElementColor(
+                      effectiveBackground,
+                      effectiveText ?? brand?.textColor ?? "#091c30",
+                      contrastThreshold,
+                    ),
+                  })
+                }
+              >
+                Melhorar automaticamente
+              </button>
+            ) : null}
           </div>
         )
       ) : null}
@@ -1342,37 +2283,149 @@ function ElementOptions({
         <details className={styles.designerRules} open>
           <summary>Regras para quem usar o template</summary>
           <div className={styles.designerRulesBody}>
-            <p>O tamanho atual é o padrão do template. Defina até onde a ONG pode reduzir ou ampliar este elemento no modo guiado.</p>
+            <p>
+              O tamanho atual é o padrão do template. Defina até onde a ONG pode
+              reduzir ou ampliar este elemento no modo guiado.
+            </p>
             <div className={styles.designerDefault}>
               <span>Padrão atual</span>
               <strong>
-                {widthDefault !== undefined ? `${Math.round(widthDefault)}%` : "Largura automática"}
-                {textBoxNode ? ` · ${fontDefault}px` : (imageNode || buttonNode || shapeNode) ? ` · ${heightDefault !== undefined ? `${Math.round(heightDefault)}px` : "altura do design"}` : ""}
+                {widthDefault !== undefined
+                  ? `${Math.round(widthDefault)}%`
+                  : "Largura automática"}
+                {textBoxNode
+                  ? ` · ${fontDefault}px`
+                  : imageNode || buttonNode || shapeNode
+                    ? ` · ${heightDefault !== undefined ? `${Math.round(heightDefault)}px` : "altura do design"}`
+                    : ""}
               </strong>
             </div>
             <div className={styles.constraintGrid}>
               <label>
                 <span>Largura mínima</span>
-                <div><input type="number" min="8" max="100" value={constraints.minWidthPercent ?? 8} onChange={(event) => changeConstraints({ minWidthPercent: Number(event.target.value) })} /><b>%</b></div>
+                <div>
+                  <input
+                    type="number"
+                    min="8"
+                    max="100"
+                    value={constraints.minWidthPercent ?? 8}
+                    onChange={(event) =>
+                      changeConstraints({
+                        minWidthPercent: Number(event.target.value),
+                      })
+                    }
+                  />
+                  <b>%</b>
+                </div>
               </label>
               <label>
                 <span>Largura máxima</span>
-                <div><input type="number" min="8" max="100" value={constraints.maxWidthPercent ?? 100} onChange={(event) => changeConstraints({ maxWidthPercent: Number(event.target.value) })} /><b>%</b></div>
+                <div>
+                  <input
+                    type="number"
+                    min="8"
+                    max="100"
+                    value={constraints.maxWidthPercent ?? 100}
+                    onChange={(event) =>
+                      changeConstraints({
+                        maxWidthPercent: Number(event.target.value),
+                      })
+                    }
+                  />
+                  <b>%</b>
+                </div>
               </label>
               {textBoxNode ? (
                 <>
-                  <label><span>Texto mínimo</span><div><input type="number" min="10" max="160" value={constraints.minFontSize ?? Math.max(10, Math.min(fontDefault, 12))} onChange={(event) => changeConstraints({ minFontSize: Number(event.target.value) })} /><b>px</b></div></label>
-                  <label><span>Texto máximo</span><div><input type="number" min="10" max="160" value={constraints.maxFontSize ?? Math.max(fontDefault, 84)} onChange={(event) => changeConstraints({ maxFontSize: Number(event.target.value) })} /><b>px</b></div></label>
+                  <label>
+                    <span>Texto mínimo</span>
+                    <div>
+                      <input
+                        type="number"
+                        min="10"
+                        max="160"
+                        value={
+                          constraints.minFontSize ??
+                          Math.max(10, Math.min(fontDefault, 12))
+                        }
+                        onChange={(event) =>
+                          changeConstraints({
+                            minFontSize: Number(event.target.value),
+                          })
+                        }
+                      />
+                      <b>px</b>
+                    </div>
+                  </label>
+                  <label>
+                    <span>Texto máximo</span>
+                    <div>
+                      <input
+                        type="number"
+                        min="10"
+                        max="160"
+                        value={
+                          constraints.maxFontSize ?? Math.max(fontDefault, 84)
+                        }
+                        onChange={(event) =>
+                          changeConstraints({
+                            maxFontSize: Number(event.target.value),
+                          })
+                        }
+                      />
+                      <b>px</b>
+                    </div>
+                  </label>
                 </>
               ) : null}
               {imageNode || buttonNode || shapeNode ? (
                 <>
-                  <label><span>Altura mínima</span><div><input type="number" min={imageNode ? 80 : buttonNode ? 32 : 24} max="1400" value={constraints.minHeightPx ?? (imageNode ? 80 : buttonNode ? 32 : 24)} onChange={(event) => changeConstraints({ minHeightPx: Number(event.target.value) })} /><b>px</b></div></label>
-                  <label><span>Altura máxima</span><div><input type="number" min={imageNode ? 80 : buttonNode ? 32 : 24} max="1400" value={constraints.maxHeightPx ?? (buttonNode ? 420 : 1400)} onChange={(event) => changeConstraints({ maxHeightPx: Number(event.target.value) })} /><b>px</b></div></label>
+                  <label>
+                    <span>Altura mínima</span>
+                    <div>
+                      <input
+                        type="number"
+                        min={imageNode ? 80 : buttonNode ? 32 : 24}
+                        max="1400"
+                        value={
+                          constraints.minHeightPx ??
+                          (imageNode ? 80 : buttonNode ? 32 : 24)
+                        }
+                        onChange={(event) =>
+                          changeConstraints({
+                            minHeightPx: Number(event.target.value),
+                          })
+                        }
+                      />
+                      <b>px</b>
+                    </div>
+                  </label>
+                  <label>
+                    <span>Altura máxima</span>
+                    <div>
+                      <input
+                        type="number"
+                        min={imageNode ? 80 : buttonNode ? 32 : 24}
+                        max="1400"
+                        value={
+                          constraints.maxHeightPx ?? (buttonNode ? 420 : 1400)
+                        }
+                        onChange={(event) =>
+                          changeConstraints({
+                            maxHeightPx: Number(event.target.value),
+                          })
+                        }
+                      />
+                      <b>px</b>
+                    </div>
+                  </label>
                 </>
               ) : null}
             </div>
-            <small>Esses limites protegem o design no modo guiado. No modo livre, a ONG pode ultrapassá-los conscientemente.</small>
+            <small>
+              Esses limites protegem o design no modo guiado. No modo livre, a
+              ONG pode ultrapassá-los conscientemente.
+            </small>
           </div>
         </details>
       ) : null}
@@ -1417,9 +2470,13 @@ export default function PropertiesPanel({
   allowImageUpload?: boolean;
   designFrames?: InstitutionalDesignFrame[];
   designerMode?: boolean;
-  onElementConstraintsChange?: (constraints: InstitutionalElementConstraints) => void;
+  onElementConstraintsChange?: (
+    constraints: InstitutionalElementConstraints,
+  ) => void;
 }) {
-  const [panelTab, setPanelTab] = useState<"content" | "design" | "layout">("content");
+  const [panelTab, setPanelTab] = useState<"content" | "design" | "layout">(
+    "content",
+  );
 
   if (!section) {
     return (
@@ -1429,7 +2486,11 @@ export default function PropertiesPanel({
             <strong>Propriedades</strong>
             <span>Selecione uma seção para editar.</span>
           </div>
-          <button type="button" onClick={onCollapse} aria-label="Recolher painel">
+          <button
+            type="button"
+            onClick={onCollapse}
+            aria-label="Recolher painel"
+          >
             <FiChevronRight />
           </button>
         </div>
@@ -1445,11 +2506,13 @@ export default function PropertiesPanel({
     (variant) => variant.sectionType === section.sectionType,
   );
   const sectionStyle =
-    section.settings.sectionStyle && typeof section.settings.sectionStyle === "object"
+    section.settings.sectionStyle &&
+    typeof section.settings.sectionStyle === "object"
       ? (section.settings.sectionStyle as InstitutionalSectionStyle)
       : {};
   const contentGuidance =
-    section.settings.contentGuidance && typeof section.settings.contentGuidance === "object"
+    section.settings.contentGuidance &&
+    typeof section.settings.contentGuidance === "object"
       ? (section.settings.contentGuidance as {
           source?: string;
           area?: string | null;
@@ -1476,31 +2539,80 @@ export default function PropertiesPanel({
         </button>
       </div>
 
-      <div className={styles.inspectorTabs} role="tablist" aria-label="Opções da seção">
-        <button type="button" role="tab" aria-selected={panelTab === "content"} data-active={panelTab === "content"} onClick={() => setPanelTab("content")}>Conteúdo</button>
-        <button type="button" role="tab" aria-selected={panelTab === "design"} data-active={panelTab === "design"} onClick={() => setPanelTab("design")}>Design</button>
-        <button type="button" role="tab" aria-selected={panelTab === "layout"} data-active={panelTab === "layout"} onClick={() => setPanelTab("layout")}>Layout</button>
+      <div
+        className={styles.inspectorTabs}
+        role="tablist"
+        aria-label="Opções da seção"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={panelTab === "content"}
+          data-active={panelTab === "content"}
+          onClick={() => setPanelTab("content")}
+        >
+          Conteúdo
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={panelTab === "design"}
+          data-active={panelTab === "design"}
+          onClick={() => setPanelTab("design")}
+        >
+          Design
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={panelTab === "layout"}
+          data-active={panelTab === "layout"}
+          onClick={() => setPanelTab("layout")}
+        >
+          Layout
+        </button>
       </div>
 
       <div className={styles.guidedIntro} data-tab={panelTab}>
-        <strong>{panelTab === "content" ? "O que esta seção diz" : panelTab === "design" ? "Como esta seção aparece" : "Como o conteúdo ocupa o espaço"}</strong>
-        <span>{panelTab === "content" ? "Edite textos, imagens e ações. A CONG mantém o restante organizado." : panelTab === "design" ? "Escolha uma composição e personalize o visual sem perder seu conteúdo." : "Ajuste espaço e largura. As opções recomendadas funcionam melhor em mais tamanhos de tela."}</span>
+        <strong>
+          {panelTab === "content"
+            ? "O que esta seção diz"
+            : panelTab === "design"
+              ? "Como esta seção aparece"
+              : "Como o conteúdo ocupa o espaço"}
+        </strong>
+        <span>
+          {panelTab === "content"
+            ? "Edite textos, imagens e ações. A CONG mantém o restante organizado."
+            : panelTab === "design"
+              ? "Escolha uma composição e personalize o visual sem perder seu conteúdo."
+              : "Ajuste espaço e largura. As opções recomendadas funcionam melhor em mais tamanhos de tela."}
+        </span>
       </div>
 
-      <div className={styles.panelBody} data-tab={panelTab} data-editing-element={Boolean(selectedElement)}>
-        {contentGuidance?.source === "contextual-example" && contentGuidance.needsReview ? (
+      <div
+        className={styles.panelBody}
+        data-tab={panelTab}
+        data-editing-element={Boolean(selectedElement)}
+      >
+        {contentGuidance?.source === "contextual-example" &&
+        contentGuidance.needsReview ? (
           <div className={styles.contextGuidance}>
             <strong>Já deixamos um exemplo para você começar</strong>
             <span>
               {contentGuidance.area
                 ? `A sugestão considera a atuação em ${contentGuidance.area}. `
                 : "A sugestão usa exemplos comuns para organizações sociais. "}
-              Troque os números, nomes e textos pelos dados reais da organização antes de publicar.
+              Troque os números, nomes e textos pelos dados reais da organização
+              antes de publicar.
             </span>
           </div>
         ) : null}
 
-        {selectedElement && onElementStyleChange && onElementValueChange && onRemoveElement ? (
+        {selectedElement &&
+        onElementStyleChange &&
+        onElementValueChange &&
+        onRemoveElement ? (
           <ElementOptions
             node={selectedElement}
             brand={brand}
@@ -1518,15 +2630,34 @@ export default function PropertiesPanel({
 
         <div className={styles.variantQuickArea}>
           <div className={styles.variantQuickHeading}>
-            <div><span>Composição</span><strong>{sectionVariants.find((variant) => variant.versionId === section.variantVersionId)?.name ?? "Design atual"}</strong></div>
+            <div>
+              <span>Composição</span>
+              <strong>
+                {sectionVariants.find(
+                  (variant) => variant.versionId === section.variantVersionId,
+                )?.name ?? "Design atual"}
+              </strong>
+            </div>
             <small>Seu conteúdo é preservado.</small>
           </div>
           <div className={styles.variantQuickChoices}>
             {sectionVariants.slice(0, 4).map((variant) => (
-              <button type="button" key={variant.versionId} data-active={variant.versionId === section.variantVersionId} onClick={() => onVariantChange(variant.versionId)}>{variant.name}</button>
+              <button
+                type="button"
+                key={variant.versionId}
+                data-active={variant.versionId === section.variantVersionId}
+                onClick={() => onVariantChange(variant.versionId)}
+              >
+                {variant.name}
+              </button>
             ))}
           </div>
-          {sectionVariants.length > 4 ? <span className={styles.variantMoreHint}>Use <strong>Design</strong> no canvas para comparar todas as opções com prévia.</span> : null}
+          {sectionVariants.length > 4 ? (
+            <span className={styles.variantMoreHint}>
+              Use <strong>Design</strong> no canvas para comparar todas as
+              opções com prévia.
+            </span>
+          ) : null}
         </div>
 
         {onSectionStyleChange ? (
@@ -1536,26 +2667,51 @@ export default function PropertiesPanel({
               <div className={styles.visualOptionGroup}>
                 <span className={styles.visualOptionTitle}>Respiro</span>
                 <div className={styles.segmentedChoices}>
-                  {([
-                    ["compact", "Mais junto"],
-                    ["normal", "Equilibrado"],
-                    ["comfortable", "Mais leve"],
-                    ["generous", "Bem amplo"],
-                  ] as const).map(([value, label]) => (
-                    <button type="button" key={value} data-active={(sectionStyle.spacing ?? "normal") === value} onClick={() => onSectionStyleChange({ spacing: value })}>{label}</button>
+                  {(
+                    [
+                      ["compact", "Mais junto"],
+                      ["normal", "Equilibrado"],
+                      ["comfortable", "Mais leve"],
+                      ["generous", "Bem amplo"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      data-active={(sectionStyle.spacing ?? "normal") === value}
+                      onClick={() => onSectionStyleChange({ spacing: value })}
+                    >
+                      {label}
+                    </button>
                   ))}
                 </div>
               </div>
 
               <div className={styles.visualOptionGroup}>
-                <span className={styles.visualOptionTitle}>O conteúdo ocupa</span>
+                <span className={styles.visualOptionTitle}>
+                  O conteúdo ocupa
+                </span>
                 <div className={styles.widthChoices}>
-                  {([
-                    ["normal", "Confortável", "normal"],
-                    ["wide", "Mais largo", "wide"],
-                    ["full", "Tela inteira", "full"],
-                  ] as const).map(([value, label, preview]) => (
-                    <button type="button" key={value} data-active={(sectionStyle.contentWidth ?? "normal") === value} onClick={() => onSectionStyleChange({ contentWidth: value })}><span data-width={preview} /><small>{label}</small></button>
+                  {(
+                    [
+                      ["normal", "Confortável", "normal"],
+                      ["wide", "Mais largo", "wide"],
+                      ["full", "Tela inteira", "full"],
+                    ] as const
+                  ).map(([value, label, preview]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      data-active={
+                        (sectionStyle.contentWidth ?? "normal") === value
+                      }
+                      onClick={() =>
+                        onSectionStyleChange({ contentWidth: value })
+                      }
+                    >
+                      <span data-width={preview} />
+                      <small>{label}</small>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1567,21 +2723,66 @@ export default function PropertiesPanel({
                     <div className={styles.colorOptions}>
                       <span>Cor</span>
                       <div>
-                        {(["background", "primary", "secondary", "accent"] as const).map((color) => (
+                        {(
+                          [
+                            "background",
+                            "primary",
+                            "secondary",
+                            "accent",
+                          ] as const
+                        ).map((color) => (
                           <button
                             type="button"
                             key={color}
                             data-color={color}
-                            data-active={!sectionStyle.backgroundImage && sectionStyle.backgroundColor === color}
-                            onClick={() => onSectionStyleChange({ backgroundColor: color, backgroundImage: null })}
+                            data-active={
+                              !sectionStyle.backgroundImage &&
+                              sectionStyle.backgroundColor === color
+                            }
+                            onClick={() =>
+                              onSectionStyleChange({
+                                backgroundColor: color,
+                                backgroundImage: null,
+                              })
+                            }
                             aria-label={`Usar cor ${color}`}
-                            style={{ background: resolveElementColor(color, brand) ?? undefined }}
+                            style={{
+                              background:
+                                resolveElementColor(color, brand) ?? undefined,
+                            }}
                           />
                         ))}
-                        <SemanticColorChoices value={sectionStyle.backgroundColor} brand={brand} onChange={(backgroundColor) => onSectionStyleChange({ backgroundColor, backgroundImage: null })} roles={["background", "primary", "secondary", "accent"]} />
+                        <SemanticColorChoices
+                          value={sectionStyle.backgroundColor}
+                          brand={brand}
+                          onChange={(backgroundColor) =>
+                            onSectionStyleChange({
+                              backgroundColor,
+                              backgroundImage: null,
+                            })
+                          }
+                          roles={[
+                            "background",
+                            "primary",
+                            "secondary",
+                            "accent",
+                          ]}
+                        />
                         <ColorPickerControl
-                          value={resolveElementColor(sectionStyle.backgroundColor, brand) ?? brand?.backgroundColor ?? "#FFFFFF"}
-                          onChange={(hex) => onSectionStyleChange({ backgroundColor: hex, backgroundImage: null })}
+                          value={
+                            resolveElementColor(
+                              sectionStyle.backgroundColor,
+                              brand,
+                            ) ??
+                            brand?.backgroundColor ??
+                            "#FFFFFF"
+                          }
+                          onChange={(hex) =>
+                            onSectionStyleChange({
+                              backgroundColor: hex,
+                              backgroundImage: null,
+                            })
+                          }
                           label="Fundo personalizado"
                           compact
                         />
@@ -1589,10 +2790,52 @@ export default function PropertiesPanel({
                     </div>
                   </div>
 
-                  <div className={styles.backgroundImageCard} data-has-image={Boolean(sectionStyle.backgroundImage?.url)}>
-                    {sectionStyle.backgroundImage?.url ? <img src={sectionStyle.backgroundImage.url} alt="Prévia do fundo" /> : <div><FiImage /><span>Use uma foto como fundo</span></div>}
-                    {onUploadSectionBackground ? <label className={styles.backgroundUpload}><FiUpload /> {sectionStyle.backgroundImage ? "Trocar foto" : "Escolher foto"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (file) onUploadSectionBackground(file); event.currentTarget.value = ""; }} /></label> : null}
-                    {sectionStyle.backgroundImage ? <button type="button" className={styles.removeBackground} onClick={() => onSectionStyleChange({ backgroundImage: null, backgroundTreatment: "original" })}>Remover</button> : null}
+                  <div
+                    className={styles.backgroundImageCard}
+                    data-has-image={Boolean(sectionStyle.backgroundImage?.url)}
+                  >
+                    {sectionStyle.backgroundImage?.url ? (
+                      <img
+                        src={sectionStyle.backgroundImage.url}
+                        alt="Prévia do fundo"
+                      />
+                    ) : (
+                      <div>
+                        <FiImage />
+                        <span>Use uma foto como fundo</span>
+                      </div>
+                    )}
+                    {onUploadSectionBackground ? (
+                      <label className={styles.backgroundUpload}>
+                        <FiUpload />{" "}
+                        {sectionStyle.backgroundImage
+                          ? "Trocar foto"
+                          : "Escolher foto"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) onUploadSectionBackground(file);
+                            event.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
+                    ) : null}
+                    {sectionStyle.backgroundImage ? (
+                      <button
+                        type="button"
+                        className={styles.removeBackground}
+                        onClick={() =>
+                          onSectionStyleChange({
+                            backgroundImage: null,
+                            backgroundTreatment: "original",
+                          })
+                        }
+                      >
+                        Remover
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -1600,29 +2843,74 @@ export default function PropertiesPanel({
               {sectionStyle.backgroundImage ? (
                 <>
                   <div className={styles.visualOptionGroup}>
-                    <span className={styles.visualOptionTitle}>Tratamento da foto</span>
-                    <span className={styles.humanHint}>Escolha pelo resultado. A CONG mantém o conteúdo editável.</span>
+                    <span className={styles.visualOptionTitle}>
+                      Tratamento da foto
+                    </span>
+                    <span className={styles.humanHint}>
+                      Escolha pelo resultado. A CONG mantém o conteúdo editável.
+                    </span>
                     <div className={styles.backgroundTreatmentGrid}>
-                      {([
-                        ["original", "Original"],
-                        ["soft", "Suave"],
-                        ["dark", "Texto claro"],
-                        ["light", "Texto escuro"],
-                        ["brand", "Cor da marca"],
-                        ["gradient", "Destaque lateral"],
-                      ] as const).map(([value, label]) => (
-                        <button type="button" key={value} data-treatment={value} data-active={(sectionStyle.backgroundTreatment ?? "original") === value} onClick={() => onSectionStyleChange({ backgroundTreatment: value })}><span style={{ backgroundImage: `url(${sectionStyle.backgroundImage?.url})` }} /><small>{label}</small></button>
+                      {(
+                        [
+                          ["original", "Original"],
+                          ["soft", "Suave"],
+                          ["dark", "Texto claro"],
+                          ["light", "Texto escuro"],
+                          ["brand", "Cor da marca"],
+                          ["gradient", "Destaque lateral"],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <button
+                          type="button"
+                          key={value}
+                          data-treatment={value}
+                          data-active={
+                            (sectionStyle.backgroundTreatment ?? "original") ===
+                            value
+                          }
+                          onClick={() =>
+                            onSectionStyleChange({ backgroundTreatment: value })
+                          }
+                        >
+                          <span
+                            style={{
+                              backgroundImage: `url(${sectionStyle.backgroundImage?.url})`,
+                            }}
+                          />
+                          <small>{label}</small>
+                        </button>
                       ))}
                     </div>
                   </div>
 
                   <div className={styles.visualOptionGroup}>
-                    <span className={styles.visualOptionTitle}>Ponto principal da foto</span>
-                    <span className={styles.humanHint}>Marque onde está o assunto importante para preservar melhor o enquadramento.</span>
+                    <span className={styles.visualOptionTitle}>
+                      Ponto principal da foto
+                    </span>
+                    <span className={styles.humanHint}>
+                      Marque onde está o assunto importante para preservar
+                      melhor o enquadramento.
+                    </span>
                     <div className={styles.sectionFocalGrid}>
-                      {[0, 50, 100].flatMap((y) => [0, 50, 100].map((x) => (
-                        <button type="button" key={`${x}-${y}`} data-active={(sectionStyle.backgroundPositionX ?? 50) === x && (sectionStyle.backgroundPositionY ?? 50) === y} onClick={() => onSectionStyleChange({ backgroundPositionX: x, backgroundPositionY: y })} aria-label={`Foco ${x}-${y}`} />
-                      )))}
+                      {[0, 50, 100].flatMap((y) =>
+                        [0, 50, 100].map((x) => (
+                          <button
+                            type="button"
+                            key={`${x}-${y}`}
+                            data-active={
+                              (sectionStyle.backgroundPositionX ?? 50) === x &&
+                              (sectionStyle.backgroundPositionY ?? 50) === y
+                            }
+                            onClick={() =>
+                              onSectionStyleChange({
+                                backgroundPositionX: x,
+                                backgroundPositionY: y,
+                              })
+                            }
+                            aria-label={`Foco ${x}-${y}`}
+                          />
+                        )),
+                      )}
                     </div>
                   </div>
                 </>
@@ -1644,7 +2932,9 @@ export default function PropertiesPanel({
                 <Input
                   value={text}
                   placeholder={field.placeholder}
-                  onChange={(event) => onContentChange([field.key], event.target.value)}
+                  onChange={(event) =>
+                    onContentChange([field.key], event.target.value)
+                  }
                 />
                 {field.help ? <small>{field.help}</small> : null}
                 <FieldCounter value={text} field={field} />

@@ -21,6 +21,7 @@ import type {
   InstitutionalImageValue,
 } from "../../../services/institutionalService";
 import InlineTextEditor from "../shared/InlineTextEditor";
+import { safeInstitutionalHref } from "../../../utils/institutionalLinks";
 import FloatingCanvasHint from "./FloatingCanvasHint";
 import ImageMedia from "./ImageMedia";
 
@@ -55,7 +56,6 @@ function asImage(value: unknown): InstitutionalImageValue | null {
   return null;
 }
 
-
 function placeholderForSlot(
   slot: string,
   presentation: string,
@@ -65,9 +65,12 @@ function placeholderForSlot(
   const normalized = slot.toLocaleLowerCase("pt-BR");
   if (normalized.includes("email")) return "email@organizacao.org.br";
   if (normalized.includes("whatsapp")) return "(00) 00000-0000";
-  if (normalized.includes("phone") || normalized.includes("telefone")) return "(00) 0000-0000";
-  if (normalized.includes("address") || normalized.includes("endereco")) return "Endereço ou área de atuação";
-  if (normalized.includes("hours") || normalized.includes("horario")) return "Horários de atendimento";
+  if (normalized.includes("phone") || normalized.includes("telefone"))
+    return "(00) 0000-0000";
+  if (normalized.includes("address") || normalized.includes("endereco"))
+    return "Endereço ou área de atuação";
+  if (normalized.includes("hours") || normalized.includes("horario"))
+    return "Horários de atendimento";
   if (presentation === "eyebrow") return "Categoria ou chamada curta";
   if (presentation === "display") return "Título principal";
   if (presentation === "heading") return "Título da seção";
@@ -108,22 +111,35 @@ function contactValidation(slot: string, value: string): string | null {
   if (!value.trim()) return null;
   if (normalized.includes("email")) {
     const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
-    return valid ? null : "Digite um e-mail válido, como contato@organizacao.org.br.";
+    return valid
+      ? null
+      : "Digite um e-mail válido, como contato@organizacao.org.br.";
   }
-  if (normalized.includes("phone") || normalized.includes("telefone") || normalized.includes("whatsapp")) {
+  if (
+    normalized.includes("phone") ||
+    normalized.includes("telefone") ||
+    normalized.includes("whatsapp")
+  ) {
     const count = phoneDigits(value).length;
-    return count === 10 || count === 11 ? null : "Informe DDD + número. Ex.: (19) 99999-9999.";
+    return count === 10 || count === 11
+      ? null
+      : "Informe DDD + número. Ex.: (19) 99999-9999.";
   }
   return null;
 }
 
 function normalizeContactValue(slot: string, value: string): string {
   const normalized = slot.toLocaleLowerCase("pt-BR");
-  if (normalized.includes("email")) return value.replace(/\s+/g, "").toLowerCase();
-  if (normalized.includes("phone") || normalized.includes("telefone") || normalized.includes("whatsapp")) return formatBrazilPhone(value);
+  if (normalized.includes("email"))
+    return value.replace(/\s+/g, "").toLowerCase();
+  if (
+    normalized.includes("phone") ||
+    normalized.includes("telefone") ||
+    normalized.includes("whatsapp")
+  )
+    return formatBrazilPhone(value);
   return value;
 }
-
 
 const semanticSectionByAnchor: Record<string, string> = {
   "#inicio": "organization_intro",
@@ -165,16 +181,17 @@ function normalizedLabel(value: string): string {
 
 function MetricContextIcon({ label }: { label: string }) {
   const normalized = normalizedLabel(label);
-  const Icon =
-    /bairro|cidade|territorio|regiao|local/.test(normalized)
-      ? FiMapPin
-      : /pessoa|famil|estud|alun|voluntar|profissional|crianca|adolesc/.test(normalized)
-        ? FiUsers
-        : /alimento|cesta|refeic|material|muda|quilo|tonelada/.test(normalized)
-          ? FiBox
-          : /%|percent|permanencia|crescimento|evolucao/.test(normalized)
-            ? FiTrendingUp
-            : FiActivity;
+  const Icon = /bairro|cidade|territorio|regiao|local/.test(normalized)
+    ? FiMapPin
+    : /pessoa|famil|estud|alun|voluntar|profissional|crianca|adolesc/.test(
+          normalized,
+        )
+      ? FiUsers
+      : /alimento|cesta|refeic|material|muda|quilo|tonelada/.test(normalized)
+        ? FiBox
+        : /%|percent|permanencia|crescimento|evolucao/.test(normalized)
+          ? FiTrendingUp
+          : FiActivity;
 
   return (
     <span className={styles.metricIconBadge} aria-hidden="true">
@@ -214,26 +231,37 @@ function TextGuidance({
   anchorRef: RefObject<HTMLElement | null>;
 }) {
   const length = value.length;
-  const tooShort = typeof field.recommendedMin === "number" && length < field.recommendedMin;
-  const tooLong = typeof field.recommendedMax === "number" && length > field.recommendedMax;
+  const tooShort =
+    typeof field.recommendedMin === "number" && length < field.recommendedMin;
+  const tooLong =
+    typeof field.recommendedMax === "number" && length > field.recommendedMax;
   const outside = tooShort || tooLong;
 
-  if (!field.recommendedMin && !field.recommendedMax && !field.help) return null;
+  if (!field.recommendedMin && !field.recommendedMax && !field.help)
+    return null;
 
-  const recommendation = field.recommendedMin && field.recommendedMax
-    ? `Recomendado: ${field.recommendedMin}–${field.recommendedMax}`
-    : field.recommendedMax
-      ? `Recomendado: até ${field.recommendedMax}`
-      : field.recommendedMin
-        ? `Recomendado: a partir de ${field.recommendedMin}`
-        : "";
+  const recommendation =
+    field.recommendedMin && field.recommendedMax
+      ? `Recomendado: ${field.recommendedMin}–${field.recommendedMax}`
+      : field.recommendedMax
+        ? `Recomendado: até ${field.recommendedMax}`
+        : field.recommendedMin
+          ? `Recomendado: a partir de ${field.recommendedMin}`
+          : "";
 
   return (
-    <FloatingCanvasHint anchorRef={anchorRef} className={styles.inlineGuidance} preferredWidth={260} dataWarning={outside}>
+    <FloatingCanvasHint
+      anchorRef={anchorRef}
+      className={styles.inlineGuidance}
+      preferredWidth={260}
+      dataWarning={outside}
+    >
       <span className={styles.canvasTipLabel}>Dica do editor</span>
       <span className={styles.inlineGuidanceCount}>
         {outside ? <FiAlertCircle /> : <FiCheckCircle />}
-        {field.recommendedMax ? `${length} / ${field.recommendedMax}` : `${length} caracteres`}
+        {field.recommendedMax
+          ? `${length} / ${field.recommendedMax}`
+          : `${length} caracteres`}
       </span>
       {recommendation ? <span>{recommendation}</span> : null}
       {outside && field.help ? <small>{field.help}</small> : null}
@@ -249,6 +277,7 @@ export default function SlotRenderer({
   path,
   fieldDefinition,
   showGuidance = false,
+  showEmptyMediaPreview = false,
   selected = false,
   imageStyle,
   onValueChange,
@@ -265,6 +294,7 @@ export default function SlotRenderer({
   path: Array<string | number>;
   fieldDefinition?: InstitutionalFieldDefinition;
   showGuidance?: boolean;
+  showEmptyMediaPreview?: boolean;
   selected?: boolean;
   imageStyle?: InstitutionalElementStyle;
   onValueChange?: (path: Array<string | number>, value: unknown) => void;
@@ -295,7 +325,10 @@ export default function SlotRenderer({
   if (["primaryAction", "secondaryAction"].includes(presentation)) {
     const action = asAction(value);
     if (!action) return null;
-    const actionClass = presentation === "primaryAction" ? styles.primaryAction : styles.secondaryAction;
+    const actionClass =
+      presentation === "primaryAction"
+        ? styles.primaryAction
+        : styles.secondaryAction;
 
     if (editable && onValueChange) {
       return (
@@ -313,25 +346,36 @@ export default function SlotRenderer({
       handleSemanticNavigation(event, action.href, editable);
     };
 
-    return <a href={action.href} onClick={handleClick} className={actionClass} data-font-target="true">{action.label}</a>;
+    return (
+      <a
+        href={safeInstitutionalHref(action.href) ?? "#"}
+        onClick={handleClick}
+        className={actionClass}
+        data-font-target="true"
+      >
+        {action.label}
+      </a>
+    );
   }
 
   if (["image", "heroImage", "wideImage", "cardImage"].includes(presentation)) {
     const image = asImage(value);
-    const guidance = editable && showGuidance && fieldDefinition
-      ? {
-          title: fieldDefinition.imageRatio
-            ? `Formato recomendado: ${fieldDefinition.imageRatio}`
-            : "Imagem da seção",
-          text: fieldDefinition.help,
-          note: "A CONG otimiza o arquivo antes de armazenar. Esta dica não faz parte do site publicado.",
-        }
-      : null;
+    const guidance =
+      editable && showGuidance && fieldDefinition
+        ? {
+            title: fieldDefinition.imageRatio
+              ? `Formato recomendado: ${fieldDefinition.imageRatio}`
+              : "Imagem da seção",
+            text: fieldDefinition.help,
+            note: "A CONG otimiza o arquivo antes de armazenar. Esta dica não faz parte do site publicado.",
+          }
+        : null;
 
     return (
       <ImageMedia
         image={image}
         presentation={presentation}
+        showEmptyMediaPreview={showEmptyMediaPreview}
         editable={editable}
         selected={selected}
         style={imageStyle}
@@ -347,7 +391,16 @@ export default function SlotRenderer({
 
   if (presentation === "documentLink") {
     const url = asString(value);
-    return url ? <a className={styles.documentLink} href={url} target="_blank" rel="noreferrer">Abrir documento</a> : null;
+    return url ? (
+      <a
+        className={styles.documentLink}
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Abrir documento
+      </a>
+    ) : null;
   }
 
   if (presentation === "socialLink") {
@@ -364,7 +417,16 @@ export default function SlotRenderer({
         />
       );
     }
-    return url ? <a className={styles.socialLink} href={url} target="_blank" rel="noreferrer">{label}</a> : null;
+    return url ? (
+      <a
+        className={styles.socialLink}
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {label}
+      </a>
+    ) : null;
   }
 
   if (presentation === "navLink") {
@@ -387,7 +449,15 @@ export default function SlotRenderer({
     const handleNavigation = (event: MouseEvent<HTMLAnchorElement>) => {
       handleSemanticNavigation(event, href, editable);
     };
-    return <a className={styles.navLink} href={href} onClick={handleNavigation}>{label}</a>;
+    return (
+      <a
+        className={styles.navLink}
+        href={safeInstitutionalHref(href) ?? "#"}
+        onClick={handleNavigation}
+      >
+        {label}
+      </a>
+    );
   }
 
   if (presentation === "contactLink") {
@@ -396,25 +466,51 @@ export default function SlotRenderer({
     if (editable && onValueChange) {
       const validation = contactValidation(slot, text);
       return (
-        <span className={styles.contactEditorField} data-invalid={Boolean(validation) || undefined}>
+        <span
+          className={styles.contactEditorField}
+          data-invalid={Boolean(validation) || undefined}
+        >
           <InlineTextEditor
             value={text}
             className={styles.contactLine}
-            placeholder={placeholderForSlot(slot, presentation, fieldDefinition?.placeholder)}
-            onChange={(nextValue) => onValueChange(valuePath, normalizeContactValue(slot, nextValue))}
-            onCommit={(nextValue) => onValueChange(valuePath, normalizeContactValue(slot, nextValue.trim()))}
+            placeholder={placeholderForSlot(
+              slot,
+              presentation,
+              fieldDefinition?.placeholder,
+            )}
+            onChange={(nextValue) =>
+              onValueChange(valuePath, normalizeContactValue(slot, nextValue))
+            }
+            onCommit={(nextValue) =>
+              onValueChange(
+                valuePath,
+                normalizeContactValue(slot, nextValue.trim()),
+              )
+            }
           />
-          {validation ? <small className={styles.contactValidationMessage}><FiAlertCircle /> {validation}</small> : null}
+          {validation ? (
+            <small className={styles.contactValidationMessage}>
+              <FiAlertCircle /> {validation}
+            </small>
+          ) : null}
         </span>
       );
     }
     if (!text) return null;
-    return href ? <a className={styles.contactLink} href={href}>{text}</a> : <span className={styles.contactLine}>{text}</span>;
+    return href ? (
+      <a className={styles.contactLink} href={href}>
+        {text}
+      </a>
+    ) : (
+      <span className={styles.contactLine}>{text}</span>
+    );
   }
 
   const text = asString(value);
   const className = styles[presentation] ?? styles.body;
-  const multiline = ["body", "lead", "itemBody", "contactLine"].includes(presentation);
+  const multiline = ["body", "lead", "itemBody", "contactLine"].includes(
+    presentation,
+  );
 
   if (!text && !editable) return null;
 
@@ -425,20 +521,65 @@ export default function SlotRenderer({
           value={text}
           multiline={multiline}
           className={className}
-          placeholder={placeholderForSlot(slot, presentation, fieldDefinition?.placeholder)}
-          onChange={(nextValue) => onValueChange(valuePath, presentation === "contactLine" ? normalizeContactValue(slot, nextValue) : nextValue)}
-          onCommit={(nextValue) => onValueChange(valuePath, presentation === "contactLine" ? normalizeContactValue(slot, nextValue.trim()) : nextValue)}
+          placeholder={placeholderForSlot(
+            slot,
+            presentation,
+            fieldDefinition?.placeholder,
+          )}
+          onChange={(nextValue) =>
+            onValueChange(
+              valuePath,
+              presentation === "contactLine"
+                ? normalizeContactValue(slot, nextValue)
+                : nextValue,
+            )
+          }
+          onCommit={(nextValue) =>
+            onValueChange(
+              valuePath,
+              presentation === "contactLine"
+                ? normalizeContactValue(slot, nextValue.trim())
+                : nextValue,
+            )
+          }
         />
         {presentation === "contactLine" && contactValidation(slot, text) ? (
-          <small className={styles.contactValidationMessage}><FiAlertCircle /> {contactValidation(slot, text)}</small>
+          <small className={styles.contactValidationMessage}>
+            <FiAlertCircle /> {contactValidation(slot, text)}
+          </small>
         ) : null}
-        {showGuidance && selected && fieldDefinition ? <TextGuidance value={text} field={fieldDefinition} anchorRef={textAnchorRef} /> : null}
+        {showGuidance && selected && fieldDefinition ? (
+          <TextGuidance
+            value={text}
+            field={fieldDefinition}
+            anchorRef={textAnchorRef}
+          />
+        ) : null}
       </div>
     );
   }
 
-  if (presentation === "display") return <h1 className={className} data-font-target="true">{text}</h1>;
-  if (presentation === "heading") return <h2 className={className} data-font-target="true">{text}</h2>;
-  if (["itemTitle", "metricValue"].includes(presentation)) return <strong className={className} data-font-target="true">{text}</strong>;
-  return <span className={className} data-font-target="true">{text}</span>;
+  if (presentation === "display")
+    return (
+      <h1 className={className} data-font-target="true">
+        {text}
+      </h1>
+    );
+  if (presentation === "heading")
+    return (
+      <h2 className={className} data-font-target="true">
+        {text}
+      </h2>
+    );
+  if (["itemTitle", "metricValue"].includes(presentation))
+    return (
+      <strong className={className} data-font-target="true">
+        {text}
+      </strong>
+    );
+  return (
+    <span className={className} data-font-target="true">
+      {text}
+    </span>
+  );
 }

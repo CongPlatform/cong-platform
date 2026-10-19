@@ -673,174 +673,187 @@ export default function About() {
               >
                 <div className={styles.memberFlip}>
                   <div className={styles.memberFront} aria-hidden={isExpanded}>
-                <div className={styles.memberPhotoArea}>
-                  <span className={styles.memberPhotoTape} />
+                    <div className={styles.memberPhotoArea}>
+                      <span className={styles.memberPhotoTape} />
 
-                  <div className={styles.memberPhoto}>
-                    <span className={styles.memberInitials}>
-                      {member.initials}
-                    </span>
-
-                    <img
-                      src={member.photo}
-                      alt={`Foto de ${member.name}`}
-                      loading="lazy"
-                      onError={(event) => {
-                        event.currentTarget.style.display = "none";
-                      }}
-                    />
-                  </div>
-
-                  <span className={styles.memberAge}>{member.age} anos</span>
-                </div>
-
-                <div className={styles.memberContent}>
-                  <span className={styles.memberRole}>{member.role}</span>
-                  <h3>{member.name}</h3>
-
-                  <div className={styles.educationList}>
-                    {member.education.map((education) => (
-                      <span key={education}>{education}</span>
-                    ))}
-                  </div>
-
-                  <blockquote className={styles.memberQuote}>
-                    “{member.quote}”
-                  </blockquote>
-
-                  <div className={styles.memberInterests}>
-                    {member.interests.map((interest) => {
-                      const InterestIcon = interest.icon;
-
-                      return (
-                        <span key={interest.label}>
-                          <InterestIcon aria-hidden="true" />
-                          {interest.label}
+                      <div className={styles.memberPhoto}>
+                        <span className={styles.memberInitials}>
+                          {member.initials}
                         </span>
-                      );
-                    })}
-                  </div>
 
-                  <button
-                    type="button"
-                    className={styles.memberToggle}
-                    tabIndex={isExpanded ? -1 : 0}
-                    aria-expanded={isExpanded}
-                    aria-controls={`trajectory-${member.id}`}
-                    onClick={() => {
-                      setExpandedMember((currentMember) =>
-                        currentMember === member.id ? null : member.id,
-                      );
-                    }}
-                  >
-                    {`Conhecer a trajetória de ${member.firstName}`}
-                    <ArrowRight aria-hidden="true" />
-                  </button>
+                        <img
+                          src={member.photo}
+                          alt={`Foto de ${member.name}`}
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                          }}
+                        />
+                      </div>
 
-                  <div className={styles.memberSocials}>
-                    <a
-                      href={member.links.github || undefined}
-                      target={member.links.github ? "_blank" : undefined}
-                      rel={member.links.github ? "noreferrer" : undefined}
-                      aria-label={`GitHub de ${member.name}`}
-                      tabIndex={isExpanded ? -1 : 0}
-                      aria-disabled={!member.links.github}
-                      className={
-                        !member.links.github ? styles.socialDisabled : undefined
-                      }
-                      onClick={(event) =>
-                        handleEmptyLink(event, member.links.github)
-                      }
-                    >
-                      <FaGithub aria-hidden="true" />
-                    </a>
+                      <span className={styles.memberAge}>
+                        {member.age} anos
+                      </span>
+                    </div>
 
-                    <a
-                      href={member.links.linkedin || undefined}
-                      target={member.links.linkedin ? "_blank" : undefined}
-                      rel={member.links.linkedin ? "noreferrer" : undefined}
-                      aria-label={`LinkedIn de ${member.name}`}
-                      tabIndex={isExpanded ? -1 : 0}
-                      aria-disabled={!member.links.linkedin}
-                      className={
-                        !member.links.linkedin
-                          ? styles.socialDisabled
-                          : undefined
-                      }
-                      onClick={(event) =>
-                        handleEmptyLink(event, member.links.linkedin)
-                      }
-                    >
-                      <FaLinkedin aria-hidden="true" />
-                    </a>
+                    <div className={styles.memberContent}>
+                      <span className={styles.memberRole}>{member.role}</span>
+                      <h3>{member.name}</h3>
 
-                    <a
-                      href={
-                        member.links.email
-                          ? `mailto:${member.links.email}`
-                          : undefined
-                      }
-                      aria-label={`E-mail de ${member.name}`}
-                      tabIndex={isExpanded ? -1 : 0}
-                      aria-disabled={!member.links.email}
-                      className={
-                        !member.links.email ? styles.socialDisabled : undefined
-                      }
-                      onClick={(event) =>
-                        handleEmptyLink(event, member.links.email)
-                      }
-                    >
-                      <Mail aria-hidden="true" />
-                    </a>
-                  </div>
-                </div>
+                      <div className={styles.educationList}>
+                        {member.education.map((education) => (
+                          <span key={education}>{education}</span>
+                        ))}
+                      </div>
+
+                      <blockquote className={styles.memberQuote}>
+                        “{member.quote}”
+                      </blockquote>
+
+                      <div className={styles.memberInterests}>
+                        {member.interests.map((interest) => {
+                          const InterestIcon = interest.icon;
+
+                          return (
+                            <span key={interest.label}>
+                              <InterestIcon aria-hidden="true" />
+                              {interest.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        type="button"
+                        className={styles.memberToggle}
+                        tabIndex={isExpanded ? -1 : 0}
+                        aria-expanded={isExpanded}
+                        aria-controls={`trajectory-${member.id}`}
+                        onClick={() => {
+                          setExpandedMember((currentMember) =>
+                            currentMember === member.id ? null : member.id,
+                          );
+                        }}
+                      >
+                        {`Conhecer a trajetória de ${member.firstName}`}
+                        <ArrowRight aria-hidden="true" />
+                      </button>
+
+                      <div className={styles.memberSocials}>
+                        <a
+                          href={member.links.github || undefined}
+                          target={member.links.github ? "_blank" : undefined}
+                          rel={member.links.github ? "noreferrer" : undefined}
+                          aria-label={`GitHub de ${member.name}`}
+                          tabIndex={isExpanded ? -1 : 0}
+                          aria-disabled={!member.links.github}
+                          className={
+                            !member.links.github
+                              ? styles.socialDisabled
+                              : undefined
+                          }
+                          onClick={(event) =>
+                            handleEmptyLink(event, member.links.github)
+                          }
+                        >
+                          <FaGithub aria-hidden="true" />
+                        </a>
+
+                        <a
+                          href={member.links.linkedin || undefined}
+                          target={member.links.linkedin ? "_blank" : undefined}
+                          rel={member.links.linkedin ? "noreferrer" : undefined}
+                          aria-label={`LinkedIn de ${member.name}`}
+                          tabIndex={isExpanded ? -1 : 0}
+                          aria-disabled={!member.links.linkedin}
+                          className={
+                            !member.links.linkedin
+                              ? styles.socialDisabled
+                              : undefined
+                          }
+                          onClick={(event) =>
+                            handleEmptyLink(event, member.links.linkedin)
+                          }
+                        >
+                          <FaLinkedin aria-hidden="true" />
+                        </a>
+
+                        <a
+                          href={
+                            member.links.email
+                              ? `mailto:${member.links.email}`
+                              : undefined
+                          }
+                          aria-label={`E-mail de ${member.name}`}
+                          tabIndex={isExpanded ? -1 : 0}
+                          aria-disabled={!member.links.email}
+                          className={
+                            !member.links.email
+                              ? styles.socialDisabled
+                              : undefined
+                          }
+                          onClick={(event) =>
+                            handleEmptyLink(event, member.links.email)
+                          }
+                        >
+                          <Mail aria-hidden="true" />
+                        </a>
+                      </div>
+                    </div>
                   </div>
                   <div className={styles.memberBack} aria-hidden={!isExpanded}>
                     <div className={styles.memberBackHeader}>
-                      <span className={styles.memberBackEyebrow}>Por trás da CONG</span>
+                      <span className={styles.memberBackEyebrow}>
+                        Por trás da CONG
+                      </span>
                       <h3>A trajetória de {member.firstName}</h3>
                       <p>{member.role}</p>
                     </div>
-                  <div
-                    id={`trajectory-${member.id}`}
-                    className={styles.memberDetails}
-                  >
-                    <div className={styles.memberDetailBlock}>
-                      <span className={styles.detailIcon}>
-                        <DreamIcon aria-hidden="true" />
-                      </span>
+                    <div
+                      id={`trajectory-${member.id}`}
+                      className={styles.memberDetails}
+                    >
+                      <div className={styles.memberDetailBlock}>
+                        <span className={styles.detailIcon}>
+                          <DreamIcon aria-hidden="true" />
+                        </span>
 
-                      <div>
-                        <small>Meu caminho</small>
-                        <p>{member.dream}</p>
+                        <div>
+                          <small>Meu caminho</small>
+                          <p>{member.dream}</p>
+                        </div>
                       </div>
+
+                      <div className={styles.memberDetailBlock}>
+                        <span className={styles.detailIcon}>
+                          <HandHeart aria-hidden="true" />
+                        </span>
+
+                        <div>
+                          <small>Como contribuo</small>
+                          <p>{member.contribution}</p>
+                        </div>
+                      </div>
+
+                      <div className={styles.memberConnection}>
+                        <Sparkles aria-hidden="true" />
+                        <p>{member.connection}</p>
+                      </div>
+
+                      {member.highlight && (
+                        <div className={styles.memberHighlight}>
+                          <CircleCheckBig aria-hidden="true" />
+                          <span>{member.highlight}</span>
+                        </div>
+                      )}
                     </div>
 
-                    <div className={styles.memberDetailBlock}>
-                      <span className={styles.detailIcon}>
-                        <HandHeart aria-hidden="true" />
-                      </span>
-
-                      <div>
-                        <small>Como contribuo</small>
-                        <p>{member.contribution}</p>
-                      </div>
-                    </div>
-
-                    <div className={styles.memberConnection}>
-                      <Sparkles aria-hidden="true" />
-                      <p>{member.connection}</p>
-                    </div>
-
-                    {member.highlight && (
-                      <div className={styles.memberHighlight}>
-                        <CircleCheckBig aria-hidden="true" />
-                        <span>{member.highlight}</span>
-                      </div>
-                    )}
-                  </div>
-
-                    <button type="button" className={styles.memberToggle} tabIndex={isExpanded ? 0 : -1} onClick={() => setExpandedMember(null)}>
+                    <button
+                      type="button"
+                      className={styles.memberToggle}
+                      tabIndex={isExpanded ? 0 : -1}
+                      onClick={() => setExpandedMember(null)}
+                    >
                       <RotateCcw aria-hidden="true" /> Voltar ao cartão
                     </button>
                   </div>

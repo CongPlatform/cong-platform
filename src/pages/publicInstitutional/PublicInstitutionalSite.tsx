@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useParams } from "react-router-dom";
 
 import InstitutionalSiteView from "../../components/institutional/renderer/InstitutionalSiteView";
@@ -17,6 +17,13 @@ export default function PublicInstitutionalSite({
 }) {
   const params = useParams();
   const slug = slugOverride ?? params.slug ?? "";
+  // On an NGO subdomain the slug is the first URL segment; /o/:slug supports
+  // the equivalent nested route, without mixing other organizations' pages.
+  const pageSlug = slugOverride
+    ? (window.location.pathname.split("/").filter(Boolean)[0] ?? "")
+    : typeof params.pageSlug === "string"
+      ? params.pageSlug
+      : "";
   const [site, setSite] = useState<InstitutionalSite | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -77,10 +84,12 @@ export default function PublicInstitutionalSite({
     };
   }, [site]);
 
-  const home = useMemo(
-    () => site?.pages.find((page) => page.isHome) ?? site?.pages[0] ?? null,
-    [site],
-  );
+  const home = useMemo(() => {
+    if (!site) return null;
+    if (!pageSlug)
+      return site.pages.find((page) => page.isHome) ?? site.pages[0] ?? null;
+    return site.pages.find((page) => page.slug === pageSlug) ?? null;
+  }, [site, pageSlug]);
 
   if (loading) {
     return <main className={styles.state}>Carregando...</main>;
@@ -97,5 +106,36 @@ export default function PublicInstitutionalSite({
     );
   }
 
-  return <InstitutionalSiteView site={site} page={home} />;
+  function navigateInternalLink(event: MouseEvent<HTMLDivElement>): void {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const anchor = target.closest("a[href]");
+    if (!(anchor instanceof HTMLAnchorElement)) return;
+    if (
+      event.defaultPrevented ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      anchor.target === "_blank"
+    )
+      return;
+    const href = anchor.getAttribute("href");
+    if (!href || !href.startsWith("/") || href.startsWith("//")) return;
+    const desired = href.split(/[?#]/, 1)[0].replace(/^\/+|\/+$/g, "");
+    const matchingPage = site.pages.find((item) => item.slug === desired);
+    if (!matchingPage && desired !== "") return;
+    event.preventDefault();
+    const nextSlug = matchingPage?.isHome ? "" : (matchingPage?.slug ?? "");
+    const prefix = slugOverride ? "" : `/o/${encodeURIComponent(slug)}`;
+    window.location.assign(
+      `${prefix}/${nextSlug}${href.includes("#") ? `#${href.split("#")[1]}` : ""}`,
+    );
+  }
+
+  return (
+    <div onClickCapture={navigateInternalLink}>
+      <InstitutionalSiteView site={site} page={home} />
+    </div>
+  );
 }

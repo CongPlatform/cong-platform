@@ -301,7 +301,9 @@ export async function createRepresentation(
     await client.query("begin");
 
     const user = await getUserForUpdate(client, authUserId);
-    await client.query("select set_config('cong.actor_user_id', $1, true)", [user.id]);
+    await client.query("select set_config('cong.actor_user_id', $1, true)", [
+      user.id,
+    ]);
 
     requireRepresentationAvailable(user, input.organizationType);
 
@@ -501,7 +503,9 @@ export async function requestRepresentation(
     await client.query("begin");
 
     const user = await getUserForUpdate(client, authUserId);
-    await client.query("select set_config('cong.actor_user_id', $1, true)", [user.id]);
+    await client.query("select set_config('cong.actor_user_id', $1, true)", [
+      user.id,
+    ]);
 
     const organizationResult = await client.query<OrganizationRow>(
       `
@@ -684,14 +688,20 @@ export async function cancelRepresentationRequest(
   const client = await pool.connect();
   try {
     await client.query("begin");
-    await client.query("select set_config('cong.actor_user_id', $1, true)", [user.id]);
+    await client.query("select set_config('cong.actor_user_id', $1, true)", [
+      user.id,
+    ]);
     const deleteResult = await client.query(
       `delete from public.organization_users
        where id = $1 and user_id = $2 and status = 'pending'`,
       [representationId, user.id],
     );
     if (deleteResult.rowCount === 0) {
-      throw new AppError("A solicitação mudou de estado e não pode mais ser cancelada", 409, "REPRESENTATION_REQUEST_CHANGED");
+      throw new AppError(
+        "A solicitação mudou de estado e não pode mais ser cancelada",
+        409,
+        "REPRESENTATION_REQUEST_CHANGED",
+      );
     }
     await client.query("commit");
   } catch (error) {

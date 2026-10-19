@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -43,6 +44,9 @@ import { institutionalColorCssVar, resolveInstitutionalColor } from "../../../ut
 import { exceedsEditorConstraints } from "../../../utils/institutionalConstraints";
 
 import ColorPickerControl from "../editor/ColorPickerControl";
+import FontFamilyPicker from "../editor/FontFamilyPicker";
+import { isGoogleFont, ensureFontsLoaded, fontCssStack } from "../../../features/site-builder/design-system/fontCatalog";
+import { designFontCss, typeRoleStyle } from "../../../features/site-builder/design-system/designTokens";
 import styles from "./InstitutionalRenderer.module.css";
 
 type ResizeEdge =
@@ -54,7 +58,7 @@ type ResizeEdge =
   | "top-right"
   | "bottom-left"
   | "bottom-right";
-type ToolbarPanel = "size" | "align" | "position" | "color" | "buttonShape" | "image" | "frame" | "overlay" | "more" | "readability" | null;
+type ToolbarPanel = "font" | "size" | "align" | "position" | "color" | "buttonShape" | "image" | "frame" | "overlay" | "more" | "readability" | null;
 
 type CanvasGuides = { vertical?: number; horizontal?: number };
 
@@ -296,6 +300,14 @@ export default function ElementShell({
   const locked = Boolean(style.locked);
   const imageLike = isImageNode(node);
   const textBoxLike = isTextBoxNode(node);
+  const linkedTypeStyle = style.fontPreset && brand ? typeRoleStyle(brand, style.fontPreset) : null;
+  const selectedFont = isGoogleFont(style.fontFamily) ? style.fontFamily : linkedTypeStyle?.family;
+  useEffect(() => { ensureFontsLoaded([selectedFont ?? ""]); }, [selectedFont]);
+  const fallbackRoleFont = style.fontPreset && ["display", "heading", "subheading"].includes(style.fontPreset)
+    ? "var(--org-heading-font)" : "var(--org-body-font)";
+  const customFontCss = isGoogleFont(style.fontFamily) ? fontCssStack(style.fontFamily)
+    : linkedTypeStyle ? designFontCss(linkedTypeStyle.family, fallbackRoleFont) : undefined;
+
   const textLike = node.type === "slot" ? !imageLike : ["heading", "text", "quote", "button", "metric"].includes(node.elementType);
   const explicitWidth = style.widthPercent !== undefined || Boolean(style.width && style.width !== "auto");
   const buttonLike =
@@ -434,7 +446,9 @@ export default function ElementShell({
   const css = {
     "--element-color": colorValue(style.color),
     "--element-background": colorValue(style.backgroundColor),
-    "--element-font-size": fontSizeValue(style),
+    "--element-font-size": fontSizeValue(style) ?? (linkedTypeStyle ? `${linkedTypeStyle.size}px` : undefined),
+    "--element-font-family": customFontCss,
+    "--element-font-weight": linkedTypeStyle ? String(linkedTypeStyle.weight) : undefined,
     "--element-radius": radiusValue(style.radius),
     "--shape-stroke-width": String(style.strokeWidth ?? 0),
     "--image-height": style.heightPx !== undefined ? `${style.heightPx}px` : undefined,
@@ -442,7 +456,11 @@ export default function ElementShell({
       ? `${Math.max(12, Math.min(320, style.iconSizePx ?? 48))}px`
       : shapeLike && style.widthPercent === undefined && (!style.width || style.width === "auto")
         ? "120px"
-        : widthValue(style),
+        : imageLike
+          ? style.widthPercent === undefined && (!style.width || style.width === "auto")
+            ? "100%"
+            : `min(100%, max(180px, ${widthValue(style) ?? "100%"}))`
+          : widthValue(style),
     height: iconLike
       ? `${Math.max(12, Math.min(320, style.iconSizePx ?? 48))}px`
       : heightResizable && style.heightPx !== undefined ? `${style.heightPx}px` : undefined,
@@ -472,7 +490,10 @@ export default function ElementShell({
           renderedMetrics.radiusPx <= 15 ? "medium" :
             renderedMetrics.radiusPx <= 32 ? "large" : "pill"
   );
-  const ratio = foreground && background ? contrastRatio(foreground, background) : null;
+  const richDataBlock = node.type === "element" && node.elementType === "data_chart";
+  const ratio = !richDataBlock && foreground && background
+    ? contrastRatio(foreground, background)
+    : null;
   const largeText = textLike && renderedFontSize >= 24;
   const goodThreshold = textLike ? (largeText ? 3 : 4.5) : 3;
   const excellentThreshold = textLike ? (largeText ? 4.5 : 7) : 4.5;
@@ -1186,6 +1207,7 @@ export default function ElementShell({
         >
           {textLike && onStyleChange ? (
             <>
+              {panelButton("font", style.fontFamily ?? (style.fontPreset ? "Estilo da marca" : "Fonte"), <FiType />)}
               {panelButton("size", `${Math.round(renderedFontSize)} px`, <FiType />)}
               {panelButton("align", "Alinhar", style.align === "center" ? <FiAlignCenter /> : style.align === "right" ? <FiAlignRight /> : style.align === "justify" ? <FiAlignJustify /> : <FiAlignLeft />)}
             </>
@@ -1261,6 +1283,20 @@ export default function ElementShell({
 
           {openPanel ? (
             <div className={styles.contextPopover} data-panel={openPanel}>
+              {openPanel === "font" && onStyleChange ? (
+                <>
+                  <div className={styles.popoverHeading}><strong>Fonte e estilo</strong><span>Use um estilo salvo da ONG ou escolha uma fonte livremente.</span></div>
+                  {brand ? <div className={styles.fontRoleGrid}>
+                    {(["display", "heading", "subheading", "body", "caption", "button"] as const).map((role) => (
+                      <button key={role} type="button" data-active={style.fontPreset === role} onClick={() => onStyleChange({fontPreset: role, fontFamily: undefined, fontSize: undefined})}>
+                        {({display:"Título principal",heading:"Título",subheading:"Subtítulo",body:"Corpo",caption:"Legenda",button:"Botão"})[role]}
+                      </button>
+                    ))}
+                  </div> : null}
+                  <FontFamilyPicker value={style.fontFamily ?? "legacy"} onChange={(value) => onStyleChange({fontFamily: value === "legacy" ? undefined : value, fontPreset: undefined})} label="Fonte deste elemento" />
+                  {style.fontPreset || style.fontFamily ? <button type="button" className={styles.resetTypeOverride} onClick={() => onStyleChange({fontPreset: undefined, fontFamily: undefined, fontSize: undefined})}>Remover personalização</button> : null}
+                </>
+              ) : null}
               {openPanel === "size" && onStyleChange ? (
                 <>
                   <div className={styles.popoverHeading}><strong>Tamanho do texto</strong><span>Escolha um tamanho ou ajuste livremente.</span></div>
@@ -1486,10 +1522,18 @@ export default function ElementShell({
       data-locked={locked}
       data-hidden={Boolean(style.hidden)}
       data-crop-mode={selected && cropMode}
-      data-custom-font-size={style.fontSize !== undefined}
+      data-custom-font-size={style.fontSize !== undefined || Boolean(linkedTypeStyle)}
+      data-font-override={Boolean(customFontCss)}
+      data-font-weight-override={Boolean(linkedTypeStyle)}
       style={css}
       onPointerDownCapture={beginDirectCanvasMove}
       onDoubleClick={(event) => {
+        if (editable && node.type === "element" &&
+          ["campaign_card", "media_gallery", "video_embed", "data_chart", "story_tabs", "faq", "progress", "community_timeline", "testimonial_slider", "action_grid", "donation_choices"].includes(node.elementType)) {
+          event.stopPropagation();
+          window.dispatchEvent(new CustomEvent("cong:edit-rich-element", { detail: { nodeId: node.id } }));
+          return;
+        }
         if (!editable || !imageLike || !onStyleChange) return;
         event.stopPropagation();
         setCropMode(true);

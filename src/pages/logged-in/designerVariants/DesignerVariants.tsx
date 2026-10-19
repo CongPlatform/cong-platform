@@ -37,9 +37,8 @@ function errorMessage(error: unknown): string {
 export default function DesignerVariants() {
   const { account } = useAuth();
   const [variants, setVariants] = useState<InstitutionalVariant[]>([]);
-  const [sectionType, setSectionType] = useState<InstitutionalSectionType>(
-    "organization_about",
-  );
+  const [sectionType, setSectionType] =
+    useState<InstitutionalSectionType>("organization_about");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("Nova variante");
   const [description, setDescription] = useState("");
@@ -130,7 +129,9 @@ export default function DesignerVariants() {
       setVariants((current) => {
         const exists = current.some((variant) => variant.id === saved.id);
         return exists
-          ? current.map((variant) => (variant.id === saved.id ? saved : variant))
+          ? current.map((variant) =>
+              variant.id === saved.id ? saved : variant,
+            )
           : [...current, saved];
       });
       setEditingId(saved.id);
@@ -154,7 +155,8 @@ export default function DesignerVariants() {
 
   const definition = getSectionDefinition(sectionType);
   const supportsMedia =
-    sectionType === "organization_intro" || sectionType === "organization_about";
+    sectionType === "organization_intro" ||
+    sectionType === "organization_about";
   const isCollection = [
     "projects_showcase",
     "impact_metrics",
@@ -191,14 +193,20 @@ export default function DesignerVariants() {
                 <article key={variant.id} className={styles.variantCard}>
                   <div>
                     <strong>{variant.name}</strong>
-                    <span>{getSectionDefinition(variant.sectionType).name} · v{variant.version}</span>
+                    <span>
+                      {getSectionDefinition(variant.sectionType).name} · v
+                      {variant.version}
+                    </span>
                   </div>
                   <div className={styles.variantActions}>
                     <button type="button" onClick={() => beginEditing(variant)}>
                       <FiEdit3 /> Editar
                     </button>
                     {variant.status !== "published" ? (
-                      <button type="button" onClick={() => void publish(variant.id)}>
+                      <button
+                        type="button"
+                        onClick={() => void publish(variant.id)}
+                      >
                         <FiSend /> Publicar
                       </button>
                     ) : (
@@ -218,7 +226,9 @@ export default function DesignerVariants() {
               <select
                 value={sectionType}
                 disabled={Boolean(editingId)}
-                onChange={(event) => resetForm(event.target.value as InstitutionalSectionType)}
+                onChange={(event) =>
+                  resetForm(event.target.value as InstitutionalSectionType)
+                }
               >
                 {sectionCatalog.map((item) => (
                   <option key={item.type} value={item.type}>
@@ -231,12 +241,20 @@ export default function DesignerVariants() {
 
             <label>
               <span>Nome da variante</span>
-              <input value={name} onChange={(event) => setName(event.target.value)} maxLength={100} />
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                maxLength={100}
+              />
             </label>
 
             <label>
               <span>Descrição</span>
-              <textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} />
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                maxLength={500}
+              />
             </label>
 
             <fieldset>
@@ -257,9 +275,14 @@ export default function DesignerVariants() {
                   <button
                     type="button"
                     key={value}
-                    className={settings.composition === value ? styles.optionActive : ""}
+                    className={
+                      settings.composition === value ? styles.optionActive : ""
+                    }
                     onClick={() =>
-                      updateSettings((current) => ({ ...current, composition: value }))
+                      updateSettings((current) => ({
+                        ...current,
+                        composition: value,
+                      }))
                     }
                   >
                     {label}
@@ -293,7 +316,8 @@ export default function DesignerVariants() {
                   onChange={(event) =>
                     updateSettings((current) => ({
                       ...current,
-                      align: event.target.value as VariantLayoutSettings["align"],
+                      align: event.target
+                        .value as VariantLayoutSettings["align"],
                     }))
                   }
                 >
@@ -312,7 +336,8 @@ export default function DesignerVariants() {
                   onChange={(event) =>
                     updateSettings((current) => ({
                       ...current,
-                      collectionColumns: Number(event.target.value) as 1 | 2 | 3 | 4,
+                      collectionColumns: Number(event.target.value) as
+                        1 | 2 | 3 | 4,
                     }))
                   }
                 >
@@ -332,19 +357,31 @@ export default function DesignerVariants() {
                 ))}
               </div>
               <small>
-                O tipo da seção define os campos válidos; a variante decide como eles são apresentados.
+                O tipo da seção define os campos válidos; a variante decide como
+                eles são apresentados.
               </small>
             </div>
 
-            <button type="button" className={styles.saveButton} onClick={() => void save()} disabled={saving || name.trim().length < 2}>
-              {saving ? "Salvando..." : editingId ? "Salvar nova versão" : "Criar variante"}
+            <button
+              type="button"
+              className={styles.saveButton}
+              onClick={() => void save()}
+              disabled={saving || name.trim().length < 2}
+            >
+              {saving
+                ? "Salvando..."
+                : editingId
+                  ? "Salvar nova versão"
+                  : "Criar variante"}
             </button>
           </div>
 
           <div className={styles.previewArea}>
             <div className={styles.previewHeading}>
               <strong>Pré-visualização</strong>
-              <span>O Brand Kit da ONG será aplicado quando ela usar a variante.</span>
+              <span>
+                O Brand Kit da ONG será aplicado quando ela usar a variante.
+              </span>
             </div>
             <div className={styles.preview}>
               <SectionRenderer section={previewSection} />

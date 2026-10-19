@@ -1291,17 +1291,22 @@ export async function getCommunityPosts(
       // recente em vez de derrubar toda a Comunidade com HTTP 500.
       try {
         const candidateLimit = 320;
+        // A consulta de candidatos usa três parâmetros. A condição original
+        // usa $4 no feed paginado, que tem um $3 para offset; sem este remapeamento,
+        // $3 fica sem tipo e o PostgreSQL responde SQLSTATE 42P18.
+        const candidateConditions = conditions.map((condition) =>
+          condition.replaceAll("$4::text", "$3::text"),
+        );
         const candidateResult = await client.query<CommunityPostRow>(
           `
             ${communityPostSelect}
-            where ${conditions.join(" and ")}
+            where ${candidateConditions.join(" and ")}
             order by coalesce(cp.boosted_at, cp.published_at) desc, cp.created_at desc
             limit $2
           `,
           [
             user.id,
             candidateLimit,
-            0,
             options.tag?.trim().replace(/^#/, "").toLowerCase() || null,
           ],
         );
@@ -3678,14 +3683,17 @@ export async function getCommunityNotifications(
         createdAt: row.createdAt,
         // Defesa adicional: mesmo notificações antigas não podem revelar o autor
         // da denúncia nem a identidade de quem aplicou a medida.
-        actor: row.type !== "moderation_action" && row.type !== "moderation_report" && row.actorUserId
-          ? {
-              userId: row.actorUserId,
-              displayName: row.actorDisplayName ?? "Pessoa da comunidade",
-              username: row.actorUsername,
-              avatarUrl: getAvatarPublicUrl(row.actorAvatarPath),
-            }
-          : null,
+        actor:
+          row.type !== "moderation_action" &&
+          row.type !== "moderation_report" &&
+          row.actorUserId
+            ? {
+                userId: row.actorUserId,
+                displayName: row.actorDisplayName ?? "Pessoa da comunidade",
+                username: row.actorUsername,
+                avatarUrl: getAvatarPublicUrl(row.actorAvatarPath),
+              }
+            : null,
         post: row.postId
           ? { id: row.postId, title: row.postTitle ?? "Publicação" }
           : null,

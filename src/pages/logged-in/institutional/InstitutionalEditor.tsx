@@ -1,3 +1,4 @@
+import type { StockMediaItem } from "../../../services/stockMediaService";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FiAlignCenter,
@@ -14,6 +15,7 @@ import {
 } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 
+import SitePagesBar from "../../../components/institutional/editor/SitePagesBar";
 import BrandPanel from "../../../components/institutional/editor/BrandPanel";
 import ConfirmActionModal from "../../../components/institutional/editor/ConfirmActionModal";
 import EditorToolbar, {
@@ -31,6 +33,10 @@ import {
 import { ApiError } from "../../../services/api";
 import {
   addInstitutionalSection,
+  createInstitutionalPage,
+  synchronizeInstitutionalNavigation,
+  updateInstitutionalPage,
+  deleteInstitutionalPage,
   deleteInstitutionalSection,
   duplicateInstitutionalSection,
   getInstitutionalSite,
@@ -42,6 +48,7 @@ import {
   updateInstitutionalSection,
   uploadInstitutionalMedia,
   type InstitutionalBrand,
+  type InstitutionalMediaAsset,
   type InstitutionalDesignResources,
   type InstitutionalElementStyle,
   type InstitutionalElementValue,
@@ -56,7 +63,6 @@ import {
 import { setInstitutionalContentValue } from "../../../utils/institutionalContent";
 import { FREE_EDITOR_CONSTRAINTS } from "../../../utils/institutionalConstraints";
 import {
-  buildBrandPaletteSuggestion,
   extractLogoPalette,
 } from "../../../utils/institutionalPalette";
 import {
@@ -88,93 +94,43 @@ import {
 import { buildNativeExampleSite } from "../../../utils/institutionalPreview";
 import { findNativeDesignFamilyByVisualStyle } from "../../../data/institutional/nativeDesignFamilies";
 
+import { cloneSiteSnapshot, updateSectionInSite } from "../../../features/site-builder/core/siteDocument";
+import { applyRecoveryDraft, clearRecoveryDraft, readRecoveryDraft, writeRecoveryDraft } from "../../../features/site-builder/core/draftRecovery";
+
+import { findSiteComposition, settingsForComposition } from "../../../features/site-builder/compositions/compositionCatalog";
+import { createRichPresetNode } from "../../../features/site-builder/compositions/richBlockPresets";
+import { createEditorialPieceNode } from "../../../features/site-builder/compositions/editorialPieces";
+
 import styles from "./InstitutionalEditor.module.css";
 
 type SavingState = "idle" | "saving" | "saved" | "error";
 type BrandDraft = Omit<
   InstitutionalBrand,
-  "organizationId" | "publicSlug" | "logoAsset"
+  "organizationId" | "publicSlug" | "logoAsset" | "logoVariantAssets"
 >;
 
-interface InstitutionalRecoveryDraft {
-  version: 1;
-  savedAt: string;
-  content: Record<string, Record<string, unknown>>;
-  settings: Record<string, Record<string, unknown>>;
-}
 
-function recoveryDraftKey(siteId: string): string {
-  return `cong:institutional-recovery:${siteId}`;
-}
 
-function readRecoveryDraft(siteId: string): InstitutionalRecoveryDraft | null {
-  try {
-    const raw = localStorage.getItem(recoveryDraftKey(siteId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<InstitutionalRecoveryDraft>;
-    if (
-      parsed.version !== 1 ||
-      !parsed.content ||
-      typeof parsed.content !== "object" ||
-      !parsed.settings ||
-      typeof parsed.settings !== "object"
-    ) {
-      localStorage.removeItem(recoveryDraftKey(siteId));
-      return null;
-    }
-    return parsed as InstitutionalRecoveryDraft;
-  } catch {
-    localStorage.removeItem(recoveryDraftKey(siteId));
-    return null;
-  }
-}
 
-function applyRecoveryDraft(
-  site: InstitutionalSite,
-  draft: InstitutionalRecoveryDraft,
-): InstitutionalSite {
-  return {
-    ...site,
-    pages: site.pages.map((page) => ({
-      ...page,
-      sections: page.sections.map((section) => ({
-        ...section,
-        content: draft.content[section.id] ?? section.content,
-        settings: draft.settings[section.id] ?? section.settings,
-      })),
-    })),
-  };
-}
+
+
+
+
 
 function messageFromError(error: unknown): string {
   if (error instanceof ApiError) return error.message;
   return "Não foi possível concluir esta alteração.";
 }
 
-function updateSectionInSite(
-  site: InstitutionalSite,
-  sectionId: string,
-  updater: (section: InstitutionalSection) => InstitutionalSection,
-): InstitutionalSite {
-  return {
-    ...site,
-    pages: site.pages.map((page) => ({
-      ...page,
-      sections: page.sections.map((section) =>
-        section.id === sectionId ? updater(section) : section,
-      ),
-    })),
-  };
-}
 
-function cloneSiteSnapshot(site: InstitutionalSite): InstitutionalSite {
-  return structuredClone(site);
-}
+
+
 
 export default function InstitutionalEditor() {
   const navigate = useNavigate();
   const { siteId } = useParams<{ siteId: string }>();
   const [site, setSite] = useState<InstitutionalSite | null>(null);
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [variants, setVariants] = useState<InstitutionalVariant[]>([]);
   const [designResources, setDesignResources] =
     useState<InstitutionalDesignResources>({ palettes: [], frames: [] });
@@ -225,6 +181,7 @@ export default function InstitutionalEditor() {
   const pendingSaveSettingsRef = useRef(
     new Map<string, Record<string, unknown>>(),
   );
+  const sectionWritesRef = useRef(new Map<string, Promise<void>>());
   const latestContentRef = useRef(new Map<string, Record<string, unknown>>());
   const latestSettingsRef = useRef(new Map<string, Record<string, unknown>>());
   const siteRef = useRef<InstitutionalSite | null>(null);
@@ -236,31 +193,7 @@ export default function InstitutionalEditor() {
 
   const syncRecoveryDraft = useCallback((): void => {
     if (!siteId) return;
-
-    const content = Object.fromEntries(pendingSaveContentRef.current.entries());
-    const settings = Object.fromEntries(
-      pendingSaveSettingsRef.current.entries(),
-    );
-    if (
-      Object.keys(content).length === 0 &&
-      Object.keys(settings).length === 0
-    ) {
-      localStorage.removeItem(recoveryDraftKey(siteId));
-      return;
-    }
-
-    const draft: InstitutionalRecoveryDraft = {
-      version: 1,
-      savedAt: new Date().toISOString(),
-      content,
-      settings,
-    };
-
-    try {
-      localStorage.setItem(recoveryDraftKey(siteId), JSON.stringify(draft));
-    } catch {
-      // A edição continua funcionando mesmo quando o navegador bloqueia armazenamento local.
-    }
+    writeRecoveryDraft(siteId, pendingSaveContentRef.current, pendingSaveSettingsRef.current);
   }, [siteId]);
 
   const adoptSite = useCallback((nextSite: InstitutionalSite): void => {
@@ -348,7 +281,7 @@ export default function InstitutionalEditor() {
           });
 
           if (recoveredContent.length === 0 && recoveredSettings.length === 0) {
-            localStorage.removeItem(recoveryDraftKey(siteId));
+            clearRecoveryDraft(siteId);
             setSavingState("saved");
             return;
           }
@@ -374,7 +307,7 @@ export default function InstitutionalEditor() {
             );
             pendingSaveContentRef.current.clear();
             pendingSaveSettingsRef.current.clear();
-            localStorage.removeItem(recoveryDraftKey(siteId));
+            clearRecoveryDraft(siteId);
             if (active) setSavingState("saved");
           } catch (caught) {
             if (active) {
@@ -407,8 +340,9 @@ export default function InstitutionalEditor() {
   );
 
   const page = useMemo(
-    () => site?.pages.find((item) => item.isHome) ?? site?.pages[0] ?? null,
-    [site],
+    () => site?.pages.find((item) => item.id === selectedPageId) ??
+      site?.pages.find((item) => item.isHome) ?? site?.pages[0] ?? null,
+    [site, selectedPageId],
   );
 
   const nativeFamily = useMemo(() => {
@@ -436,10 +370,11 @@ export default function InstitutionalEditor() {
   );
   const renderedPage = useMemo(
     () =>
+      renderedSite?.pages.find((item) => item.id === page?.id) ??
       renderedSite?.pages.find((item) => item.isHome) ??
       renderedSite?.pages[0] ??
       null,
-    [renderedSite],
+    [renderedSite, page?.id],
   );
 
   const changeExampleView = useCallback(
@@ -458,9 +393,9 @@ export default function InstitutionalEditor() {
 
   const selectedSection = useMemo(
     () =>
-      page?.sections.find((section) => section.id === selectedSectionId) ??
+      site?.pages.flatMap((candidatePage) => candidatePage.sections).find((section) => section.id === selectedSectionId) ??
       null,
-    [page, selectedSectionId],
+    [site, selectedSectionId],
   );
   const selectedElement = useMemo(() => {
     if (!selectedSection || !selectedElementId) return null;
@@ -516,12 +451,30 @@ export default function InstitutionalEditor() {
     setSelectedSectionId,
   ]);
 
+  const enqueueSectionWrite = useCallback(
+    (sectionId: string, patch: { content?: Record<string, unknown>; settings?: Record<string, unknown> }): Promise<void> => {
+      const previous = sectionWritesRef.current.get(sectionId) ?? Promise.resolve();
+      const request = previous.catch(() => undefined).then(() => updateInstitutionalSection(sectionId, patch)).then(() => undefined);
+      sectionWritesRef.current.set(sectionId, request);
+      void request.then(
+        () => {
+          if (sectionWritesRef.current.get(sectionId) === request) sectionWritesRef.current.delete(sectionId);
+        },
+        () => {
+          if (sectionWritesRef.current.get(sectionId) === request) sectionWritesRef.current.delete(sectionId);
+        },
+      );
+      return request;
+    },
+    [],
+  );
+
   const persistSectionContent = useCallback(
     async (
       sectionId: string,
       content: Record<string, unknown>,
     ): Promise<void> => {
-      await updateInstitutionalSection(sectionId, { content });
+      await enqueueSectionWrite(sectionId, { content });
       if (pendingSaveContentRef.current.get(sectionId) === content) {
         pendingSaveContentRef.current.delete(sectionId);
       }
@@ -533,7 +486,7 @@ export default function InstitutionalEditor() {
           : "saving",
       );
     },
-    [syncRecoveryDraft],
+    [enqueueSectionWrite, syncRecoveryDraft],
   );
 
   const queueSectionSave = useCallback(
@@ -562,7 +515,7 @@ export default function InstitutionalEditor() {
       sectionId: string,
       settings: Record<string, unknown>,
     ): Promise<void> => {
-      await updateInstitutionalSection(sectionId, { settings });
+      await enqueueSectionWrite(sectionId, { settings });
       if (pendingSaveSettingsRef.current.get(sectionId) === settings) {
         pendingSaveSettingsRef.current.delete(sectionId);
       }
@@ -574,7 +527,7 @@ export default function InstitutionalEditor() {
           : "saving",
       );
     },
-    [syncRecoveryDraft],
+    [enqueueSectionWrite, syncRecoveryDraft],
   );
 
   const queueSectionSettingsSave = useCallback(
@@ -611,35 +564,106 @@ export default function InstitutionalEditor() {
     );
 
     if (pendingContent.length === 0 && pendingSettings.length === 0) {
-      setSavingState("saved");
+      await Promise.all(sectionWritesRef.current.values());
+      if (pendingSaveContentRef.current.size === 0 && pendingSaveSettingsRef.current.size === 0) {
+        setSavingState("saved");
+      }
       return;
     }
 
     setSavingState("saving");
 
-    const sectionIds = new Set([
-      ...pendingContent.map(([sectionId]) => sectionId),
-      ...pendingSettings.map(([sectionId]) => sectionId),
-    ]);
+    const contentSnapshot = new Map(pendingContent);
+    const settingsSnapshot = new Map(pendingSettings);
+    const sectionIds = new Set([...contentSnapshot.keys(), ...settingsSnapshot.keys()]);
 
     await Promise.all(
       [...sectionIds].map((sectionId) =>
-        updateInstitutionalSection(sectionId, {
-          ...(pendingSaveContentRef.current.has(sectionId)
-            ? { content: pendingSaveContentRef.current.get(sectionId) }
+        enqueueSectionWrite(sectionId, {
+          ...(contentSnapshot.has(sectionId)
+            ? { content: contentSnapshot.get(sectionId) }
             : {}),
-          ...(pendingSaveSettingsRef.current.has(sectionId)
-            ? { settings: pendingSaveSettingsRef.current.get(sectionId) }
+          ...(settingsSnapshot.has(sectionId)
+            ? { settings: settingsSnapshot.get(sectionId) }
             : {}),
         }),
       ),
     );
 
-    pendingSaveContentRef.current.clear();
-    pendingSaveSettingsRef.current.clear();
+    contentSnapshot.forEach((content, sectionId) => {
+      if (pendingSaveContentRef.current.get(sectionId) === content) {
+        pendingSaveContentRef.current.delete(sectionId);
+      }
+    });
+    settingsSnapshot.forEach((settings, sectionId) => {
+      if (pendingSaveSettingsRef.current.get(sectionId) === settings) {
+        pendingSaveSettingsRef.current.delete(sectionId);
+      }
+    });
     syncRecoveryDraft();
-    setSavingState("saved");
-  }, [syncRecoveryDraft]);
+    setSavingState(
+      pendingSaveContentRef.current.size === 0 && pendingSaveSettingsRef.current.size === 0
+        ? "saved"
+        : "saving",
+    );
+  }, [enqueueSectionWrite, syncRecoveryDraft]);
+
+  const selectPage = useCallback(async (pageId: string): Promise<void> => {
+    if (pageId === page?.id) return;
+    try {
+      await flushPendingSectionSaves();
+      setSelectedPageId(pageId);
+      setSelectedSectionId(null);
+      setSelectedElementIds([]);
+      setPropertiesOpen(false);
+      setExampleView(false);
+    } catch (caught) { setError(messageFromError(caught)); }
+  }, [flushPendingSectionSaves, page?.id, setSelectedElementIds, setSelectedSectionId]);
+
+  const createPage = useCallback(async (title: string, slug: string): Promise<void> => {
+    if (!siteId) return;
+    await flushPendingSectionSaves();
+    setBusy(true);
+    try {
+      const updated = await createInstitutionalPage(siteId, { title, slug });
+      adoptSite(updated);
+      const created = updated.pages.find((item) => item.slug === slug);
+      if (created) await selectPage(created.id);
+    } catch (caught) { setError(messageFromError(caught)); throw caught; }
+    finally { setBusy(false); }
+  }, [adoptSite, flushPendingSectionSaves, selectPage, siteId]);
+
+  const updatePage = useCallback(async (pageId: string, patch: { title?: string; slug?: string; isHome?: boolean }): Promise<void> => {
+    if (!siteId) return;
+    await flushPendingSectionSaves();
+    setBusy(true);
+    try { adoptSite(await updateInstitutionalPage(siteId, pageId, patch)); }
+    catch (caught) { setError(messageFromError(caught)); throw caught; }
+    finally { setBusy(false); }
+  }, [adoptSite, flushPendingSectionSaves, siteId]);
+
+  const deletePage = useCallback(async (pageId: string): Promise<void> => {
+    if (!siteId) return;
+    await flushPendingSectionSaves();
+    setBusy(true);
+    try {
+      const updated = await deleteInstitutionalPage(siteId, pageId);
+      adoptSite(updated);
+      if (page?.id === pageId) setSelectedPageId(updated.pages.find((item) => item.isHome)?.id ?? null);
+      setSelectedSectionId(null);
+      setSelectedElementIds([]);
+    } catch (caught) { setError(messageFromError(caught)); throw caught; }
+    finally { setBusy(false); }
+  }, [adoptSite, flushPendingSectionSaves, page?.id, setSelectedElementIds, setSelectedSectionId, siteId]);
+
+  const syncNavigation = useCallback(async (): Promise<void> => {
+    if (!siteId) return;
+    await flushPendingSectionSaves();
+    setBusy(true);
+    try { adoptSite(await synchronizeInstitutionalNavigation(siteId)); }
+    catch (caught) { setError(messageFromError(caught)); throw caught; }
+    finally { setBusy(false); }
+  }, [adoptSite, flushPendingSectionSaves, siteId]);
 
   const syncHistoryState = useCallback((): void => {
     setHistoryState({
@@ -769,7 +793,7 @@ export default function InstitutionalEditor() {
       sectionId: string,
       updater: (layout: InstitutionalLayoutNode) => InstitutionalLayoutNode,
     ): void => {
-      const currentSection = page?.sections.find(
+      const currentSection = site?.pages.flatMap((candidatePage) => candidatePage.sections).find(
         (section) => section.id === sectionId,
       );
       if (!currentSection) return;
@@ -786,7 +810,7 @@ export default function InstitutionalEditor() {
       };
       changeSectionSettings(sectionId, nextSettings);
     },
-    [changeSectionSettings, page],
+    [changeSectionSettings, site],
   );
 
   const changeElementValue = useCallback(
@@ -932,14 +956,12 @@ export default function InstitutionalEditor() {
       setSelectedSectionId(sectionId);
       if (additive) {
         selectEditorElement(sectionId, elementId, true);
-        setPropertiesOpen(true);
         return;
       }
 
-      const section = page?.sections.find((item) => item.id === sectionId);
+      const section = site?.pages.flatMap((candidatePage) => candidatePage.sections).find((item) => item.id === sectionId);
       if (!section) {
         selectEditorElement(sectionId, elementId, false);
-        setPropertiesOpen(true);
         return;
       }
       const layout = ensureLayoutNodeIds(
@@ -961,9 +983,8 @@ export default function InstitutionalEditor() {
       } else {
         selectEditorElement(sectionId, elementId, false);
       }
-      setPropertiesOpen(true);
     },
-    [page, selectEditorElement, selectEditorElements, setSelectedSectionId],
+    [site, selectEditorElement, selectEditorElements, setSelectedSectionId],
   );
 
   const groupSelectedElements = useCallback((): void => {
@@ -1266,6 +1287,81 @@ export default function InstitutionalEditor() {
     [setSelectedElementId, setSelectedSectionId, updateSectionLayout],
   );
 
+  const addRichPreset = useCallback((presetId: string, inheritBrand = true): void => {
+    if (!selectedSection) {
+      setError("Selecione uma seção para inserir este modelo.");
+      return;
+    }
+    const element = createRichPresetNode(presetId, inheritBrand);
+    if (!element) {
+      setError("Não foi possível encontrar esse modelo.");
+      return;
+    }
+    updateSectionLayout(selectedSection.id, (layout) => appendElement(layout, element));
+    setSelectedSectionId(selectedSection.id);
+    setSelectedElementId(element.id);
+  }, [selectedSection, setSelectedElementId, setSelectedSectionId, updateSectionLayout]);
+
+  const addEditorialPiece = useCallback((pieceId: string, inheritBrand: boolean): void => {
+    if (!selectedSection) {
+      setError("Selecione uma seção antes de adicionar esta composição.");
+      return;
+    }
+    const piece = createEditorialPieceNode(pieceId, inheritBrand);
+    if (!piece) {
+      setError("Não foi possível preparar essa composição.");
+      return;
+    }
+    updateSectionLayout(selectedSection.id, (layout) => appendElement(layout, piece));
+    setSelectedSectionId(selectedSection.id);
+  }, [selectedSection, setSelectedSectionId, updateSectionLayout]);
+
+  const insertStockImage = useCallback(async (file: File, label: string): Promise<void> => {
+    const target = selectedSection;
+    if (!target) throw new Error("Selecione uma seção antes de adicionar a fotografia.");
+
+    try {
+      const asset = await uploadInstitutionalMedia(file);
+      const element = createElementNode("image");
+      if (element.type !== "element") throw new Error("Não foi possível preparar a imagem.");
+      const imageNode: typeof element = {
+        ...element,
+        value: {
+          assetId: asset.id,
+          url: asset.url,
+          alt: label.slice(0, 240),
+        },
+      };
+      updateSectionLayout(target.id, (layout) => appendElement(layout, imageNode));
+      setSelectedSectionId(target.id);
+      setSelectedElementId(imageNode.id);
+    } catch (error) {
+      setError(messageFromError(error));
+      throw error;
+    }
+  }, [selectedSection, setSelectedElementId, setSelectedSectionId, updateSectionLayout]);
+
+  const insertStockVideo = useCallback((item: StockMediaItem): void => {
+    if (!selectedSection) {
+      setError("Selecione uma seção antes de inserir o vídeo.");
+      return;
+    }
+    const node = createElementNode("video_embed");
+    if (node.type !== "element") return;
+    const videoNode: typeof node = {
+      ...node,
+      value: {
+        kind: "video_embed",
+        title: item.title.slice(0, 140) || "Vídeo da comunidade",
+        caption: `Vídeo ilustrativo · ${item.author}`.slice(0, 300),
+        url: item.url,
+      },
+    };
+    updateSectionLayout(selectedSection.id, (layout) => appendElement(layout, videoNode));
+    setSelectedSectionId(selectedSection.id);
+    setSelectedElementId(videoNode.id);
+  }, [selectedSection, setSelectedElementId, setSelectedSectionId, updateSectionLayout]);
+
   const addElement = useCallback(
     (elementType: InstitutionalElementType, initialValue?: string): void => {
       if (!selectedSection) {
@@ -1281,7 +1377,7 @@ export default function InstitutionalEditor() {
     sectionId: string,
     style: Partial<InstitutionalSectionStyle>,
   ): void {
-    const current = page?.sections.find((item) => item.id === sectionId);
+    const current = site?.pages.flatMap((candidatePage) => candidatePage.sections).find((item) => item.id === sectionId);
     if (!current) return;
     const currentSettings =
       latestSettingsRef.current.get(sectionId) ?? current.settings;
@@ -1307,6 +1403,7 @@ export default function InstitutionalEditor() {
     sectionType: InstitutionalSectionType,
     preferredVariantVersionId?: string,
     beforeSectionId: string | null = null,
+    compositionId?: string,
   ): Promise<void> {
     if (!page) return;
     if (
@@ -1339,6 +1436,11 @@ export default function InstitutionalEditor() {
       setError("Nenhuma variante disponível para este tipo de seção.");
       return;
     }
+    const composition = findSiteComposition(compositionId);
+    if (compositionId && (!composition || composition.sectionType !== sectionType)) {
+      setError("A composição selecionada não está disponível para esta seção.");
+      return;
+    }
 
     setBusy(true);
     setError("");
@@ -1349,9 +1451,9 @@ export default function InstitutionalEditor() {
         variantVersionId: variant.versionId,
         content: createDefaultSectionContent(sectionType),
         settings: {
-          ...defaultSettingsForVariant(variant),
+          ...(composition ? settingsForComposition(composition, variant) : defaultSettingsForVariant(variant)),
           contentGuidance: {
-            source: "contextual-request",
+            source: composition ? "composition-template" : "contextual-request",
             needsReview: true,
           },
         },
@@ -1389,6 +1491,7 @@ export default function InstitutionalEditor() {
       }
 
       adoptSite(updated);
+      if (composition) changeExampleView(false);
       setSelectedSectionId(
         createdSection?.id ?? updatedPage?.sections.at(-1)?.id ?? null,
       );
@@ -1404,7 +1507,7 @@ export default function InstitutionalEditor() {
     sectionId: string,
     variantVersionId: string,
   ): Promise<void> {
-    const section = page?.sections.find((item) => item.id === sectionId);
+    const section = site?.pages.flatMap((candidatePage) => candidatePage.sections).find((item) => item.id === sectionId);
     if (!section) return;
     setSavingState("saving");
     try {
@@ -1417,6 +1520,7 @@ export default function InstitutionalEditor() {
         ...(selectedVariant ? defaultSettingsForVariant(selectedVariant) : {}),
       };
       delete nextSettings.layoutOverride;
+      delete nextSettings.compositionId;
       const updated = await updateInstitutionalSection(section.id, {
         variantVersionId,
         settings: nextSettings,
@@ -1532,7 +1636,7 @@ export default function InstitutionalEditor() {
   }
 
   async function toggleSection(sectionId: string): Promise<void> {
-    const section = page?.sections.find((item) => item.id === sectionId);
+    const section = site?.pages.flatMap((candidatePage) => candidatePage.sections).find((item) => item.id === sectionId);
     if (!section) return;
     try {
       await flushPendingSectionSaves();
@@ -1619,56 +1723,13 @@ export default function InstitutionalEditor() {
     }
   }
 
-  async function uploadLogo(file: File): Promise<void> {
-    if (!site) return;
-    setBrandSaving(true);
-    setError("");
-    try {
-      const [asset, palette] = await Promise.all([
-        uploadInstitutionalMedia(file),
-        extractLogoPalette(file).catch(() => []),
-      ]);
-      if (palette.length > 0) setSuggestedPalette(palette);
-      const brand = await updateInstitutionalBrand({
-        logoAssetId: asset.id,
-        primaryColor: site.brand.primaryColor,
-        secondaryColor: site.brand.secondaryColor,
-        accentColor: site.brand.accentColor,
-        backgroundColor: site.brand.backgroundColor,
-        textColor: site.brand.textColor,
-        headingFont: site.brand.headingFont,
-        bodyFont: site.brand.bodyFont,
-      });
-      setSite((current) => (current ? { ...current, brand } : current));
-    } catch (caught) {
-      setError(messageFromError(caught));
-    } finally {
-      setBrandSaving(false);
-    }
-  }
-
-  async function applyPalette(palette: string[]): Promise<void> {
-    if (!site || palette.length === 0) return;
-    const suggestion = buildBrandPaletteSuggestion(palette);
-    setBrandSaving(true);
-    setError("");
-    try {
-      const brand = await updateInstitutionalBrand({
-        logoAssetId: site.brand.logoAssetId,
-        primaryColor: suggestion.primaryColor,
-        secondaryColor: suggestion.secondaryColor,
-        accentColor: suggestion.accentColor,
-        backgroundColor: suggestion.backgroundColor,
-        textColor: suggestion.textColor,
-        headingFont: site.brand.headingFont,
-        bodyFont: site.brand.bodyFont,
-      });
-      setSite((current) => (current ? { ...current, brand } : current));
-    } catch (caught) {
-      setError(messageFromError(caught));
-    } finally {
-      setBrandSaving(false);
-    }
+  async function uploadBrandImage(file: File, primary: boolean): Promise<InstitutionalMediaAsset> {
+    const [asset, palette] = await Promise.all([
+      uploadInstitutionalMedia(file),
+      primary ? extractLogoPalette(file).catch(() => []) : Promise.resolve([] as string[]),
+    ]);
+    if (primary && palette.length > 0) setSuggestedPalette(palette);
+    return asset;
   }
 
   async function leaveEditor(): Promise<void> {
@@ -1723,6 +1784,18 @@ export default function InstitutionalEditor() {
         </div>
       ) : null}
 
+      <SitePagesBar
+        pages={site.pages}
+        selectedId={page.id}
+        disabled={busy || publishing}
+        publicSlug={site.publicSlug}
+        onSelect={(id) => void selectPage(id)}
+        onCreate={createPage}
+        onUpdate={updatePage}
+        onDelete={deletePage}
+        hasHeader={Boolean(site.pages.some((p) => p.sections.some((section) => section.sectionType === "site_header")))}
+        onSyncNavigation={syncNavigation}
+      />
       <div className={styles.workspace}>
         <SectionLibrary
           disabled={busy || showExampleView}
@@ -1744,15 +1817,19 @@ export default function InstitutionalEditor() {
               return next;
             });
           }}
-          onAddSection={(type, variantVersionId) => {
+          onAddSection={(type, variantVersionId, compositionId) => {
             const selectedIndex = page.sections.findIndex(
               (section) => section.id === selectedSectionId,
             );
             const nextSection =
               selectedIndex >= 0 ? page.sections[selectedIndex + 1] : undefined;
-            void addSection(type, variantVersionId, nextSection?.id ?? null);
+            void addSection(type, variantVersionId, nextSection?.id ?? null, compositionId);
           }}
           onAddElement={addElement}
+          onAddRichPreset={addRichPreset}
+          onAddEditorialPiece={addEditorialPiece}
+          onInsertStockImage={insertStockImage}
+          onInsertStockVideo={insertStockVideo}
           onSelectSection={(sectionId) => {
             setSelectedSectionId(sectionId);
             setSelectedElementId(null);
@@ -1778,12 +1855,12 @@ export default function InstitutionalEditor() {
         <div className={styles.canvasArea}>
           <div className={styles.stageBar}>
             <div className={styles.stageContext}>
-              <strong>Página</strong>
+              <strong>{page.title}</strong>
               <span>
                 {showExampleView
                   ? `${nativeFamily?.name ?? "Design nativo"} · visualização preenchida para você conhecer o design.`
                   : selectedSection
-                    ? `Página inicial › ${getSectionDefinition(selectedSection.sectionType).name}${selectedElement ? ` › ${selectedElement.type === "element" ? ({ heading: "Título", text: "Texto", image: "Imagem", button: "Botão", icon: "Ícone", shape: "Forma", metric: "Número em destaque", quote: "Destaque", divider: "Linha divisória", spacer: "Espaço" } as const)[selectedElement.elementType] : selectedElement.type === "slot" ? "Conteúdo" : "Elemento"}` : ""}`
+                    ? `${page.title} › ${getSectionDefinition(selectedSection.sectionType).name}${selectedElement ? ` › ${selectedElement.type === "element" ? ({ heading: "Título", text: "Texto", image: "Imagem", button: "Botão", icon: "Ícone", shape: "Forma", metric: "Número em destaque", quote: "Destaque", faq: "Perguntas frequentes", progress: "Barra de progresso", campaign_card: "Campanha visual", media_gallery: "Galeria", video_embed: "Vídeo", data_chart: "Gráfico", story_tabs: "Abas", community_timeline: "Linha do tempo", testimonial_slider: "Depoimentos", action_grid: "Participação", donation_choices: "Opções de doação", divider: "Linha divisória", spacer: "Espaço" } as const)[selectedElement.elementType] : selectedElement.type === "slot" ? "Conteúdo" : "Elemento"}` : ""}`
                     : "Clique no próprio site para editar. Use os controles entre as seções para adicionar conteúdo."}
               </span>
             </div>
@@ -1972,6 +2049,15 @@ export default function InstitutionalEditor() {
               className={styles.canvas}
               style={{ width: canvasWidth }}
               data-cong-editor-device={device}
+              onDoubleClickCapture={(event) => {
+                if (showExampleView) return;
+                const target = event.target as HTMLElement;
+                // Rich elements have their own dedicated contextual inspector.
+                const shell = target.closest<HTMLElement>("[data-element-shell]");
+                const richTypes = ["campaign_card", "media_gallery", "video_embed", "data_chart", "story_tabs", "faq", "progress", "community_timeline", "testimonial_slider", "action_grid", "donation_choices"];
+                if (shell?.dataset.elementType && richTypes.includes(shell.dataset.elementType)) return;
+                if (shell || target.closest("[data-section-id]")) setPropertiesOpen(true);
+              }}
             >
               {showExampleView ? (
                 <div className={styles.exampleCanvasNotice}>
@@ -2223,15 +2309,13 @@ export default function InstitutionalEditor() {
 
       {brandOpen ? (
         <BrandPanel
-          key={`${site.brand.logoAssetId ?? "no-logo"}-${site.brand.primaryColor}`}
           brand={site.brand}
           saving={brandSaving}
           suggestedPalette={suggestedPalette}
           communityPalettes={designResources.palettes}
           onClose={() => setBrandOpen(false)}
           onSave={(draft) => void saveBrand(draft)}
-          onUploadLogo={(file) => void uploadLogo(file)}
-          onApplyPalette={(palette) => void applyPalette(palette)}
+          onUploadLogo={uploadBrandImage}
         />
       ) : null}
 

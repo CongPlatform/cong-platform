@@ -3,6 +3,10 @@ import type { Request, Response } from "express";
 import {
   addInstitutionalSection,
   createInstitutionalSite,
+  createInstitutionalPage,
+  synchronizeInstitutionalNavigation,
+  updateInstitutionalPage,
+  deleteInstitutionalPage,
   deleteInstitutionalSite,
   deleteInstitutionalSection,
   duplicateInstitutionalSection,
@@ -417,16 +421,21 @@ export async function renameSite(req: Request, res: Response): Promise<void> {
 export async function updateBrand(req: Request, res: Response): Promise<void> {
   try {
     const organizationId = res.locals.organizationContext.organizationId;
-    const brand = await updateInstitutionalBrand(organizationId, {
-      logoAssetId: req.body.logoAssetId ?? null,
-      primaryColor: req.body.primaryColor,
-      secondaryColor: req.body.secondaryColor,
-      accentColor: req.body.accentColor,
-      backgroundColor: req.body.backgroundColor,
-      textColor: req.body.textColor,
-      headingFont: req.body.headingFont,
-      bodyFont: req.body.bodyFont,
-    }, res.locals.authUser.id);
+    const brand = await updateInstitutionalBrand(
+      organizationId,
+      {
+        logoAssetId: req.body.logoAssetId ?? null,
+        primaryColor: req.body.primaryColor,
+        secondaryColor: req.body.secondaryColor,
+        accentColor: req.body.accentColor,
+        backgroundColor: req.body.backgroundColor,
+        textColor: req.body.textColor,
+        headingFont: req.body.headingFont,
+        bodyFont: req.body.bodyFont,
+        designSystem: req.body.designSystem,
+      },
+      res.locals.authUser.id,
+    );
     res.status(200).json({ brand });
   } catch (error) {
     handleError(error, res);
@@ -449,6 +458,65 @@ export async function uploadMedia(req: Request, res: Response): Promise<void> {
       req.file,
     );
     res.status(201).json({ asset });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function createPage(req: Request, res: Response): Promise<void> {
+  try {
+    const site = await createInstitutionalPage(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      req.body,
+      res.locals.authUser.id,
+    );
+    res.status(201).json({ site });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function syncSiteNavigation(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const site = await synchronizeInstitutionalNavigation(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      res.locals.authUser.id,
+    );
+    res.status(200).json({ site });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function updatePage(req: Request, res: Response): Promise<void> {
+  try {
+    const site = await updateInstitutionalPage(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      paramString(req, "pageId", "PAGE_ID_REQUIRED"),
+      req.body,
+      res.locals.authUser.id,
+    );
+    res.status(200).json({ site });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function deletePage(req: Request, res: Response): Promise<void> {
+  try {
+    const site = await deleteInstitutionalPage(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      paramString(req, "pageId", "PAGE_ID_REQUIRED"),
+      res.locals.authUser.id,
+    );
+    res.status(200).json({ site });
   } catch (error) {
     handleError(error, res);
   }

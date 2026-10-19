@@ -500,10 +500,24 @@ export type CommunityReportInput = z.infer<typeof communityReportSchema>;
 
 export const communityModerationReviewSchema = z
   .object({
-    action: z.enum(["review", "dismiss", "hide_content", "restore_content", "warn_user", "suspend_24h", "suspend_7d", "ban_user", "lift_restriction"]),
+    action: z.enum([
+      "review",
+      "dismiss",
+      "hide_content",
+      "restore_content",
+      "warn_user",
+      "suspend_24h",
+      "suspend_7d",
+      "ban_user",
+      "lift_restriction",
+    ]),
     note: z.string().trim().max(1200).optional().default(""),
     guidance: z.string().trim().max(600).optional().default(""),
-    responseHours: z.union([z.literal(24), z.literal(168)]).nullable().optional().default(null),
+    responseHours: z
+      .union([z.literal(24), z.literal(168)])
+      .nullable()
+      .optional()
+      .default(null),
   })
   .strict();
 

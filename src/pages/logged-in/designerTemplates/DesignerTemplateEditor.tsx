@@ -489,7 +489,10 @@ export default function DesignerTemplateEditor() {
     if (element.type === "element") setSelectedElementId(element.id);
   }
 
-  function addElement(type: InstitutionalElementType, initialValue?: string): void {
+  function addElement(
+    type: InstitutionalElementType,
+    initialValue?: string,
+  ): void {
     if (!selectedSectionId) {
       setError("Selecione uma seção antes de adicionar um elemento.");
       return;
@@ -888,7 +891,11 @@ export default function DesignerTemplateEditor() {
             designerMode
             onElementConstraintsChange={(constraints) => {
               if (selectedSectionId && selectedElementId) {
-                changeElementConstraints(selectedSectionId, selectedElementId, constraints);
+                changeElementConstraints(
+                  selectedSectionId,
+                  selectedElementId,
+                  constraints,
+                );
               }
             }}
             onElementStyleChange={(style) => {

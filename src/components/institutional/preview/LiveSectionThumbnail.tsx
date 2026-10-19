@@ -1,11 +1,20 @@
 import { createDefaultSectionContent } from "../../../data/institutional/sectionCatalog";
-import { findNativeDesignFamilyById, findNativeDesignFamilyByName } from "../../../data/institutional/nativeDesignFamilies";
+import {
+  findNativeDesignFamilyById,
+  findNativeDesignFamilyByName,
+} from "../../../data/institutional/nativeDesignFamilies";
 import type {
   InstitutionalSectionType,
   InstitutionalVariant,
 } from "../../../services/institutionalService";
-import { previewBrandForVariant, previewContentForSection } from "../../../utils/institutionalPreview";
-import { defaultSettingsForVariant, findRecommendedVariant } from "../../../utils/institutionalVariants";
+import {
+  previewBrandForVariant,
+  previewContentForSection,
+} from "../../../utils/institutionalPreview";
+import {
+  defaultSettingsForVariant,
+  findRecommendedVariant,
+} from "../../../utils/institutionalVariants";
 import SectionRenderer from "../renderer/SectionRenderer";
 
 import styles from "./LiveSectionThumbnail.module.css";
@@ -21,14 +30,21 @@ export default function LiveSectionThumbnail({
   preferredVariant?: InstitutionalVariant;
   size?: "compact" | "large";
 }) {
-  const variant = preferredVariant ?? findRecommendedVariant(variants, sectionType);
+  const variant =
+    preferredVariant ?? findRecommendedVariant(variants, sectionType);
 
   if (!variant) {
-    return <div className={styles.fallback} data-size={size}>Prévia disponível ao abrir</div>;
+    return (
+      <div className={styles.fallback} data-size={size}>
+        Prévia disponível ao abrir
+      </div>
+    );
   }
 
   const brand = previewBrandForVariant(variant);
-  const family = findNativeDesignFamilyById(variant.familyKey) ?? findNativeDesignFamilyByName(variant.name);
+  const family =
+    findNativeDesignFamilyById(variant.familyKey) ??
+    findNativeDesignFamilyByName(variant.name);
   const section = {
     id: `preview-${sectionType}`,
     pageId: "preview-page",
@@ -36,7 +52,11 @@ export default function LiveSectionThumbnail({
     variantVersionId: variant.versionId,
     position: 0,
     visible: true,
-    content: previewContentForSection(sectionType, createDefaultSectionContent(sectionType), family?.id),
+    content: previewContentForSection(
+      sectionType,
+      createDefaultSectionContent(sectionType),
+      family?.id,
+    ),
     settings: defaultSettingsForVariant(variant),
     variantId: variant.id,
     variantName: variant.name,

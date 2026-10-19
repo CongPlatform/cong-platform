@@ -720,6 +720,7 @@ export function buildNativeExampleSite(
       ...brand,
       organizationId: site.brand.organizationId,
       publicSlug: site.brand.publicSlug,
+      designSystem: site.brand.designSystem,
     },
     pages: site.pages.map((page) => ({
       ...page,
@@ -749,34 +750,50 @@ export function buildTemplatePreviewSite(
   variants: InstitutionalVariant[],
 ): InstitutionalSite | null {
   const definition = template.definition;
-  const sourcePage = definition?.pages.find((page) => page.isHome) ?? definition?.pages[0];
-  if (!sourcePage) return null;
+  if (!definition?.pages.length) return null;
   const family = findNativeDesignFamilyById(template.familyKey) ?? findNativeDesignFamilyByName(template.name);
 
-  const previewSections = family
-    ? [...sourcePage.sections].sort((left, right) => {
-        const order = NATIVE_EXAMPLE_SECTION_ORDER[family.id];
-        return order.indexOf(left.sectionType) - order.indexOf(right.sectionType);
-      })
-    : sourcePage.sections;
+  const pages = definition.pages.map((sourcePage, pageIndex): InstitutionalSite["pages"][number] => {
+    const previewPageId = `preview-page-${template.id}-${pageIndex}`;
+    const sectionsToRender = family && sourcePage.isHome
+      ? [...sourcePage.sections].sort((left, right) => {
+          const order = NATIVE_EXAMPLE_SECTION_ORDER[family.id];
+          return order.indexOf(left.sectionType) - order.indexOf(right.sectionType);
+        })
+      : sourcePage.sections;
 
-  const sections = previewSections.flatMap((section, index): InstitutionalSection[] => {
-    const variant = variants.find((item) => item.versionId === section.variantVersionId);
-    if (!variant) return [];
-    return [{
-      id: `preview-${template.id}-${index}`,
-      pageId: `preview-page-${template.id}`,
-      sectionType: section.sectionType,
-      variantVersionId: section.variantVersionId,
-      position: index,
-      visible: true,
-      content: previewContentForSection(section.sectionType, family ? undefined : section.content, family?.id),
-      settings: section.settings ?? {},
-      variantId: variant.id,
-      variantName: variant.name,
-      variantVersion: variant.version,
-      layout: family ? exampleLayoutForSection(variant.layout, section.sectionType, family.id) : variant.layout,
-    }];
+    const sections = sectionsToRender.flatMap((section, index): InstitutionalSection[] => {
+      const variant = variants.find((item) => item.versionId === section.variantVersionId);
+      if (!variant) return [];
+      const useExampleCopy = Boolean(family && sourcePage.isHome && !section.settings?.layoutOverride);
+      return [{
+        id: `preview-${template.id}-${pageIndex}-${index}`,
+        pageId: previewPageId,
+        sectionType: section.sectionType,
+        variantVersionId: section.variantVersionId,
+        position: index,
+        visible: true,
+        content: useExampleCopy
+          ? previewContentForSection(section.sectionType, undefined, family?.id)
+          : section.content,
+        settings: section.settings ?? {},
+        variantId: variant.id,
+        variantName: variant.name,
+        variantVersion: variant.version,
+        layout: useExampleCopy
+          ? exampleLayoutForSection(variant.layout, section.sectionType, family!.id)
+          : variant.layout,
+      }];
+    });
+
+    return {
+      id: previewPageId,
+      title: sourcePage.title,
+      slug: sourcePage.slug,
+      isHome: sourcePage.isHome,
+      position: pageIndex,
+      sections,
+    };
   });
 
   const brand = previewBrandForCategory(family?.category ?? template.category);
@@ -800,13 +817,6 @@ export function buildTemplatePreviewSite(
     updatedAt: FIXED_DATE,
     organization: { id: "preview-organization", name: family ? NATIVE_EXAMPLE_COPY[family.id].organizationName : "Sua organização" },
     brand,
-    pages: [{
-      id: `preview-page-${template.id}`,
-      title: sourcePage.title,
-      slug: sourcePage.slug,
-      isHome: true,
-      position: 0,
-      sections,
-    }],
+    pages,
   };
 }

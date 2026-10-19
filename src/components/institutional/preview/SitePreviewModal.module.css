@@ -179,6 +179,44 @@
   white-space: nowrap;
 }
 
+.browserShell[data-multipage="true"] {
+  grid-template-rows: 38px auto minmax(0, 1fr);
+}
+
+.pageNavigation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-slate-200);
+  background: var(--color-white);
+  scrollbar-width: thin;
+}
+
+.pageTab {
+  flex: none;
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--color-slate-600);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pageTab:hover {
+  background: var(--color-slate-100);
+}
+
+.pageTab[aria-current="page"] {
+  border-color: var(--color-primary-100);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-50);
+}
+
 .siteViewport {
   min-width: 0;
   min-height: 0;

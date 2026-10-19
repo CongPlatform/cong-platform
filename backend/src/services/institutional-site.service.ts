@@ -103,6 +103,22 @@ interface SectionRow {
   layout: InstitutionalVariant["layout"];
 }
 
+interface InstitutionalDesignSystem {
+  headingFamily: string;
+  bodyFamily: string;
+  textStyles?: Partial<
+    Record<
+      "display" | "heading" | "subheading" | "body" | "caption" | "button",
+      { family: string; size: number; weight: 400 | 500 | 600 | 700 | 800 }
+    >
+  >;
+  logos?: Partial<Record<"compact" | "light" | "dark", string | null>>;
+  headingScale: "compact" | "standard" | "expressive";
+  bodyScale: "compact" | "standard" | "relaxed";
+  spacing: "compact" | "standard" | "spacious";
+  corners: "original" | "square" | "subtle" | "rounded";
+}
+
 interface BrandRow {
   organizationId: string;
   publicSlug: string;
@@ -114,10 +130,43 @@ interface BrandRow {
   textColor: string;
   headingFont: "brand" | "interface" | "system";
   bodyFont: "brand" | "interface" | "system";
+  designSystem?: InstitutionalDesignSystem;
 }
 
 export interface InstitutionalBrand extends BrandRow {
   logoAsset: InstitutionalMediaAsset | null;
+  logoVariantAssets?: Partial<
+    Record<"compact" | "light" | "dark", InstitutionalMediaAsset>
+  >;
+}
+
+const logoVariantSlots = ["compact", "light", "dark"] as const;
+function brandMediaIds(
+  brand: Pick<BrandRow, "logoAssetId" | "designSystem">,
+): string[] {
+  const ids = [
+    brand.logoAssetId,
+    ...logoVariantSlots.map((slot) => brand.designSystem?.logos?.[slot]),
+  ];
+  return [
+    ...new Set(
+      ids.filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  ];
+}
+function signedBrandVariants(
+  brand: BrandRow,
+  assets: Map<string, InstitutionalMediaAsset>,
+): InstitutionalBrand["logoVariantAssets"] {
+  const result: NonNullable<InstitutionalBrand["logoVariantAssets"]> = {};
+  logoVariantSlots.forEach((slot) => {
+    const id = brand.designSystem?.logos?.[slot];
+    if (id) {
+      const asset = assets.get(id);
+      if (asset) result[slot] = asset;
+    }
+  });
+  return result;
 }
 
 export interface InstitutionalSection extends SectionRow {
@@ -360,6 +409,7 @@ async function getBrandProfile(
         b.text_color as "textColor",
         b.heading_font as "headingFont",
         b.body_font as "bodyFont",
+        b.design_system as "designSystem",
         o.name as "organizationName"
       from public.organization_brand_profiles b
       join public.organizations o on o.id = b.organization_id
@@ -402,7 +452,8 @@ async function getBrandProfile(
         background_color as "backgroundColor",
         text_color as "textColor",
         heading_font as "headingFont",
-        body_font as "bodyFont"
+        body_font as "bodyFont",
+        design_system as "designSystem"
     `,
     [publicSlug, organizationId],
   );
@@ -678,8 +729,8 @@ async function hydrateSnapshot(
 ): Promise<InstitutionalSite> {
   const assetIds = collectAssetIds(snapshot.pages);
 
-  if (snapshot.brand.logoAssetId) {
-    assetIds.add(snapshot.brand.logoAssetId);
+  for (const id of brandMediaIds(snapshot.brand)) {
+    assetIds.add(id);
   }
 
   const assets = await getSignedOrganizationAssets(snapshot.organization.id, [
@@ -701,6 +752,7 @@ async function hydrateSnapshot(
       logoAsset: snapshot.brand.logoAssetId
         ? (assets.get(snapshot.brand.logoAssetId) ?? null)
         : null,
+      logoVariantAssets: signedBrandVariants(snapshot.brand, assets),
     },
     pages: snapshot.pages.map((page) => ({
       ...page,
@@ -719,11 +771,15 @@ async function hydrateSnapshot(
   };
 }
 
-
 /** Insere o autor real da requisição no contexto transacional das triggers. */
-async function setAuditActor(client: PoolClient, authUserId: string): Promise<void> {
+async function setAuditActor(
+  client: PoolClient,
+  authUserId: string,
+): Promise<void> {
   const userId = await getActiveUserId(client, authUserId);
-  await client.query("select set_config('cong.actor_user_id', $1, true)", [userId]);
+  await client.query("select set_config('cong.actor_user_id', $1, true)", [
+    userId,
+  ]);
 }
 
 export async function listInstitutionalSites(
@@ -791,6 +847,137 @@ export async function getInstitutionalSite(
   } finally {
     client.release();
   }
+}
+
+/** Converts only explicit internal navigation targets into site pages.
+ * External links and unknown in-page anchors are left untouched.
+ * Execute inside an existing transaction with the site row locked.
+ */
+const defaultNavigationAnchors: Record<string, string> = {
+  "#top": "",
+  "#inicio": "",
+  "#sobre": "sobre",
+  "#projetos": "projetos",
+  "#impacto": "impacto",
+  "#como-ajudar": "como-ajudar",
+  "#contato": "contato",
+  "#acoes": "acoes",
+  "#doar": "doar",
+  "#transparencia": "transparencia",
+};
+
+function navigationPageSlug(href: string): string | null {
+  const destination = href.trim();
+  if (destination in defaultNavigationAnchors)
+    return defaultNavigationAnchors[destination];
+  if (destination === "/") return "";
+  if (
+    /^\/[a-z0-9][a-z0-9-]{0,69}$/.test(destination) &&
+    !destination.startsWith("/o/")
+  ) {
+    return destination.slice(1);
+  }
+  return null;
+}
+
+async function syncNavigationPagesInTransaction(
+  client: PoolClient,
+  siteId: string,
+): Promise<void> {
+  const headerResult = await client.query<{
+    id: string;
+    content: Record<string, unknown>;
+  }>(
+    `select s.id, s.content from public.institutional_sections s
+     join public.institutional_pages p on p.id = s.page_id
+     where p.site_id = $1 and s.section_type = 'site_header'
+     order by p.position, s.position limit 1`,
+    [siteId],
+  );
+  const header = headerResult.rows[0];
+  if (!header) return;
+  const content = header.content;
+  const knownPages = await client.query<{ slug: string; isHome: boolean }>(
+    `select slug, is_home as "isHome" from public.institutional_pages where site_id = $1 order by position`,
+    [siteId],
+  );
+  const slugs = new Set(knownPages.rows.map((page) => page.slug));
+  let nextPosition = knownPages.rows.length;
+  const links = Array.isArray(content.links) ? content.links : [];
+  const action = content.primaryAction;
+  const candidates = [
+    ...links.map((item) => ({
+      item,
+      label: typeof item?.label === "string" ? item.label : "",
+    })),
+    {
+      item: action,
+      label:
+        typeof (action as { label?: unknown } | null)?.label === "string"
+          ? (action as { label: string }).label
+          : "",
+    },
+  ];
+  const replacements = new Map<unknown, string>();
+  for (const { item, label } of candidates) {
+    if (!item || typeof item !== "object" || typeof item.href !== "string")
+      continue;
+    const slug = navigationPageSlug(item.href);
+    if (slug === null) continue;
+    if (slug && !slugs.has(slug)) {
+      await client.query(
+        `insert into public.institutional_pages (site_id, title, slug, is_home, position)
+         values ($1, $2, $3, false, $4)`,
+        [
+          siteId,
+          label.trim().slice(0, 100) || slug.replace(/-/g, " "),
+          slug,
+          nextPosition++,
+        ],
+      );
+      slugs.add(slug);
+    }
+    replacements.set(item, slug ? `/${slug}` : "/");
+  }
+  if (!replacements.size) return;
+  const updatedLinks = links.map((item) =>
+    replacements.has(item) ? { ...item, href: replacements.get(item) } : item,
+  );
+  const updatedAction = replacements.has(action)
+    ? { ...(action as Record<string, unknown>), href: replacements.get(action) }
+    : action;
+  await client.query(
+    `update public.institutional_sections set content = $2 where id = $1`,
+    [
+      header.id,
+      { ...content, links: updatedLinks, primaryAction: updatedAction },
+    ],
+  );
+}
+
+export async function synchronizeInstitutionalNavigation(
+  organizationId: string,
+  siteId: string,
+  authUserId: string,
+): Promise<InstitutionalSite> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    await client.query(
+      "select id from public.institutional_sites where id = $1 for update",
+      [siteId],
+    );
+    await syncNavigationPagesInTransaction(client, siteId);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return getInstitutionalSite(organizationId, siteId);
 }
 
 export async function createInstitutionalSite(
@@ -952,6 +1139,7 @@ export async function createInstitutionalSite(
       }
     }
 
+    await syncNavigationPagesInTransaction(client, siteId);
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");
@@ -974,7 +1162,10 @@ export async function renameInstitutionalSite(
     await client.query("begin");
     await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
-    await client.query(`update public.institutional_sites set name = $1 where id = $2`, [name.trim(), siteId]);
+    await client.query(
+      `update public.institutional_sites set name = $1 where id = $2`,
+      [name.trim(), siteId],
+    );
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");
@@ -997,8 +1188,10 @@ export async function updateInstitutionalBrand(
     await setAuditActor(client, authUserId);
     await requireNgo(client, organizationId);
 
-    if (input.logoAssetId) {
-      await assertOrganizationAsset(client, organizationId, input.logoAssetId);
+    // Verifica a posse de TODAS as versões, não apenas da logo principal.
+    // Evita referenciar mídias privadas de outra organização.
+    for (const assetId of brandMediaIds(input)) {
+      await assertOrganizationAsset(client, organizationId, assetId);
     }
 
     const result = await client.query<BrandRow>(
@@ -1012,9 +1205,10 @@ export async function updateInstitutionalBrand(
           background_color,
           text_color,
           heading_font,
-          body_font
+          body_font,
+          design_system
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, coalesce($10::jsonb, '{}'::jsonb))
         on conflict (organization_id) do update
         set
           logo_asset_id = excluded.logo_asset_id,
@@ -1024,7 +1218,8 @@ export async function updateInstitutionalBrand(
           background_color = excluded.background_color,
           text_color = excluded.text_color,
           heading_font = excluded.heading_font,
-          body_font = excluded.body_font
+          body_font = excluded.body_font,
+          design_system = coalesce($10::jsonb, organization_brand_profiles.design_system)
         returning
           organization_id as "organizationId",
           public_slug as "publicSlug",
@@ -1035,7 +1230,8 @@ export async function updateInstitutionalBrand(
           background_color as "backgroundColor",
           text_color as "textColor",
           heading_font as "headingFont",
-          body_font as "bodyFont"
+          body_font as "bodyFont",
+        design_system as "designSystem"
       `,
       [
         organizationId,
@@ -1047,6 +1243,7 @@ export async function updateInstitutionalBrand(
         input.textColor,
         input.headingFont,
         input.bodyFont,
+        input.designSystem ? JSON.stringify(input.designSystem) : null,
       ],
     );
 
@@ -1062,8 +1259,9 @@ export async function updateInstitutionalBrand(
       );
     }
 
-    const assets = brand.logoAssetId
-      ? await getSignedOrganizationAssets(organizationId, [brand.logoAssetId])
+    const mediaIds = brandMediaIds(brand);
+    const assets = mediaIds.length
+      ? await getSignedOrganizationAssets(organizationId, mediaIds)
       : new Map<string, InstitutionalMediaAsset>();
 
     return {
@@ -1071,6 +1269,7 @@ export async function updateInstitutionalBrand(
       logoAsset: brand.logoAssetId
         ? (assets.get(brand.logoAssetId) ?? null)
         : null,
+      logoVariantAssets: signedBrandVariants(brand, assets),
     };
   } catch (error) {
     await client.query("rollback");
@@ -1213,6 +1412,9 @@ export async function addInstitutionalSection(
       ],
     );
 
+    if (input.sectionType === "site_header") {
+      await syncNavigationPagesInTransaction(client, siteId);
+    }
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");
@@ -1601,8 +1803,11 @@ export async function unpublishInstitutionalSite(
     await client.query("begin");
     await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
-    await client.query(`update public.institutional_sites
-      set published_at = null, is_primary = false where id = $1`, [siteId]);
+    await client.query(
+      `update public.institutional_sites
+      set published_at = null, is_primary = false where id = $1`,
+      [siteId],
+    );
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");
@@ -1622,7 +1827,10 @@ export async function deleteInstitutionalSite(
     await client.query("begin");
     await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
-    await client.query(`delete from public.institutional_sites where id = $1 and organization_id = $2`, [siteId, organizationId]);
+    await client.query(
+      `delete from public.institutional_sites where id = $1 and organization_id = $2`,
+      [siteId, organizationId],
+    );
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");
@@ -1630,6 +1838,192 @@ export async function deleteInstitutionalSite(
   } finally {
     client.release();
   }
+}
+
+// Todos os acessos verificam site + organização; mudanças em uma página
+// não modificam snapshots publicados até a próxima publicação explícita.
+export async function createInstitutionalPage(
+  organizationId: string,
+  siteId: string,
+  input: { title: string; slug: string },
+  authUserId: string,
+): Promise<InstitutionalSite> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    // Bloqueio serializa operações de páginas na mesma organização/site.
+    await client.query(
+      "select id from public.institutional_sites where id = $1 for update",
+      [siteId],
+    );
+    const existing = await client.query(
+      "select 1 from public.institutional_pages where site_id = $1 and slug = $2",
+      [siteId, input.slug],
+    );
+    if (existing.rowCount)
+      throw new AppError(
+        "Já existe uma página com esse endereço.",
+        409,
+        "INSTITUTIONAL_PAGE_SLUG_IN_USE",
+      );
+    const positions = await client.query<{ nextPosition: number }>(
+      'select coalesce(max(position), -1) + 1 as "nextPosition" from public.institutional_pages where site_id = $1',
+      [siteId],
+    );
+    await client.query(
+      `insert into public.institutional_pages (site_id, title, slug, is_home, position)
+       values ($1, $2, $3, false, $4)`,
+      [siteId, input.title, input.slug, positions.rows[0]?.nextPosition ?? 0],
+    );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return getInstitutionalSite(organizationId, siteId);
+}
+
+export async function updateInstitutionalPage(
+  organizationId: string,
+  siteId: string,
+  pageId: string,
+  input: { title?: string; slug?: string; isHome?: boolean },
+  authUserId: string,
+): Promise<InstitutionalSite> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    await client.query(
+      "select id from public.institutional_sites where id = $1 for update",
+      [siteId],
+    );
+    const page = await requirePage(client, organizationId, pageId);
+    if (page.siteId !== siteId)
+      throw new AppError(
+        "Página não pertence a este site.",
+        404,
+        "INSTITUTIONAL_PAGE_NOT_FOUND",
+      );
+    if (input.slug) {
+      const duplicate = await client.query(
+        "select 1 from public.institutional_pages where site_id = $1 and slug = $2 and id <> $3",
+        [siteId, input.slug, pageId],
+      );
+      if (duplicate.rowCount)
+        throw new AppError(
+          "Já existe uma página com esse endereço.",
+          409,
+          "INSTITUTIONAL_PAGE_SLUG_IN_USE",
+        );
+    }
+    const current = await client.query<{ isHome: boolean }>(
+      'select is_home as "isHome" from public.institutional_pages where id = $1',
+      [pageId],
+    );
+    if (input.isHome === false && current.rows[0]?.isHome) {
+      throw new AppError(
+        "Defina outra página inicial antes de alterar esta.",
+        400,
+        "INSTITUTIONAL_PAGE_HOME_REQUIRED",
+      );
+    }
+    if (input.isHome === true) {
+      await client.query(
+        "update public.institutional_pages set is_home = false where site_id = $1 and is_home = true",
+        [siteId],
+      );
+    }
+    await client.query(
+      `update public.institutional_pages
+       set title = coalesce($3, title), slug = coalesce($4, slug),
+           is_home = case when $5::boolean = true then true else is_home end
+       where id = $1 and site_id = $2`,
+      [
+        pageId,
+        siteId,
+        input.title ?? null,
+        input.slug ?? null,
+        input.isHome ?? null,
+      ],
+    );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return getInstitutionalSite(organizationId, siteId);
+}
+
+export async function deleteInstitutionalPage(
+  organizationId: string,
+  siteId: string,
+  pageId: string,
+  authUserId: string,
+): Promise<InstitutionalSite> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    await client.query(
+      "select id from public.institutional_sites where id = $1 for update",
+      [siteId],
+    );
+    const page = await requirePage(client, organizationId, pageId);
+    if (page.siteId !== siteId)
+      throw new AppError(
+        "Página não pertence a este site.",
+        404,
+        "INSTITUTIONAL_PAGE_NOT_FOUND",
+      );
+    const state = await client.query<{ isHome: boolean }>(
+      'select is_home as "isHome" from public.institutional_pages where id = $1',
+      [pageId],
+    );
+    if (state.rows[0]?.isHome)
+      throw new AppError(
+        "A página inicial não pode ser excluída.",
+        409,
+        "INSTITUTIONAL_PAGE_HOME_DELETE",
+      );
+    // A exclusão usa ON DELETE CASCADE nas seções, mas não altera publicações anteriores.
+    await client.query(
+      "delete from public.institutional_pages where id = $1 and site_id = $2",
+      [pageId, siteId],
+    );
+    // Reindexação em duas etapas evita violar unique(site_id, position).
+    const remaining = await client.query<{ id: string }>(
+      "select id from public.institutional_pages where site_id = $1 order by position, id",
+      [siteId],
+    );
+    for (const [index, row] of remaining.rows.entries()) {
+      await client.query(
+        "update public.institutional_pages set position = $2 where id = $1",
+        [row.id, index + 100000],
+      );
+    }
+    for (const [index, row] of remaining.rows.entries()) {
+      await client.query(
+        "update public.institutional_pages set position = $2 where id = $1",
+        [row.id, index],
+      );
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return getInstitutionalSite(organizationId, siteId);
 }
 
 export async function getPublishedInstitutionalSite(

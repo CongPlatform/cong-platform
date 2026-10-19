@@ -1,0 +1,7 @@
+
+.browser{display:grid;gap:12px;min-width:0}.collections{display:flex;gap:6px;flex-wrap:wrap}.collections button,.search button{border:1px solid #dce5ee;background:white;border-radius:9px;padding:9px;font-size:11px;font-weight:700;cursor:pointer}.collections button[data-active=true]{background:#eaf1fb;color:#183f67;border-color:#bdd5f2}.search{display:flex;gap:6px}.search input{flex:1;min-width:0;padding:9px;border:1px solid #dce5ee;border-radius:9px;font:inherit;font-size:12px}.icons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.icons button{display:grid;justify-items:center;gap:6px;min-width:0;border:1px solid #dce5ee;border-radius:10px;background:white;padding:10px 3px;cursor:pointer}.icons button:hover{background:#f0f6fc}.icons img{width:33px;height:33px}.icons small{font-size:9px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#4f6377}.browser>small{font-size:10px;color:#60758b}
+.browser { padding-bottom: 20px; }
+.icons { max-height: none; min-height: 0; }
+.icons button { min-height: 82px; }
+.icons svg { width: 33px; height: 33px; }
+.meta { font-size: 11px; color: #60758b; }

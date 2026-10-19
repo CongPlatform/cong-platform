@@ -261,16 +261,23 @@ export async function apiRequest<T>(
     // A single institutional warning is shown above the app. No actor identities.
     if (code === "ACCOUNT_SUSPENDED" || code === "ACCOUNT_BANNED") {
       const rawRestriction = errorPayload.restriction;
-      const detail = rawRestriction && typeof rawRestriction === "object"
-        ? rawRestriction as Record<string, unknown> : {};
+      const detail =
+        rawRestriction && typeof rawRestriction === "object"
+          ? (rawRestriction as Record<string, unknown>)
+          : {};
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("cong:account-restricted", {
-          detail: {
-            kind: code === "ACCOUNT_BANNED" ? "banned" : "suspended",
-            reason: typeof detail.reason === "string" ? detail.reason : "Violação das regras da comunidade.",
-            until: typeof detail.until === "string" ? detail.until : null,
-          },
-        }));
+        window.dispatchEvent(
+          new CustomEvent("cong:account-restricted", {
+            detail: {
+              kind: code === "ACCOUNT_BANNED" ? "banned" : "suspended",
+              reason:
+                typeof detail.reason === "string"
+                  ? detail.reason
+                  : "Violação das regras da comunidade.",
+              until: typeof detail.until === "string" ? detail.until : null,
+            },
+          }),
+        );
       }
     }
 
@@ -570,7 +577,6 @@ export function apiTenantDelete<T>(endpoint: string): Promise<T> {
     organizationScoped: true,
   });
 }
-
 
 export function apiTenantUpload<T>(
   endpoint: string,

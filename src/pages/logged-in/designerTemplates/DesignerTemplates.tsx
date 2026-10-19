@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { FiArrowRight, FiEdit3, FiLayout, FiPenTool, FiPlus, FiSend } from "react-icons/fi";
+import {
+  FiArrowRight,
+  FiEdit3,
+  FiLayout,
+  FiPenTool,
+  FiPlus,
+  FiSend,
+} from "react-icons/fi";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import ConfirmActionModal from "../../../components/institutional/editor/ConfirmActionModal";
@@ -22,29 +29,44 @@ const emptyDefinition: InstitutionalTemplateDefinition = {
 };
 
 function errorMessage(error: unknown): string {
-  return error instanceof ApiError ? error.message : "Não foi possível concluir esta ação.";
+  return error instanceof ApiError
+    ? error.message
+    : "Não foi possível concluir esta ação.";
 }
 
 export default function DesignerTemplates() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [templates, setTemplates] = useState<DesignerInstitutionalTemplate[]>([]);
+  const [templates, setTemplates] = useState<DesignerInstitutionalTemplate[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [createOpen, setCreateOpen] = useState(() => searchParams.get("create") === "1");
+  const [createOpen, setCreateOpen] = useState(
+    () => searchParams.get("create") === "1",
+  );
   const [name, setName] = useState("Novo template");
   const [description, setDescription] = useState("");
   const [creating, setCreating] = useState(false);
-  const [publishTarget, setPublishTarget] = useState<DesignerInstitutionalTemplate | null>(null);
+  const [publishTarget, setPublishTarget] =
+    useState<DesignerInstitutionalTemplate | null>(null);
   const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     let active = true;
     void listDesignerTemplates()
-      .then((items) => { if (active) setTemplates(items); })
-      .catch((caught) => { if (active) setError(errorMessage(caught)); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .then((items) => {
+        if (active) setTemplates(items);
+      })
+      .catch((caught) => {
+        if (active) setError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   function closeCreate(): void {
@@ -84,7 +106,9 @@ export default function DesignerTemplates() {
     setError("");
     try {
       const published = await publishDesignerTemplate(publishTarget.id);
-      setTemplates((current) => current.map((item) => item.id === published.id ? published : item));
+      setTemplates((current) =>
+        current.map((item) => (item.id === published.id ? published : item)),
+      );
       setPublishTarget(null);
     } catch (caught) {
       setError(errorMessage(caught));
@@ -93,7 +117,8 @@ export default function DesignerTemplates() {
     }
   }
 
-  if (loading) return <div className={styles.loading}>Carregando seus templates...</div>;
+  if (loading)
+    return <div className={styles.loading}>Carregando seus templates...</div>;
 
   return (
     <main className={styles.page}>
@@ -102,8 +127,9 @@ export default function DesignerTemplates() {
           <span className={styles.eyebrow}>Designer · Templates</span>
           <h1>Transforme boas estruturas em pontos de partida para ONGs</h1>
           <p>
-            Crie sites reutilizáveis com o mesmo editor visual. O conteúdo, as imagens e a
-            identidade final continuam pertencendo a cada organização.
+            Crie sites reutilizáveis com o mesmo editor visual. O conteúdo, as
+            imagens e a identidade final continuam pertencendo a cada
+            organização.
           </p>
         </div>
         <div className={styles.headerActions}>
@@ -114,7 +140,11 @@ export default function DesignerTemplates() {
           >
             <FiPenTool /> Criar variação
           </button>
-          <button type="button" className={styles.createButton} onClick={() => setCreateOpen(true)}>
+          <button
+            type="button"
+            className={styles.createButton}
+            onClick={() => setCreateOpen(true)}
+          >
             <FiPlus /> Criar template
           </button>
         </div>
@@ -124,7 +154,10 @@ export default function DesignerTemplates() {
         <FiLayout />
         <div>
           <strong>Design que vira infraestrutura compartilhada</strong>
-          <span>Uma boa estrutura pode poupar trabalho de várias organizações e continuar acessível, responsiva e adaptável.</span>
+          <span>
+            Uma boa estrutura pode poupar trabalho de várias organizações e
+            continuar acessível, responsiva e adaptável.
+          </span>
         </div>
       </section>
 
@@ -139,32 +172,68 @@ export default function DesignerTemplates() {
         </div>
 
         <div className={styles.grid}>
-          <button type="button" className={styles.blankCard} onClick={() => setCreateOpen(true)}>
-            <span><FiPlus /></span>
+          <button
+            type="button"
+            className={styles.blankCard}
+            onClick={() => setCreateOpen(true)}
+          >
+            <span>
+              <FiPlus />
+            </span>
             <strong>Novo template</strong>
-            <small>Monte a estrutura do zero usando seções e variantes da CONG.</small>
+            <small>
+              Monte a estrutura do zero usando seções e variantes da CONG.
+            </small>
           </button>
 
           {templates.map((template) => (
             <article key={template.id} className={styles.card}>
-              <button type="button" className={styles.preview} onClick={() => navigate(`/app/design/templates/${template.id}`)}>
-                <div className={styles.previewTop}><span /><span /><span /></div>
-                <div className={styles.previewBody}><b /><i /><i /><em /></div>
+              <button
+                type="button"
+                className={styles.preview}
+                onClick={() => navigate(`/app/design/templates/${template.id}`)}
+              >
+                <div className={styles.previewTop}>
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className={styles.previewBody}>
+                  <b />
+                  <i />
+                  <i />
+                  <em />
+                </div>
               </button>
               <div className={styles.cardBody}>
                 <div>
-                  <span className={template.status === "published" ? styles.published : styles.draft}>
+                  <span
+                    className={
+                      template.status === "published"
+                        ? styles.published
+                        : styles.draft
+                    }
+                  >
                     {template.status === "published" ? "Publicado" : "Rascunho"}
                   </span>
                   <h3>{template.name}</h3>
                   <p>{template.description || "Sem descrição."}</p>
                 </div>
                 <div className={styles.actions}>
-                  <button type="button" onClick={() => navigate(`/app/design/templates/${template.id}`)}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/app/design/templates/${template.id}`)
+                    }
+                  >
                     <FiEdit3 /> Editar
                   </button>
                   {template.status !== "published" ? (
-                    <button type="button" className={styles.publishButton} onClick={() => setPublishTarget(template)}>
+                    <button
+                      type="button"
+                      className={styles.publishButton}
+                      onClick={() => setPublishTarget(template)}
+                    >
                       <FiSend /> Publicar
                     </button>
                   ) : null}
@@ -184,14 +253,39 @@ export default function DesignerTemplates() {
         onFechar={closeCreate}
         mensagem={
           <div className={styles.createModal}>
-            <label><span>Nome</span><input value={name} onChange={(event) => setName(event.target.value)} maxLength={100} autoFocus /></label>
-            <label><span>Descrição</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} placeholder="Explique para que tipo de necessidade este template funciona bem." /></label>
+            <label>
+              <span>Nome</span>
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                maxLength={100}
+                autoFocus
+              />
+            </label>
+            <label>
+              <span>Descrição</span>
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                maxLength={500}
+                placeholder="Explique para que tipo de necessidade este template funciona bem."
+              />
+            </label>
             <div className={styles.modalNote}>
-              A responsividade é tratada pelo motor da CONG. Você organiza a composição; a plataforma preserva comportamentos seguros em telas menores.
+              A responsividade é tratada pelo motor da CONG. Você organiza a
+              composição; a plataforma preserva comportamentos seguros em telas
+              menores.
             </div>
             <div className={styles.modalActions}>
-              <button type="button" onClick={closeCreate} disabled={creating}>Cancelar</button>
-              <button type="button" className={styles.primary} onClick={() => void createTemplate()} disabled={creating}>
+              <button type="button" onClick={closeCreate} disabled={creating}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className={styles.primary}
+                onClick={() => void createTemplate()}
+                disabled={creating}
+              >
                 {creating ? "Criando..." : "Criar e editar"} <FiArrowRight />
               </button>
             </div>

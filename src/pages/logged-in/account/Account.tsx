@@ -168,7 +168,9 @@ export default function Account() {
 
   const requestedSection = searchParams.get("tab");
   const activeSection: SettingsSectionId =
-    requestedSection === "profiles" || requestedSection === "representations" || requestedSection === "security"
+    requestedSection === "profiles" ||
+    requestedSection === "representations" ||
+    requestedSection === "security"
       ? requestedSection
       : "overview";
   const [avatarUploaderOpen, setAvatarUploaderOpen] = useState(false);
