@@ -40,11 +40,12 @@ import {
   deleteInstitutionalSection,
   duplicateInstitutionalSection,
   getInstitutionalSite,
+  getInstitutionalTemplates,
   getInstitutionalVariants,
   getInstitutionalDesignResources,
   publishInstitutionalSite,
   reorderInstitutionalSections,
-  updateInstitutionalBrand,
+  updateInstitutionalSiteBrand,
   updateInstitutionalSection,
   uploadInstitutionalMedia,
   type InstitutionalBrand,
@@ -58,6 +59,7 @@ import {
   type InstitutionalSectionStyle,
   type InstitutionalSectionType,
   type InstitutionalSite,
+  type InstitutionalTemplate,
   type InstitutionalVariant,
 } from "../../../services/institutionalService";
 import { setInstitutionalContentValue } from "../../../utils/institutionalContent";
@@ -91,7 +93,7 @@ import {
   institutionalSourceNodeId,
   uniqueInstitutionalSourceNodeIds,
 } from "../../../utils/institutionalSelection";
-import { buildNativeExampleSite } from "../../../utils/institutionalPreview";
+import { buildTemplatePreviewSite } from "../../../utils/institutionalPreview";
 import { findNativeDesignFamilyByVisualStyle } from "../../../data/institutional/nativeDesignFamilies";
 
 import { cloneSiteSnapshot, updateSectionInSite } from "../../../features/site-builder/core/siteDocument";
@@ -132,6 +134,7 @@ export default function InstitutionalEditor() {
   const [site, setSite] = useState<InstitutionalSite | null>(null);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [variants, setVariants] = useState<InstitutionalVariant[]>([]);
+  const [sourceTemplates, setSourceTemplates] = useState<InstitutionalTemplate[]>([]);
   const [designResources, setDesignResources] =
     useState<InstitutionalDesignResources>({ palettes: [], frames: [] });
   const {
@@ -147,6 +150,7 @@ export default function InstitutionalEditor() {
     selectElements: selectEditorElements,
   } = useEditorSelection();
   const [propertiesOpen, setPropertiesOpen] = useState(false);
+  const [richEditorRequest, setRichEditorRequest] = useState<{ nodeId: string; revision: number } | null>(null);
   const [libraryCollapsed, setLibraryCollapsed] = useState(
     () => localStorage.getItem("cong:institutional-library-collapsed") === "1",
   );
@@ -242,9 +246,11 @@ export default function InstitutionalEditor() {
       getInstitutionalSite(siteId),
       getInstitutionalVariants(),
       getInstitutionalDesignResources(),
+      // Catalogue errors must not prevent editing a privately owned site.
+      getInstitutionalTemplates().catch(() => [] as InstitutionalTemplate[]),
     ])
       .then(
-        async ([currentSite, availableVariants, availableDesignResources]) => {
+        async ([currentSite, availableVariants, availableDesignResources, availableTemplates]) => {
           if (!active) return;
 
           const recoveryDraft = readRecoveryDraft(siteId);
@@ -254,6 +260,7 @@ export default function InstitutionalEditor() {
 
           adoptSite(recoveredSite);
           setVariants(availableVariants);
+          setSourceTemplates(availableTemplates);
           setDesignResources(availableDesignResources);
 
           if (!recoveryDraft) {
@@ -360,21 +367,26 @@ export default function InstitutionalEditor() {
     return () => window.cancelAnimationFrame(frame);
   }, [nativeFamily, siteId]);
 
-  const showExampleView = Boolean(nativeFamily && exampleView);
-  const renderedSite = useMemo(
-    () =>
-      site && nativeFamily && showExampleView
-        ? buildNativeExampleSite(site, nativeFamily.id)
-        : site,
-    [nativeFamily, showExampleView, site],
+  // The example is reconstructed from the immutable published catalogue.
+  // Never derive it from the user's editable sections (especially layoutOverride,
+  // image frames, element values or the current organization's brand).
+  const sourceTemplate = useMemo(
+    () => sourceTemplates.find((item) => item.id === site?.sourceTemplateId),
+    [sourceTemplates, site?.sourceTemplateId],
   );
+  const catalogueExampleSite = useMemo(
+    () => sourceTemplate ? buildTemplatePreviewSite(sourceTemplate, variants, true) : null,
+    [sourceTemplate, variants],
+  );
+  const showExampleView = Boolean(nativeFamily && exampleView && catalogueExampleSite);
+  const renderedSite = showExampleView ? catalogueExampleSite : site;
   const renderedPage = useMemo(
     () =>
-      renderedSite?.pages.find((item) => item.id === page?.id) ??
+      renderedSite?.pages.find((item) => item.slug === page?.slug) ??
       renderedSite?.pages.find((item) => item.isHome) ??
       renderedSite?.pages[0] ??
       null,
-    [renderedSite, page?.id],
+    [renderedSite, page?.slug],
   );
 
   const changeExampleView = useCallback(
@@ -1713,7 +1725,7 @@ export default function InstitutionalEditor() {
     setBrandSaving(true);
     setError("");
     try {
-      const brand = await updateInstitutionalBrand(draft);
+      const brand = await updateInstitutionalSiteBrand(site!.id, draft);
       setSite((current) => (current ? { ...current, brand } : current));
       setBrandOpen(false);
     } catch (caught) {
@@ -1865,7 +1877,7 @@ export default function InstitutionalEditor() {
               </span>
             </div>
             <div className={styles.stageActions}>
-              {nativeFamily ? (
+              {nativeFamily && catalogueExampleSite ? (
                 <div
                   className={styles.exampleModeSwitch}
                   role="group"
@@ -2052,10 +2064,16 @@ export default function InstitutionalEditor() {
               onDoubleClickCapture={(event) => {
                 if (showExampleView) return;
                 const target = event.target as HTMLElement;
-                // Rich elements have their own dedicated contextual inspector.
                 const shell = target.closest<HTMLElement>("[data-element-shell]");
                 const richTypes = ["campaign_card", "media_gallery", "video_embed", "data_chart", "story_tabs", "faq", "progress", "community_timeline", "testimonial_slider", "action_grid", "donation_choices"];
-                if (shell?.dataset.elementType && richTypes.includes(shell.dataset.elementType)) return;
+                if (shell?.dataset.elementType && richTypes.includes(shell.dataset.elementType)) {
+                  const nodeId = shell.dataset.congNodeId;
+                  if (nodeId) {
+                    setPropertiesOpen(true);
+                    setRichEditorRequest((previous) => ({ nodeId, revision: (previous?.revision ?? 0) + 1 }));
+                  }
+                  return;
+                }
                 if (shell || target.closest("[data-section-id]")) setPropertiesOpen(true);
               }}
             >
@@ -2144,6 +2162,7 @@ export default function InstitutionalEditor() {
           {propertiesOpen ? (
             <PropertiesPanel
               section={selectedSection}
+              pages={site.pages}
               variants={variants}
               onCollapse={() => setPropertiesOpen(false)}
               onContentChange={(path, value) => {
@@ -2161,6 +2180,7 @@ export default function InstitutionalEditor() {
               }}
               selectedElement={selectedElement}
               selectedElementDomId={selectedElementId}
+              richEditorRequest={richEditorRequest}
               brand={site.brand}
               designFrames={designResources.frames}
               onElementStyleChange={(style) => {
@@ -2316,6 +2336,16 @@ export default function InstitutionalEditor() {
           onClose={() => setBrandOpen(false)}
           onSave={(draft) => void saveBrand(draft)}
           onUploadLogo={uploadBrandImage}
+          onSuggestLogoPalette={async (slot, pending) => {
+            if (!site) return [];
+            const asset = pending ?? (slot === "primary" ? site.brand.logoAsset : site.brand.logoVariantAssets?.[slot]);
+            if (!asset?.url) return [];
+            const response = await fetch(asset.url, { mode: "cors", credentials: "omit" });
+            if (!response.ok) return [];
+            const blob = await response.blob();
+            if (!blob.type.startsWith("image/")) return [];
+            return extractLogoPalette(new File([blob], `logo-${slot}.png`, { type: blob.type }));
+          }}
         />
       ) : null}
 

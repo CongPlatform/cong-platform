@@ -33,6 +33,7 @@ import {
   renameSite,
   reorderSections,
   updateBrand,
+  updateSiteBrand,
   updateDesignPaletteItem,
   updateImageFrameItem,
   updateDesignerTemplateItem,
@@ -203,6 +204,13 @@ institutionalRouter.delete(
   deleteSite,
 );
 
+institutionalRouter.patch(
+  "/sites/:siteId/brand",
+  requireOrganizationContext,
+  requirePermission("institutional.edit"),
+  validateBody(updateBrandProfileSchema),
+  updateSiteBrand,
+);
 institutionalRouter.post(
   "/sites/:siteId/navigation/sync",
   requireOrganizationContext,
@@ -237,6 +245,7 @@ institutionalRouter.patch(
   requirePermission("institutional.edit"),
   validateBody(updateBrandProfileSchema),
   updateBrand,
+  updateSiteBrand,
 );
 institutionalRouter.post(
   "/media",

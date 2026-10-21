@@ -145,6 +145,8 @@ export function resolveDesignSystem(
       "original",
     ),
     textStyles: normalizeTextStyles(value.textStyles),
+    headerLogoVariant: value.headerLogoVariant ?? "primary",
+    footerLogoVariant: value.footerLogoVariant ?? "primary",
     logos: value.logos
       ? {
           compact: value.logos.compact ?? null,

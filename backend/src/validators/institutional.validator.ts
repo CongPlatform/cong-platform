@@ -24,7 +24,7 @@ const optionalUrl = z
   .default("");
 
 const safeHrefSchema = z.string().trim().min(1).max(500).refine((href) => {
-  if (/[\u0000-\u001f\\]/.test(href)) return false;
+  if ((href.includes("\\") || Array.from(href).some((char) => char.charCodeAt(0) < 32))) return false;
   if (/^#[A-Za-z0-9_:-]*$/.test(href)) return true;
   if (/^\/(?!\/)[A-Za-z0-9/_?#%&=+.-]*$/.test(href)) return true;
   if (/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(href)) return true;
@@ -707,6 +707,7 @@ export const createInstitutionalSiteSchema = z
   .object({
     name: z.string().trim().min(2).max(100),
     templateId: z.string().uuid().nullable().optional(),
+    identityMode: z.enum(["template", "organization", "custom"]).optional(),
   })
   .strict();
 
@@ -743,6 +744,8 @@ export const institutionalDesignSystemSchema = z.object({
     light: z.string().uuid().nullable().optional(),
     dark: z.string().uuid().nullable().optional(),
   }).strict().optional(),
+  headerLogoVariant: z.enum(["primary", "compact", "light", "dark"]).optional(),
+  footerLogoVariant: z.enum(["primary", "compact", "light", "dark"]).optional(),
   headingScale: z.enum(["compact", "standard", "expressive"]),
   bodyScale: z.enum(["compact", "standard", "relaxed"]),
   spacing: z.enum(["compact", "standard", "spacious"]),

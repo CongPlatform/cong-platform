@@ -18,10 +18,11 @@ export default function StockVideoBrowser({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [selected, setSelected] = useState<StockMediaItem | null>(null);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
-    setBusy(true);
+    queueMicrotask(() => { if (active) setBusy(true); });
     void searchPixabay("video", submitted, page)
       .then((result) => {
         if (!active) return;
@@ -45,7 +46,7 @@ export default function StockVideoBrowser({
     <div className={styles.source}>Vídeos do Pixabay · SafeSearch ativo</div>
     {message ? <p className={styles.notice} role="status">{message}</p> : null}
     <div className={styles.grid}>
-      {items.map((item) => <button key={item.id} className={styles.card} type="button" onClick={() => setSelected(item)}>
+      {items.map((item) => <button key={item.id} className={styles.card} type="button" onClick={() => { setVideoFailed(false); setSelected(item); }}>
         {item.thumbnail ? <img src={item.thumbnail} loading="lazy" alt="" /> : <span className={styles.blank}><FiPlay /></span>}
         <span className={styles.play}><FiPlay /></span>
         <strong>{item.title || "Vídeo"}</strong>
@@ -56,11 +57,11 @@ export default function StockVideoBrowser({
     {selected ? <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}>
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-label="Prévia do vídeo">
         <div className={styles.dialogTop}><strong>Prévia do vídeo</strong><button type="button" onClick={() => setSelected(null)}>Fechar</button></div>
-        <video controls preload="metadata" playsInline src={selected.url} />
+        {videoFailed ? <p role="alert" className={styles.notice}>Não foi possível reproduzir esta mídia. Escolha outro vídeo ou consulte a fonte.</p> : <video controls preload="metadata" playsInline src={selected.url} onError={() => setVideoFailed(true)} />}
         <h3>{selected.title}</h3>
         <p>Fonte: {selected.author} · Licença de Conteúdo Pixabay</p>
         <a href={selected.sourceUrl} target="_blank" rel="noopener noreferrer"><FiExternalLink /> Consultar fonte e licença</a>
-        <button type="button" disabled={disabled} className={styles.choose} onClick={() => { onChoose(selected); setSelected(null); }}>Inserir vídeo na página</button>
+        <button type="button" disabled={disabled || videoFailed} className={styles.choose} onClick={() => { onChoose(selected); setSelected(null); }}>Inserir vídeo na página</button>
         {disabled ? <small>Selecione primeiro uma seção da página.</small> : null}
       </section>
     </div> : null}

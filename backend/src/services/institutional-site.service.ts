@@ -59,6 +59,8 @@ interface SiteRow {
   organizationId: string;
   name: string;
   slug: string;
+  identityMode: SiteIdentityMode;
+  brandOverride: Partial<BrandRow> | null;
   sourceTemplateId: string | null;
   editorConstraints: InstitutionalEditorConstraints;
   isPrimary: boolean;
@@ -113,6 +115,8 @@ interface InstitutionalDesignSystem {
     >
   >;
   logos?: Partial<Record<"compact" | "light" | "dark", string | null>>;
+  headerLogoVariant?: "primary" | "compact" | "light" | "dark";
+  footerLogoVariant?: "primary" | "compact" | "light" | "dark";
   headingScale: "compact" | "standard" | "expressive";
   bodyScale: "compact" | "standard" | "relaxed";
   spacing: "compact" | "standard" | "spacious";
@@ -133,11 +137,53 @@ interface BrandRow {
   designSystem?: InstitutionalDesignSystem;
 }
 
+type SiteIdentityMode = "template" | "organization" | "custom";
+type NativeSitePalette = Pick<BrandRow, "primaryColor" | "secondaryColor" | "accentColor" | "backgroundColor" | "textColor">;
+const nativeSitePalettes: Record<string, NativeSitePalette> = {
+  "horizonte": {"primaryColor": "#123C73", "secondaryColor": "#E85D3F", "accentColor": "#F7B733", "backgroundColor": "#FFFDF8", "textColor": "#0B1E3A"} ,
+  "territorio-vivo": {"primaryColor": "#123F2A", "secondaryColor": "#2F6B46", "accentColor": "#B7D84B", "backgroundColor": "#F7F8F0", "textColor": "#10271B"} ,
+  "acolher": {"primaryColor": "#8C4A2F", "secondaryColor": "#5B7047", "accentColor": "#E9B57B", "backgroundColor": "#FFF8EF", "textColor": "#2E241E"} ,
+  "essencial": {"primaryColor": "#D71920", "secondaryColor": "#0E4C5A", "accentColor": "#F5B32B", "backgroundColor": "#FCFCFB", "textColor": "#111921"} ,
+  "comunidade": {"primaryColor": "#9A3F25", "secondaryColor": "#264D3A", "accentColor": "#E7A64A", "backgroundColor": "#FFF8EC", "textColor": "#332018"} ,
+  "vozes": {"primaryColor": "#74164D", "secondaryColor": "#B72F68", "accentColor": "#EF6C9C", "backgroundColor": "#FFF4F7", "textColor": "#351026"} ,
+  "pulso": {"primaryColor": "#0A1724", "secondaryColor": "#087BF4", "accentColor": "#F3EE0A", "backgroundColor": "#F8F8F4", "textColor": "#07111B"} ,
+  "profundezas": {"primaryColor": "#043C52", "secondaryColor": "#087B97", "accentColor": "#2ED9E7", "backgroundColor": "#F1FBFC", "textColor": "#062C3D"} ,
+  "sereno": {"primaryColor": "#2F4B37", "secondaryColor": "#9A7A4A", "accentColor": "#D7B574", "backgroundColor": "#FCF8EF", "textColor": "#253229"} ,
+  "conexao": {"primaryColor": "#1A5F43", "secondaryColor": "#365BA8", "accentColor": "#F2B64A", "backgroundColor": "#FBFCF9", "textColor": "#162A22"} 
+};
+/** Mantém tokens semânticos editáveis quando o usuário troca as cores do modelo pelas da ONG. */
+function remapNativePaletteTokens(value: unknown, palette: NativeSitePalette | Record<string, never>): unknown {
+  const roles: Record<string, string> = {
+    [palette.primaryColor?.toLowerCase() ?? "_"]: "primary",
+    [palette.secondaryColor?.toLowerCase() ?? "_"]: "secondary",
+    [palette.accentColor?.toLowerCase() ?? "_"]: "accent",
+    [palette.backgroundColor?.toLowerCase() ?? "_"]: "background",
+    [palette.textColor?.toLowerCase() ?? "_"]: "text",
+  };
+  const traverse = (entry: unknown): unknown => {
+    if (Array.isArray(entry)) return entry.map(traverse);
+    if (!entry || typeof entry !== "object") return entry;
+    const mapped: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(entry)) {
+      if (["color", "backgroundColor", "overlayColor"].includes(key) && typeof child === "string") {
+        mapped[key] = roles[child.toLowerCase()] ?? child;
+      } else mapped[key] = traverse(child);
+    }
+    return mapped;
+  };
+  return traverse(value);
+}
+
+function withSiteBrand(base: BrandRow, override: Partial<BrandRow> | null | undefined): BrandRow {
+  if (!override) return base;
+  return { ...base, ...override, organizationId: base.organizationId, publicSlug: base.publicSlug };
+}
+
 export interface InstitutionalBrand extends BrandRow {
   logoAsset: InstitutionalMediaAsset | null;
   logoVariantAssets?: Partial<
     Record<"compact" | "light" | "dark", InstitutionalMediaAsset>
-  >;
+  > | undefined;
 }
 
 const logoVariantSlots = ["compact", "light", "dark"] as const;
@@ -474,6 +520,8 @@ async function requireSiteForOrganization(
         name,
         slug,
         source_template_id as "sourceTemplateId",
+        identity_mode as "identityMode",
+        brand_override as "brandOverride",
         editor_constraints as "editorConstraints",
         is_primary as "isPrimary",
         published_at as "publishedAt",
@@ -653,7 +701,7 @@ async function buildSiteSnapshot(
 ): Promise<SiteSnapshot> {
   const organization = await requireNgo(client, organizationId);
   const site = await requireSiteForOrganization(client, organizationId, siteId);
-  const brand = await getBrandProfile(client, organizationId);
+  const brand = withSiteBrand(await getBrandProfile(client, organizationId), site.brandOverride);
 
   const pagesResult = await client.query<PageRow>(
     `
@@ -869,7 +917,7 @@ const defaultNavigationAnchors: Record<string, string> = {
 function navigationPageSlug(href: string): string | null {
   const destination = href.trim();
   if (destination in defaultNavigationAnchors)
-    return defaultNavigationAnchors[destination];
+    return defaultNavigationAnchors[destination] ?? null;
   if (destination === "/") return "";
   if (
     /^\/[a-z0-9][a-z0-9-]{0,69}$/.test(destination) &&
@@ -983,7 +1031,7 @@ export async function synchronizeInstitutionalNavigation(
 export async function createInstitutionalSite(
   authUserId: string,
   organizationId: string,
-  input: { name: string; templateId?: string | null },
+  input: { name: string; templateId?: string | null; identityMode?: SiteIdentityMode },
 ): Promise<InstitutionalSite> {
   const template = input.templateId
     ? await getInstitutionalTemplateDefinition(input.templateId)
@@ -1036,7 +1084,29 @@ export async function createInstitutionalSite(
       );
     }
 
-    await ensureBrandProfile(client, organizationId);
+    // Copia a identidade no momento da criação, sem alterar o Brand Kit da ONG.
+    // A cor original de um modelo nativo é escolhida no servidor (não confiamos no cliente).
+    const organizationBrand = await getBrandProfile(client, organizationId);
+    const mode: SiteIdentityMode = input.identityMode ?? (template ? "template" : "organization");
+    let initialBrand: BrandRow = organizationBrand;
+    let templatePalette: NativeSitePalette | null = null;
+    if (input.templateId) {
+      const templateResult = await client.query<{ familyKey: string | null }>(
+        "select family_key as \"familyKey\" from public.institutional_templates where id = $1",
+        [input.templateId],
+      );
+      const familyKey = templateResult.rows[0]?.familyKey ?? "";
+      const palette = nativeSitePalettes[familyKey];
+      if (palette && mode === "template") initialBrand = { ...organizationBrand, ...palette };
+      templatePalette = palette ?? null;
+    }
+    const { organizationId: _owner, publicSlug: _slug, ...brandCopy } = initialBrand;
+    void _owner;
+    void _slug;
+    await client.query(
+      "update public.institutional_sites set identity_mode = $2, brand_override = $3::jsonb where id = $1",
+      [siteId, mode, JSON.stringify(brandCopy)],
+    );
 
     const pages = template?.pages ?? [
       {
@@ -1100,7 +1170,7 @@ export async function createInstitutionalSite(
           sectionType,
           sourceContent,
         );
-        const settings = parseInstitutionalSectionSettings({
+        const settings = parseInstitutionalSectionSettings(remapNativePaletteTokens({
           ...(sectionDefinition.settings ?? {}),
           ...(template?.example
             ? {
@@ -1111,7 +1181,7 @@ export async function createInstitutionalSite(
                 },
               }
             : {}),
-        });
+        }, mode !== "template" && templatePalette ? templatePalette : {}));
         await assertContentAssets(client, organizationId, content);
         await assertContentAssets(client, organizationId, settings);
 
@@ -1277,6 +1347,35 @@ export async function updateInstitutionalBrand(
   } finally {
     client.release();
   }
+}
+
+/** Atualiza somente o site autorizado; nunca modifica organization_brand_profiles. */
+export async function updateInstitutionalSiteBrand(
+  organizationId: string,
+  siteId: string,
+  input: Omit<BrandRow, "organizationId" | "publicSlug">,
+  authUserId: string,
+): Promise<InstitutionalBrand> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    for (const assetId of brandMediaIds(input)) {
+      await assertOrganizationAsset(client, organizationId, assetId);
+    }
+    await client.query(
+      `update public.institutional_sites
+         set brand_override = $3::jsonb, identity_mode = 'custom'
+       where id = $1 and organization_id = $2`,
+      [siteId, organizationId, JSON.stringify(input)],
+    );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally { client.release(); }
+  return (await getInstitutionalSite(organizationId, siteId)).brand;
 }
 
 export async function addInstitutionalSection(
@@ -1922,8 +2021,8 @@ export async function updateInstitutionalPage(
           "INSTITUTIONAL_PAGE_SLUG_IN_USE",
         );
     }
-    const current = await client.query<{ isHome: boolean }>(
-      'select is_home as "isHome" from public.institutional_pages where id = $1',
+    const current = await client.query<{ isHome: boolean; slug: string }>(
+      'select slug, is_home as "isHome" from public.institutional_pages where id = $1',
       [pageId],
     );
     if (input.isHome === false && current.rows[0]?.isHome) {
@@ -1952,6 +2051,35 @@ export async function updateInstitutionalPage(
         input.isHome ?? null,
       ],
     );
+    // Mantém a navegação de cabeçalho sincronizada após renomear a URL de uma página.
+    const previousSlug = current.rows[0]?.slug;
+    if (input.slug && previousSlug && input.slug !== previousSlug) {
+      const oldHref = current.rows[0]?.isHome ? "/" : `/${previousSlug}`;
+      const newHref = current.rows[0]?.isHome ? "/" : `/${input.slug}`;
+      const headers = await client.query<{ id: string; content: Record<string, unknown> }>(
+        `select sec.id, sec.content from public.institutional_sections sec
+         join public.institutional_pages p on p.id = sec.page_id
+         where p.site_id = $1 and sec.section_type = 'site_header'`,
+        [siteId],
+      );
+      for (const header of headers.rows) {
+        const links = Array.isArray(header.content.links) ? header.content.links : [];
+        const updatedLinks = links.map((item: unknown) => {
+          if (!item || typeof item !== "object") return item;
+          const link = item as Record<string, unknown>;
+          return link.href === oldHref ? { ...link, href: newHref } : link;
+        });
+        const primaryAction = header.content.primaryAction;
+        const updatedAction = primaryAction && typeof primaryAction === "object" &&
+          (primaryAction as Record<string, unknown>).href === oldHref
+            ? { ...(primaryAction as Record<string, unknown>), href: newHref }
+            : primaryAction;
+        await client.query(
+          "update public.institutional_sections set content = $2 where id = $1",
+          [header.id, { ...header.content, links: updatedLinks, primaryAction: updatedAction }],
+        );
+      }
+    }
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");

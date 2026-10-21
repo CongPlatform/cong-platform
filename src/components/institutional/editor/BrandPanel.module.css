@@ -538,3 +538,9 @@
 .typeStyleControls { grid-template-columns: minmax(0, 1fr) 92px; }
 .typeWeight { grid-column: 1 / -1; }
 @media (max-width: 700px) { .visualChoice { min-width: calc(50% - 6px); } }
+
+.siteLogoUsage { display:grid; gap:10px; padding:15px; margin:14px 0; border:1px solid #d9e5e3; border-radius:12px; background:#f6faf9; color:#163b39; }
+.siteLogoUsage label { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; font-size:13px; font-weight:650; }
+.siteLogoUsage select { min-width:150px; max-width:100%; padding:8px; border:1px solid #a6bdb9; border-radius:8px; color:#193631; background:white; }
+.siteLogoUsage button { justify-self:start; padding:9px 12px; border-radius:9px; border:1px solid #41695f; color:#1f4d43; background:white; font-weight:700; }
+.siteLogoUsage small { color:#48625e; font-size:12px; line-height:1.5; }

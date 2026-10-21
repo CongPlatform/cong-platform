@@ -1,0 +1,131 @@
+/* TERRITÓRIO VIVO — territorial identity, photographic field journal.
+   Layout rules are scoped to the specific authored variants; the same rules
+   apply in gallery, editor and published sites. */
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] {
+  --tv-deep: #123f2a;
+  --tv-green: #244e35;
+  --tv-lime: #c7e478;
+  --tv-cream: #f5f6ed;
+  --tv-line: color-mix(in srgb, var(--org-text) 18%, transparent);
+  isolation: isolate;
+  overflow-wrap: anywhere;
+}
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-layout-container],
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-shell="true"] {min-inline-size:0;}
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="heading"] [data-font-target] {
+  font-family: "Trebuchet MS", "Arial Narrow", Arial, sans-serif;
+  line-height: 1.06;
+  letter-spacing: -.04em;
+  text-wrap: balance;
+  max-inline-size: min(100%, 21ch);
+}
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="text"] [data-font-target] {
+  line-height: 1.7;
+  max-inline-size: 68ch;
+}
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="image"] img {width:100%;height:100%;}
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="image"] [data-frame] {max-width:100%;}
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="button"] a {
+  min-height:45px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:3px;max-width:100%;white-space:normal;text-align:center;
+  padding:13px 22px;text-decoration:none;transition:transform .2s ease;
+}
+section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="button"] a:hover {transform:translateY(-2px);}
+/* Only the dark panels change default foreground. Explicit image frames and all
+   mutable media geometry remain instance-owned, never assigned by the family. */
+section[data-visual-style="tv2-opening"],
+section[data-visual-style="tv2-invitation"],
+section[data-visual-style="tv2-principles"],
+section[data-visual-style="tv2-actions-end"],
+section[data-visual-style="tv2-join-commitment"],
+section[data-visual-style="tv2-contact-end"] {
+  --org-text:#ffffff;--tv-line:rgb(255 255 255 / .28);
+  color:#ffffff;
+}
+section[data-visual-style="tv2-opening"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="tv2-story-opening"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="tv2-join-opening"] [data-element-type="heading"] [data-font-target] {
+  font-size:clamp(2.8rem, 5.1cqi, 5.85rem);
+  line-height:.98;
+  max-inline-size:13ch;
+}
+section[data-visual-style="tv2-opening"] {
+  padding-block:clamp(68px,8cqi,132px);
+  background:var(--tv-deep);
+}
+section[data-visual-style="tv2-opening"] [data-layout-kind="columns"] {
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  gap:clamp(24px,5cqi,86px);align-items:center;
+}
+section[data-visual-style="tv2-opening"] [data-element-type="image"] {position:relative;}
+section[data-visual-style="tv2-opening"] [data-element-type="image"]::before {content:"";position:absolute;inset:10% -10% -10% 10%;background:var(--tv-lime);opacity:.14;transform:rotate(-5deg);pointer-events:none;}
+/* Image frame shape is always controlled by the site instance, never this preset. */
+section[data-visual-style="tv2-field-index"] [data-layout-kind="grid"],
+section[data-visual-style="tv2-join-paths"] [data-layout-kind="grid"],
+section[data-visual-style="tv2-contact-paths"] [data-layout-kind="grid"] {
+  border-top:2px solid var(--tv-deep);gap:0;
+}
+section[data-visual-style="tv2-field-index"] [data-layout-kind="grid"] > [data-surface="card"],
+section[data-visual-style="tv2-join-paths"] [data-layout-kind="grid"] > [data-surface="card"],
+section[data-visual-style="tv2-contact-paths"] [data-layout-kind="grid"] > [data-surface="card"] {
+  border:0;border-right:1px solid var(--tv-line);border-radius:0;
+  box-shadow:none;background:transparent;padding:clamp(22px,2.5cqi,38px);
+}
+section[data-visual-style="tv2-field-index"] [data-layout-kind="grid"] > [data-surface="card"]:last-child,
+section[data-visual-style="tv2-join-paths"] [data-layout-kind="grid"] > [data-surface="card"]:last-child,
+section[data-visual-style="tv2-contact-paths"] [data-layout-kind="grid"] > [data-surface="card"]:last-child {border-right:0;}
+section[data-visual-style="tv2-panorama"] [data-element-type="image"] {margin-block:26px;}
+section[data-visual-style="tv2-panorama"] [data-element-type="heading"] [data-font-target] {font-size:clamp(2.4rem,4.6cqi,5.25rem);max-inline-size:16ch;}
+section[data-visual-style="tv2-missions"] [data-layout-kind="columns"],
+section[data-visual-style="tv2-forest-restoration"] [data-layout-kind="columns"],
+section[data-visual-style="tv2-monitoring"] [data-layout-kind="columns"] {align-items:center;gap:clamp(26px,5cqi,90px);}
+section[data-visual-style="tv2-field-gallery"] [data-layout-kind="grid"] {gap:clamp(10px,1.6cqi,24px);}
+section[data-visual-style="tv2-field-gallery"] [data-layout-kind="grid"] [data-element-type="image"] {border-radius:0;}
+section[data-visual-style="tv2-ledger"] [data-layout-kind="columns"] {align-items:center;gap:clamp(20px,5cqi,75px);}
+section[data-visual-style="tv2-journey"] [data-layout-kind="grid"],
+section[data-visual-style="tv2-accountability"] [data-layout-kind="grid"],
+section[data-visual-style="tv2-principles"] [data-layout-kind="grid"] {gap:clamp(16px,2.3cqi,33px);}
+section[data-visual-style="tv2-journey"] [data-surface="card"],
+section[data-visual-style="tv2-accountability"] [data-surface="card"],
+section[data-visual-style="tv2-principles"] [data-surface="card"] {border-radius:0;border:0;border-top:3px solid var(--tv-lime);background:transparent;box-shadow:none;}
+section[data-visual-style="tv2-principles"] [data-surface="card"] [data-font-target],
+section[data-visual-style="tv2-principles"] [data-element-type="heading"] [data-font-target] {color:#ffffff;}
+section[data-visual-style="tv2-join-commitment"] [data-element-type="heading"] [data-font-target] {font-size:clamp(2.5rem,5.1cqi,5.3rem);max-inline-size:17ch;}
+@container institutional-site (max-width:1040px) {
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-layout-kind="grid"][data-layout-columns="4"] {grid-template-columns:repeat(2,minmax(0,1fr));}
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="heading"] [data-font-target] {font-size:min(var(--element-font-size,2.9rem),clamp(1.9rem,5cqi,3.5rem));}
+}
+@container institutional-site (max-width:720px) {
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] {padding-inline:20px;padding-block:clamp(38px,8cqi,68px);}
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-layout-kind="columns"],
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-layout-kind="grid"],
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-layout-kind="grid"][data-layout-columns="4"] {grid-template-columns:minmax(0,1fr);gap:clamp(20px,5cqi,35px);}
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="heading"] [data-font-target],
+  section[data-visual-style="tv2-opening"] [data-element-type="heading"] [data-font-target],
+  section[data-visual-style="tv2-story-opening"] [data-element-type="heading"] [data-font-target],
+  section[data-visual-style="tv2-join-opening"] [data-element-type="heading"] [data-font-target] {
+    font-size:min(var(--element-font-size,2.5rem),clamp(1.8rem,7.6cqi,3.1rem));
+    line-height:1.08;max-inline-size:100%;
+  }
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="text"] [data-font-target] {font-size:min(var(--element-font-size,1.15rem),clamp(.94rem,3.9cqi,1.15rem));}
+  section[data-visual-style="tv2-field-index"] [data-layout-kind="grid"] > [data-surface="card"],
+  section[data-visual-style="tv2-join-paths"] [data-layout-kind="grid"] > [data-surface="card"],
+  section[data-visual-style="tv2-contact-paths"] [data-layout-kind="grid"] > [data-surface="card"] {border:0;border-bottom:1px solid var(--tv-line);padding-inline:0;}
+  section[data-visual-style="tv2-opening"] [data-element-type="image"] {order:-1;}
+  section[data-visual-style="tv2-opening"] [data-element-type="image"]::before {display:none;}
+  section[data-visual-style="tv2-opening"] [data-element-type="image"] [data-frame]:not([data-custom-height="true"]) {max-height:355px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  section[data-section-type="custom_content"][data-visual-style^="tv2-"] [data-element-type="button"] a {transition:none;}
+}
+
+/* Text colors on dark backgrounds remain readable without modifying the brand palette. */
+section[data-visual-style="tv2-opening"],
+section[data-visual-style="tv2-invitation"],
+section[data-visual-style="tv2-principles"],
+section[data-visual-style="tv2-actions-end"],
+section[data-visual-style="tv2-join-commitment"],
+section[data-visual-style="tv2-contact-end"] {
+  --org-text-base:#ffffff;
+  --org-secondary-strong:#d3e99b;
+}

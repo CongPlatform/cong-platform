@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { PoolClient } from "pg";
 
 import pool from "../config/database.js";
@@ -74,7 +75,45 @@ async function getActiveUserId(
   return userId;
 }
 
-function normalizeDefinition(input: unknown): InstitutionalTemplateDefinition {
+// Some published native templates were imported before navigation items received
+// stable identifiers. Repair only this known legacy omission on reads; all other
+// values remain subject to the original Zod schema.
+function withLegacyNavigationIds(
+  content: unknown,
+  templateId: string,
+  pageIndex: number,
+  sectionIndex: number,
+): unknown {
+  if (!content || typeof content !== "object" || Array.isArray(content)) {
+    return content;
+  }
+  const raw = content as Record<string, unknown>;
+  if (!Array.isArray(raw.links) || !raw.links.some(
+    (link) => link && typeof link === "object" && !Array.isArray(link) && !("id" in link),
+  )) return content;
+
+  const links = raw.links.map((link, linkIndex) => {
+    if (!link || typeof link !== "object" || Array.isArray(link) || "id" in link) {
+      return link;
+    }
+
+    const bytes = createHash("sha256")
+      .update(`${templateId}:${pageIndex}:${sectionIndex}:${linkIndex}`)
+      .digest();
+    bytes[6] = (bytes[6]! & 0x0f) | 0x50;
+    bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+    const hex = bytes.subarray(0, 16).toString("hex");
+    const id = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    return { ...link, id };
+  });
+
+  return { ...raw, links };
+}
+
+function normalizeDefinition(
+  input: unknown,
+  legacyNativeTemplateId?: string,
+): InstitutionalTemplateDefinition {
   const parsed = institutionalTemplateDefinitionSchema.parse(input);
 
   return {
@@ -82,16 +121,23 @@ function normalizeDefinition(input: unknown): InstitutionalTemplateDefinition {
     ...(parsed.editorConstraints === undefined
       ? {}
       : { editorConstraints: parsed.editorConstraints }),
-    pages: parsed.pages.map((page) => ({
+    pages: parsed.pages.map((page, pageIndex) => ({
       title: page.title,
       slug: page.slug,
       isHome: page.isHome,
-      sections: page.sections.map((section) => ({
+      sections: page.sections.map((section, sectionIndex) => ({
         sectionType: section.sectionType,
         variantVersionId: section.variantVersionId,
         content: parseInstitutionalSectionContent(
           section.sectionType,
-          section.content,
+          section.sectionType === "site_header" && legacyNativeTemplateId
+            ? withLegacyNavigationIds(
+                section.content,
+                legacyNativeTemplateId,
+                pageIndex,
+                sectionIndex,
+              )
+            : section.content,
         ),
         ...(section.settings
           ? { settings: parseInstitutionalSectionSettings(section.settings) }
@@ -177,7 +223,12 @@ export async function listInstitutionalTemplates(): Promise<
   return result.rows.map((template) => ({
     ...template,
     ...(template.definition
-      ? { definition: normalizeDefinition(template.definition) }
+      ? {
+          definition: normalizeDefinition(
+            template.definition,
+            template.isSystem ? template.id : undefined,
+          ),
+        }
       : {}),
   }));
 }
@@ -185,9 +236,13 @@ export async function listInstitutionalTemplates(): Promise<
 export async function getInstitutionalTemplateDefinition(
   templateId: string,
 ): Promise<InstitutionalTemplateDefinition> {
-  const result = await pool.query<{ definition: unknown }>(
+  const result = await pool.query<{
+    definition: unknown;
+    id: string;
+    isSystem: boolean;
+  }>(
     `
-      select definition
+      select id, is_system as "isSystem", definition
       from public.institutional_templates
       where id = $1
         and status = 'published'
@@ -206,7 +261,10 @@ export async function getInstitutionalTemplateDefinition(
     );
   }
 
-  return normalizeDefinition(definition);
+  return normalizeDefinition(
+    definition,
+    result.rows[0]?.isSystem ? result.rows[0].id : undefined,
+  );
 }
 
 export async function listDesignerTemplates(
@@ -248,7 +306,10 @@ export async function listDesignerTemplates(
 
     return result.rows.map((template) => ({
       ...template,
-      definition: normalizeDefinition(template.definition),
+      definition: normalizeDefinition(
+        template.definition,
+        template.isSystem ? template.id : undefined,
+      ),
     }));
   } finally {
     client.release();
@@ -304,7 +365,10 @@ export async function getDesignerTemplate(
 
     return {
       ...template,
-      definition: normalizeDefinition(template.definition),
+      definition: normalizeDefinition(
+        template.definition,
+        template.isSystem ? template.id : undefined,
+      ),
     };
   } finally {
     client.release();

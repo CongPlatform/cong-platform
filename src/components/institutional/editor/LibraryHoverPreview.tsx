@@ -18,7 +18,7 @@ export default function LibraryHoverPreview({
   theme?: CSSProperties;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
-  const [stageWidth, setStageWidth] = useState(440);
+  const [stageWidth, setStageWidth] = useState(760);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -33,13 +33,13 @@ export default function LibraryHoverPreview({
 
   if (!anchor || typeof document === "undefined") return null;
 
-  const width = Math.min(740, window.innerWidth - 24);
+  const width = Math.min(850, window.innerWidth - 32);
   const availableRight = window.innerWidth - anchor.right;
   const left = availableRight >= width + 22
     ? anchor.right + 12
     : Math.max(12, anchor.left - width - 12);
-  const top = Math.max(12, Math.min(anchor.top - 25, window.innerHeight - 370));
-  const scale = Math.min(1, Math.max(0.1, (stageWidth - 28) / CONTENT_WIDTH));
+  const top = Math.max(12, Math.min(anchor.top - 25, window.innerHeight - 510));
+  const scale = Math.min(1.2, Math.max(0.1, (stageWidth - 28) / CONTENT_WIDTH));
 
   return createPortal(
     <div className={styles.preview} style={{ ...theme, left, top, width }} aria-hidden="true">

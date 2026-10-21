@@ -12,6 +12,7 @@ import type {
 } from "../../../services/institutionalService";
 import { institutionalColorCssVar } from "../../../utils/institutionalColors";
 
+import { getNativeEditorialPhoto } from "../../../data/institutional/nativeEditorialPhotos";
 import FloatingCanvasHint from "./FloatingCanvasHint";
 import styles from "./InstitutionalRenderer.module.css";
 
@@ -63,6 +64,8 @@ export default function ImageMedia({
   onInteractionCommit?: () => void;
   onFile?: (file: File) => void;
 }) {
+  const nativePhoto = getNativeEditorialPhoto(image?.assetId);
+  const sourceUrl = image?.url || nativePhoto?.url;
   const dragRef = useRef<DragState | null>(null);
   const hintAnchorRef = useRef<HTMLDivElement>(null);
   const focalX = style.focalX ?? 50;
@@ -83,7 +86,7 @@ export default function ImageMedia({
   } as CSSProperties;
 
   function beginFocalDrag(event: ReactPointerEvent<HTMLDivElement>): void {
-    if (!editable || !selected || !onStyleChange || !image?.url) return;
+    if (!editable || !selected || !onStyleChange || !sourceUrl) return;
     if ((event.target as HTMLElement).closest("button")) return;
     if (!event.currentTarget.closest('[data-crop-mode="true"]')) return;
 
@@ -150,7 +153,7 @@ export default function ImageMedia({
     }
   }
 
-  if (!image?.url) {
+  if (!sourceUrl) {
     if (!editable && !showEmptyMediaPreview) return null;
     if (!editable && showEmptyMediaPreview) {
       return (
@@ -229,7 +232,17 @@ export default function ImageMedia({
         onPointerUp={finishFocalDrag}
         onPointerCancel={finishFocalDrag}
       >
-        <img className={styles.imageMediaImage} src={image.url} alt={image.alt} draggable={false} />
+        <img key={sourceUrl} className={styles.imageMediaImage} src={sourceUrl} alt={image?.alt || "Fotografia ilustrativa"} draggable={false}
+          onError={(event) => {
+            const fallback = nativePhoto?.fallback;
+            if (fallback && !event.currentTarget.dataset.nativeFallback) {
+              event.currentTarget.dataset.nativeFallback = "true";
+              event.currentTarget.src = fallback;
+              return;
+            }
+            event.currentTarget.hidden = true;
+            event.currentTarget.parentElement?.setAttribute("data-image-unavailable", "true");
+          }} />
         <span className={styles.imageMediaOverlay} aria-hidden="true" />
 
         {editable && selected ? (

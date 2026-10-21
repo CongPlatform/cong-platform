@@ -123,7 +123,7 @@ export default function PublicInstitutionalSite({
     const href = anchor.getAttribute("href");
     if (!href || !href.startsWith("/") || href.startsWith("//")) return;
     const desired = href.split(/[?#]/, 1)[0].replace(/^\/+|\/+$/g, "");
-    const matchingPage = site.pages.find((item) => item.slug === desired);
+    const matchingPage = site?.pages.find((item) => item.slug === desired);
     if (!matchingPage && desired !== "") return;
     event.preventDefault();
     const nextSlug = matchingPage?.isHome ? "" : (matchingPage?.slug ?? "");

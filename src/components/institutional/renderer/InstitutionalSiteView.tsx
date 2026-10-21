@@ -398,8 +398,12 @@ export default function InstitutionalSiteView({
             href="#top"
             onClick={editor ? (event) => event.preventDefault() : undefined}
           >
-            {brand.logoAsset?.url ? (
-              <img src={brand.logoAsset.url} alt="" />
+            {(brand.designSystem?.headerLogoVariant && brand.designSystem.headerLogoVariant !== "primary"
+              ? brand.logoVariantAssets?.[brand.designSystem.headerLogoVariant]?.url ?? brand.logoAsset?.url
+              : brand.logoAsset?.url) ? (
+              <img src={(brand.designSystem?.headerLogoVariant && brand.designSystem.headerLogoVariant !== "primary"
+                ? brand.logoVariantAssets?.[brand.designSystem.headerLogoVariant]?.url ?? brand.logoAsset?.url
+                : brand.logoAsset?.url) ?? ""} alt="" />
             ) : (
               <span className={styles.brandMark} aria-hidden="true">
                 {site.organization.name.slice(0, 1).toUpperCase()}

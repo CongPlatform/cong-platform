@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- rich helpers share narrow type contracts */
 import { useId, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
 import { FiArrowRight, FiCamera, FiChevronLeft, FiChevronRight, FiFilm, FiImage, FiPlus, FiTrash2, FiUploadCloud } from "react-icons/fi";
 import {
@@ -11,6 +12,7 @@ import {
   type InstitutionalVideoValue,
 } from "../../../services/institutionalService";
 import { safeInstitutionalHref } from "../../../utils/institutionalLinks";
+import { nativeEditorialPhotos, getNativeEditorialPhoto } from "../../../data/institutional/nativeEditorialPhotos";
 import styles from "./RichElements.module.css";
 
 type RichValue = InstitutionalCampaignValue | InstitutionalGalleryValue | InstitutionalVideoValue | InstitutionalChartValue | InstitutionalStoryTabsValue;
@@ -25,11 +27,12 @@ function accessibleLink(raw: string): string | null {
 }
 
 /** All media files use the platform's authenticated, tenant-scoped uploader. */
-function MediaFrame({ image, editable, label, illustration, position, onUploaded, onPosition }: {
+function MediaFrame({ image, editable, label, illustration, illustrationIndex = 0, position, onUploaded, onPosition }: {
   image: InstitutionalImageValue | null;
   editable: boolean;
   label: string;
   illustration?: InstitutionalIllustration;
+  illustrationIndex?: number;
   position?: { x: number; y: number };
   onUploaded?: (image: InstitutionalImageValue) => void;
   onPosition?: (x: number, y: number) => void;
@@ -52,14 +55,30 @@ function MediaFrame({ image, editable, label, illustration, position, onUploaded
     event.preventDefault(); event.stopPropagation();
     void accept(event.dataTransfer.files[0]);
   }
-  const illustrativeUrl = illustration ? `/institutional/examples/${illustration}.webp` : null;
+  const native = getNativeEditorialPhoto(image?.assetId);
+  const illustrativeUrl = illustration
+    ? nativeEditorialPhotos[illustration][illustrationIndex % nativeEditorialPhotos[illustration].length].url
+    : null;
+  const photoUrl = image?.url || native?.url || illustrativeUrl;
   return <div className={styles.mediaFrame} tabIndex={editable ? 0 : undefined}
     aria-label={editable ? `${label}: selecione e pressione Ctrl+V para colar uma imagem` : label}
     onPaste={(event) => {
       const imageFile = Array.from(event.clipboardData.files).find((file) => file.type.startsWith("image/"));
       if (imageFile && editable) { event.preventDefault(); void accept(imageFile); }
     }} onDragOver={(event) => { if (editable) event.preventDefault(); }} onDrop={drop}>
-    {(image?.url || illustrativeUrl) ? <img src={image?.url || illustrativeUrl || ""} alt={image?.alt || label} loading="lazy"
+    {photoUrl ? <img src={photoUrl} alt={image?.alt || label} loading="lazy"
+      onError={(event) => {
+        const fallback = native?.fallback || (illustration
+          ? `/institutional/editorial/${illustration}${illustrationIndex ? `-${illustrationIndex + 1}` : ""}.webp`
+          : null);
+        if (fallback && !event.currentTarget.dataset.nativeFallback) {
+          event.currentTarget.dataset.nativeFallback = "true";
+          event.currentTarget.src = fallback;
+        } else {
+          event.currentTarget.hidden = true;
+          event.currentTarget.parentElement?.setAttribute("data-image-unavailable", "true");
+        }
+      }}
       style={{ objectPosition: `${position?.x ?? 50}% ${position?.y ?? 50}%` }} />
       : <div className={styles.mediaEmpty} aria-label={label}><FiImage aria-hidden="true" /><span>{label}</span></div>}
     {!image?.url && illustrativeUrl && <span className={styles.exampleImageTag}>Imagem ilustrativa · substitua pela sua</span>}
@@ -130,7 +149,7 @@ export function MediaGallery({ value, editable, onChange }: Common<Institutional
   return <section className={styles.gallery} aria-label={value.title || "Galeria"}>
     {editable ? <Field label="Título da galeria" value={value.title} onChange={(title) => onChange?.({ ...value, title })} /> : <h3>{value.title}</h3>}
     <div className={styles.galleryFeatured}>
-      {photos[selected] && <MediaFrame key={photos[selected].id} image={photos[selected].image} illustration={photos[selected].illustration} label={photos[selected].caption || captionPlaceholder} editable={editable}
+      {photos[selected] && <MediaFrame key={photos[selected].id} image={photos[selected].image} illustration={photos[selected].illustration} illustrationIndex={selected} label={photos[selected].caption || captionPlaceholder} editable={editable}
         position={{ x: photos[selected].focalX, y: photos[selected].focalY }} onUploaded={(image) => updateItem(photos[selected].id, { image })}
         onPosition={(focalX, focalY) => updateItem(photos[selected].id, { focalX, focalY })} />}
       {photos.length > 1 && <div className={styles.galleryArrows}>
@@ -142,7 +161,22 @@ export function MediaGallery({ value, editable, onChange }: Common<Institutional
     {editable && photos[selected] ? <Field label="Legenda da imagem selecionada" maxLength={160} value={photos[selected].caption} onChange={(caption) => updateItem(photos[selected].id, { caption, ...(photos[selected].image ? { image: { ...photos[selected].image!, alt: caption } } : {}) })} /> : photos[selected]?.caption ? <p className={styles.galleryCaption}>{photos[selected].caption}</p> : null}
     <div className={styles.galleryThumbnails} aria-label="Selecionar imagem">
       {photos.map((item, i) => <button type="button" key={item.id} data-active={i === selected} aria-label={`Imagem ${i + 1}: ${item.caption}`} aria-pressed={i === selected} onClick={() => setActive(i)}>
-        {item.image?.url || item.illustration ? <img src={item.image?.url || `/institutional/examples/${item.illustration}.webp`} alt="" loading="lazy" style={{ objectPosition: `${item.focalX}% ${item.focalY}%` }} /> : <FiCamera aria-hidden="true" />}
+        {item.image?.url || getNativeEditorialPhoto(item.image?.assetId) || item.illustration
+          ? <img
+              src={item.image?.url || getNativeEditorialPhoto(item.image?.assetId)?.url || nativeEditorialPhotos[item.illustration!][i % nativeEditorialPhotos[item.illustration!].length].url}
+              alt="" loading="lazy"
+              onError={(event) => {
+                const fallback = getNativeEditorialPhoto(item.image?.assetId)?.fallback
+                  || (item.illustration
+                  ? `/institutional/editorial/${item.illustration}${i ? `-${i + 1}` : ""}.webp`
+                  : null);
+                if (fallback && !event.currentTarget.dataset.nativeFallback) {
+                  event.currentTarget.dataset.nativeFallback = "true";
+                  event.currentTarget.src = fallback;
+                } else event.currentTarget.hidden = true;
+              }}
+              style={{ objectPosition: `${item.focalX}% ${item.focalY}%` }} />
+          : <FiCamera aria-hidden="true" />}
       </button>)}
       {editable && photos.length < 10 && <button type="button" className={styles.galleryAdd} onClick={() => {
         onChange?.({ ...value, items: [...photos, { id: crypto.randomUUID(), image: null, caption: "Nova imagem", focalX: 50, focalY: 50 }] });

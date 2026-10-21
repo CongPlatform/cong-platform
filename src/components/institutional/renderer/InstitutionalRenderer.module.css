@@ -7109,3 +7109,305 @@
     min-inline-size: 0;
   }
 }
+
+
+/* Native editorial: ten distinct compositions with one responsive contract. */
+.section[data-design-family][data-visual-style$="-hero"] {
+  isolation: isolate;
+  overflow: clip;
+}
+.section[data-design-family][data-visual-style$="-hero"] .sectionInner,
+.section[data-design-family][data-visual-style$="-hero"] .columns,
+.section[data-design-family][data-visual-style$="-hero"] .stack {
+  min-width: 0;
+}
+.section[data-design-family][data-visual-style$="-hero"] .display {
+  max-width: 100%;
+  min-width: 0;
+  font-size: clamp(2.8rem, 5.4cqi, 5.6rem);
+  line-height: 1.035;
+  letter-spacing: -.035em;
+  overflow-wrap: break-word;
+  word-break: normal;
+  text-wrap: balance;
+}
+.section[data-design-family][data-visual-style$="-hero"] .lead {
+  max-width: 52ch;
+  line-height: 1.5;
+  font-size: clamp(1.05rem, 1.55cqi, 1.3rem);
+}
+.section[data-design-family][data-visual-style$="-hero"] .imageMediaRoot,
+.section[data-design-family][data-visual-style$="-hero"] .imageMediaFrame {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.section[data-design-family][data-visual-style$="-hero"] .imageMediaFrame {
+  max-height: 720px;
+  overflow: hidden;
+}
+.section[data-design-family][data-visual-style$="-hero"] .imageMediaImage {
+  object-fit: cover;
+}
+.section[data-design-family][data-visual-style$="-hero"] .primaryAction,
+.section[data-design-family][data-visual-style$="-hero"] .secondaryAction {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+.section[data-design-family] .cardImage,
+.section[data-design-family] .imageMediaFrame,
+.section[data-design-family] .mediaFrame {
+  background-color: color-mix(in srgb, var(--org-primary) 9%, var(--org-background));
+}
+.section[data-design-family] .imageMediaFrame[data-image-unavailable="true"]:after {
+  content: "Fotografia indisponível · substitua na biblioteca";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  text-align: center;
+  color: var(--org-text);
+  font-size: 14px;
+}
+/* Horizonte: magazine spread with an asymmetrical crop and an open type area. */
+.section[data-design-family][data-visual-style="horizonte-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+  align-items: end;
+  gap: clamp(26px, 3cqi, 65px);
+}
+.section[data-design-family][data-visual-style="horizonte-hero"] .display {
+  font-family: Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -.055em;
+  max-width: 12ch;
+}
+.section[data-design-family][data-visual-style="horizonte-hero"] .imageMediaFrame {
+  min-height: 520px;
+  border-radius: 140px 8px 8px 8px;
+  clip-path: none;
+}
+/* Território Vivo: the story overlays the landscape, rather than sitting beside it. */
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+  min-height: 610px;
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :first-child {
+  position: relative;
+  z-index: 2;
+  max-width: min(650px, 66%);
+  padding: 48px 0;
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :last-child {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :last-child:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(2 29 18 / 90%), rgb(2 29 18 / 58%) 52%, transparent);
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .imageMediaRoot,
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .imageMediaFrame {
+  height: 100%;
+  min-height: 610px;
+  max-height: none;
+  border-radius: 0;
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .display,
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .lead,
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .eyebrow { color: #fff; }
+/* Acolher: softer inverted composition and an organic portrait window. */
+.section[data-design-family][data-visual-style="acolher-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+  align-items: center;
+  gap: clamp(24px, 4cqi, 80px);
+}
+.section[data-design-family][data-visual-style="acolher-hero"] .sectionInner > .columns > :last-child { order: -1; }
+.section[data-design-family][data-visual-style="acolher-hero"] .imageMediaFrame {
+  min-height: 520px;
+  border-radius: 42% 42% 34px 34px;
+  clip-path: none;
+}
+.section[data-design-family][data-visual-style="acolher-hero"] .display {
+  font-family: Georgia, serif;
+  max-width: 13ch;
+}
+/* Essencial: legible emergency information card laid over a full photo bleed. */
+.section[data-design-family][data-visual-style="essencial-hero"] .sectionInner > .columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 610px;
+  position: relative;
+}
+.section[data-design-family][data-visual-style="essencial-hero"] .sectionInner > .columns > :last-child {
+  position: absolute;
+  inset: 0 0 0 24%;
+  z-index: 0;
+}
+.section[data-design-family][data-visual-style="essencial-hero"] .sectionInner > .columns > :first-child {
+  position: relative;
+  z-index: 2;
+  width: min(510px, 57%);
+  padding: clamp(24px, 3cqi, 44px);
+  border-left: 8px solid var(--org-primary);
+  background: #161e24;
+  color: #fff;
+  box-shadow: 0 20px 65px rgb(0 0 0 / 17%);
+}
+.section[data-design-family][data-visual-style="essencial-hero"] .display {
+  font-family: "Arial Narrow", Impact, sans-serif;
+  font-size: clamp(2.7rem, 4.3cqi, 4.8rem);
+  line-height: 1.08;
+  max-width: 13ch;
+  text-transform: uppercase;
+  color: #fff;
+}
+.section[data-design-family][data-visual-style="essencial-hero"] .lead,
+.section[data-design-family][data-visual-style="essencial-hero"] .eyebrow { color: #fff; }
+.section[data-design-family][data-visual-style="essencial-hero"] .imageMediaRoot,
+.section[data-design-family][data-visual-style="essencial-hero"] .imageMediaFrame {
+  height: 100%; min-height: 610px; max-height: none; border-radius: 16px;
+}
+/* Comunidade: photo first, with the narrative offset like a neighborhood journal. */
+.section[data-design-family][data-visual-style="comunidade-hero"] .sectionInner > .columns { grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); }
+.section[data-design-family][data-visual-style="comunidade-hero"] .sectionInner > .columns > :last-child { order: -1; }
+.section[data-design-family][data-visual-style="comunidade-hero"] .imageMediaFrame {
+  min-height: 520px;
+  border-radius: 12px;
+  transform: rotate(-2deg);
+}
+.section[data-design-family][data-visual-style="comunidade-hero"] .display { font-family: Georgia, serif; max-width: 14ch; }
+/* Vozes: campaign manifesto, tall portrait, very open margins. */
+.section[data-design-family][data-visual-style="vozes-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+  gap: clamp(30px, 4cqi, 74px);
+}
+.section[data-design-family][data-visual-style="vozes-hero"] .display {
+  font-family: Georgia, serif;
+  font-style: italic;
+  letter-spacing: -.052em;
+  max-width: 13ch;
+}
+.section[data-design-family][data-visual-style="vozes-hero"] .imageMediaFrame {
+  min-height: 590px;
+  border-radius: 360px 360px 20px 20px;
+}
+/* Pulso: poster typography and an athletic, angled image slab. */
+.section[data-design-family][data-visual-style="pulso-hero"] .sectionInner > .columns { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
+.section[data-design-family][data-visual-style="pulso-hero"] .display {
+  font-family: Impact, "Arial Narrow", sans-serif;
+  letter-spacing: -.012em;
+  text-transform: uppercase;
+  max-width: 10ch;
+  font-size: clamp(3rem, 6.4cqi, 6.9rem);
+}
+.section[data-design-family][data-visual-style="pulso-hero"] .imageMediaFrame {
+  min-height: 520px;
+  clip-path: polygon(7% 0, 100% 8%, 93% 100%, 0 92%);
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Profundezas: ocean scene with a glass research card over the photograph. */
+.section[data-design-family][data-visual-style="profundezas-hero"] .sectionInner > .columns { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+.section[data-design-family][data-visual-style="profundezas-hero"] .sectionInner > .columns > :first-child {
+  position: relative;
+  z-index: 2;
+  width: calc(100% + 55px);
+  margin-right: -55px;
+  padding: clamp(20px, 2.9cqi, 40px);
+  background: rgb(5 33 51 / 87%);
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 16px;
+}
+.section[data-design-family][data-visual-style="profundezas-hero"] .imageMediaFrame { min-height: 610px; border-radius: 16px; }
+.section[data-design-family][data-visual-style="profundezas-hero"] :is(.display, .lead, .eyebrow) { color: #fff; }
+/* Sereno: quiet typographic story centered around a soft portrait. */
+.section[data-design-family][data-visual-style="sereno-hero"] .sectionInner > .columns { grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); }
+.section[data-design-family][data-visual-style="sereno-hero"] .display { font-family: Georgia, serif; font-weight: 400; max-width: 13ch; }
+.section[data-design-family][data-visual-style="sereno-hero"] .imageMediaFrame {
+  min-height: 560px;
+  border-radius: 300px 300px 16px 16px;
+}
+/* Conexão: editorial network with a framed photo and modular text. */
+.section[data-design-family][data-visual-style="conexao-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: clamp(18px, 4cqi, 60px);
+}
+.section[data-design-family][data-visual-style="conexao-hero"] .sectionInner > .columns > :last-child {
+  padding: 12px;
+  background: color-mix(in srgb, var(--org-accent) 14%, var(--org-background));
+  border: 1px solid color-mix(in srgb, var(--org-primary) 18%, transparent);
+  border-radius: 36px;
+}
+.section[data-design-family][data-visual-style="conexao-hero"] .display { font-weight: 800; max-width: 12ch; }
+.section[data-design-family][data-visual-style="conexao-hero"] .imageMediaFrame { min-height: 520px; border-radius: 26px; }
+/* All families: real canvas size, not viewport width, controls the responsive reflow. */
+@container institutional-site (max-width: 800px) {
+  .section[data-design-family][data-visual-style$="-hero"] {
+    min-height: 0;
+    padding: clamp(24px, 5cqi, 48px);
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns,
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .stack > .columns {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > *,
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .stack > .columns > * {
+    position: relative;
+    inset: auto;
+    order: initial;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > :last-child { order: 2; }
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > :first-child { order: 1; }
+  .section[data-design-family][data-visual-style$="-hero"] .display {
+    max-width: 100%;
+    font-size: clamp(2rem, 8.5cqi, 4rem);
+    line-height: 1.08;
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .imageMediaRoot,
+  .section[data-design-family][data-visual-style$="-hero"] .imageMediaFrame {
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    max-height: 440px;
+    aspect-ratio: 4 / 3;
+    transform: none;
+    clip-path: none;
+    border-radius: 20px;
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .imageMediaFrame:after {
+    background: none;
+  }
+  .section[data-design-family][data-visual-style="essencial-hero"] .sectionInner > .columns > :first-child,
+  .section[data-design-family][data-visual-style="profundezas-hero"] .sectionInner > .columns > :first-child {
+    padding: clamp(22px, 4cqi, 32px);
+  }
+  .section[data-design-family][data-visual-style="essencial-hero"] .display { font-size: clamp(2rem, 8cqi, 3.5rem); }
+  .section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :last-child:after { display: none; }
+  .section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :first-child {
+    padding: clamp(22px, 4cqi, 32px);
+    background: #163b29;
+    border-radius: 16px;
+  }
+}
+/* Previews are scaled canvases; avoid shaping the text into unreadable narrow strips. */
+.section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > * {
+  min-width: 0;
+}

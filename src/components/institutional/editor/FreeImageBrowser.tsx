@@ -4,7 +4,6 @@ import { createPortal } from "react-dom";
 import {
   FiArrowUpRight,
   FiCheck,
-  FiChevronLeft,
   FiChevronRight,
   FiImage,
   FiSearch,
@@ -12,7 +11,7 @@ import {
 } from "react-icons/fi";
 import styles from "./FreeImageBrowser.module.css";
 
-type ImageSource = "openverse" | "pixabay";
+type ImageSource = "pixabay";
 
 interface StockImage {
   id: string;
@@ -45,16 +44,13 @@ const topics = [
   { name: "Cultura", search: "culture" },
 ];
 
-function isHttps(url: unknown): url is string {
-  return typeof url === "string" && /^https:\/\//i.test(url);
-}
-
 async function searchImages(
   source: ImageSource,
   query: string,
   page: number,
-  signal: AbortSignal,
+  _signal: AbortSignal,
 ): Promise<SearchResponse> {
+  void _signal;
   if (source === "pixabay") {
     const result = await searchPixabay("image", query, page);
     if (!result.configured) throw new Error("O Pixabay ainda não foi conectado. Configure PIXABAY_API_KEY no backend.");
@@ -67,54 +63,7 @@ async function searchImages(
       hasMore: result.hasMore,
     };
   }
-  if (source === "openverse") {
-    const params = new URLSearchParams({
-      q: query,
-      license: "cc0,pdm",
-      mature: "false",
-      page_size: "18",
-      page: String(page),
-    });
-    const response = await fetch(`https://api.openverse.org/v1/images/?${params}`, { signal });
-    if (!response.ok) {
-      throw new Error(response.status === 429
-        ? "Muitas pesquisas seguidas. Aguarde um pouco e tente novamente."
-        : "O Openverse não respondeu. Tente outra fonte.");
-    }
 
-    const data = await response.json() as {
-      results?: Array<{
-        id: string;
-        title?: string;
-        thumbnail?: string;
-        url?: string;
-        foreign_landing_url?: string;
-        creator?: string;
-        license?: string;
-      }>;
-      page_count?: number;
-      next?: string | null;
-    };
-
-    const items = (data.results ?? []).flatMap((result) => {
-      if (!isHttps(result.url) || !["cc0", "pdm"].includes(result.license ?? "")) return [];
-      const thumbnail = isHttps(result.thumbnail) ? result.thumbnail : result.url;
-      return [{
-        id: `openverse-${result.id}`,
-        title: result.title?.trim() || "Fotografia sem título",
-        thumbnail,
-        image: result.url,
-        sourceUrl: isHttps(result.foreign_landing_url) ? result.foreign_landing_url : result.url,
-        creator: result.creator?.trim() || "Autoria não informada",
-        license: result.license === "cc0" ? "CC0" : "Domínio público",
-      }];
-    });
-
-    return {
-      items,
-      hasMore: Boolean(data.next) && page < Math.min(data.page_count ?? 3, 3),
-    };
-  }
 
   return { items: [], hasMore: false };
 }
@@ -124,7 +73,7 @@ export default function FreeImageBrowser({
   disabled = false,
   compact = false,
 }: FreeImageBrowserProps) {
-  const [source, setSource] = useState<ImageSource>("openverse");
+  const [source] = useState<ImageSource>("pixabay");
   const [query, setQuery] = useState("community");
   const [term, setTerm] = useState("community");
   const [items, setItems] = useState<StockImage[]>([]);
@@ -143,9 +92,12 @@ export default function FreeImageBrowser({
     abortRef.current = controller;
     const requestId = ++latestRequestRef.current;
 
-    setBusy(true);
-    setNotice("");
-    if (page === 1) setItems([]);
+    queueMicrotask(() => {
+      if (controller.signal.aborted) return;
+      setBusy(true);
+      setNotice("");
+      if (page === 1) setItems([]);
+    });
 
     void searchImages(source, term, page, controller.signal)
       .then((result) => {
@@ -155,7 +107,7 @@ export default function FreeImageBrowser({
           : [...current, ...result.items.filter((item) => !current.some((old) => old.id === item.id))]);
         setHasMore(result.hasMore);
         if (result.items.length === 0 && page === 1) {
-          setNotice("Nenhuma foto encontrada. Tente outro tema ou outra fonte.");
+          setNotice("Nenhuma foto encontrada. Tente outro tema.");
         }
       })
       .catch((error: unknown) => {
@@ -221,20 +173,7 @@ export default function FreeImageBrowser({
   return (
     <div className={styles.browser} data-compact={compact}>
       <div className={styles.sources} role="group" aria-label="Fonte das fotografias">
-        <button
-          type="button"
-          data-active={source === "openverse"}
-          onClick={() => { setSource("openverse"); setPage(1); }}
-        >
-          Openverse
-        </button>
-        <button
-          type="button"
-          data-active={source === "pixabay"}
-          onClick={() => { setSource("pixabay"); setPage(1); }}
-        >
-          Pixabay
-        </button>
+        <span>Fotografias Pixabay · SafeSearch ativo</span>
       </div>
 
       <form className={styles.search} onSubmit={submit}>

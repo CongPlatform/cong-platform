@@ -408,6 +408,8 @@ export interface InstitutionalDesignSystem {
   textStyles?: Partial<Record<InstitutionalTypeRole, InstitutionalTypeStyle>>;
   /** IDs de arquivos de versões alternativas, não URLs públicas. */
   logos?: Partial<Record<InstitutionalLogoVariant, string | null>>;
+  headerLogoVariant?: "primary" | "compact" | "light" | "dark";
+  footerLogoVariant?: "primary" | "compact" | "light" | "dark";
   headingScale: "compact" | "standard" | "expressive";
   bodyScale: "compact" | "standard" | "relaxed";
   spacing: "compact" | "standard" | "spacious";
@@ -601,10 +603,12 @@ export function getInstitutionalSite(
 export function createInstitutionalSite(input: {
   name: string;
   templateId?: string | null;
+  identityMode?: "template" | "organization" | "custom";
 }): Promise<InstitutionalSite> {
   return apiTenantPost<RequiredSiteResponse>("/institutional/sites", {
     name: input.name,
     templateId: input.templateId ?? null,
+    identityMode: input.identityMode ?? (input.templateId ? "template" : "organization"),
   }).then((response) => response.site);
 }
 
@@ -792,6 +796,14 @@ export function reorderInstitutionalSections(
     `/institutional/pages/${pageId}/reorder-sections`,
     { sectionIds },
   ).then((response) => response.site);
+}
+
+export function updateInstitutionalSiteBrand(
+  siteId: string,
+  brand: Omit<InstitutionalBrand, "organizationId" | "publicSlug" | "logoAsset" | "logoVariantAssets">,
+): Promise<InstitutionalBrand> {
+  return apiTenantPatch<BrandResponse>(`/institutional/sites/${siteId}/brand`, brand)
+    .then((response) => response.brand);
 }
 
 export function updateInstitutionalBrand(

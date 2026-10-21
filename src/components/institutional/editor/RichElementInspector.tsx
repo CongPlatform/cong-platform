@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- rich helpers share narrow type contracts */
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import { FiCheck, FiEdit3, FiImage, FiPlus, FiSearch, FiTrash2, FiUploadCloud, FiX } from "react-icons/fi";
@@ -38,7 +39,7 @@ function Field({ label, value, onChange, multiline = false, hint, maxLength = 14
 }
 function AddressField({ label, value, onChange, video = false }: { label: string; value: string; onChange: (value: string) => void; video?: boolean }) {
   const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value]);
+  useEffect(() => { queueMicrotask(() => setDraft(value)); }, [value]);
   const valid = video
     ? !draft || safeVideoEmbed(draft) !== null || /^https:\/\/cdn\.pixabay\.com\/video\/[A-Za-z0-9/_-]+\.mp4$/.test(draft)
     : Boolean(safeInstitutionalHref(draft));
@@ -100,7 +101,7 @@ function MediaPicker({ image, onChange, label = "Imagem", onClear }: {
     {image && <Field label="Descrição acessível da foto" maxLength={240} value={image.alt} onChange={(alt) => onChange({ ...image, alt: alt.slice(0, 240) })} />}
   </div>;
 }
-export default function RichElementInspector({ node, onChange }: { node: RichNode; onChange: (next: unknown) => void }) {
+export default function RichElementInspector({ node, onChange, openRequestRevision }: { node: RichNode; onChange: (next: unknown) => void; openRequestRevision?: number }) {
   const [open, setOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -117,6 +118,9 @@ export default function RichElementInspector({ node, onChange }: { node: RichNod
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     }
   }; document.addEventListener("keydown", onKey); return () => document.removeEventListener("keydown", onKey); }, [open]);
+  useEffect(() => {
+    if (openRequestRevision) queueMicrotask(() => setOpen(true));
+  }, [openRequestRevision]);
   const value = node.value;
   const setValue = (next: unknown) => onChange(next);
   useEffect(() => {

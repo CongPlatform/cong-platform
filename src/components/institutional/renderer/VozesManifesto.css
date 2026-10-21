@@ -1,0 +1,99 @@
+/* VOZES / EDIÇÃO MANIFESTO — composicoes de campanha e direitos.
+   Exclusivo das variantes voz4: nao modifica paginas antigas nem molduras editadas. */
+section[data-section-type="custom_content"][data-visual-style^="voz4-"]{
+  --voz-ink:#241622;--voz-wine:#741f4d;--voz-paper:#fff9f3;--voz-salmon:#f4a579;
+  isolation:isolate;overflow-wrap:break-word;container-type:normal;
+}
+section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-layout-container],
+section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-shell="true"]{min-width:0;}
+section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-type="heading"] [data-font-target]{
+  font-family:"Archivo Black", "Arial Black", "Arial",sans-serif; font-weight:900;
+  letter-spacing:-.055em;line-height:1.03;text-wrap:balance;overflow-wrap:normal;word-break:normal;hyphens:auto;
+}
+section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-type="text"] [data-font-target]{
+  line-height:1.57;max-width:66ch;
+}
+section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-type="button"] a{
+  min-height:46px;border-radius:0;padding:12px 21px;max-width:100%;white-space:normal;
+  font-weight:750;text-align:center;
+}
+section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-type="icon"]{color:#7c214d;}
+section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-surface="card"]{
+  box-shadow:none;border-radius:0;border:0;border-top:3px solid #741f4d;padding-block:24px;
+  background:transparent;
+}
+section[data-visual-style="voz4-manifesto"] [data-layout-kind="columns"]{align-items:center;gap:clamp(30px,6cqi,88px);}
+section[data-visual-style="voz4-manifesto"] [data-element-type="heading"] [data-font-target]{
+  font-size:clamp(3.6rem,7.2cqi,7.9rem);max-width:12ch;line-height:.96;
+}
+section[data-visual-style="voz4-manifesto"] [data-element-type="image"]{max-width:100%;}
+section[data-visual-style="voz4-statement"] [data-layout-container]{max-width:1280px;}
+section[data-visual-style="voz4-statement"] [data-element-type="heading"] [data-font-target]{
+  font-size:clamp(3rem,7cqi,8.3rem);max-width:16ch;font-family:Georgia, "Times New Roman",serif;font-style:italic;
+}
+section[data-visual-style="voz4-story-cover"] [data-element-type="heading"] [data-font-target]{
+  font-family:Georgia, "Times New Roman",serif;font-weight:700;letter-spacing:-.035em;
+  font-size:clamp(3.4rem,7.8cqi,8.5rem);max-width:16ch;
+}
+section[data-visual-style="voz4-story-portrait"] [data-layout-kind="columns"]{align-items:center;}
+section[data-visual-style="voz4-actions-poster"] [data-element-type="heading"] [data-font-target]{
+  font-size:clamp(3.6rem,8cqi,9rem);max-width:15ch;
+}
+section[data-visual-style="voz4-index"] [data-surface="card"]{border-top:4px solid #741f4d;}
+section[data-visual-style="voz4-trust-opening"] [data-element-type="heading"] [data-font-target]{
+  font-family:Georgia, "Times New Roman",serif;font-weight:700;letter-spacing:-.04em;
+  font-size:clamp(3.2rem,6.8cqi,7.5rem);max-width:19ch;
+}
+section[data-visual-style="voz4-contact-opening"] [data-element-type="heading"] [data-font-target]{
+  font-size:clamp(3.3rem,8cqi,8.7rem);max-width:16ch;
+}
+section[data-visual-style="voz4-join-intro"] [data-layout-kind="columns"]{align-items:center;}
+section[data-visual-style="voz4-trust-chart"] [data-rich-variant]{max-width:100%;}
+/* A secao escura nao pode herdar texto escuro da cor da ONG. */
+section[data-visual-style="voz4-statement"],section[data-visual-style="voz4-join-banner"],
+section[data-visual-style="voz4-actions-poster"],section[data-visual-style="voz4-program-close"],
+section[data-visual-style="voz4-trust-footer"],section[data-visual-style="voz4-join-principles"],
+section[data-visual-style="voz4-join-closing"],section[data-visual-style="voz4-contact-end"]{
+  --org-text:#ffffff;color:#ffffff;
+}
+section[data-visual-style="voz4-statement"] [data-font-target],section[data-visual-style="voz4-join-banner"] [data-font-target],
+section[data-visual-style="voz4-actions-poster"] [data-font-target],section[data-visual-style="voz4-program-close"] [data-font-target],
+section[data-visual-style="voz4-trust-footer"] [data-font-target],section[data-visual-style="voz4-join-principles"] [data-font-target],
+section[data-visual-style="voz4-join-closing"] [data-font-target],section[data-visual-style="voz4-contact-end"] [data-font-target]{color:#ffffff!important;}
+section[data-visual-style="voz4-statement"] [data-element-type="text"] [data-font-target],
+section[data-visual-style="voz4-trust-footer"] [data-element-type="text"] [data-font-target]{color:#fff4ed!important;}
+section[data-visual-style="voz4-statement"] [data-element-type="divider"]{border-color:rgba(255,255,255,.5);}
+/* Accent buttons use the family contrast token rather than the white section copy. */
+section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-type="button"] [data-font-target]{
+ color:var(--family-on-accent, #241622)!important;
+}
+section[data-visual-style="voz4-join-intro"] [data-element-type="heading"] [data-font-target]{
+  font-size:clamp(2.8rem,6cqi,6.9rem);max-width:18ch;
+}
+section[data-visual-style="voz4-contact-index"] [data-layout-kind="grid"],
+section[data-visual-style="voz4-principles"] [data-layout-kind="grid"]{gap:clamp(14px,3cqi,32px);}
+/* 3 resolucoes intencionais; nao redefinir imageFit/moldura/proporcao do usuario. */
+@container institutional-site (max-width:1020px){
+ section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-layout-kind="grid"][data-layout-columns="3"]{
+   grid-template-columns:repeat(2,minmax(0,1fr));}
+ section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-type="heading"] [data-font-target]{
+   font-size:min(var(--element-font-size,3rem),clamp(2.3rem,5.5cqi,5.6rem));}
+}
+@container institutional-site (max-width:700px){
+ section[data-section-type="custom_content"][data-visual-style^="voz4-"]{
+  padding-inline:clamp(16px,5cqi,26px);padding-block:clamp(40px,7cqi,76px);}
+ section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-layout-kind="columns"],
+ section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-layout-kind="grid"],
+ section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-layout-kind="grid"][data-layout-columns="3"]{
+  grid-template-columns:minmax(0,1fr);gap:22px;}
+ section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-type="heading"] [data-font-target],
+ section[data-visual-style="voz4-manifesto"] [data-element-type="heading"] [data-font-target],
+ section[data-visual-style="voz4-actions-poster"] [data-element-type="heading"] [data-font-target],
+ section[data-visual-style="voz4-story-cover"] [data-element-type="heading"] [data-font-target]{
+  font-size:min(var(--element-font-size,3.2rem),clamp(2rem,8.5cqi,3.8rem));max-width:100%;line-height:1.09;}
+ section[data-section-type="custom_content"][data-visual-style^="voz4-"] [data-element-type="text"] [data-font-target]{
+  font-size:min(var(--element-font-size,1.2rem),clamp(1rem,4cqi,1.2rem));}
+ section[data-visual-style="voz4-manifesto"] [data-layout-kind="columns"] {gap:32px;}
+ section[data-visual-style="voz4-manifesto"] [data-layout-kind="stack"] {min-width:0;}
+}
+@media(prefers-reduced-motion:reduce){section[data-section-type="custom_content"][data-visual-style^="voz4-"] *{scroll-behavior:auto;}}

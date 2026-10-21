@@ -1,0 +1,37 @@
+/* Essencial 09 · atendimento claro e orientação acessível */
+section[data-visual-style^="es9-"]{isolation:isolate;overflow-wrap:break-word}
+section[data-visual-style^="es9-"] [data-layout-container],section[data-visual-style^="es9-"] [data-element-shell="true"]{min-width:0;max-width:100%}
+section[data-visual-style^="es9-"] [data-element-type="heading"] [data-font-target]{font-family:"Public Sans",Inter,Arial,sans-serif;font-weight:790;line-height:1.13;letter-spacing:-.035em;text-wrap:balance;overflow-wrap:normal}
+section[data-visual-style^="es9-"] [data-element-type="text"] [data-font-target]{font-family:Inter,Arial,sans-serif;line-height:1.6;max-width:72ch}
+section[data-visual-style^="es9-"] :is(a,button):focus-visible{outline:3px solid #D71920;outline-offset:4px}
+section[data-visual-style="es9-porta"] [data-layout-kind="columns"]{align-items:center;gap:clamp(30px,5vw,90px)}
+section[data-visual-style="es9-porta"] [data-layout-kind="columns"]>[data-layout-kind="stack"]{border-left:5px solid #D71920;padding-left:clamp(16px,3vw,42px)}
+section[data-visual-style="es9-porta"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,74px),clamp(40px,5.2vw,80px));max-width:13ch}
+section[data-visual-style="es9-servicos"] [data-element-type="action_grid"]{width:100%}
+section[data-visual-style="es9-servicos"] [data-element-type="heading"] [data-font-target]{max-width:18ch}
+section[data-visual-style="es9-escuta"] [data-layout-kind="columns"]{align-items:center}
+section[data-visual-style="es9-escuta"] [data-layout-kind="columns"]>:first-child{position:relative}
+section[data-visual-style="es9-valores"] [data-layout-kind="grid"]>[data-layout-kind="stack"]{padding:clamp(18px,3vw,35px);border-top:5px solid #D71920;background:#fff}
+section[data-visual-style="es9-equipe"] [data-layout-kind="columns"],section[data-visual-style="es9-participe"] [data-layout-kind="columns"]{align-items:center}
+section[data-visual-style="es9-programas"] [data-layout-kind="grid"]>[data-layout-kind="stack"]{background:#fff;padding:15px 15px 24px;box-shadow:0 12px 35px rgb(10 36 44 / .07)}
+section[data-visual-style="es9-programas"] [data-element-type="heading"] [data-font-target]{font-size:clamp(23px,2.8vw,31px)}
+section[data-visual-style="es9-galeria"] [data-element-type="media_gallery"]{width:100%}
+section[data-visual-style="es9-dados"] [data-layout-kind="columns"]{align-items:center}
+section[data-visual-style="es9-chamada"],section[data-visual-style="es9-contribuicao"]{position:relative}
+section[data-visual-style="es9-chamada"]::before,section[data-visual-style="es9-contribuicao"]::before{content:"+";position:absolute;inset:auto 6% 6% auto;font:900 clamp(90px,15vw,220px)/1 Arial;color:rgb(255 255 255 / .065);pointer-events:none}
+section[data-visual-style="es9-chamada"] [data-element-type="heading"] [data-font-target],section[data-visual-style="es9-contribuicao"] [data-element-type="heading"] [data-font-target]{max-width:18ch}
+section[data-visual-style="es9-chamada"] [data-element-type="button"],section[data-visual-style="es9-contribuicao"] [data-element-type="button"]{position:relative;z-index:1}
+@container institutional-site (max-width:900px){section[data-visual-style^="es9-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,56px),clamp(33px,5cqi,58px))}}
+@container institutional-site (max-width:720px){section[data-visual-style^="es9-"] [data-layout-kind="columns"],section[data-visual-style^="es9-"] [data-layout-kind="grid"]{grid-template-columns:minmax(0,1fr);gap:clamp(16px,4cqi,32px)}section[data-visual-style="es9-porta"] [data-layout-kind="columns"]>[data-layout-kind="stack"]{border-left-width:3px}section[data-visual-style^="es9-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,46px),clamp(28px,7.2cqi,48px))}}
+@media(prefers-reduced-motion:reduce){section[data-visual-style^="es9-"] *,section[data-visual-style^="es9-"] *::before{animation:none!important;transition:none!important}}
+
+/* Fix 09/10: rich/text nodes without authored widths must fill their layout tracks.
+   The editor still owns explicit widths and all image/frame geometries. */
+section[data-visual-style^="es9-"] [data-element-shell="true"][data-explicit-width="false"]:is([data-text-box="true"], [data-element-type="action_grid"], [data-element-type="media_gallery"], [data-element-type="video_embed"], [data-element-type="data_chart"], [data-element-type="story_tabs"], [data-element-type="faq"], [data-element-type="community_timeline"], [data-element-type="testimonial_slider"], [data-element-type="donation_choices"], [data-element-type="campaign_card"]) {
+  width: 100% !important;
+  min-width: 0;
+}
+section[data-visual-style^="es9-"] [data-text-box="true"][data-explicit-width="false"] .editableText {
+  width: 100%;
+  max-width: 100%;
+}

@@ -262,6 +262,7 @@ export default function InstitutionalHome() {
       const created = await createInstitutionalSite({
         name: request.name,
         templateId: request.template?.id ?? null,
+        identityMode: request.identityMode,
       });
       if (request.guided) {
         await applyGuidedAnswers(created, request.guided, organizationName);

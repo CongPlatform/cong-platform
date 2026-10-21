@@ -42,6 +42,7 @@ export default function LayoutRenderer({
   path = [],
   sectionDefinition,
   showGuidance = false,
+  showEmptyMediaPreview = false,
   selectedElementId,
   selectedElementIds = [],
   onSelectElement,
@@ -72,6 +73,7 @@ export default function LayoutRenderer({
   path?: Array<string | number>;
   sectionDefinition: InstitutionalSectionDefinition;
   showGuidance?: boolean;
+  showEmptyMediaPreview?: boolean;
   selectedElementId?: string | null;
   selectedElementIds?: string[];
   onSelectElement?: (elementId: string, additive?: boolean) => void;
@@ -126,6 +128,7 @@ export default function LayoutRenderer({
         presentation={node.presentation}
         data={data}
         editable={editable}
+        showEmptyMediaPreview={showEmptyMediaPreview}
         path={path}
         fieldDefinition={fieldDefinition}
         showGuidance={Boolean(
@@ -300,6 +303,7 @@ export default function LayoutRenderer({
               path={[...path, node.source, index]}
               sectionDefinition={sectionDefinition}
               showGuidance={false}
+              showEmptyMediaPreview={showEmptyMediaPreview}
               selectedElementId={selectedElementId}
               selectedElementIds={selectedElementIds}
               onSelectElement={onSelectElement}
@@ -346,6 +350,7 @@ export default function LayoutRenderer({
     path,
     sectionDefinition,
     showGuidance,
+    showEmptyMediaPreview,
     selectedElementId,
     selectedElementIds,
     onSelectElement,

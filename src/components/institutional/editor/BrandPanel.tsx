@@ -57,6 +57,7 @@ export default function BrandPanel({
   onClose,
   onSave,
   onUploadLogo,
+  onSuggestLogoPalette,
 }: {
   brand: InstitutionalBrand;
   saving: boolean;
@@ -68,9 +69,14 @@ export default function BrandPanel({
     file: File,
     primary: boolean,
   ) => Promise<InstitutionalMediaAsset>;
+  onSuggestLogoPalette?: (slot: "primary" | InstitutionalLogoVariant, pending?: InstitutionalMediaAsset) => Promise<string[]>;
 }) {
   const [activeTab, setActiveTab] = useState<BrandTab>("logos");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [paletteLogo, setPaletteLogo] = useState<"primary" | InstitutionalLogoVariant>("primary");
+  const [paletteError, setPaletteError] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [sitePaletteColors, setSitePaletteColors] = useState<string[]>([]);
   const [uploadsInProgress, setUploadsInProgress] = useState(0);
   const [uploadedLogos, setUploadedLogos] = useState<
     Partial<
@@ -96,6 +102,7 @@ export default function BrandPanel({
     setUploadsInProgress((count) => count + 1);
     try {
       const asset = await onUploadLogo(file, slot === "primary");
+      if (slot === paletteLogo) setPaletteError("Use o botão de extrair cores para analisar esta logo.");
       setUploadedLogos((current) => ({ ...current, [slot]: asset }));
       changeLogoSlot(slot, asset.id);
     } finally {
@@ -177,10 +184,10 @@ export default function BrandPanel({
 
   const paletteSuggestion = useMemo(
     () =>
-      suggestedPalette.length > 0
-        ? buildBrandPaletteSuggestion(suggestedPalette)
+      (sitePaletteColors.length > 0 || suggestedPalette.length > 0)
+        ? buildBrandPaletteSuggestion(sitePaletteColors.length > 0 ? sitePaletteColors : suggestedPalette)
         : null,
-    [suggestedPalette],
+    [suggestedPalette, sitePaletteColors],
   );
 
   const contrastChecks = useMemo(
@@ -239,15 +246,14 @@ export default function BrandPanel({
         className={`${styles.panel} ${styles.brandDialog}`}
         role="dialog"
         aria-modal="true"
-        aria-label="Identidade visual da organização"
+        aria-label="Identidade visual exclusiva deste site"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className={styles.header}>
           <div>
-            <strong>Minha marca</strong>
+            <strong>Identidade deste site</strong>
             <span>
-              Defina a identidade da sua ONG. Você poderá personalizar cada
-              elemento no editor.
+              Ajuste logos, cores e fontes deste site sem alterar a identidade principal da ONG nem outros sites.
             </span>
           </div>
           <button type="button" onClick={onClose} aria-label="Fechar">
@@ -274,6 +280,7 @@ export default function BrandPanel({
           </nav>
           <div className={styles.body}>
             {activeTab === "logos" ? (
+              <>
               <BrandLogoLibrary
                 brand={brand}
                 primaryId={draft.logoAssetId}
@@ -283,8 +290,35 @@ export default function BrandPanel({
                 onUpload={uploadLogoSlot}
                 disabled={saving || uploadsInProgress > 0}
               />
+              <div className={styles.siteLogoUsage}>
+                {([ ["headerLogoVariant", "Logo do cabeçalho"], ["footerLogoVariant", "Logo do rodapé"] ] as const).map(([key, title]) =>
+                  <label key={key}><span>{title}</span><select value={design[key] ?? "primary"} onChange={(event) => setDesign(key, event.target.value as "primary" | InstitutionalLogoVariant)}>
+                    <option value="primary">Principal</option><option value="compact">Reduzida</option><option value="light">Clara</option><option value="dark">Escura</option>
+                  </select></label>
+                )}
+                <small>Você pode escolher uma versão diferente para cada posição. Se uma versão não estiver cadastrada, será utilizada a principal.</small>
+              </div>
+              </>
             ) : null}
 
+            {activeTab === "colors" && onSuggestLogoPalette ? <div className={styles.siteLogoUsage}>
+              <label><span>Gerar paleta a partir de qual logo?</span>
+                <select value={paletteLogo} onChange={(event) => { setPaletteLogo(event.target.value as "primary" | InstitutionalLogoVariant); setPaletteError(""); }}>
+                  <option value="primary">Principal</option><option value="compact">Reduzida</option>
+                  <option value="light">Clara</option><option value="dark">Escura</option>
+                </select></label>
+              <button type="button" disabled={extracting || saving} onClick={async () => {
+                setExtracting(true); setPaletteError("");
+                try {
+                  const colors = await onSuggestLogoPalette(paletteLogo, uploadedLogos[paletteLogo]);
+                  if (!colors.length) setPaletteError("Não foi possível extrair cores desta logo. Tente uma imagem enviada neste site.");
+                  else setSitePaletteColors(colors);
+                } catch { setPaletteError("Não foi possível ler a imagem selecionada. Verifique a permissão da mídia."); }
+                finally { setExtracting(false); }
+              }}>{extracting ? "Analisando..." : "Extrair cores dessa logo"}</button>
+              {paletteError ? <small role="status">{paletteError}</small> : null}
+              <small>A extração apenas sugere cores. Sua paleta muda somente após clicar em Aplicar e depois Salvar.</small>
+            </div> : null}
             {activeTab === "colors" && paletteSuggestion ? (
               <div className={styles.paletteSuggestion}>
                 <strong>Paleta sugerida a partir da logo</strong>
@@ -305,7 +339,7 @@ export default function BrandPanel({
                 </div>
                 <button
                   type="button"
-                  onClick={() => applyPaletteAndKeepDraft(suggestedPalette)}
+                  onClick={() => applyPaletteAndKeepDraft(sitePaletteColors.length ? sitePaletteColors : suggestedPalette)}
                   disabled={saving}
                 >
                   Aplicar cores sugeridas

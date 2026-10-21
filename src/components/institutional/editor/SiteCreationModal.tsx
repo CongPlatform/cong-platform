@@ -29,6 +29,7 @@ export interface SiteCreationRequest {
   name: string;
   template: InstitutionalTemplate | null;
   guided: GuidedSiteAnswers | null;
+  identityMode: "template" | "organization" | "custom";
 }
 
 type Step = "choose" | "guided" | "name";
@@ -94,6 +95,7 @@ export default function SiteCreationModal({
   const [location, setLocation] = useState("");
   const [priority, setPriority] = useState<GuidedSitePriority>("present");
   const [visualStyle, setVisualStyle] = useState<GuidedSiteStyle>("human");
+  const [identityMode, setIdentityMode] = useState<"template" | "organization" | "custom">(initialTemplate ? "template" : "organization");
 
   const recommendedTemplate = useMemo(() => {
     const preferredNames =
@@ -122,6 +124,7 @@ export default function SiteCreationModal({
     };
     setGuided(answers);
     setTemplate(recommendedTemplate);
+    setIdentityMode("template");
     setStep("name");
   }
 
@@ -185,6 +188,7 @@ export default function SiteCreationModal({
                   className={styles.startCard}
                   onClick={() => {
                     setTemplate(null);
+                    setIdentityMode("organization");
                     setGuided(null);
                     setStep("name");
                   }}
@@ -325,6 +329,13 @@ export default function SiteCreationModal({
                   continua sendo o da organização.
                 </small>
               </label>
+              <fieldset className={styles.identityChoices}>
+                <legend>Qual identidade visual utilizar neste site?</legend>
+                {template ? <label><input type="radio" name="identity" checked={identityMode === "template"} onChange={() => setIdentityMode("template")} /> Manter cores e estilo do modelo</label> : null}
+                <label><input type="radio" name="identity" checked={identityMode === "organization"} onChange={() => setIdentityMode("organization")} /> Aplicar a identidade principal da ONG</label>
+                <label><input type="radio" name="identity" checked={identityMode === "custom"} onChange={() => setIdentityMode("custom")} /> Criar uma identidade exclusiva para este site</label>
+                <small>Depois você poderá alterar logos, paleta e fontes, sem mudar os outros sites.</small>
+              </fieldset>
               <div className={styles.actions}>
                 <button
                   type="button"
@@ -343,7 +354,7 @@ export default function SiteCreationModal({
                   className={styles.primary}
                   disabled={busy || name.trim().length < 2}
                   onClick={() =>
-                    onCreate({ name: name.trim(), template, guided })
+                    onCreate({ name: name.trim(), template, guided, identityMode })
                   }
                 >
                   {busy ? "Preparando..." : "Abrir no palco"} <FiArrowRight />

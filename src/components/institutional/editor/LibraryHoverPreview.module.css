@@ -72,3 +72,11 @@
 
 .canvas > * { box-sizing: border-box; }
 .preview { contain: layout style; }
+
+/* Prévia fiel: estágio amplo com informação abaixo em vez de encolher a tela em colunas. */
+.preview { grid-template-columns: minmax(0,1fr); grid-template-rows:minmax(0,1fr) auto; height:min(500px,calc(100vh - 24px)); border-radius:16px; }
+.stage { padding:12px; background:#eff4f6; min-height:0; }
+.canvas { top:12px; left:12px; }
+.details { padding:14px 18px; gap:4px; border-top:1px solid #e4e8ed; }
+.details strong { font-size:16px; }
+.details p { font-size:12px; line-height:1.4; }

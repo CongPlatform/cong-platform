@@ -1,3 +1,4 @@
+import { getNativeEditorialPhoto } from "../../../data/institutional/nativeEditorialPhotos";
 import { useState, type CSSProperties } from "react";
 import { FiMenu, FiX } from "react-icons/fi";
 import { getSectionDefinition } from "../../../data/institutional/sectionCatalog";
@@ -19,6 +20,16 @@ import {
 import LayoutRenderer from "./LayoutRenderer";
 
 import styles from "./InstitutionalRenderer.module.css";
+import "./HorizonteEditorial.css";
+import "./TerritorioVivo.css";
+import "./PulsoV3.css";
+import "./VozesManifesto.css";
+import "./ProfundezasAtlas.css";
+import "./ComunidadeCaderno.css";
+import "./AcolherCasa.css";
+import "./SerenoArquivo.css";
+import "./ConexaoRede.css";
+import "./EssencialPortal.css";
 
 function resolveSectionColor(
   value: string | undefined,
@@ -102,7 +113,7 @@ export default function SectionRenderer({
     ? nearestAccessibleColor(brand?.textColor ?? "#091c30", footerBackground, 4.5)
     : null;
 
-  const backgroundImageUrl = sectionStyle.backgroundImage?.url;
+  const backgroundImageUrl = sectionStyle.backgroundImage?.url ?? getNativeEditorialPhoto(sectionStyle.backgroundImage?.assetId)?.url;
   const treatment = sectionStyle.backgroundTreatment ?? "original";
   const safeImageUrl = backgroundImageUrl?.replace(/["\n\r]/g, "");
   const treatmentLayer = treatment === "dark"
@@ -158,12 +169,16 @@ export default function SectionRenderer({
   const decorScale = Math.max(60, Math.min(160, sectionStyle.backgroundDecorScale ?? 100));
   const decorStrong = `${Math.round(8 + decorIntensity * 0.22)}%`;
   const decorSoft = `${Math.round(3 + decorIntensity * 0.11)}%`;
-  const rendererData = header && brand?.logoAsset
+  const requestedLogo = header ? brand?.designSystem?.headerLogoVariant : footer ? brand?.designSystem?.footerLogoVariant : "primary";
+  const selectedLogo = requestedLogo && requestedLogo !== "primary"
+    ? brand?.logoVariantAssets?.[requestedLogo] ?? brand?.logoAsset
+    : brand?.logoAsset;
+  const rendererData = (header || footer) && selectedLogo
     ? {
         ...section.content,
         brandLogo: {
-          assetId: brand.logoAsset.id,
-          url: brand.logoAsset.url,
+          assetId: selectedLogo.id,
+          url: selectedLogo.url,
           alt: "Logo da organização",
         },
       }
@@ -186,7 +201,7 @@ export default function SectionRenderer({
     ...(imageBackground ? { backgroundImage: imageBackground } : {}),
     ...(imageBackground ? { backgroundSize: "cover" } : {}),
     ...(imageBackground ? { backgroundPosition: `${sectionStyle.backgroundPositionX ?? 50}% ${sectionStyle.backgroundPositionY ?? 50}%` } : {}),
-    ...(imageTreatmentForeground ? { "--org-text": imageTreatmentForeground, "--org-primary": imageTreatmentForeground } : {}),
+    ...(imageTreatmentForeground ? { "--org-text": imageTreatmentForeground } : {}),
     ...(solidForeground ? { "--org-text": solidForeground } : {}),
     ...(footerForeground ? { "--section-foreground": footerForeground } : {}),
   } as CSSProperties;

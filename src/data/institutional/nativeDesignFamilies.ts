@@ -268,6 +268,14 @@ export function findNativeDesignFamilyByVisualStyle(
   visualStyle: unknown,
 ): NativeDesignFamily | undefined {
   if (typeof visualStyle !== "string") return undefined;
+  if (visualStyle.startsWith("tv2-")) return findNativeDesignFamilyById("territorio-vivo");
+  if (visualStyle.startsWith("pulso3-")) return findNativeDesignFamilyById("pulso");
+  if (visualStyle.startsWith("voz4-")) return findNativeDesignFamilyById("vozes");
+  if (visualStyle.startsWith("deep5-")) return findNativeDesignFamilyById("profundezas");
+  if (visualStyle.startsWith("cx9-")) return findNativeDesignFamilyById("conexao");
+  if (visualStyle.startsWith("es9-")) return findNativeDesignFamilyById("essencial");
+  if (visualStyle.startsWith("cx9-")) return findNativeDesignFamilyById("conexao");
+  if (visualStyle.startsWith("es9-")) return findNativeDesignFamilyById("essencial");
   return nativeDesignFamilies.find((family) =>
     visualStyle.startsWith(`${family.id}-`),
   );

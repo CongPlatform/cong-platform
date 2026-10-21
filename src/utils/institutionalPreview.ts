@@ -1,3 +1,4 @@
+import { nativeEditorialPhotos } from "../data/institutional/nativeEditorialPhotos";
 import { createDefaultSectionContent } from "../data/institutional/sectionCatalog";
 import {
   findNativeDesignFamilyByCategory,
@@ -439,13 +440,15 @@ function previewImage(
   const familyFirst = family ? (variant % 2 === 0 ? family.palette.primary : family.palette.secondary) : first;
   const familySecond = family ? (variant % 3 === 0 ? family.palette.accent : family.palette.background) : second;
   return {
-    assetId: `preview-${familyId ?? "generic"}-${label.toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, "-")}-${variant}`,
+    assetId: familyId
+      ? nativeEditorialPhotos[familyId][variant % nativeEditorialPhotos[familyId].length].assetId
+      : `preview-generic-${label.toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, "-")}-${variant}`,
     alt: label,
     // Native families ship with a real visual study image, so the first contact
     // with a template never looks like an empty wireframe. Generic/community
     // variants keep the lightweight generated illustration fallback.
-    url: familyId && variant === 0
-      ? `/institutional/examples/${familyId}.webp`
+    url: familyId && variant < nativeEditorialPhotos[familyId].length
+      ? nativeEditorialPhotos[familyId][variant].url
       : svgDataUri(familyFirst, familySecond, familyId, variant),
   };
 }
@@ -748,6 +751,7 @@ export function withCongBrandFallback(brand: InstitutionalBrand): InstitutionalB
 export function buildTemplatePreviewSite(
   template: InstitutionalTemplate,
   variants: InstitutionalVariant[],
+  faithful = false,
 ): InstitutionalSite | null {
   const definition = template.definition;
   if (!definition?.pages.length) return null;
@@ -755,7 +759,7 @@ export function buildTemplatePreviewSite(
 
   const pages = definition.pages.map((sourcePage, pageIndex): InstitutionalSite["pages"][number] => {
     const previewPageId = `preview-page-${template.id}-${pageIndex}`;
-    const sectionsToRender = family && sourcePage.isHome
+    const sectionsToRender = !faithful && family && sourcePage.isHome
       ? [...sourcePage.sections].sort((left, right) => {
           const order = NATIVE_EXAMPLE_SECTION_ORDER[family.id];
           return order.indexOf(left.sectionType) - order.indexOf(right.sectionType);
@@ -765,7 +769,7 @@ export function buildTemplatePreviewSite(
     const sections = sectionsToRender.flatMap((section, index): InstitutionalSection[] => {
       const variant = variants.find((item) => item.versionId === section.variantVersionId);
       if (!variant) return [];
-      const useExampleCopy = Boolean(family && sourcePage.isHome && !section.settings?.layoutOverride);
+      const useExampleCopy = Boolean(!faithful && family && sourcePage.isHome && !section.settings?.layoutOverride);
       return [{
         id: `preview-${template.id}-${pageIndex}-${index}`,
         pageId: previewPageId,
@@ -776,7 +780,7 @@ export function buildTemplatePreviewSite(
         content: useExampleCopy
           ? previewContentForSection(section.sectionType, undefined, family?.id)
           : section.content,
-        settings: section.settings ?? {},
+        settings: structuredClone(section.settings ?? {}),
         variantId: variant.id,
         variantName: variant.name,
         variantVersion: variant.version,

@@ -12,6 +12,7 @@ import {
   type RichCategory,
 } from "../../../features/site-builder/compositions/richBlockPresets";
 import ElementRenderer from "../renderer/ElementRenderer";
+import { nativeEditorialPhotos } from "../../../data/institutional/nativeEditorialPhotos";
 import LibraryHoverPreview from "./LibraryHoverPreview";
 import styles from "./RichBlockGallery.module.css";
 
@@ -32,7 +33,7 @@ function RichPreview({ id, inheritBrand = true }: { id: string; inheritBrand?: b
           ...node,
           value: {
             assetId: "preview-only",
-            url: `/institutional/examples/${example}.webp`,
+            url: nativeEditorialPhotos[example][0].url,
             alt: "Fotografia ilustrativa para prévia",
           },
         }}

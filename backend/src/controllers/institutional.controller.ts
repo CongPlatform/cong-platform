@@ -18,6 +18,7 @@ import {
   unpublishInstitutionalSite,
   reorderInstitutionalSections,
   updateInstitutionalBrand,
+  updateInstitutionalSiteBrand,
   updateInstitutionalSection,
 } from "../services/institutional-site.service.js";
 import {
@@ -416,6 +417,18 @@ export async function renameSite(req: Request, res: Response): Promise<void> {
   } catch (error) {
     handleError(error, res);
   }
+}
+
+export async function updateSiteBrand(req: Request, res: Response): Promise<void> {
+  try {
+    const brand = await updateInstitutionalSiteBrand(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      req.body,
+      res.locals.authUser.id,
+    );
+    res.status(200).json({ brand });
+  } catch (error) { handleError(error, res); }
 }
 
 export async function updateBrand(req: Request, res: Response): Promise<void> {

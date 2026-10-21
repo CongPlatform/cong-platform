@@ -42,16 +42,14 @@ export default function IconifyBrowser({ disabled, onChoose }: {
 
   useEffect(() => {
     if (!term || category !== "all") {
-      setIcons([]);
-      setLoading(false);
-      setMessage("");
+      queueMicrotask(() => { setIcons([]); setLoading(false); setMessage(""); });
       return;
     }
 
     const controller = new AbortController();
     const params = new URLSearchParams({ query: term, limit: "64" });
     if (collection !== "all") params.set("prefix", collection);
-    setLoading(true);
+    queueMicrotask(() => { if (!controller.signal.aborted) setLoading(true); });
     void fetch(`https://api.iconify.design/search?${params}`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Falha na busca");

@@ -1,3 +1,5 @@
+import NativeVariantCanvas from "../preview/NativeVariantCanvas";
+import LibraryHoverPreview from "./LibraryHoverPreview";
 import IconifyBrowser from "./IconifyBrowser";
 import type { StockMediaItem } from "../../../services/stockMediaService";
 import StockVideoBrowser from "./StockVideoBrowser";
@@ -245,10 +247,10 @@ export default function SectionLibrary({
   onToggleCollapsed: () => void;
   onAddSection: (sectionType: InstitutionalSectionType, variantVersionId?: string, compositionId?: string) => void;
   onAddElement: (elementType: InstitutionalElementType, initialValue?: string) => void;
-  onAddRichPreset: (presetId: string, inheritBrand?: boolean) => void;
-  onAddEditorialPiece: (pieceId: string, inheritBrand: boolean) => void;
-  onInsertStockImage: (file: File, label: string) => Promise<void>;
-  onInsertStockVideo: (item: StockMediaItem) => void;
+  onAddRichPreset?: (presetId: string, inheritBrand?: boolean) => void;
+  onAddEditorialPiece?: (pieceId: string, inheritBrand: boolean) => void;
+  onInsertStockImage?: (file: File, label: string) => Promise<void>;
+  onInsertStockVideo?: (item: StockMediaItem) => void;
   onSelectSection?: (sectionId: string) => void;
   onSelectElement?: (sectionId: string, elementId: string, additive?: boolean) => void;
   onMoveSection?: (sectionId: string, direction: -1 | 1) => void;
@@ -263,6 +265,7 @@ export default function SectionLibrary({
   const [category, setCategory] = useState<LibraryCategory>("structure");
   const [sectionGroup, setSectionGroup] = useState<SectionGroup>("all");
   const [sectionView, setSectionView] = useState<"compositions" | "variants">("compositions");
+  const [variantHover, setVariantHover] = useState<{ versionId: string; anchor: DOMRect } | null>(null);
   const [backgroundScope, setBackgroundScope] = useState<"section" | "all">("section");
   const [query, setQuery] = useState("");
   const [sectionType, setSectionType] = useState<InstitutionalSectionType>("organization_intro");
@@ -382,7 +385,7 @@ export default function SectionLibrary({
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={category === "sections" ? "Buscar seção ou estilo" : category === "icons" ? "Buscar ícone (ex.: pessoas, mapa, doação)" : "Buscar peça"}
+                placeholder={category === "sections" ? "Buscar seção ou estilo" : "Buscar peça"}
               />
             </label>
           ) : null}
@@ -794,6 +797,10 @@ export default function SectionLibrary({
                         <article
                           key={variant.versionId}
                           className={styles.variantCard}
+                          onMouseEnter={(event) => setVariantHover({ versionId: variant.versionId, anchor: event.currentTarget.getBoundingClientRect() })}
+                          onMouseLeave={() => setVariantHover(null)}
+                          onFocusCapture={(event) => setVariantHover({ versionId: variant.versionId, anchor: event.currentTarget.getBoundingClientRect() })}
+                          onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setVariantHover(null); }}
                           data-family={family?.id}
                           data-family-match={matchesCurrentFamily || undefined}
                           draggable={!disabled}
@@ -952,7 +959,7 @@ export default function SectionLibrary({
                   </button>
                 </div>
               ) : category === "rich" ? (
-                <RichBlockGallery brand={brand} query={query} disabled={disabled} canInsert={Boolean(selectedSection)} onInsert={onAddRichPreset} />
+                <RichBlockGallery brand={brand} query={query} disabled={disabled || !onAddRichPreset} canInsert={Boolean(selectedSection && onAddRichPreset)} onInsert={onAddRichPreset ?? (() => {})} />
               ) : category === "media" ? (
                 <div className={styles.mediaDiscovery}>
                   <div className={styles.libraryTabs} role="group" aria-label="Tipo de mídia">
@@ -972,17 +979,17 @@ export default function SectionLibrary({
                   {mediaTab === "images" ? (
                     <FreeImageBrowser
                       disabled={disabled || !selectedSection}
-                      onChosen={onInsertStockImage}
+                      onChosen={onInsertStockImage ?? (async () => {})}
                     />
                   ) : mediaTab === "video" ? (
-                    <StockVideoBrowser disabled={Boolean(disabled || !selectedSection)} onChoose={onInsertStockVideo} />
+                    <StockVideoBrowser disabled={Boolean(disabled || !selectedSection || !onInsertStockVideo)} onChoose={onInsertStockVideo ?? (() => {})} />
                   ) : (
                     <RichBlockGallery
                       brand={brand}
                       query={query}
                       disabled={disabled}
                       canInsert={Boolean(selectedSection)}
-                      onInsert={onAddRichPreset}
+                      onInsert={onAddRichPreset ?? (() => {})}
                       initialCategory="media"
                       categoryOnly
                       allowedTypes={mediaTab === "frames"
@@ -1019,7 +1026,7 @@ export default function SectionLibrary({
                       query={query}
                       disabled={disabled}
                       canInsert={Boolean(selectedSection)}
-                      onInsert={onAddRichPreset}
+                      onInsert={onAddRichPreset ?? (() => {})}
                       initialCategory="all"
                       categoryOnly
                       allowedTypes={actionTab === "campaigns" ? ["campaign_card"] : actionTab === "participation" ? ["action_grid"] : ["donation_choices"]}
@@ -1049,7 +1056,7 @@ export default function SectionLibrary({
                     query={query}
                     disabled={disabled}
                     canInsert={Boolean(selectedSection)}
-                    onInsert={onAddRichPreset}
+                    onInsert={onAddRichPreset ?? (() => {})}
                     initialCategory="all"
                     categoryOnly
                     allowedTypes={dataTab === "charts" ? ["data_chart"] : dataTab === "goals" ? ["progress"] : ["faq", "story_tabs"]}
@@ -1060,7 +1067,7 @@ export default function SectionLibrary({
                   brand={brand}
                   disabled={disabled}
                   canInsert={Boolean(selectedSection)}
-                  onInsert={onAddEditorialPiece}
+                  onInsert={onAddEditorialPiece ?? (() => {})}
                 />
               ) : category === "icons" ? (
                 <IconifyBrowser
@@ -1111,6 +1118,17 @@ export default function SectionLibrary({
           ) : null}
         </div>
       ) : null}
+      {category === "sections" && sectionView === "variants" && variantHover ? (() => {
+        const variant = sectionVariants.find((item) => item.versionId === variantHover.versionId);
+        if (!variant) return null;
+        return <LibraryHoverPreview
+          anchor={variantHover.anchor}
+          title={variant.name}
+          description={variant.description || "Composição editável para esta seção."}
+        >
+          <NativeVariantCanvas sectionType={activeSectionType} variant={variant} />
+        </LibraryHoverPreview>;
+      })() : null}
     </aside>
   );
 }
