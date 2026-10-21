@@ -35,6 +35,7 @@ import type {
   InstitutionalElementConstraints,
   InstitutionalDesignFrame,
   InstitutionalSection,
+  InstitutionalPage,
   InstitutionalSectionStyle,
   InstitutionalVariant,
   InstitutionalColorRole,
@@ -45,6 +46,10 @@ import { brandRoleHex, deriveColorTone, institutionalColorRoles, institutionalCo
 import { collectionItemLabel, createInstitutionalCollectionItem } from "../../../utils/institutionalCollections";
 
 import ColorPickerControl from "./ColorPickerControl";
+import RichElementInspector, { CommonsSearch, isRichElement } from "./RichElementInspector";
+import { uploadInstitutionalMedia } from "../../../services/institutionalService";
+import freeMediaStyles from "./RichElementInspector.module.css";
+import FontFamilyPicker from "./FontFamilyPicker";
 import ImageFramePicker from "./ImageFramePicker";
 import styles from "./PropertiesPanel.module.css";
 
@@ -116,6 +121,7 @@ function ImageField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const image = asImage(value);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <div className={styles.imageField}>
@@ -134,12 +140,25 @@ function ImageField({
             <FiUpload /> {image ? "Trocar imagem" : "Enviar imagem"}
           </button>
         ) : null}
+        {allowUpload ? (
+          <button type="button" onClick={() => setSearchOpen((previous) => !previous)} aria-expanded={searchOpen}>
+            <FiImage /> {searchOpen ? "Fechar acervo" : "Acervo gratuito"}
+          </button>
+        ) : null}
         {image ? (
           <button type="button" onClick={() => onChange(path, null)}>
             <FiTrash2 /> Remover
           </button>
         ) : null}
       </div>
+
+      {searchOpen ? <div className={freeMediaStyles.commons}>
+        <CommonsSearch onChosen={async (file, label) => {
+          const asset = await uploadInstitutionalMedia(file);
+          onChange(path, { assetId: asset.id, url: asset.url, alt: label.slice(0, 240) });
+          setSearchOpen(false);
+        }} />
+      </div> : null}
 
       {allowUpload ? (
       <input
@@ -249,12 +268,14 @@ function CollectionEditor({
   onChange,
   onUploadImage,
   allowImageUpload,
+  pages = [],
 }: {
   field: InstitutionalFieldDefinition;
   value: unknown;
   onChange: (path: Array<string | number>, value: unknown) => void;
   onUploadImage: (path: Array<string | number>, file: File) => void;
   allowImageUpload: boolean;
+  pages?: InstitutionalPage[];
 }) {
   const items = Array.isArray(value)
     ? (value.filter((item) => item && typeof item === "object") as Record<
@@ -433,9 +454,23 @@ function CollectionEditor({
                 <span>Texto no menu</span>
                 <input value={String(item.label ?? "")} onChange={(event) => updateItem(index, "label", event.target.value)} placeholder="Ex.: Projetos" />
               </label>
+              {pages.length > 0 ? <label className={styles.field}>
+                <span>Vincular a uma página deste site</span>
+                <select value={pages.find((page) => (page.isHome ? "/" : `/${page.slug}`) === item.href) ? String(item.href) : ""}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    if (next) {
+                      updateItem(index, "href", next);
+                    }
+                  }}>
+                  <option value="">Endereço personalizado</option>
+                  {pages.map((page) => <option key={page.id} value={page.isHome ? "/" : `/${page.slug}`}>{page.title}{page.isHome ? " (início)" : ""}</option>)}
+                </select>
+              </label> : null}
               <label className={styles.field}>
-                <span>Destino</span>
-                <input value={String(item.href ?? "")} onChange={(event) => updateItem(index, "href", event.target.value)} placeholder="#projetos ou https://..." />
+                <span>Destino (página interna, âncora ou URL)</span>
+                <input value={String(item.href ?? "")} onChange={(event) => updateItem(index, "href", event.target.value)} placeholder="/projetos, #contato ou https://..." />
+                <small>Use o seletor acima para associar o menu a uma página existente. A edição vale para o cabeçalho global.</small>
               </label>
             </>
           ) : null}
@@ -546,6 +581,7 @@ function ElementOptions({
   designFrames,
   previewImageUrl,
   domSelectionId,
+  richEditorRequest,
   designerMode = false,
   onConstraintsChange,
   onStyleChange,
@@ -558,6 +594,7 @@ function ElementOptions({
   designFrames?: InstitutionalDesignFrame[];
   previewImageUrl?: string;
   domSelectionId?: string | null;
+  richEditorRequest?: { nodeId: string; revision: number } | null;
   designerMode?: boolean;
   onConstraintsChange?: (constraints: InstitutionalElementConstraints) => void;
   onStyleChange: (style: Partial<InstitutionalElementStyle>) => void;
@@ -739,6 +776,13 @@ function ElementOptions({
           Remover
         </button>
       </div>
+
+      {isRichElement(node) ? <RichElementInspector
+        key={node.id}
+        node={node}
+        onChange={onValueChange}
+        openRequestRevision={richEditorRequest?.nodeId === node.id ? richEditorRequest.revision : undefined}
+      /> : null}
 
       {custom && ["heading", "text", "quote"].includes(node.elementType) ? (
         <label className={styles.field}>
@@ -992,6 +1036,16 @@ function ElementOptions({
         </div>
       ) : textBoxNode ? (
         <div className={styles.textBoxControls}>
+          <FontFamilyPicker value={style.fontFamily ?? "legacy"} label="Fonte deste texto" onChange={(value) => onStyleChange({ fontFamily: value === "legacy" ? undefined : value, fontPreset: undefined })} />
+          {brand ? <label className={styles.field}>
+            <span>Estilo da minha marca</span>
+            <select value={style.fontPreset ?? ""} onChange={(event) => onStyleChange({ fontPreset: (event.target.value || undefined) as InstitutionalElementStyle["fontPreset"], fontFamily: undefined, fontSize: undefined })}>
+              <option value="">Sem vínculo</option>
+              <option value="display">Título principal</option><option value="heading">Título de seção</option>
+              <option value="subheading">Subtítulo</option><option value="body">Corpo do texto</option>
+              <option value="caption">Legenda</option><option value="button">Botão</option>
+            </select>
+          </label> : null}
           <div className={styles.compactGrid}>
             <label className={styles.field}>
               <span>Tamanho do texto</span>
@@ -1382,6 +1436,7 @@ function ElementOptions({
 
 export default function PropertiesPanel({
   section,
+  pages = [],
   variants,
   onCollapse,
   onContentChange,
@@ -1389,6 +1444,7 @@ export default function PropertiesPanel({
   onUploadImage,
   selectedElement,
   selectedElementDomId,
+  richEditorRequest,
   brand,
   onElementStyleChange,
   onElementValueChange,
@@ -1401,6 +1457,7 @@ export default function PropertiesPanel({
   onElementConstraintsChange,
 }: {
   section: InstitutionalSection | null;
+  pages?: InstitutionalPage[];
   variants: InstitutionalVariant[];
   onCollapse: () => void;
   onContentChange: (path: Array<string | number>, value: unknown) => void;
@@ -1408,6 +1465,7 @@ export default function PropertiesPanel({
   onUploadImage: (path: Array<string | number>, file: File) => void;
   selectedElement?: InstitutionalLayoutNode | null;
   selectedElementDomId?: string | null;
+  richEditorRequest?: { nodeId: string; revision: number } | null;
   brand?: InstitutionalBrand;
   onElementStyleChange?: (style: Partial<InstitutionalElementStyle>) => void;
   onElementValueChange?: (value: unknown) => void;
@@ -1508,6 +1566,7 @@ export default function PropertiesPanel({
             designFrames={designFrames}
             previewImageUrl={selectedImagePreviewUrl}
             domSelectionId={selectedElementDomId}
+            richEditorRequest={richEditorRequest}
             designerMode={designerMode}
             onConstraintsChange={onElementConstraintsChange}
             onStyleChange={onElementStyleChange}
@@ -1691,6 +1750,7 @@ export default function PropertiesPanel({
                   onChange={onContentChange}
                   onUploadImage={onUploadImage}
                   allowImageUpload={allowImageUpload}
+                  pages={pages}
                 />
               </div>
             );

@@ -59,6 +59,8 @@ interface SiteRow {
   organizationId: string;
   name: string;
   slug: string;
+  identityMode: SiteIdentityMode;
+  brandOverride: Partial<BrandRow> | null;
   sourceTemplateId: string | null;
   editorConstraints: InstitutionalEditorConstraints;
   isPrimary: boolean;
@@ -103,6 +105,24 @@ interface SectionRow {
   layout: InstitutionalVariant["layout"];
 }
 
+interface InstitutionalDesignSystem {
+  headingFamily: string;
+  bodyFamily: string;
+  textStyles?: Partial<
+    Record<
+      "display" | "heading" | "subheading" | "body" | "caption" | "button",
+      { family: string; size: number; weight: 400 | 500 | 600 | 700 | 800 }
+    >
+  >;
+  logos?: Partial<Record<"compact" | "light" | "dark", string | null>>;
+  headerLogoVariant?: "primary" | "compact" | "light" | "dark";
+  footerLogoVariant?: "primary" | "compact" | "light" | "dark";
+  headingScale: "compact" | "standard" | "expressive";
+  bodyScale: "compact" | "standard" | "relaxed";
+  spacing: "compact" | "standard" | "spacious";
+  corners: "original" | "square" | "subtle" | "rounded";
+}
+
 interface BrandRow {
   organizationId: string;
   publicSlug: string;
@@ -114,10 +134,85 @@ interface BrandRow {
   textColor: string;
   headingFont: "brand" | "interface" | "system";
   bodyFont: "brand" | "interface" | "system";
+  designSystem?: InstitutionalDesignSystem;
+}
+
+type SiteIdentityMode = "template" | "organization" | "custom";
+type NativeSitePalette = Pick<BrandRow, "primaryColor" | "secondaryColor" | "accentColor" | "backgroundColor" | "textColor">;
+const nativeSitePalettes: Record<string, NativeSitePalette> = {
+  "horizonte": {"primaryColor": "#123C73", "secondaryColor": "#E85D3F", "accentColor": "#F7B733", "backgroundColor": "#FFFDF8", "textColor": "#0B1E3A"} ,
+  "territorio-vivo": {"primaryColor": "#123F2A", "secondaryColor": "#2F6B46", "accentColor": "#B7D84B", "backgroundColor": "#F7F8F0", "textColor": "#10271B"} ,
+  "acolher": {"primaryColor": "#8C4A2F", "secondaryColor": "#5B7047", "accentColor": "#E9B57B", "backgroundColor": "#FFF8EF", "textColor": "#2E241E"} ,
+  "essencial": {"primaryColor": "#D71920", "secondaryColor": "#0E4C5A", "accentColor": "#F5B32B", "backgroundColor": "#FCFCFB", "textColor": "#111921"} ,
+  "comunidade": {"primaryColor": "#9A3F25", "secondaryColor": "#264D3A", "accentColor": "#E7A64A", "backgroundColor": "#FFF8EC", "textColor": "#332018"} ,
+  "vozes": {"primaryColor": "#74164D", "secondaryColor": "#B72F68", "accentColor": "#EF6C9C", "backgroundColor": "#FFF4F7", "textColor": "#351026"} ,
+  "pulso": {"primaryColor": "#0A1724", "secondaryColor": "#087BF4", "accentColor": "#F3EE0A", "backgroundColor": "#F8F8F4", "textColor": "#07111B"} ,
+  "profundezas": {"primaryColor": "#043C52", "secondaryColor": "#087B97", "accentColor": "#2ED9E7", "backgroundColor": "#F1FBFC", "textColor": "#062C3D"} ,
+  "sereno": {"primaryColor": "#2F4B37", "secondaryColor": "#9A7A4A", "accentColor": "#D7B574", "backgroundColor": "#FCF8EF", "textColor": "#253229"} ,
+  "conexao": {"primaryColor": "#1A5F43", "secondaryColor": "#365BA8", "accentColor": "#F2B64A", "backgroundColor": "#FBFCF9", "textColor": "#162A22"} 
+};
+/** Mantém tokens semânticos editáveis quando o usuário troca as cores do modelo pelas da ONG. */
+function remapNativePaletteTokens(value: unknown, palette: NativeSitePalette | Record<string, never>): unknown {
+  const roles: Record<string, string> = {
+    [palette.primaryColor?.toLowerCase() ?? "_"]: "primary",
+    [palette.secondaryColor?.toLowerCase() ?? "_"]: "secondary",
+    [palette.accentColor?.toLowerCase() ?? "_"]: "accent",
+    [palette.backgroundColor?.toLowerCase() ?? "_"]: "background",
+    [palette.textColor?.toLowerCase() ?? "_"]: "text",
+  };
+  const traverse = (entry: unknown): unknown => {
+    if (Array.isArray(entry)) return entry.map(traverse);
+    if (!entry || typeof entry !== "object") return entry;
+    const mapped: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(entry)) {
+      if (["color", "backgroundColor", "overlayColor"].includes(key) && typeof child === "string") {
+        mapped[key] = roles[child.toLowerCase()] ?? child;
+      } else mapped[key] = traverse(child);
+    }
+    return mapped;
+  };
+  return traverse(value);
+}
+
+function withSiteBrand(base: BrandRow, override: Partial<BrandRow> | null | undefined): BrandRow {
+  if (!override) return base;
+  return { ...base, ...override, organizationId: base.organizationId, publicSlug: base.publicSlug };
 }
 
 export interface InstitutionalBrand extends BrandRow {
   logoAsset: InstitutionalMediaAsset | null;
+  logoVariantAssets?: Partial<
+    Record<"compact" | "light" | "dark", InstitutionalMediaAsset>
+  > | undefined;
+}
+
+const logoVariantSlots = ["compact", "light", "dark"] as const;
+function brandMediaIds(
+  brand: Pick<BrandRow, "logoAssetId" | "designSystem">,
+): string[] {
+  const ids = [
+    brand.logoAssetId,
+    ...logoVariantSlots.map((slot) => brand.designSystem?.logos?.[slot]),
+  ];
+  return [
+    ...new Set(
+      ids.filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  ];
+}
+function signedBrandVariants(
+  brand: BrandRow,
+  assets: Map<string, InstitutionalMediaAsset>,
+): InstitutionalBrand["logoVariantAssets"] {
+  const result: NonNullable<InstitutionalBrand["logoVariantAssets"]> = {};
+  logoVariantSlots.forEach((slot) => {
+    const id = brand.designSystem?.logos?.[slot];
+    if (id) {
+      const asset = assets.get(id);
+      if (asset) result[slot] = asset;
+    }
+  });
+  return result;
 }
 
 export interface InstitutionalSection extends SectionRow {
@@ -360,6 +455,7 @@ async function getBrandProfile(
         b.text_color as "textColor",
         b.heading_font as "headingFont",
         b.body_font as "bodyFont",
+        b.design_system as "designSystem",
         o.name as "organizationName"
       from public.organization_brand_profiles b
       join public.organizations o on o.id = b.organization_id
@@ -402,7 +498,8 @@ async function getBrandProfile(
         background_color as "backgroundColor",
         text_color as "textColor",
         heading_font as "headingFont",
-        body_font as "bodyFont"
+        body_font as "bodyFont",
+        design_system as "designSystem"
     `,
     [publicSlug, organizationId],
   );
@@ -423,6 +520,8 @@ async function requireSiteForOrganization(
         name,
         slug,
         source_template_id as "sourceTemplateId",
+        identity_mode as "identityMode",
+        brand_override as "brandOverride",
         editor_constraints as "editorConstraints",
         is_primary as "isPrimary",
         published_at as "publishedAt",
@@ -602,7 +701,7 @@ async function buildSiteSnapshot(
 ): Promise<SiteSnapshot> {
   const organization = await requireNgo(client, organizationId);
   const site = await requireSiteForOrganization(client, organizationId, siteId);
-  const brand = await getBrandProfile(client, organizationId);
+  const brand = withSiteBrand(await getBrandProfile(client, organizationId), site.brandOverride);
 
   const pagesResult = await client.query<PageRow>(
     `
@@ -678,8 +777,8 @@ async function hydrateSnapshot(
 ): Promise<InstitutionalSite> {
   const assetIds = collectAssetIds(snapshot.pages);
 
-  if (snapshot.brand.logoAssetId) {
-    assetIds.add(snapshot.brand.logoAssetId);
+  for (const id of brandMediaIds(snapshot.brand)) {
+    assetIds.add(id);
   }
 
   const assets = await getSignedOrganizationAssets(snapshot.organization.id, [
@@ -701,6 +800,7 @@ async function hydrateSnapshot(
       logoAsset: snapshot.brand.logoAssetId
         ? (assets.get(snapshot.brand.logoAssetId) ?? null)
         : null,
+      logoVariantAssets: signedBrandVariants(snapshot.brand, assets),
     },
     pages: snapshot.pages.map((page) => ({
       ...page,
@@ -717,6 +817,17 @@ async function hydrateSnapshot(
       })),
     })),
   };
+}
+
+/** Insere o autor real da requisição no contexto transacional das triggers. */
+async function setAuditActor(
+  client: PoolClient,
+  authUserId: string,
+): Promise<void> {
+  const userId = await getActiveUserId(client, authUserId);
+  await client.query("select set_config('cong.actor_user_id', $1, true)", [
+    userId,
+  ]);
 }
 
 export async function listInstitutionalSites(
@@ -786,10 +897,141 @@ export async function getInstitutionalSite(
   }
 }
 
+/** Converts only explicit internal navigation targets into site pages.
+ * External links and unknown in-page anchors are left untouched.
+ * Execute inside an existing transaction with the site row locked.
+ */
+const defaultNavigationAnchors: Record<string, string> = {
+  "#top": "",
+  "#inicio": "",
+  "#sobre": "sobre",
+  "#projetos": "projetos",
+  "#impacto": "impacto",
+  "#como-ajudar": "como-ajudar",
+  "#contato": "contato",
+  "#acoes": "acoes",
+  "#doar": "doar",
+  "#transparencia": "transparencia",
+};
+
+function navigationPageSlug(href: string): string | null {
+  const destination = href.trim();
+  if (destination in defaultNavigationAnchors)
+    return defaultNavigationAnchors[destination] ?? null;
+  if (destination === "/") return "";
+  if (
+    /^\/[a-z0-9][a-z0-9-]{0,69}$/.test(destination) &&
+    !destination.startsWith("/o/")
+  ) {
+    return destination.slice(1);
+  }
+  return null;
+}
+
+async function syncNavigationPagesInTransaction(
+  client: PoolClient,
+  siteId: string,
+): Promise<void> {
+  const headerResult = await client.query<{
+    id: string;
+    content: Record<string, unknown>;
+  }>(
+    `select s.id, s.content from public.institutional_sections s
+     join public.institutional_pages p on p.id = s.page_id
+     where p.site_id = $1 and s.section_type = 'site_header'
+     order by p.position, s.position limit 1`,
+    [siteId],
+  );
+  const header = headerResult.rows[0];
+  if (!header) return;
+  const content = header.content;
+  const knownPages = await client.query<{ slug: string; isHome: boolean }>(
+    `select slug, is_home as "isHome" from public.institutional_pages where site_id = $1 order by position`,
+    [siteId],
+  );
+  const slugs = new Set(knownPages.rows.map((page) => page.slug));
+  let nextPosition = knownPages.rows.length;
+  const links = Array.isArray(content.links) ? content.links : [];
+  const action = content.primaryAction;
+  const candidates = [
+    ...links.map((item) => ({
+      item,
+      label: typeof item?.label === "string" ? item.label : "",
+    })),
+    {
+      item: action,
+      label:
+        typeof (action as { label?: unknown } | null)?.label === "string"
+          ? (action as { label: string }).label
+          : "",
+    },
+  ];
+  const replacements = new Map<unknown, string>();
+  for (const { item, label } of candidates) {
+    if (!item || typeof item !== "object" || typeof item.href !== "string")
+      continue;
+    const slug = navigationPageSlug(item.href);
+    if (slug === null) continue;
+    if (slug && !slugs.has(slug)) {
+      await client.query(
+        `insert into public.institutional_pages (site_id, title, slug, is_home, position)
+         values ($1, $2, $3, false, $4)`,
+        [
+          siteId,
+          label.trim().slice(0, 100) || slug.replace(/-/g, " "),
+          slug,
+          nextPosition++,
+        ],
+      );
+      slugs.add(slug);
+    }
+    replacements.set(item, slug ? `/${slug}` : "/");
+  }
+  if (!replacements.size) return;
+  const updatedLinks = links.map((item) =>
+    replacements.has(item) ? { ...item, href: replacements.get(item) } : item,
+  );
+  const updatedAction = replacements.has(action)
+    ? { ...(action as Record<string, unknown>), href: replacements.get(action) }
+    : action;
+  await client.query(
+    `update public.institutional_sections set content = $2 where id = $1`,
+    [
+      header.id,
+      { ...content, links: updatedLinks, primaryAction: updatedAction },
+    ],
+  );
+}
+
+export async function synchronizeInstitutionalNavigation(
+  organizationId: string,
+  siteId: string,
+  authUserId: string,
+): Promise<InstitutionalSite> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    await client.query(
+      "select id from public.institutional_sites where id = $1 for update",
+      [siteId],
+    );
+    await syncNavigationPagesInTransaction(client, siteId);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return getInstitutionalSite(organizationId, siteId);
+}
+
 export async function createInstitutionalSite(
   authUserId: string,
   organizationId: string,
-  input: { name: string; templateId?: string | null },
+  input: { name: string; templateId?: string | null; identityMode?: SiteIdentityMode },
 ): Promise<InstitutionalSite> {
   const template = input.templateId
     ? await getInstitutionalTemplateDefinition(input.templateId)
@@ -800,6 +1042,7 @@ export async function createInstitutionalSite(
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const organization = await requireNgo(client, organizationId);
     const userId = await getActiveUserId(client, authUserId);
@@ -841,7 +1084,29 @@ export async function createInstitutionalSite(
       );
     }
 
-    await ensureBrandProfile(client, organizationId);
+    // Copia a identidade no momento da criação, sem alterar o Brand Kit da ONG.
+    // A cor original de um modelo nativo é escolhida no servidor (não confiamos no cliente).
+    const organizationBrand = await getBrandProfile(client, organizationId);
+    const mode: SiteIdentityMode = input.identityMode ?? (template ? "template" : "organization");
+    let initialBrand: BrandRow = organizationBrand;
+    let templatePalette: NativeSitePalette | null = null;
+    if (input.templateId) {
+      const templateResult = await client.query<{ familyKey: string | null }>(
+        "select family_key as \"familyKey\" from public.institutional_templates where id = $1",
+        [input.templateId],
+      );
+      const familyKey = templateResult.rows[0]?.familyKey ?? "";
+      const palette = nativeSitePalettes[familyKey];
+      if (palette && mode === "template") initialBrand = { ...organizationBrand, ...palette };
+      templatePalette = palette ?? null;
+    }
+    const { organizationId: _owner, publicSlug: _slug, ...brandCopy } = initialBrand;
+    void _owner;
+    void _slug;
+    await client.query(
+      "update public.institutional_sites set identity_mode = $2, brand_override = $3::jsonb where id = $1",
+      [siteId, mode, JSON.stringify(brandCopy)],
+    );
 
     const pages = template?.pages ?? [
       {
@@ -905,7 +1170,7 @@ export async function createInstitutionalSite(
           sectionType,
           sourceContent,
         );
-        const settings = parseInstitutionalSectionSettings({
+        const settings = parseInstitutionalSectionSettings(remapNativePaletteTokens({
           ...(sectionDefinition.settings ?? {}),
           ...(template?.example
             ? {
@@ -916,7 +1181,7 @@ export async function createInstitutionalSite(
                 },
               }
             : {}),
-        });
+        }, mode !== "template" && templatePalette ? templatePalette : {}));
         await assertContentAssets(client, organizationId, content);
         await assertContentAssets(client, organizationId, settings);
 
@@ -944,6 +1209,7 @@ export async function createInstitutionalSite(
       }
     }
 
+    await syncNavigationPagesInTransaction(client, siteId);
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");
@@ -959,34 +1225,43 @@ export async function renameInstitutionalSite(
   organizationId: string,
   siteId: string,
   name: string,
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
-
   try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
     await client.query(
       `update public.institutional_sites set name = $1 where id = $2`,
       [name.trim(), siteId],
     );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
   } finally {
     client.release();
   }
-
   return getInstitutionalSite(organizationId, siteId);
 }
 
 export async function updateInstitutionalBrand(
   organizationId: string,
   input: Omit<BrandRow, "organizationId" | "publicSlug">,
+  authUserId: string,
 ): Promise<InstitutionalBrand> {
   const client = await pool.connect();
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
     await requireNgo(client, organizationId);
 
-    if (input.logoAssetId) {
-      await assertOrganizationAsset(client, organizationId, input.logoAssetId);
+    // Verifica a posse de TODAS as versões, não apenas da logo principal.
+    // Evita referenciar mídias privadas de outra organização.
+    for (const assetId of brandMediaIds(input)) {
+      await assertOrganizationAsset(client, organizationId, assetId);
     }
 
     const result = await client.query<BrandRow>(
@@ -1000,9 +1275,10 @@ export async function updateInstitutionalBrand(
           background_color,
           text_color,
           heading_font,
-          body_font
+          body_font,
+          design_system
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, coalesce($10::jsonb, '{}'::jsonb))
         on conflict (organization_id) do update
         set
           logo_asset_id = excluded.logo_asset_id,
@@ -1012,7 +1288,8 @@ export async function updateInstitutionalBrand(
           background_color = excluded.background_color,
           text_color = excluded.text_color,
           heading_font = excluded.heading_font,
-          body_font = excluded.body_font
+          body_font = excluded.body_font,
+          design_system = coalesce($10::jsonb, organization_brand_profiles.design_system)
         returning
           organization_id as "organizationId",
           public_slug as "publicSlug",
@@ -1023,7 +1300,8 @@ export async function updateInstitutionalBrand(
           background_color as "backgroundColor",
           text_color as "textColor",
           heading_font as "headingFont",
-          body_font as "bodyFont"
+          body_font as "bodyFont",
+        design_system as "designSystem"
       `,
       [
         organizationId,
@@ -1035,6 +1313,7 @@ export async function updateInstitutionalBrand(
         input.textColor,
         input.headingFont,
         input.bodyFont,
+        input.designSystem ? JSON.stringify(input.designSystem) : null,
       ],
     );
 
@@ -1050,8 +1329,9 @@ export async function updateInstitutionalBrand(
       );
     }
 
-    const assets = brand.logoAssetId
-      ? await getSignedOrganizationAssets(organizationId, [brand.logoAssetId])
+    const mediaIds = brandMediaIds(brand);
+    const assets = mediaIds.length
+      ? await getSignedOrganizationAssets(organizationId, mediaIds)
       : new Map<string, InstitutionalMediaAsset>();
 
     return {
@@ -1059,6 +1339,7 @@ export async function updateInstitutionalBrand(
       logoAsset: brand.logoAssetId
         ? (assets.get(brand.logoAssetId) ?? null)
         : null,
+      logoVariantAssets: signedBrandVariants(brand, assets),
     };
   } catch (error) {
     await client.query("rollback");
@@ -1066,6 +1347,35 @@ export async function updateInstitutionalBrand(
   } finally {
     client.release();
   }
+}
+
+/** Atualiza somente o site autorizado; nunca modifica organization_brand_profiles. */
+export async function updateInstitutionalSiteBrand(
+  organizationId: string,
+  siteId: string,
+  input: Omit<BrandRow, "organizationId" | "publicSlug">,
+  authUserId: string,
+): Promise<InstitutionalBrand> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    for (const assetId of brandMediaIds(input)) {
+      await assertOrganizationAsset(client, organizationId, assetId);
+    }
+    await client.query(
+      `update public.institutional_sites
+         set brand_override = $3::jsonb, identity_mode = 'custom'
+       where id = $1 and organization_id = $2`,
+      [siteId, organizationId, JSON.stringify(input)],
+    );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally { client.release(); }
+  return (await getInstitutionalSite(organizationId, siteId)).brand;
 }
 
 export async function addInstitutionalSection(
@@ -1077,6 +1387,7 @@ export async function addInstitutionalSection(
     content: unknown;
     settings?: unknown;
   },
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
 
@@ -1084,6 +1395,7 @@ export async function addInstitutionalSection(
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
     const page = await requirePage(client, organizationId, pageId);
     siteId = page.siteId;
 
@@ -1199,6 +1511,9 @@ export async function addInstitutionalSection(
       ],
     );
 
+    if (input.sectionType === "site_header") {
+      await syncNavigationPagesInTransaction(client, siteId);
+    }
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");
@@ -1219,12 +1534,14 @@ export async function updateInstitutionalSection(
     content?: unknown;
     settings?: Record<string, unknown>;
   },
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
   let siteId: string;
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const section = await requireSection(client, organizationId, sectionId);
     siteId = section.siteId;
@@ -1286,12 +1603,14 @@ export async function updateInstitutionalSection(
 export async function duplicateInstitutionalSection(
   organizationId: string,
   sectionId: string,
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
   let siteId: string;
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const section = await requireSection(client, organizationId, sectionId);
     siteId = section.siteId;
@@ -1355,12 +1674,14 @@ export async function duplicateInstitutionalSection(
 export async function deleteInstitutionalSection(
   organizationId: string,
   sectionId: string,
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
   let siteId: string;
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const section = await requireSection(client, organizationId, sectionId);
     siteId = section.siteId;
@@ -1419,12 +1740,14 @@ export async function reorderInstitutionalSections(
   organizationId: string,
   pageId: string,
   sectionIds: string[],
+  authUserId: string,
 ): Promise<InstitutionalSite> {
   const client = await pool.connect();
   let siteId: string;
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
     const page = await requirePage(client, organizationId, pageId);
     siteId = page.siteId;
 
@@ -1504,6 +1827,7 @@ export async function publishInstitutionalSite(
 
   try {
     await client.query("begin");
+    await setAuditActor(client, authUserId);
 
     const userId = await getActiveUserId(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
@@ -1571,19 +1895,22 @@ export async function publishInstitutionalSite(
 export async function unpublishInstitutionalSite(
   organizationId: string,
   siteId: string,
+  authUserId: string,
 ): Promise<void> {
   const client = await pool.connect();
-
   try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
     await client.query(
-      `
-        update public.institutional_sites
-        set published_at = null, is_primary = false
-        where id = $1
-      `,
+      `update public.institutional_sites
+      set published_at = null, is_primary = false where id = $1`,
       [siteId],
     );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
   } finally {
     client.release();
   }
@@ -1592,18 +1919,239 @@ export async function unpublishInstitutionalSite(
 export async function deleteInstitutionalSite(
   organizationId: string,
   siteId: string,
+  authUserId: string,
 ): Promise<void> {
   const client = await pool.connect();
-
   try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
     await client.query(
       `delete from public.institutional_sites where id = $1 and organization_id = $2`,
       [siteId, organizationId],
     );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
   } finally {
     client.release();
   }
+}
+
+// Todos os acessos verificam site + organização; mudanças em uma página
+// não modificam snapshots publicados até a próxima publicação explícita.
+export async function createInstitutionalPage(
+  organizationId: string,
+  siteId: string,
+  input: { title: string; slug: string },
+  authUserId: string,
+): Promise<InstitutionalSite> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    // Bloqueio serializa operações de páginas na mesma organização/site.
+    await client.query(
+      "select id from public.institutional_sites where id = $1 for update",
+      [siteId],
+    );
+    const existing = await client.query(
+      "select 1 from public.institutional_pages where site_id = $1 and slug = $2",
+      [siteId, input.slug],
+    );
+    if (existing.rowCount)
+      throw new AppError(
+        "Já existe uma página com esse endereço.",
+        409,
+        "INSTITUTIONAL_PAGE_SLUG_IN_USE",
+      );
+    const positions = await client.query<{ nextPosition: number }>(
+      'select coalesce(max(position), -1) + 1 as "nextPosition" from public.institutional_pages where site_id = $1',
+      [siteId],
+    );
+    await client.query(
+      `insert into public.institutional_pages (site_id, title, slug, is_home, position)
+       values ($1, $2, $3, false, $4)`,
+      [siteId, input.title, input.slug, positions.rows[0]?.nextPosition ?? 0],
+    );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return getInstitutionalSite(organizationId, siteId);
+}
+
+export async function updateInstitutionalPage(
+  organizationId: string,
+  siteId: string,
+  pageId: string,
+  input: { title?: string; slug?: string; isHome?: boolean },
+  authUserId: string,
+): Promise<InstitutionalSite> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    await client.query(
+      "select id from public.institutional_sites where id = $1 for update",
+      [siteId],
+    );
+    const page = await requirePage(client, organizationId, pageId);
+    if (page.siteId !== siteId)
+      throw new AppError(
+        "Página não pertence a este site.",
+        404,
+        "INSTITUTIONAL_PAGE_NOT_FOUND",
+      );
+    if (input.slug) {
+      const duplicate = await client.query(
+        "select 1 from public.institutional_pages where site_id = $1 and slug = $2 and id <> $3",
+        [siteId, input.slug, pageId],
+      );
+      if (duplicate.rowCount)
+        throw new AppError(
+          "Já existe uma página com esse endereço.",
+          409,
+          "INSTITUTIONAL_PAGE_SLUG_IN_USE",
+        );
+    }
+    const current = await client.query<{ isHome: boolean; slug: string }>(
+      'select slug, is_home as "isHome" from public.institutional_pages where id = $1',
+      [pageId],
+    );
+    if (input.isHome === false && current.rows[0]?.isHome) {
+      throw new AppError(
+        "Defina outra página inicial antes de alterar esta.",
+        400,
+        "INSTITUTIONAL_PAGE_HOME_REQUIRED",
+      );
+    }
+    if (input.isHome === true) {
+      await client.query(
+        "update public.institutional_pages set is_home = false where site_id = $1 and is_home = true",
+        [siteId],
+      );
+    }
+    await client.query(
+      `update public.institutional_pages
+       set title = coalesce($3, title), slug = coalesce($4, slug),
+           is_home = case when $5::boolean = true then true else is_home end
+       where id = $1 and site_id = $2`,
+      [
+        pageId,
+        siteId,
+        input.title ?? null,
+        input.slug ?? null,
+        input.isHome ?? null,
+      ],
+    );
+    // Mantém a navegação de cabeçalho sincronizada após renomear a URL de uma página.
+    const previousSlug = current.rows[0]?.slug;
+    if (input.slug && previousSlug && input.slug !== previousSlug) {
+      const oldHref = current.rows[0]?.isHome ? "/" : `/${previousSlug}`;
+      const newHref = current.rows[0]?.isHome ? "/" : `/${input.slug}`;
+      const headers = await client.query<{ id: string; content: Record<string, unknown> }>(
+        `select sec.id, sec.content from public.institutional_sections sec
+         join public.institutional_pages p on p.id = sec.page_id
+         where p.site_id = $1 and sec.section_type = 'site_header'`,
+        [siteId],
+      );
+      for (const header of headers.rows) {
+        const links = Array.isArray(header.content.links) ? header.content.links : [];
+        const updatedLinks = links.map((item: unknown) => {
+          if (!item || typeof item !== "object") return item;
+          const link = item as Record<string, unknown>;
+          return link.href === oldHref ? { ...link, href: newHref } : link;
+        });
+        const primaryAction = header.content.primaryAction;
+        const updatedAction = primaryAction && typeof primaryAction === "object" &&
+          (primaryAction as Record<string, unknown>).href === oldHref
+            ? { ...(primaryAction as Record<string, unknown>), href: newHref }
+            : primaryAction;
+        await client.query(
+          "update public.institutional_sections set content = $2 where id = $1",
+          [header.id, { ...header.content, links: updatedLinks, primaryAction: updatedAction }],
+        );
+      }
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return getInstitutionalSite(organizationId, siteId);
+}
+
+export async function deleteInstitutionalPage(
+  organizationId: string,
+  siteId: string,
+  pageId: string,
+  authUserId: string,
+): Promise<InstitutionalSite> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await setAuditActor(client, authUserId);
+    await requireSiteForOrganization(client, organizationId, siteId);
+    await client.query(
+      "select id from public.institutional_sites where id = $1 for update",
+      [siteId],
+    );
+    const page = await requirePage(client, organizationId, pageId);
+    if (page.siteId !== siteId)
+      throw new AppError(
+        "Página não pertence a este site.",
+        404,
+        "INSTITUTIONAL_PAGE_NOT_FOUND",
+      );
+    const state = await client.query<{ isHome: boolean }>(
+      'select is_home as "isHome" from public.institutional_pages where id = $1',
+      [pageId],
+    );
+    if (state.rows[0]?.isHome)
+      throw new AppError(
+        "A página inicial não pode ser excluída.",
+        409,
+        "INSTITUTIONAL_PAGE_HOME_DELETE",
+      );
+    // A exclusão usa ON DELETE CASCADE nas seções, mas não altera publicações anteriores.
+    await client.query(
+      "delete from public.institutional_pages where id = $1 and site_id = $2",
+      [pageId, siteId],
+    );
+    // Reindexação em duas etapas evita violar unique(site_id, position).
+    const remaining = await client.query<{ id: string }>(
+      "select id from public.institutional_pages where site_id = $1 order by position, id",
+      [siteId],
+    );
+    for (const [index, row] of remaining.rows.entries()) {
+      await client.query(
+        "update public.institutional_pages set position = $2 where id = $1",
+        [row.id, index + 100000],
+      );
+    }
+    for (const [index, row] of remaining.rows.entries()) {
+      await client.query(
+        "update public.institutional_pages set position = $2 where id = $1",
+        [row.id, index],
+      );
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return getInstitutionalSite(organizationId, siteId);
 }
 
 export async function getPublishedInstitutionalSite(

@@ -62,13 +62,7 @@ const rootSlots: Record<InstitutionalSectionType, Set<string>> = {
     "hours",
   ]),
   custom_content: new Set(),
-  site_footer: new Set([
-    "title",
-    "description",
-    "email",
-    "phone",
-    "copyright",
-  ]),
+  site_footer: new Set(["title", "description", "email", "phone", "copyright"]),
 };
 
 const repeatSources: Record<
@@ -374,7 +368,13 @@ export async function createInstitutionalVariant(
         values ($1, $2, $3, $4, $5, 'private', 'draft')
         returning id, updated_at as "updatedAt"
       `,
-      [input.sectionType, input.name, input.description, isSystem ? null : userId, isSystem],
+      [
+        input.sectionType,
+        input.name,
+        input.description,
+        isSystem ? null : userId,
+        isSystem,
+      ],
     );
 
     const variant = variantResult.rows[0];
@@ -497,7 +497,10 @@ export async function updateInstitutionalVariant(
       );
     }
 
-    const layout = validateInstitutionalLayout(variant.sectionType, input.layout);
+    const layout = validateInstitutionalLayout(
+      variant.sectionType,
+      input.layout,
+    );
 
     const versionResult = await client.query<{
       id: string;
@@ -657,4 +660,3 @@ export async function publishInstitutionalVariant(
     client.release();
   }
 }
-

@@ -13,7 +13,8 @@ import ModalMensagem from "../../modalMensagem/ModalMensagem";
 
 import styles from "./SiteCreationModal.module.css";
 
-export type GuidedSitePriority = "present" | "donations" | "volunteers" | "transparency";
+export type GuidedSitePriority =
+  "present" | "donations" | "volunteers" | "transparency";
 export type GuidedSiteStyle = "human" | "impact" | "institutional";
 
 export interface GuidedSiteAnswers {
@@ -28,6 +29,7 @@ export interface SiteCreationRequest {
   name: string;
   template: InstitutionalTemplate | null;
   guided: GuidedSiteAnswers | null;
+  identityMode: "template" | "organization" | "custom";
 }
 
 type Step = "choose" | "guided" | "name";
@@ -39,10 +41,26 @@ const priorities: Array<{ id: GuidedSitePriority; label: string }> = [
   { id: "transparency", label: "Dar visibilidade aos resultados" },
 ];
 
-const stylesList: Array<{ id: GuidedSiteStyle; label: string; description: string }> = [
-  { id: "human", label: "Humano", description: "Fotos, histórias e proximidade." },
-  { id: "impact", label: "Impacto", description: "Resultados, números e ações." },
-  { id: "institutional", label: "Institucional", description: "Clareza, confiança e transparência." },
+const stylesList: Array<{
+  id: GuidedSiteStyle;
+  label: string;
+  description: string;
+}> = [
+  {
+    id: "human",
+    label: "Humano",
+    description: "Fotos, histórias e proximidade.",
+  },
+  {
+    id: "impact",
+    label: "Impacto",
+    description: "Resultados, números e ações.",
+  },
+  {
+    id: "institutional",
+    label: "Institucional",
+    description: "Clareza, confiança e transparência.",
+  },
 ];
 
 export default function SiteCreationModal({
@@ -65,21 +83,27 @@ export default function SiteCreationModal({
   onCreate: (request: SiteCreationRequest) => void;
 }) {
   const [step, setStep] = useState<Step>(initialTemplate ? "name" : "choose");
-  const [template, setTemplate] = useState<InstitutionalTemplate | null>(initialTemplate);
+  const [template, setTemplate] = useState<InstitutionalTemplate | null>(
+    initialTemplate,
+  );
   const [guided, setGuided] = useState<GuidedSiteAnswers | null>(null);
-  const [name, setName] = useState(organizationName ? `Site de ${organizationName}` : "Novo site");
+  const [name, setName] = useState(
+    organizationName ? `Site de ${organizationName}` : "Novo site",
+  );
   const [mission, setMission] = useState("");
   const [audience, setAudience] = useState("");
   const [location, setLocation] = useState("");
   const [priority, setPriority] = useState<GuidedSitePriority>("present");
   const [visualStyle, setVisualStyle] = useState<GuidedSiteStyle>("human");
+  const [identityMode, setIdentityMode] = useState<"template" | "organization" | "custom">(initialTemplate ? "template" : "organization");
 
   const recommendedTemplate = useMemo(() => {
-    const preferredNames = visualStyle === "human"
-      ? ["Acolher", "Sereno", "Comunidade"]
-      : visualStyle === "impact"
-        ? ["Horizonte Editorial", "Pulso", "Território Vivo"]
-        : ["Essencial", "Conexão", "Horizonte Editorial"];
+    const preferredNames =
+      visualStyle === "human"
+        ? ["Acolher", "Sereno", "Comunidade"]
+        : visualStyle === "impact"
+          ? ["Horizonte Editorial", "Pulso", "Território Vivo"]
+          : ["Essencial", "Conexão", "Horizonte Editorial"];
 
     for (const preferredName of preferredNames) {
       const match = templates.find((item) => item.name === preferredName);
@@ -100,16 +124,18 @@ export default function SiteCreationModal({
     };
     setGuided(answers);
     setTemplate(recommendedTemplate);
+    setIdentityMode("template");
     setStep("name");
   }
 
-  const title = step === "choose"
-    ? "Como você quer começar?"
-    : step === "guided"
-      ? "Conte sobre a organização"
-      : template
-        ? "Antes de abrir o palco"
-        : "Criar site livre";
+  const title =
+    step === "choose"
+      ? "Como você quer começar?"
+      : step === "guided"
+        ? "Conte sobre a organização"
+        : template
+          ? "Antes de abrir o palco"
+          : "Criar site livre";
 
   return (
     <ModalMensagem
@@ -123,23 +149,58 @@ export default function SiteCreationModal({
         <div className={styles.modal}>
           {step === "choose" ? (
             <>
-              <p className={styles.intro}>A CONG pode montar uma boa primeira versão para você. Se preferir, pule essa ajuda e desenhe no palco.</p>
+              <p className={styles.intro}>
+                A CONG pode montar uma boa primeira versão para você. Se
+                preferir, pule essa ajuda e desenhe no palco.
+              </p>
               <div className={styles.startGrid}>
-                <button type="button" className={styles.startCard} data-featured="true" onClick={() => setStep("guided")}> 
-                  <span className={styles.startIcon}><FiStar /></span>
+                <button
+                  type="button"
+                  className={styles.startCard}
+                  data-featured="true"
+                  onClick={() => setStep("guided")}
+                >
+                  <span className={styles.startIcon}>
+                    <FiStar />
+                  </span>
                   <strong>Me guie</strong>
-                  <small>Responda sobre a ONG. A CONG organiza estrutura, hierarquia e design inicial.</small>
+                  <small>
+                    Responda sobre a ONG. A CONG organiza estrutura, hierarquia
+                    e design inicial.
+                  </small>
                   <em>Recomendado</em>
                 </button>
-                <button type="button" className={styles.startCard} onClick={onBrowseTemplates}>
-                  <span className={styles.startIcon}><FiLayout /></span>
+                <button
+                  type="button"
+                  className={styles.startCard}
+                  onClick={onBrowseTemplates}
+                >
+                  <span className={styles.startIcon}>
+                    <FiLayout />
+                  </span>
                   <strong>Escolher modelo</strong>
-                  <small>Compare modelos reais e comece de uma composição pronta.</small>
+                  <small>
+                    Compare modelos reais e comece de uma composição pronta.
+                  </small>
                 </button>
-                <button type="button" className={styles.startCard} onClick={() => { setTemplate(null); setGuided(null); setStep("name"); }}>
-                  <span className={styles.startIcon}><FiEdit3 /></span>
+                <button
+                  type="button"
+                  className={styles.startCard}
+                  onClick={() => {
+                    setTemplate(null);
+                    setIdentityMode("organization");
+                    setGuided(null);
+                    setStep("name");
+                  }}
+                >
+                  <span className={styles.startIcon}>
+                    <FiEdit3 />
+                  </span>
                   <strong>Criar livremente</strong>
-                  <small>Abra o palco em branco. A CONG cuida da responsividade e dos padrões técnicos.</small>
+                  <small>
+                    Abra o palco em branco. A CONG cuida da responsividade e dos
+                    padrões técnicos.
+                  </small>
                 </button>
               </div>
             </>
@@ -147,27 +208,55 @@ export default function SiteCreationModal({
 
           {step === "guided" ? (
             <>
-              <div className={styles.guideNote}><FiMessageCircle /><span>Não precisa pensar em layout. Responda como explicaria a organização para uma pessoa.</span></div>
+              <div className={styles.guideNote}>
+                <FiMessageCircle />
+                <span>
+                  Não precisa pensar em layout. Responda como explicaria a
+                  organização para uma pessoa.
+                </span>
+              </div>
               <label className={styles.field}>
                 <span>O que a organização faz?</span>
-                <textarea value={mission} onChange={(event) => setMission(event.target.value)} placeholder="Ex.: oferecemos aulas gratuitas e apoio para jovens da comunidade..." autoFocus />
-                <small>{mission.length} caracteres · use suas próprias palavras</small>
+                <textarea
+                  value={mission}
+                  onChange={(event) => setMission(event.target.value)}
+                  placeholder="Ex.: oferecemos aulas gratuitas e apoio para jovens da comunidade..."
+                  autoFocus
+                />
+                <small>
+                  {mission.length} caracteres · use suas próprias palavras
+                </small>
               </label>
               <div className={styles.twoColumns}>
                 <label className={styles.field}>
                   <span>Quem vocês atendem?</span>
-                  <input value={audience} onChange={(event) => setAudience(event.target.value)} placeholder="Ex.: crianças, famílias, moradores..." />
+                  <input
+                    value={audience}
+                    onChange={(event) => setAudience(event.target.value)}
+                    placeholder="Ex.: crianças, famílias, moradores..."
+                  />
                 </label>
                 <label className={styles.field}>
                   <span>Onde vocês atuam?</span>
-                  <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Cidade, região ou território" />
+                  <input
+                    value={location}
+                    onChange={(event) => setLocation(event.target.value)}
+                    placeholder="Cidade, região ou território"
+                  />
                 </label>
               </div>
               <fieldset className={styles.choiceGroup}>
                 <legend>O que deve ficar mais evidente?</legend>
                 <div className={styles.chips}>
                   {priorities.map((item) => (
-                    <button key={item.id} type="button" data-active={priority === item.id} onClick={() => setPriority(item.id)}>{item.label}</button>
+                    <button
+                      key={item.id}
+                      type="button"
+                      data-active={priority === item.id}
+                      onClick={() => setPriority(item.id)}
+                    >
+                      {item.label}
+                    </button>
                   ))}
                 </div>
               </fieldset>
@@ -175,15 +264,34 @@ export default function SiteCreationModal({
                 <legend>Qual direção combina melhor com vocês?</legend>
                 <div className={styles.styleChoices}>
                   {stylesList.map((item) => (
-                    <button key={item.id} type="button" data-active={visualStyle === item.id} onClick={() => setVisualStyle(item.id)}>
-                      <strong>{item.label}</strong><small>{item.description}</small>
+                    <button
+                      key={item.id}
+                      type="button"
+                      data-active={visualStyle === item.id}
+                      onClick={() => setVisualStyle(item.id)}
+                    >
+                      <strong>{item.label}</strong>
+                      <small>{item.description}</small>
                     </button>
                   ))}
                 </div>
               </fieldset>
               <div className={styles.actions}>
-                <button type="button" className={styles.secondary} onClick={() => setStep("choose")}><FiArrowLeft /> Voltar</button>
-                <button type="button" className={styles.primary} onClick={finishGuided} disabled={!mission.trim()}>Montar primeira versão <FiArrowRight /></button>
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  onClick={() => setStep("choose")}
+                >
+                  <FiArrowLeft /> Voltar
+                </button>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  onClick={finishGuided}
+                  disabled={!mission.trim()}
+                >
+                  Montar primeira versão <FiArrowRight />
+                </button>
               </div>
             </>
           ) : null}
@@ -191,20 +299,64 @@ export default function SiteCreationModal({
           {step === "name" ? (
             <>
               <div className={styles.summary}>
-                <span className={styles.startIcon}>{guided ? <FiStar /> : template ? <FiLayout /> : <FiEdit3 />}</span>
+                <span className={styles.startIcon}>
+                  {guided ? <FiStar /> : template ? <FiLayout /> : <FiEdit3 />}
+                </span>
                 <div>
-                  <strong>{guided ? "Primeira versão guiada" : template?.name ?? "Palco livre"}</strong>
-                  <small>{guided ? "Você poderá alterar tudo depois no canvas." : template?.description ?? "Sem modelo obrigatório. A CONG mantém os comportamentos técnicos seguros."}</small>
+                  <strong>
+                    {guided
+                      ? "Primeira versão guiada"
+                      : (template?.name ?? "Palco livre")}
+                  </strong>
+                  <small>
+                    {guided
+                      ? "Você poderá alterar tudo depois no canvas."
+                      : (template?.description ??
+                        "Sem modelo obrigatório. A CONG mantém os comportamentos técnicos seguros.")}
+                  </small>
                 </div>
               </div>
               <label className={styles.field}>
                 <span>Como quer chamar este site dentro da CONG?</span>
-                <input value={name} onChange={(event) => setName(event.target.value)} maxLength={100} autoFocus />
-                <small>Isso serve para organizar seus projetos. O nome público continua sendo o da organização.</small>
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  maxLength={100}
+                  autoFocus
+                />
+                <small>
+                  Isso serve para organizar seus projetos. O nome público
+                  continua sendo o da organização.
+                </small>
               </label>
+              <fieldset className={styles.identityChoices}>
+                <legend>Qual identidade visual utilizar neste site?</legend>
+                {template ? <label><input type="radio" name="identity" checked={identityMode === "template"} onChange={() => setIdentityMode("template")} /> Manter cores e estilo do modelo</label> : null}
+                <label><input type="radio" name="identity" checked={identityMode === "organization"} onChange={() => setIdentityMode("organization")} /> Aplicar a identidade principal da ONG</label>
+                <label><input type="radio" name="identity" checked={identityMode === "custom"} onChange={() => setIdentityMode("custom")} /> Criar uma identidade exclusiva para este site</label>
+                <small>Depois você poderá alterar logos, paleta e fontes, sem mudar os outros sites.</small>
+              </fieldset>
               <div className={styles.actions}>
-                <button type="button" className={styles.secondary} disabled={busy} onClick={() => initialTemplate ? onClose() : setStep(guided ? "guided" : "choose")}><FiArrowLeft /> Voltar</button>
-                <button type="button" className={styles.primary} disabled={busy || name.trim().length < 2} onClick={() => onCreate({ name: name.trim(), template, guided })}>
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  disabled={busy}
+                  onClick={() =>
+                    initialTemplate
+                      ? onClose()
+                      : setStep(guided ? "guided" : "choose")
+                  }
+                >
+                  <FiArrowLeft /> Voltar
+                </button>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  disabled={busy || name.trim().length < 2}
+                  onClick={() =>
+                    onCreate({ name: name.trim(), template, guided, identityMode })
+                  }
+                >
                   {busy ? "Preparando..." : "Abrir no palco"} <FiArrowRight />
                 </button>
               </div>

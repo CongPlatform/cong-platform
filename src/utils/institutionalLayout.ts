@@ -219,9 +219,16 @@ export function createElementNode(
       type: "element",
       id,
       elementType: type,
-      value: "Novo título",
+      value: initialValue === "display" ? "Uma causa que transforma futuros." : initialValue === "statement" ? "Pessoas no centro de tudo." : "Novo título",
       presentation: "heading",
-      style: { size: "2xl", width: "100", color: "text", align: "left" },
+      style: {
+        size: initialValue === "display" ? "3xl" : "2xl",
+        width: "100",
+        color: initialValue === "display" ? "primary.strong" : "text",
+        align: "left",
+        fontSize: initialValue === "display" ? 56 : initialValue === "statement" ? 42 : 34,
+        fontPreset: initialValue === "display" ? "display" : "heading",
+      },
     };
   }
 
@@ -230,9 +237,20 @@ export function createElementNode(
       type: "element",
       id,
       elementType: type,
-      value: "Escreva seu texto aqui.",
+      value: initialValue === "lead"
+        ? "Uma ideia clara, acolhedora e fácil de compreender."
+        : initialValue === "caption"
+          ? "Informação complementar, fonte ou legenda."
+          : "Escreva seu texto aqui.",
       presentation: "body",
-      style: { size: "md", width: "100", color: "text", align: "left" },
+      style: {
+        size: initialValue === "lead" ? "xl" : initialValue === "caption" ? "sm" : "md",
+        width: "100",
+        color: initialValue === "caption" ? "text.soft" : "text",
+        align: "left",
+        fontPreset: initialValue === "caption" ? "caption" : "body",
+        fontSize: initialValue === "lead" ? 22 : initialValue === "caption" ? 14 : 17,
+      },
     };
   }
 
@@ -323,10 +341,106 @@ export function createElementNode(
       type: "element",
       id,
       elementType: type,
-      value: "Uma frase de destaque ou depoimento.",
-      style: { size: "lg", color: "text", width: "100", align: "left" },
+      value: initialValue === "manifesto" ? "“Transformar é construir novos caminhos em conjunto.”" : "Uma frase de destaque ou depoimento.",
+      style: {
+        size: "lg",
+        fontSize: initialValue === "manifesto" ? 34 : 23,
+        color: initialValue === "manifesto" ? "primary.strong" : "text",
+        width: "100",
+        align: "left",
+      },
     };
   }
+
+  if (type === "faq") {
+    return {
+      type: "element", id, elementType: type,
+      value: { items: [
+        { id: nodeId(), question: "Como posso participar?", answer: "Entre em contato com a organização para conhecer as oportunidades." },
+        { id: nodeId(), question: "Como funciona o atendimento?", answer: "A equipe orienta cada pessoa de acordo com as atividades disponíveis." },
+      ] },
+      style: { width: "100", color: "text" },
+    };
+  }
+  if (type === "progress") {
+    return {
+      type: "element", id, elementType: type,
+      value: { label: "Meta da campanha", percent: 65, detail: "Exemplo ilustrativo: atualize com dados confirmados." },
+      style: { width: "100", color: "primary" },
+    };
+  }
+
+  if (type === "campaign_card") return {
+    type: "element", id, elementType: type,
+    value: {
+      kind: "campaign_card", tag: "CAMPANHA · EXEMPLO", title: "Uma comunidade mais forte começa aqui",
+      description: "Apresente uma campanha real, sua meta e como a comunidade pode participar.",
+      image: null, illustration: "comunidade", raised: 3750, goal: 10000, unit: "R$",
+      action: { label: "Conhecer a campanha", href: "#" },
+    }, style: { width: "100", color: "text" },
+  };
+  if (type === "media_gallery") return {
+    type: "element", id, elementType: type,
+    value: { kind: "media_gallery", title: "Nossa história em imagens", items: [
+      { id: nodeId(), image: null, illustration: "comunidade", caption: "Ação comunitária", focalX: 50, focalY: 50 },
+      { id: nodeId(), image: null, illustration: "essencial", caption: "Pessoas e encontros", focalX: 50, focalY: 50 },
+      { id: nodeId(), image: null, illustration: "sereno", caption: "Resultados compartilhados", focalX: 50, focalY: 50 },
+    ] }, style: { width: "100", color: "text" },
+  };
+  if (type === "video_embed") return {
+    type: "element", id, elementType: type,
+    value: { kind: "video_embed", title: "Conheça nosso trabalho", caption: "Adicione um link de vídeo do YouTube ou Vimeo.", url: "" },
+    style: { width: "100", color: "text" },
+  };
+  if (type === "community_timeline") return {
+    type: "element", id, elementType: type,
+    value: { kind: "community_timeline", title: "Uma história construída juntos", eyebrow: "NOSSA TRAJETÓRIA", items: [
+      { id: nodeId(), year: "2018", title: "Uma ideia ganha forma", description: "Pessoas da comunidade se unem em torno de uma necessidade comum." },
+      { id: nodeId(), year: "2021", title: "Novas redes de apoio", description: "O projeto amplia sua atuação com voluntários e parceiros." },
+      { id: nodeId(), year: "Hoje", title: "Seguimos aprendendo", description: "Exemplo de narrativa: substitua os marcos pelos fatos da sua organização." },
+    ] }, style: { width: "100", color: "text" },
+  };
+  if (type === "testimonial_slider") return {
+    type: "element", id, elementType: type,
+    value: { kind: "testimonial_slider", title: "Vozes que nos movem", subtitle: "Depoimentos fictícios para demonstrar a composição — substitua por relatos autorizados.", items: [
+      { id: nodeId(), quote: "Quando as pessoas se escutam, a comunidade inteira fica mais forte.", author: "Marina S.", role: "Relato demonstrativo" },
+      { id: nodeId(), quote: "A colaboração transforma boas ideias em cuidado real.", author: "André L.", role: "Relato demonstrativo" },
+    ] }, style: { width: "100", color: "text" },
+  };
+  if (type === "action_grid") return {
+    type: "element", id, elementType: type,
+    value: { kind: "action_grid", title: "Sua participação faz a diferença", subtitle: "Escolha como participar — cada opção pode levar a uma página do site.", items: [
+      { id: nodeId(), eyebrow: "PARTICIPE", title: "Seja voluntário", description: "Compartilhe tempo, conhecimento e cuidado.", icon: "hand", action: { label: "Quero participar", href: "#" } },
+      { id: nodeId(), eyebrow: "APOIE", title: "Faça uma doação", description: "Ajude iniciativas a atender quem mais precisa.", icon: "heart", action: { label: "Quero doar", href: "#" } },
+      { id: nodeId(), eyebrow: "ACOMPANHE", title: "Conheça os projetos", description: "Veja ações e resultados da nossa atuação.", icon: "book", action: { label: "Ver ações", href: "#" } },
+    ] }, style: { width: "100", color: "text" },
+  };
+  if (type === "donation_choices") return {
+    type: "element", id, elementType: type,
+    value: { kind: "donation_choices", title: "Escolha como você quer ajudar", subtitle: "Valores ilustrativos; configure um destino de doação antes de publicar.", currency: "R$", items: [
+      { id: nodeId(), amount: 25, description: "Um pequeno gesto" },
+      { id: nodeId(), amount: 50, description: "Fortaleça uma ação" },
+      { id: nodeId(), amount: 100, description: "Amplie o cuidado" },
+      { id: nodeId(), amount: 200, description: "Transforme mais histórias" },
+    ], action: { label: "Continuar para doação", href: "#" }, trustNote: "A CONG não processa pagamentos neste componente. Configure um destino externo ou página interna segura." },
+    style: { width: "100", color: "text" },
+  };
+  if (type === "data_chart") return {
+    type: "element", id, elementType: type,
+    value: { kind: "data_chart", title: "Nossa atuação em dados", subtitle: "Valores de exemplo — substitua pelos resultados confirmados.", format: "bar", unit: "ações", items: [
+      { id: nodeId(), label: "Educação", value: 38 },
+      { id: nodeId(), label: "Alimentação", value: 62 },
+      { id: nodeId(), label: "Saúde", value: 26 },
+    ] }, style: { width: "100", color: "text" },
+  };
+  if (type === "story_tabs") return {
+    type: "element", id, elementType: type,
+    value: { kind: "story_tabs", title: "Como fazemos a diferença", items: [
+      { id: nodeId(), title: "Nossa missão", description: "Apresente o propósito da organização e quem ela atende." },
+      { id: nodeId(), title: "Nossa atuação", description: "Conte como as iniciativas são desenvolvidas na prática." },
+      { id: nodeId(), title: "Participe", description: "Explique como pessoas e parceiros podem colaborar." },
+    ] }, style: { width: "100", color: "text" },
+  };
 
   if (type === "divider") {
     return {

@@ -4,6 +4,10 @@ import {
   me,
   removeAvatar,
   updateMe,
+  deactivateMe,
+  deleteMe,
+  requestDeletionMe,
+  adminListDeletionRequests,
   uploadAvatar,
   usernameAvailability,
 } from "../controllers/account.controller.js";
@@ -31,6 +35,10 @@ accountRouter.get("/me", me);
 accountRouter.get("/me/username-availability", usernameAvailability);
 
 accountRouter.patch("/me", validateBody(updateAccountSchema), updateMe);
+accountRouter.post("/me/deactivate", deactivateMe);
+accountRouter.post("/me/delete", deleteMe);
+accountRouter.post("/me/deletion-request", requestDeletionMe);
+accountRouter.get("/admin/deletion-requests", adminListDeletionRequests);
 
 /* ==================================================
    AVATAR

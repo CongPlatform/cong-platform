@@ -44,3 +44,5 @@
     padding: 18px 12px 36px;
   }
 }
+
+.auditNav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 17px}.auditNav button{border:1px solid #d8e1ef;background:#fffdfa;color:#355070;cursor:pointer;border-radius:10px;padding:10px 14px;display:flex;gap:8px;align-items:center;font-weight:750;font-size:12px}.auditNav button[aria-current="page"]{background:#3c62bd;color:white;border-color:#3c62bd}

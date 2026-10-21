@@ -244,3 +244,82 @@ export async function checkUsernameAvailability(
     available: !inUse,
   };
 }
+
+/** Suspende somente a própria conta. Um novo login válido poderá reativá-la. */
+export async function selfDeactivateAccount(authUserId: string): Promise<void> {
+  const result = await pool.query(
+    `update public.users
+       set active = false, self_deactivated_at = now(), updated_at = now()
+     where auth_user_id = $1 and active = true
+       and deletion_requested_at is null
+     returning id`,
+    [authUserId],
+  );
+  if (!result.rowCount) {
+    throw new AppError(
+      "Esta conta não está disponível para desativação.",
+      409,
+      "ACCOUNT_DEACTIVATION_UNAVAILABLE",
+    );
+  }
+}
+
+/** Solicitação persistida; não simula uma eliminação imediata de dados vinculados a ONGs. */
+export async function requestOwnAccountDeletion(
+  authUserId: string,
+): Promise<void> {
+  const result = await pool.query(
+    `update public.users
+       set active = false, self_deactivated_at = null,
+           deletion_requested_at = now(), updated_at = now()
+     where auth_user_id = $1 and active = true
+       and deletion_requested_at is null
+     returning id`,
+    [authUserId],
+  );
+  if (!result.rowCount) {
+    throw new AppError(
+      "Não foi possível registrar a solicitação nesta conta.",
+      409,
+      "ACCOUNT_DELETION_REQUEST_UNAVAILABLE",
+    );
+  }
+}
+
+/** Fila operacional para administradores da plataforma. Não executa exclusão. */
+export interface AccountDeletionQueueItem {
+  id: string;
+  displayName: string;
+  username: string | null;
+  requestedAt: Date;
+  organizationMemberships: number;
+}
+
+export async function listAccountDeletionQueue(
+  authUserId: string,
+): Promise<AccountDeletionQueueItem[]> {
+  const admin = await pool.query<{ allowed: boolean }>(
+    `select exists (
+      select 1 from public.users u join public.roles r on r.id = u.platform_role_id
+      where u.auth_user_id = $1 and u.active = true and r.code = 'platform_admin'
+    ) as allowed`,
+    [authUserId],
+  );
+  if (!admin.rows[0]?.allowed) {
+    throw new AppError(
+      "Somente administradores da CONG podem consultar solicitações de exclusão.",
+      403,
+      "ACCOUNT_DELETION_QUEUE_FORBIDDEN",
+    );
+  }
+  const result = await pool.query<AccountDeletionQueueItem>(
+    `select u.id, coalesce(u.display_name,u.name) as "displayName", u.username,
+       u.deletion_requested_at as "requestedAt",
+       (select count(*)::int from public.organization_users ou where ou.user_id = u.id and ou.status = 'active') as "organizationMemberships"
+     from public.users u
+     where u.deletion_requested_at is not null and u.deleted_at is null
+     order by u.deletion_requested_at asc
+     limit 200`,
+  );
+  return result.rows;
+}

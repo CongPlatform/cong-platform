@@ -28,8 +28,8 @@ import {
   Music2,
   PencilLine,
   Rocket,
+  RotateCcw,
   Sparkles,
-  Stethoscope,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
@@ -137,7 +137,7 @@ const teamMembers: TeamMember[] = [
     firstName: "André",
     initials: "AM",
     age: 17,
-    role: "Desenvolvedor Web",
+    role: "Desenvolvedor Mobile",
     education: ["Técnico em Desenvolvimento de Sistemas"],
     photo: andrePhoto,
     quote:
@@ -146,9 +146,9 @@ const teamMembers: TeamMember[] = [
       "Pretende seguir carreira como Engenheiro de Dados, trabalhando com informação, tecnologia e decisões orientadas por dados.",
     dreamIcon: Database,
     contribution:
-      "Na CONG, André transforma conceitos e protótipos em páginas, componentes e experiências funcionais para as organizações.",
+      "Na CONG, André é responsável pelo desenvolvimento mobile, transformando os recursos da plataforma em experiências acessíveis pelo celular.",
     connection:
-      "Mesmo desejando seguir uma área diferente no futuro, encontrou no desenvolvimento web uma forma de contribuir agora com causas sociais.",
+      "Mesmo desejando seguir uma área diferente no futuro, encontrou no desenvolvimento mobile uma forma de contribuir agora com causas sociais.",
     interests: [
       { label: "Futebol", icon: Goal },
       { label: "Jogos", icon: Gamepad2 },
@@ -205,12 +205,12 @@ const teamMembers: TeamMember[] = [
     photo: kelvinPhoto,
     quote: "Tudo posso Naquele que me fortalece.",
     dream:
-      "Pretende seguir Medicina, com interesse especial pelas áreas de Pediatria e Cardiologia.",
-    dreamIcon: Stethoscope,
+      "Pretende seguir na área de Desenvolvimento de Sistemas e aprofundar seus estudos em Ciência da Computação.",
+    dreamIcon: Code2,
     contribution:
-      "Kelvin atua na liderança, no planejamento, no desenvolvimento web, na identidade e na visão de crescimento da CONG.",
+      "Kelvin lidera o projeto e desenvolve a plataforma web da CONG, articulando planejamento, programação e identidade visual.",
     connection:
-      "Mesmo planejando seguir a Medicina, utiliza desde agora conhecimentos de tecnologia e marketing para fortalecer organizações e projetos sociais.",
+      "Seu interesse por programação, tecnologia, culinária e iniciativas sociais inspira soluções práticas para organizações que precisam de autonomia digital.",
     interests: [
       { label: "Leitura", icon: BookOpen },
       { label: "Culinária", icon: ChefHat },
@@ -221,7 +221,7 @@ const teamMembers: TeamMember[] = [
     tone: "memberGreen",
     links: {
       github: "https://github.com/KelvinPalka",
-      linkedin: "https://www.linkedin.com/in/kelvin-souza-1ab484368/",
+      linkedin: "https://www.linkedin.com/in/kelvinpalka/",
       email: "kelvinpalka07@gmail.com",
     },
   },
@@ -665,169 +665,197 @@ export default function About() {
                 className={[
                   styles.memberCard,
                   styles[member.tone],
-                  styles.reveal,
                   isExpanded ? styles.memberCardExpanded : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                data-reveal
                 style={{ "--member-index": index } as CSSProperties}
               >
-                <div className={styles.memberPhotoArea}>
-                  <span className={styles.memberPhotoTape} />
+                <div className={styles.memberFlip}>
+                  <div className={styles.memberFront} aria-hidden={isExpanded}>
+                    <div className={styles.memberPhotoArea}>
+                      <span className={styles.memberPhotoTape} />
 
-                  <div className={styles.memberPhoto}>
-                    <span className={styles.memberInitials}>
-                      {member.initials}
-                    </span>
-
-                    <img
-                      src={member.photo}
-                      alt={`Foto de ${member.name}`}
-                      loading="lazy"
-                      onError={(event) => {
-                        event.currentTarget.style.display = "none";
-                      }}
-                    />
-                  </div>
-
-                  <span className={styles.memberAge}>{member.age} anos</span>
-                </div>
-
-                <div className={styles.memberContent}>
-                  <span className={styles.memberRole}>{member.role}</span>
-                  <h3>{member.name}</h3>
-
-                  <div className={styles.educationList}>
-                    {member.education.map((education) => (
-                      <span key={education}>{education}</span>
-                    ))}
-                  </div>
-
-                  <blockquote className={styles.memberQuote}>
-                    “{member.quote}”
-                  </blockquote>
-
-                  <div className={styles.memberInterests}>
-                    {member.interests.map((interest) => {
-                      const InterestIcon = interest.icon;
-
-                      return (
-                        <span key={interest.label}>
-                          <InterestIcon aria-hidden="true" />
-                          {interest.label}
+                      <div className={styles.memberPhoto}>
+                        <span className={styles.memberInitials}>
+                          {member.initials}
                         </span>
-                      );
-                    })}
-                  </div>
 
-                  <button
-                    type="button"
-                    className={styles.memberToggle}
-                    aria-expanded={isExpanded}
-                    onClick={() => {
-                      setExpandedMember((currentMember) =>
-                        currentMember === member.id ? null : member.id,
-                      );
-                    }}
-                  >
-                    {isExpanded
-                      ? "Fechar trajetória"
-                      : `Conhecer a trajetória de ${member.firstName}`}
-                    <ArrowRight aria-hidden="true" />
-                  </button>
+                        <img
+                          src={member.photo}
+                          alt={`Foto de ${member.name}`}
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                          }}
+                        />
+                      </div>
 
-                  <div
-                    className={styles.memberDetails}
-                    aria-hidden={!isExpanded}
-                  >
-                    <div className={styles.memberDetailBlock}>
-                      <span className={styles.detailIcon}>
-                        <DreamIcon aria-hidden="true" />
+                      <span className={styles.memberAge}>
+                        {member.age} anos
                       </span>
-
-                      <div>
-                        <small>Meu caminho</small>
-                        <p>{member.dream}</p>
-                      </div>
                     </div>
 
-                    <div className={styles.memberDetailBlock}>
-                      <span className={styles.detailIcon}>
-                        <HandHeart aria-hidden="true" />
-                      </span>
+                    <div className={styles.memberContent}>
+                      <span className={styles.memberRole}>{member.role}</span>
+                      <h3>{member.name}</h3>
 
-                      <div>
-                        <small>Como contribuo</small>
-                        <p>{member.contribution}</p>
+                      <div className={styles.educationList}>
+                        {member.education.map((education) => (
+                          <span key={education}>{education}</span>
+                        ))}
+                      </div>
+
+                      <blockquote className={styles.memberQuote}>
+                        “{member.quote}”
+                      </blockquote>
+
+                      <div className={styles.memberInterests}>
+                        {member.interests.map((interest) => {
+                          const InterestIcon = interest.icon;
+
+                          return (
+                            <span key={interest.label}>
+                              <InterestIcon aria-hidden="true" />
+                              {interest.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        type="button"
+                        className={styles.memberToggle}
+                        tabIndex={isExpanded ? -1 : 0}
+                        aria-expanded={isExpanded}
+                        aria-controls={`trajectory-${member.id}`}
+                        onClick={() => {
+                          setExpandedMember((currentMember) =>
+                            currentMember === member.id ? null : member.id,
+                          );
+                        }}
+                      >
+                        {`Conhecer a trajetória de ${member.firstName}`}
+                        <ArrowRight aria-hidden="true" />
+                      </button>
+
+                      <div className={styles.memberSocials}>
+                        <a
+                          href={member.links.github || undefined}
+                          target={member.links.github ? "_blank" : undefined}
+                          rel={member.links.github ? "noreferrer" : undefined}
+                          aria-label={`GitHub de ${member.name}`}
+                          tabIndex={isExpanded ? -1 : 0}
+                          aria-disabled={!member.links.github}
+                          className={
+                            !member.links.github
+                              ? styles.socialDisabled
+                              : undefined
+                          }
+                          onClick={(event) =>
+                            handleEmptyLink(event, member.links.github)
+                          }
+                        >
+                          <FaGithub aria-hidden="true" />
+                        </a>
+
+                        <a
+                          href={member.links.linkedin || undefined}
+                          target={member.links.linkedin ? "_blank" : undefined}
+                          rel={member.links.linkedin ? "noreferrer" : undefined}
+                          aria-label={`LinkedIn de ${member.name}`}
+                          tabIndex={isExpanded ? -1 : 0}
+                          aria-disabled={!member.links.linkedin}
+                          className={
+                            !member.links.linkedin
+                              ? styles.socialDisabled
+                              : undefined
+                          }
+                          onClick={(event) =>
+                            handleEmptyLink(event, member.links.linkedin)
+                          }
+                        >
+                          <FaLinkedin aria-hidden="true" />
+                        </a>
+
+                        <a
+                          href={
+                            member.links.email
+                              ? `mailto:${member.links.email}`
+                              : undefined
+                          }
+                          aria-label={`E-mail de ${member.name}`}
+                          tabIndex={isExpanded ? -1 : 0}
+                          aria-disabled={!member.links.email}
+                          className={
+                            !member.links.email
+                              ? styles.socialDisabled
+                              : undefined
+                          }
+                          onClick={(event) =>
+                            handleEmptyLink(event, member.links.email)
+                          }
+                        >
+                          <Mail aria-hidden="true" />
+                        </a>
                       </div>
                     </div>
-
-                    <div className={styles.memberConnection}>
-                      <Sparkles aria-hidden="true" />
-                      <p>{member.connection}</p>
-                    </div>
-
-                    {member.highlight && (
-                      <div className={styles.memberHighlight}>
-                        <CircleCheckBig aria-hidden="true" />
-                        <span>{member.highlight}</span>
-                      </div>
-                    )}
                   </div>
-
-                  <div className={styles.memberSocials}>
-                    <a
-                      href={member.links.github || undefined}
-                      target={member.links.github ? "_blank" : undefined}
-                      rel={member.links.github ? "noreferrer" : undefined}
-                      aria-label={`GitHub de ${member.name}`}
-                      aria-disabled={!member.links.github}
-                      className={
-                        !member.links.github ? styles.socialDisabled : undefined
-                      }
-                      onClick={(event) =>
-                        handleEmptyLink(event, member.links.github)
-                      }
+                  <div className={styles.memberBack} aria-hidden={!isExpanded}>
+                    <div className={styles.memberBackHeader}>
+                      <span className={styles.memberBackEyebrow}>
+                        Por trás da CONG
+                      </span>
+                      <h3>A trajetória de {member.firstName}</h3>
+                      <p>{member.role}</p>
+                    </div>
+                    <div
+                      id={`trajectory-${member.id}`}
+                      className={styles.memberDetails}
                     >
-                      <FaGithub aria-hidden="true" />
-                    </a>
+                      <div className={styles.memberDetailBlock}>
+                        <span className={styles.detailIcon}>
+                          <DreamIcon aria-hidden="true" />
+                        </span>
 
-                    <a
-                      href={member.links.linkedin || undefined}
-                      target={member.links.linkedin ? "_blank" : undefined}
-                      rel={member.links.linkedin ? "noreferrer" : undefined}
-                      aria-label={`LinkedIn de ${member.name}`}
-                      aria-disabled={!member.links.linkedin}
-                      className={
-                        !member.links.linkedin
-                          ? styles.socialDisabled
-                          : undefined
-                      }
-                      onClick={(event) =>
-                        handleEmptyLink(event, member.links.linkedin)
-                      }
-                    >
-                      <FaLinkedin aria-hidden="true" />
-                    </a>
+                        <div>
+                          <small>Meu caminho</small>
+                          <p>{member.dream}</p>
+                        </div>
+                      </div>
 
-                    <a
-                      href={
-                        member.links.email
-                          ? `mailto:${member.links.email}`
-                          : undefined
-                      }
-                      aria-label={`E-mail de ${member.name}`}
-                      aria-disabled={!member.links.email}
-                      className={
-                        !member.links.email ? styles.socialDisabled : undefined
-                      }
-                      onClick={(event) =>
-                        handleEmptyLink(event, member.links.email)
-                      }
+                      <div className={styles.memberDetailBlock}>
+                        <span className={styles.detailIcon}>
+                          <HandHeart aria-hidden="true" />
+                        </span>
+
+                        <div>
+                          <small>Como contribuo</small>
+                          <p>{member.contribution}</p>
+                        </div>
+                      </div>
+
+                      <div className={styles.memberConnection}>
+                        <Sparkles aria-hidden="true" />
+                        <p>{member.connection}</p>
+                      </div>
+
+                      {member.highlight && (
+                        <div className={styles.memberHighlight}>
+                          <CircleCheckBig aria-hidden="true" />
+                          <span>{member.highlight}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className={styles.memberToggle}
+                      tabIndex={isExpanded ? 0 : -1}
+                      onClick={() => setExpandedMember(null)}
                     >
-                      <Mail aria-hidden="true" />
-                    </a>
+                      <RotateCcw aria-hidden="true" /> Voltar ao cartão
+                    </button>
                   </div>
                 </div>
               </article>

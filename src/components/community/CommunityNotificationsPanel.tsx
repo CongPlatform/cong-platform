@@ -61,11 +61,11 @@ function textFor(notification: CommunityNotification) {
         ? `${actor} cancelou um evento em que você estava participando`
         : `${actor} atualizou um evento em que você está participando`;
     case "moderation_report":
-      return `${actor} enviou uma denúncia que aguarda moderação`;
+      return "Nova denúncia recebida para análise pela equipe de moderação";
     case "moderation_action":
-      return notification.actor
-        ? `${actor} registrou uma ação de moderação no seu conteúdo`
-        : "A moderação retirou temporariamente seu conteúdo para revisão";
+      return notification.moderationMessage
+        ? `Equipe de moderação da CONG: ${notification.moderationMessage}`
+        : "A equipe de moderação da CONG tomou uma medida sobre seu conteúdo";
   }
 }
 

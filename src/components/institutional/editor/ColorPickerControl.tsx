@@ -39,7 +39,8 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 function rgbToHex(red: number, green: number, blue: number): string {
-  const part = (value: number) => clamp(Math.round(value), 0, 255).toString(16).padStart(2, "0");
+  const part = (value: number) =>
+    clamp(Math.round(value), 0, 255).toString(16).padStart(2, "0");
   return `#${part(red)}${part(green)}${part(blue)}`.toUpperCase();
 }
 
@@ -76,11 +77,16 @@ function hsvToHex({ h, s, v }: HSV): string {
   const x = chroma * (1 - Math.abs(((h / 60) % 2) - 1));
   const m = v - chroma;
   const [r, g, b]: [number, number, number] =
-    h < 60 ? [chroma, x, 0]
-      : h < 120 ? [x, chroma, 0]
-        : h < 180 ? [0, chroma, x]
-          : h < 240 ? [0, x, chroma]
-            : h < 300 ? [x, 0, chroma]
+    h < 60
+      ? [chroma, x, 0]
+      : h < 120
+        ? [x, chroma, 0]
+        : h < 180
+          ? [0, chroma, x]
+          : h < 240
+            ? [0, x, chroma]
+            : h < 300
+              ? [x, 0, chroma]
               : [chroma, 0, x];
 
   return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
@@ -88,7 +94,9 @@ function hsvToHex({ h, s, v }: HSV): string {
 
 function canUseEyeDropper(): boolean {
   if (typeof window === "undefined") return false;
-  return Boolean((window as Window & { EyeDropper?: EyeDropperConstructor }).EyeDropper);
+  return Boolean(
+    (window as Window & { EyeDropper?: EyeDropperConstructor }).EyeDropper,
+  );
 }
 
 export default function ColorPickerControl({
@@ -121,8 +129,13 @@ export default function ColorPickerControl({
       const popupWidth = 264;
       const popupHeight = 350;
       const margin = 10;
-      const left = clamp(rect.right - popupWidth, margin, Math.max(margin, window.innerWidth - popupWidth - margin));
-      const fitsBelow = rect.bottom + margin + popupHeight <= window.innerHeight;
+      const left = clamp(
+        rect.right - popupWidth,
+        margin,
+        Math.max(margin, window.innerWidth - popupWidth - margin),
+      );
+      const fitsBelow =
+        rect.bottom + margin + popupHeight <= window.innerHeight;
       const top = fitsBelow
         ? rect.bottom + 7
         : Math.max(margin, rect.top - popupHeight - 7);
@@ -131,7 +144,11 @@ export default function ColorPickerControl({
 
     const close = (event: PointerEvent) => {
       const target = event.target as Node;
-      if (rootRef.current?.contains(target) || popoverRef.current?.contains(target)) return;
+      if (
+        rootRef.current?.contains(target) ||
+        popoverRef.current?.contains(target)
+      )
+        return;
       setOpen(false);
     };
 
@@ -159,8 +176,13 @@ export default function ColorPickerControl({
 
   function setSvFromPointer(event: ReactPointerEvent<HTMLDivElement>): void {
     const rect = event.currentTarget.getBoundingClientRect();
-    const s = clamp((event.clientX - rect.left) / Math.max(rect.width, 1), 0, 1);
-    const v = 1 - clamp((event.clientY - rect.top) / Math.max(rect.height, 1), 0, 1);
+    const s = clamp(
+      (event.clientX - rect.left) / Math.max(rect.width, 1),
+      0,
+      1,
+    );
+    const v =
+      1 - clamp((event.clientY - rect.top) / Math.max(rect.height, 1), 0, 1);
     commit({ ...hsv, s, v });
   }
 
@@ -173,7 +195,9 @@ export default function ColorPickerControl({
   }
 
   async function pickFromScreen(): Promise<void> {
-    const EyeDropper = (window as Window & { EyeDropper?: EyeDropperConstructor }).EyeDropper;
+    const EyeDropper = (
+      window as Window & { EyeDropper?: EyeDropperConstructor }
+    ).EyeDropper;
     if (!EyeDropper) return;
     try {
       const result = await new EyeDropper().open();
@@ -186,7 +210,10 @@ export default function ColorPickerControl({
   }
 
   function commitHex(): void {
-    if (!/^#[0-9a-f]{6}$/i.test(draft.trim()) && !/^#[0-9a-f]{3}$/i.test(draft.trim())) {
+    if (
+      !/^#[0-9a-f]{6}$/i.test(draft.trim()) &&
+      !/^#[0-9a-f]{3}$/i.test(draft.trim())
+    ) {
       setDraft(normalized);
       return;
     }
@@ -210,81 +237,124 @@ export default function ColorPickerControl({
         <span className={styles.spectrumMark} aria-hidden="true" />
         {!compact ? (
           <>
-            <span className={styles.triggerSwatch} style={{ background: normalized }} aria-hidden="true" />
+            <span
+              className={styles.triggerSwatch}
+              style={{ background: normalized }}
+              aria-hidden="true"
+            />
             <span className={styles.triggerText}>{normalized}</span>
           </>
         ) : null}
         <FiChevronDown aria-hidden="true" />
       </button>
 
-      {open && typeof document !== "undefined" ? createPortal(
-        <div
-          ref={popoverRef}
-          className={styles.popover}
-          style={{ top: popoverPosition.top, left: popoverPosition.left }}
-          onPointerDown={(event) => event.stopPropagation()}
-        >
-          <div className={styles.header}>
-            <div><span className={styles.spectrumMark} aria-hidden="true" /><strong>{label}</strong></div>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Fechar seletor de cor"><FiX /></button>
-          </div>
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              className={styles.popover}
+              style={{ top: popoverPosition.top, left: popoverPosition.left }}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <div className={styles.header}>
+                <div>
+                  <span className={styles.spectrumMark} aria-hidden="true" />
+                  <strong>{label}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Fechar seletor de cor"
+                >
+                  <FiX />
+                </button>
+              </div>
 
-          <div
-            className={styles.sv}
-            style={{ "--picker-hue": `hsl(${hsv.h} 100% 50%)` } as CSSProperties}
-            onPointerDown={beginSv}
-            onPointerMove={(event) => {
-              if (event.currentTarget.hasPointerCapture(event.pointerId)) setSvFromPointer(event);
-            }}
-          >
-            <span className={styles.svThumb} style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%`, background: normalized }} />
-          </div>
+              <div
+                className={styles.sv}
+                style={
+                  { "--picker-hue": `hsl(${hsv.h} 100% 50%)` } as CSSProperties
+                }
+                onPointerDown={beginSv}
+                onPointerMove={(event) => {
+                  if (event.currentTarget.hasPointerCapture(event.pointerId))
+                    setSvFromPointer(event);
+                }}
+              >
+                <span
+                  className={styles.svThumb}
+                  style={{
+                    left: `${hsv.s * 100}%`,
+                    top: `${(1 - hsv.v) * 100}%`,
+                    background: normalized,
+                  }}
+                />
+              </div>
 
-          <label className={styles.hueRow}>
-            <span>Matiz</span>
-            <input
-              type="range"
-              min="0"
-              max="359"
-              step="1"
-              value={Math.round(hsv.h)}
-              onChange={(event) => commit({ ...hsv, h: Number(event.target.value) })}
-              aria-label="Matiz da cor"
-            />
-          </label>
+              <label className={styles.hueRow}>
+                <span>Matiz</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="359"
+                  step="1"
+                  value={Math.round(hsv.h)}
+                  onChange={(event) =>
+                    commit({ ...hsv, h: Number(event.target.value) })
+                  }
+                  aria-label="Matiz da cor"
+                />
+              </label>
 
-          <div className={styles.valueRow}>
-            <span className={styles.largeSwatch} style={{ background: normalized }} aria-hidden="true" />
-            <label>
-              <span>HEX</span>
-              <input
-                value={editingHex ? draft : normalized}
-                onFocus={() => {
-                  setDraft(normalized);
-                  setEditingHex(true);
-                }}
-                onChange={(event) => setDraft(event.target.value.toUpperCase())}
-                onBlur={() => {
-                  commitHex();
-                  setEditingHex(false);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") event.currentTarget.blur();
-                }}
-                maxLength={7}
-                spellCheck={false}
-              />
-            </label>
-            {eyeDropperAvailable ? (
-              <button type="button" className={styles.eyeDropper} onClick={() => void pickFromScreen()} title="Conta-gotas" aria-label="Escolher cor da tela com conta-gotas">
-                <FiCrosshair />
-              </button>
-            ) : null}
-          </div>
-          <small className={styles.hint}>{eyeDropperAvailable ? "Arraste o ponto ou use o conta-gotas para capturar uma cor da tela." : "Arraste o ponto para escolher saturação e luminosidade."}</small>
-        </div>,
-        document.body,
-      ) : null}
+              <div className={styles.valueRow}>
+                <span
+                  className={styles.largeSwatch}
+                  style={{ background: normalized }}
+                  aria-hidden="true"
+                />
+                <label>
+                  <span>HEX</span>
+                  <input
+                    value={editingHex ? draft : normalized}
+                    onFocus={() => {
+                      setDraft(normalized);
+                      setEditingHex(true);
+                    }}
+                    onChange={(event) =>
+                      setDraft(event.target.value.toUpperCase())
+                    }
+                    onBlur={() => {
+                      commitHex();
+                      setEditingHex(false);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") event.currentTarget.blur();
+                    }}
+                    maxLength={7}
+                    spellCheck={false}
+                  />
+                </label>
+                {eyeDropperAvailable ? (
+                  <button
+                    type="button"
+                    className={styles.eyeDropper}
+                    onClick={() => void pickFromScreen()}
+                    title="Conta-gotas"
+                    aria-label="Escolher cor da tela com conta-gotas"
+                  >
+                    <FiCrosshair />
+                  </button>
+                ) : null}
+              </div>
+              <small className={styles.hint}>
+                {eyeDropperAvailable
+                  ? "Arraste o ponto ou use o conta-gotas para capturar uma cor da tela."
+                  : "Arraste o ponto para escolher saturação e luminosidade."}
+              </small>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

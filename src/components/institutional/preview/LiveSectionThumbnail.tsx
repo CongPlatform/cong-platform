@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createDefaultSectionContent } from "../../../data/institutional/sectionCatalog";
 import { findNativeDesignFamilyById, findNativeDesignFamilyByName } from "../../../data/institutional/nativeDesignFamilies";
 import type {
@@ -22,6 +23,22 @@ export default function LiveSectionThumbnail({
   size?: "compact" | "large";
 }) {
   const variant = preferredVariant ?? findRecommendedVariant(variants, sectionType);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.2);
+  const sourceWidth = size === "large" ? 1120 : 960;
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const update = () => {
+      const width = viewport.getBoundingClientRect().width;
+      if (width > 0) setScale(width / sourceWidth);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [sourceWidth]);
 
   if (!variant) {
     return <div className={styles.fallback} data-size={size}>Prévia disponível ao abrir</div>;
@@ -45,8 +62,11 @@ export default function LiveSectionThumbnail({
   };
 
   return (
-    <div className={styles.viewport} data-size={size} aria-hidden="true">
-      <div className={styles.scaled}>
+    <div ref={viewportRef} className={styles.viewport} data-size={size} aria-hidden="true">
+      <div
+        className={styles.scaled}
+        style={{ width: sourceWidth, transform: `scale(${scale})` } as CSSProperties}
+      >
         <SectionRenderer section={section} brand={brand} />
       </div>
       <div className={styles.guard} />

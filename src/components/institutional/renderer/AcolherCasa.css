@@ -1,0 +1,49 @@
+/* Acolher / Casa de Passagem — editorial de cuidado animal. Isolado por visualStyle. */
+section[data-visual-style^="ac7-"] { isolation:isolate; overflow-wrap:break-word; }
+section[data-visual-style^="ac7-"] [data-layout-container], section[data-visual-style^="ac7-"] [data-element-shell="true"] {min-width:0;max-width:100%;}
+section[data-visual-style^="ac7-"] [data-element-type="heading"] [data-font-target] { font-family:"Fraunces",Georgia,serif; font-weight:640; line-height:1.08; letter-spacing:-.035em; text-wrap:balance; }
+section[data-visual-style^="ac7-"] [data-element-type="text"] [data-font-target] {max-width:69ch;line-height:1.62;}
+section[data-visual-style^="ac7-"] [data-element-type="image"] img {transition:filter .3s ease,transform .4s ease;}
+section[data-visual-style^="ac7-"] [data-element-type="button"] a:focus-visible {outline:3px solid #31594b;outline-offset:4px;}
+section[data-visual-style="ac7-casa-aberta"] {position:relative;background:radial-gradient(circle at 95% 10%,#E7D7C3 0,transparent 27%),#FCF7EE;}
+section[data-visual-style="ac7-casa-aberta"]::before{content:"CASA / 01";position:absolute;right:3%;top:3%;font:700 12px system-ui;letter-spacing:.24em;color:#784D3D;border-top:2px solid;padding-top:12px;}
+section[data-visual-style="ac7-casa-aberta"] [data-layout-kind="columns"] {align-items:center;}
+section[data-visual-style="ac7-casa-aberta"] [data-element-type="image"] {position:relative;}
+section[data-visual-style="ac7-casa-aberta"] [data-element-type="image"]::after{content:"♡";position:absolute;right:-8px;top:-28px;font-size:clamp(36px,6cqi,90px);color:#B5796D;transform:rotate(13deg);pointer-events:none;}
+section[data-visual-style="ac7-tracos-de-cuidado"] [data-layout-kind="grid"]> [data-layout-kind="stack"]{border-left:1px solid #779681;padding-inline:clamp(12px,2vw,30px);}
+section[data-visual-style="ac7-tracos-de-cuidado"] [data-layout-kind="grid"]> [data-layout-kind="stack"]:first-child{border-left:none;}
+section[data-visual-style="ac7-bilhete-de-casa"]{position:relative;}
+section[data-visual-style="ac7-bilhete-de-casa"]::before{content:"“";position:absolute;left:2%;top:0;font:150px Georgia,serif;color:#c2d2b63b;line-height:1;pointer-events:none;}
+section[data-visual-style="ac7-bilhete-de-casa"] [data-layout-kind="columns"]{align-items:center;}
+section[data-visual-style="ac7-bilhete-de-casa"] [data-element-type="image"]{max-width:330px;margin-inline:auto;}
+section[data-visual-style="ac7-convite-janela"],section[data-visual-style="ac7-historia-convite"],section[data-visual-style="ac7-responsabilidade-fim"],section[data-visual-style="ac7-participar-fecho"]{position:relative; border-radius:0; border-top:6px solid #EDC98D;}
+section[data-visual-style="ac7-convite-janela"]::before,section[data-visual-style="ac7-participar-fecho"]::before{content:"✳";position:absolute;right:7%;bottom:7%;font-size:clamp(50px,11cqi,145px);color:#b7ceb840;pointer-events:none;}
+section[data-visual-style="ac7-historia-em-primeira-pessoa"] [data-layout-kind="stack"]{max-width:940px;margin:0 auto;text-align:center;}
+section[data-visual-style="ac7-olhares-que-acolhem"] [data-layout-kind="columns"]{align-items:end;}
+section[data-visual-style="ac7-olhares-que-acolhem"] [data-element-type="image"]{max-width:550px;}
+section[data-visual-style="ac7-rota-do-acolhimento"] [data-layout-kind="columns"]{align-items:center;}
+section[data-visual-style="ac7-fichas-de-encontro"] [data-layout-kind="grid"]> [data-layout-kind="stack"] {border:1px solid #D4BDAD;background:#FFF9F2;padding:16px 16px 24px;border-radius:clamp(12px,2cqi,28px);}
+section[data-visual-style="ac7-fichas-de-encontro"] [data-element-type="image"] img{object-fit:cover;}
+section[data-visual-style="ac7-fichas-de-encontro"] [data-layout-kind="grid"]> [data-layout-kind="stack"]:nth-child(2){transform:translateY(35px);}
+section[data-visual-style="ac7-roteiro-de-adocao"] [data-layout-kind="stack"]{max-width:1040px;margin-inline:auto;}
+section[data-visual-style="ac7-cuidados-em-pratica"] [data-layout-kind="grid"]> [data-layout-kind="stack"],section[data-visual-style="ac7-cuidado-com-os-recursos"] [data-layout-kind="grid"]> [data-layout-kind="stack"]{border-top:2px solid #82988A;padding-top:25px;}
+section[data-visual-style="ac7-participar-capa"]{background-image:radial-gradient(ellipse at 85% 45%,#efdfd0 0%,transparent 48%);}
+section[data-visual-style="ac7-materiais-prioritarios"] [data-layout-kind="grid"]> [data-layout-kind="stack"]{padding:20px;border-radius:20px;border:1px solid #d9c9b8;}
+section[data-visual-style="ac7-contato-nota"] [data-layout-kind="stack"]{max-width:900px;}
+@container institutional-site (max-width:960px){
+ section[data-visual-style^="ac7-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,3rem),clamp(2.1rem,5.5cqi,4.5rem));}
+ section[data-visual-style="ac7-tracos-de-cuidado"] [data-layout-kind="grid"]{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+@container institutional-site (max-width:720px){
+ section[data-visual-style^="ac7-"]{padding-inline:clamp(17px,4cqi,30px);}
+ section[data-visual-style^="ac7-"] [data-layout-kind="columns"],section[data-visual-style^="ac7-"] [data-layout-kind="grid"]{grid-template-columns:minmax(0,1fr);gap:clamp(24px,6cqi,42px);}
+ section[data-visual-style^="ac7-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,3rem),clamp(2rem,8cqi,3.45rem));}
+ section[data-visual-style="ac7-casa-aberta"]::before{display:none;}
+ section[data-visual-style="ac7-casa-aberta"] [data-layout-kind="columns"]>:first-child{order:2;}
+ section[data-visual-style="ac7-casa-aberta"] [data-layout-kind="columns"]>:last-child{order:1;}
+ section[data-visual-style="ac7-casa-aberta"] [data-element-type="image"]{max-width:500px;margin:auto;}
+ section[data-visual-style="ac7-fichas-de-encontro"] [data-layout-kind="grid"]> [data-layout-kind="stack"]:nth-child(2){transform:none;}
+ section[data-visual-style="ac7-tracos-de-cuidado"] [data-layout-kind="grid"]> [data-layout-kind="stack"]{border-left:0;border-bottom:1px solid #779681;padding:15px 0;}
+ section[data-visual-style="ac7-olhares-que-acolhem"] [data-element-type="image"]{max-width:360px;}
+}
+@media (prefers-reduced-motion: reduce){section[data-visual-style^="ac7-"] *,section[data-visual-style^="ac7-"] *::before,section[data-visual-style^="ac7-"] *::after {transition:none!important;animation:none!important;}}

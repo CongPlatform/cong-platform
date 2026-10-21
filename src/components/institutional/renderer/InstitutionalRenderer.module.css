@@ -1,6 +1,6 @@
 .section {
   width: 100%;
-  padding: clamp(48px, 7vw, 92px) clamp(24px, 5vw, 72px);
+  padding: calc(clamp(48px, 7vw, 92px) * var(--org-space-scale, 1)) clamp(24px, 5vw, 72px);
   color: var(--org-text, var(--color-navy));
   background: var(--section-background, var(--org-background, var(--color-white)));
   font-family: var(--org-body-font, var(--font-body));
@@ -12,15 +12,15 @@
 }
 
 .section[data-spacing="compact"] {
-  padding-block: clamp(28px, 4vw, 46px);
+  padding-block: calc(clamp(28px, 4vw, 46px) * var(--org-space-scale, 1));
 }
 
 .section[data-spacing="comfortable"] {
-  padding-block: clamp(64px, 9vw, 112px);
+  padding-block: calc(clamp(64px, 9vw, 112px) * var(--org-space-scale, 1));
 }
 
 .section[data-spacing="generous"] {
-  padding-block: clamp(82px, 11vw, 142px);
+  padding-block: calc(clamp(82px, 11vw, 142px) * var(--org-space-scale, 1));
 }
 
 .section[data-content-width="wide"] .sectionInner {
@@ -101,21 +101,21 @@
 .columns[data-gap="small"],
 .grid[data-gap="small"],
 .repeat[data-gap="small"] {
-  gap: 12px;
+  gap: calc(12px * var(--org-space-scale, 1));
 }
 
 .stack[data-gap="medium"],
 .columns[data-gap="medium"],
 .grid[data-gap="medium"],
 .repeat[data-gap="medium"] {
-  gap: clamp(18px, 3vw, 30px);
+  gap: calc(clamp(18px, 3vw, 30px) * var(--org-space-scale, 1));
 }
 
 .stack[data-gap="large"],
 .columns[data-gap="large"],
 .grid[data-gap="large"],
 .repeat[data-gap="large"] {
-  gap: clamp(30px, 5vw, 56px);
+  gap: calc(clamp(30px, 5vw, 56px) * var(--org-space-scale, 1));
 }
 
 .alignstart {
@@ -139,8 +139,8 @@
 .surfacecard,
 .surfacelist,
 .surfacehighlight {
-  padding: clamp(18px, 3vw, 30px);
-  border-radius: 22px;
+  padding: calc(clamp(18px, 3vw, 30px) * var(--org-space-scale, 1));
+  border-radius: var(--org-radius-card, 22px);
 }
 
 .surfacecard {
@@ -175,13 +175,13 @@
 
 .display {
   max-width: 16ch;
-  font-size: clamp(2.4rem, 6vw, 5rem);
+  font-size: calc(clamp(2.4rem, 6vw, 5rem) * var(--org-heading-scale, 1));
   line-height: 0.98;
 }
 
 .heading {
   max-width: 22ch;
-  font-size: clamp(1.9rem, 4vw, 3.2rem);
+  font-size: calc(clamp(1.9rem, 4vw, 3.2rem) * var(--org-heading-scale, 1));
   line-height: 1.08;
 }
 
@@ -196,12 +196,12 @@
 
 .lead {
   max-width: 62ch;
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-size: calc(clamp(1.05rem, 2vw, 1.3rem) * var(--org-body-scale, 1));
 }
 
 .body {
   max-width: 68ch;
-  font-size: var(--font-md);
+  font-size: calc(var(--font-md) * var(--org-body-scale, 1));
 }
 
 .caption {
@@ -213,14 +213,14 @@
   display: block;
   color: var(--org-text, var(--color-navy));
   font-family: var(--org-heading-font, var(--font-brand));
-  font-size: var(--font-xl);
+  font-size: calc(var(--font-xl) * var(--org-heading-scale, 1));
 }
 
 .metricValue {
   display: block;
   color: var(--org-primary, var(--color-primary));
   font-family: var(--org-heading-font, var(--font-brand));
-  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-size: calc(clamp(2.2rem, 4vw, 3.6rem) * var(--org-heading-scale, 1));
   line-height: 1;
 }
 
@@ -240,7 +240,7 @@
   justify-content: center;
   min-height: 44px;
   padding: 10px 18px;
-  border-radius: 999px;
+  border-radius: var(--org-radius-button, 999px);
   font-weight: var(--font-semibold);
 }
 
@@ -265,7 +265,7 @@
 .imagePlaceholder {
   width: 100%;
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: var(--org-radius-image, 24px);
   background: color-mix(in srgb, var(--org-primary, var(--color-primary)) 8%, var(--org-background, var(--color-white)));
 }
 
@@ -480,7 +480,7 @@
 
 .display {
   max-width: 20ch;
-  font-size: clamp(2.2rem, 5.2vw, 4.7rem);
+  font-size: calc(clamp(2.2rem, 5.2vw, 4.7rem) * var(--org-heading-scale, 1));
 }
 
 .elementShell {
@@ -6732,4 +6732,682 @@
     max-width: min(180px, 100%);
     max-height: 180px;
   }
+}
+
+/* Brand-linked and individual type choices override native composition styles. */
+.elementShell[data-font-override="true"] [data-font-target="true"] {
+  font-family: var(--element-font-family) !important;
+}
+.elementShell[data-font-weight-override="true"] [data-font-target="true"] {
+  font-weight: var(--element-font-weight) !important;
+}
+
+.fontRoleGrid { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 12px; }
+.fontRoleGrid button { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 12px; color: #213a57; background: #fff; }
+.fontRoleGrid button[data-active="true"] { border-color: #3864be; color: #1f50a0; background: #edf4ff; }
+.resetTypeOverride { font-size: 12px; margin-top: 8px; text-decoration: underline; color: #3864be; }
+
+/* Global organization fonts take precedence over native example typography.
+   Per-element choices below use higher specificity and win. */
+:global([data-cong-custom-heading="true"]) .elementShell:not([data-font-override="true"])[data-presentation="display"] [data-font-target="true"],
+:global([data-cong-custom-heading="true"]) .elementShell:not([data-font-override="true"])[data-presentation="heading"] [data-font-target="true"],
+:global([data-cong-custom-heading="true"]) .elementShell:not([data-font-override="true"])[data-presentation="itemTitle"] [data-font-target="true"],
+:global([data-cong-custom-heading="true"]) .elementShell:not([data-font-override="true"])[data-element-type="heading"] [data-font-target="true"] {
+  font-family: var(--org-heading-font) !important;
+}
+:global([data-cong-custom-body="true"]) .elementShell:not([data-font-override="true"])[data-presentation="body"] [data-font-target="true"],
+:global([data-cong-custom-body="true"]) .elementShell:not([data-font-override="true"])[data-presentation="lead"] [data-font-target="true"],
+:global([data-cong-custom-body="true"]) .elementShell:not([data-font-override="true"])[data-element-type="text"] [data-font-target="true"] {
+  font-family: var(--org-body-font) !important;
+}
+
+/* Site Builder 2.0 / curated compositions.
+   Pure presentation: the layout and content are stored in the section document,
+   while these styles apply equally to editor, live previews and publication. */
+.section[data-composition="hero-editorial"] .display {
+  max-width: 12ch;
+  letter-spacing: -.045em;
+}
+.section[data-composition="hero-editorial"] .heroImage,
+.section[data-composition="hero-photo-first"] .heroImage {
+  overflow: hidden;
+  border-radius: var(--org-radius-card, 24px);
+}
+.section[data-composition="hero-photo-first"] {
+  background: color-mix(in srgb, var(--org-background) 90%, var(--org-accent) 10%);
+}
+.section[data-composition="hero-manifesto"] .sectionInner {
+  max-width: 1080px;
+  text-align: center;
+}
+.section[data-composition="hero-manifesto"] .display,
+.section[data-composition="hero-manifesto"] .lead {
+  margin-inline: auto;
+  max-width: 20ch;
+}
+.section[data-composition="hero-manifesto"] .stackRow { justify-content: center; }
+.section[data-composition="hero-manifesto"] .wideImage { border-radius: var(--org-radius-card, 24px); overflow:hidden; }
+.section[data-composition="about-portrait"] .cardImage { border-radius: 160px 160px 20px 20px; overflow:hidden; }
+.section[data-composition="about-editorial"] .heading { font-size: calc(clamp(2.2rem, 4.5vw, 4rem) * var(--org-heading-scale, 1)); }
+.section[data-composition="about-conversation"] { background: color-mix(in srgb, var(--org-background) 94%, var(--org-primary) 6%); }
+.section[data-composition="projects-gallery"] .surfacecard,
+.section[data-composition="projects-two-up"] .surfacecard {
+  border-radius: var(--org-radius-card, 18px);
+  overflow: hidden;
+  box-shadow: 0 6px 25px rgb(0 0 0 / .04);
+}
+.section[data-composition="projects-report"] .collectionCanvasGroup { width:100%; }
+.section[data-composition="impact-figures"] .metricValue {
+  font-size: calc(clamp(2.8rem, 5vw, 5.8rem) * var(--org-heading-scale, 1));
+  line-height: 1;
+}
+.section[data-composition="impact-figures"] .repeat > * {
+  padding-top: 16px;
+  border-top: 3px solid var(--org-accent);
+}
+.section[data-composition="impact-explained"] .repeat > *,
+.section[data-composition="impact-columns"] .surfacecard {
+  border-left: 3px solid var(--org-accent);
+  padding-left: 16px;
+}
+.section[data-composition="support-cards"] .surfacecard,
+.section[data-composition="support-pathways"] .surfacecard {
+  border: 1px solid color-mix(in srgb, var(--org-primary) 15%, transparent);
+  background: color-mix(in srgb, var(--org-background) 93%, var(--org-accent) 7%);
+}
+.section[data-composition="trust-report-list"] .surfacecard {
+  border-radius: 0;
+  border-width: 0 0 1px;
+  background: transparent;
+}
+.section[data-composition="contact-centered"] .sectionInner { max-width: 760px; }
+.section[data-composition="contact-centered"] .sectionInner > .stack { text-align:center; }
+@container institutional-site (max-width: 620px) {
+  .section[data-composition="hero-editorial"] .display,
+  .section[data-composition="hero-manifesto"] .display { font-size: calc(2.6rem * var(--org-heading-scale, 1)); }
+  .section[data-composition="impact-figures"] .repeat > * { border-top-width:2px; }
+}
+
+/* 03.1A — composition sizing, semantic palette levels and reusable media frames.
+   Query against each metric tile, never against the viewport: four metrics must
+   be legible inside the narrow library preview as well as the published site. */
+.section[data-composition="impact-figures"] .repeat,
+.section[data-composition="impact-columns"] .repeat,
+.section[data-composition="impact-explained"] .repeat {
+  gap: clamp(12px, 2.1vw, 24px);
+}
+.section[data-composition="impact-figures"] .repeat > *,
+.section[data-composition="impact-columns"] .repeat > *,
+.section[data-composition="impact-explained"] .repeat > * {
+  min-width: 0;
+  container-type: inline-size;
+  position: relative;
+}
+.section[data-composition="impact-figures"] .repeat > * {
+  display: flex;
+  gap: clamp(6px, 1vw, 12px);
+  padding: clamp(12px, 1.8vw, 26px);
+  border: 1px solid color-mix(in srgb, var(--org-primary) 15%, transparent);
+  border-top: 4px solid var(--org-primary);
+  border-radius: var(--org-radius-card, 18px);
+  background: color-mix(in srgb, var(--org-background) 93%, var(--org-primary) 7%);
+}
+.section[data-composition="impact-figures"] .repeat > :nth-child(4n + 2) {
+  border-top-color: var(--org-secondary);
+  background: color-mix(in srgb, var(--org-background) 92%, var(--org-secondary) 8%);
+}
+.section[data-composition="impact-figures"] .repeat > :nth-child(4n + 3) {
+  border-top-color: var(--org-accent);
+  background: color-mix(in srgb, var(--org-background) 91%, var(--org-accent) 9%);
+}
+.section[data-composition="impact-figures"] .repeat > :nth-child(4n + 4) {
+  border-top-color: var(--org-text);
+  background: color-mix(in srgb, var(--org-background) 95%, var(--org-text) 5%);
+}
+/* Some family styles force huge font sizes with !important. The card-specific
+   sizing must supersede them, including in the read-only preview. */
+.section[data-composition="impact-figures"] .metricValue,
+.section[data-composition="impact-columns"] .metricValue,
+.section[data-composition="impact-explained"] .metricValue {
+  display: block;
+  font-size: clamp(1.15rem, 17cqi, 3.2rem) !important;
+  line-height: 1.04 !important;
+  letter-spacing: -.045em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.section[data-composition="impact-figures"] .metricLabel,
+.section[data-composition="impact-columns"] .metricLabel,
+.section[data-composition="impact-explained"] .metricLabel {
+  overflow-wrap: anywhere;
+}
+.section[data-composition="impact-figures"] .metricIconBadge {
+  margin-bottom: 2px;
+  width: clamp(28px, 5cqi, 42px);
+  height: clamp(28px, 5cqi, 42px);
+  color: var(--org-primary);
+  background: color-mix(in srgb, var(--org-primary) 12%, var(--org-background));
+}
+/* The real image slot remains an editable frame. This is only the blank-slot
+   preview, not pretend published content. */
+.mediaPreviewPlaceholder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 170px;
+  color: var(--org-primary);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--org-primary) 9%, var(--org-background)),
+      color-mix(in srgb, var(--org-accent) 13%, var(--org-background)));
+  border: 2px dashed color-mix(in srgb, var(--org-primary) 28%, transparent);
+  text-align: center;
+  font-size: .9rem;
+  font-weight: 600;
+}
+.mediaPreviewPlaceholder svg { width: 36px; height: 36px; }
+@container institutional-site (max-width: 780px) {
+  .section[data-composition="impact-figures"] .repeat {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@container institutional-site (max-width: 380px) {
+  .section[data-composition="impact-figures"] .repeat {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Moderate vertical rhythm: a statistics section should not be a hero-sized
+   slab, even when its source family uses generous section spacing. */
+.section[data-composition="impact-figures"] {
+  padding-block: clamp(36px, 5vw, 78px) !important;
+}
+.section[data-composition="impact-figures"] .sectionInner > .stack {
+  gap: clamp(22px, 3.2vw, 48px) !important;
+}
+.section[data-composition="impact-figures"] .heading {
+  font-size: clamp(1.55rem, 3.5vw, 2.8rem);
+}
+
+/* Componentes de conteúdo interativo do Site Builder: acessíveis e controlados pela marca. */
+.faqBlock { display: grid; gap: 10px; width: 100%; min-width: 0; color: var(--org-text, #172b41); }
+.faqItem { border: 1px solid color-mix(in srgb, var(--org-primary, #3459a5) 18%, transparent); border-radius: var(--design-corner, 14px); background: color-mix(in srgb, var(--org-background, white) 94%, var(--org-primary, #3459a5) 6%); overflow: hidden; }
+.faqItem summary { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 17px 19px; cursor: pointer; font-weight: 650; list-style: none; }
+.faqItem summary::-webkit-details-marker { display: none; }
+.faqItem summary span { color: var(--org-primary, #3459a5); font-size: 24px; line-height: 1; transition: transform .15s ease; }
+.faqItem[open] summary span { transform: rotate(45deg); }
+.faqItem summary:focus-visible, .faqAdd:focus-visible, .faqRemove:focus-visible { outline: 2px solid var(--org-primary, #3459a5); outline-offset: 3px; }
+.faqAnswer { padding: 0 19px 19px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+.faqEditorItem { padding: 14px; border: 1px solid color-mix(in srgb, var(--org-primary, #3459a5) 20%, transparent); border-radius: 12px; display: grid; gap: 10px; }
+.faqEditorItem label { display: grid; gap: 6px; font-size: 12px; font-weight: 650; }
+.faqEditorItem input, .faqEditorItem textarea, .progressBlock input { background: white; color: #14243a; border: 1px solid #cdd4e3; border-radius: 8px; padding: 10px 12px; font: inherit; width: 100%; box-sizing: border-box; }
+.faqEditorItem textarea { resize: vertical; }
+.faqAdd, .faqRemove { border: 1px solid color-mix(in srgb, var(--org-primary, #3459a5) 30%, transparent); border-radius: 9px; background: transparent; color: var(--org-primary, #3459a5); cursor: pointer; padding: 9px 12px; font-weight: 650; justify-self: start; }
+.progressBlock { display: grid; gap: 14px; width: 100%; min-width: 0; padding: clamp(16px, 3vw, 28px); border: 1px solid color-mix(in srgb, var(--org-primary, #3459a5) 18%, transparent); border-radius: 16px; background: color-mix(in srgb, var(--org-background, white) 94%, var(--org-accent, #f8b83a) 6%); }
+.progressHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; font-size: clamp(1rem, 1.7vw, 1.3rem); }
+.progressHeading strong:last-child { color: var(--org-primary, #3459a5); font-size: clamp(1.2rem, 2vw, 2rem); }
+.progressTrack { width: 100%; background: color-mix(in srgb, var(--org-primary, #3459a5) 14%, white); border-radius: 999px; height: 12px; overflow: hidden; }
+.progressFill { height: 100%; background: linear-gradient(90deg, var(--org-primary, #3459a5), var(--org-accent, #f8b83a)); border-radius: inherit; transition: width 200ms ease; }
+.progressAdjust { display: grid; gap: 5px; font-size: 12px; font-weight: 650; }
+.progressAdjust input { padding: 0; accent-color: var(--org-primary, #3459a5); }
+.progressDetail { margin: 0; font-size: .91em; line-height: 1.6; opacity: .8; }
+@media (prefers-reduced-motion: reduce) { .progressFill, .faqItem summary span { transition: none; } }
+
+/* CONG 03.1E — curated layouts: brand palettes guide visual hierarchy. */
+.section[data-visual-style="curated-composition"] .sectionInner {min-width:0;}
+.section[data-visual-style="curated-composition"] .surfacecard {
+  background:color-mix(in srgb,var(--org-primary,#244b72) 5%,var(--org-background,#fff));
+  border:1px solid color-mix(in srgb,var(--org-primary,#244b72) 13%,transparent);
+  box-shadow:0 14px 34px color-mix(in srgb,var(--org-primary,#244b72) 8%,transparent);
+}
+.section[data-visual-style="curated-composition"] .surfacehighlight {
+  background:linear-gradient(125deg,color-mix(in srgb,var(--org-primary,#244b72) 9%,var(--org-background,#fff)),color-mix(in srgb,var(--org-accent,#f1b948) 10%,var(--org-background,#fff)));
+  border:1px solid color-mix(in srgb,var(--org-accent,#f1b948) 10%,transparent);
+}
+.section[data-visual-style="curated-composition"] .primaryAction,
+.section[data-visual-style="curated-composition"] .secondaryAction {text-decoration:none;transition:transform .18s ease,box-shadow .18s ease;}
+.section[data-visual-style="curated-composition"] .primaryAction:hover,
+.section[data-visual-style="curated-composition"] .secondaryAction:hover {transform:translateY(-2px);box-shadow:0 7px 20px color-mix(in srgb,var(--org-primary,#244b72) 16%,transparent);}
+.section[data-visual-style="curated-composition"] .itemTitle {line-height:1.18;overflow-wrap:anywhere;}
+.section[data-visual-style="curated-composition"] .metricValue {font-variant-numeric:tabular-nums;min-width:0;max-width:100%;font-size:clamp(1.7rem,3vw,3.3rem);overflow-wrap:anywhere;line-height:1.06;}
+.section[data-visual-style="curated-composition"] .metricLabel {overflow-wrap:anywhere;line-height:1.35;}
+@container institutional-site (max-width: 640px){
+  .section[data-visual-style="curated-composition"] .metricValue{font-size:clamp(1.6rem,7vw,2.5rem)}
+}
+@media(prefers-reduced-motion:reduce){.section[data-visual-style="curated-composition"] .primaryAction,.section[data-visual-style="curated-composition"] .secondaryAction{transition:none}}
+
+/* Patch 03.1G — robust layout boundaries for curated compositions.
+   A missing image must remain a normal frame, not become a 20px wide button. */
+.section .columns > *, .section .grid > *, .section .repeat > *,
+.section .stack > * { min-width: 0; max-width: 100%; }
+.section :is(.display, .heading, .itemTitle, .customHeading, .customText) {
+  max-width: 100%; overflow-wrap: anywhere; text-wrap: balance;
+}
+.section .columns :is(.imageButton, .editableMedia, .imagePlaceholder) {
+  box-sizing: border-box; max-width: 100%; width: 100%;
+}
+.section .columns .imagePlaceholder {
+  min-height: clamp(190px, 28cqw, 370px);
+  aspect-ratio: 4 / 3;
+}
+.section [data-element-shell="true"][data-image-element="true"] {
+  max-width: 100%;
+}
+@container institutional-site (max-width: 720px) {
+  .section .columns .imagePlaceholder { min-height: 190px; aspect-ratio: 4 / 3; }
+}
+
+/* Patch 03.1H — Never allow media slots to shrink to the width of the
+   placeholder label.  Ratios are part of the frame, not content sizing. */
+.section .elementShell[data-image-element="true"] {
+  box-sizing: border-box;
+  min-inline-size: 0;
+}
+.section .elementShell[data-image-element="true"] > :is(.editableMedia, .imageMediaRoot) {
+  width: 100%;
+  min-width: 0;
+  display: block;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder {
+  width: 100%;
+  max-width: none;
+  min-height: clamp(210px, 24vw, 410px);
+  aspect-ratio: 4 / 3;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  overflow: hidden;
+  overflow-wrap: normal;
+  white-space: normal;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.heroImage { aspect-ratio: 4 / 3; }
+.section .elementShell[data-image-element="true"] .imagePlaceholder.wideImage { aspect-ratio: 16 / 7; min-height: 190px; }
+.section .elementShell[data-image-element="true"] .imagePlaceholder.cardImage { aspect-ratio: 16 / 10; min-height: 160px; }
+.section .elementShell[data-image-element="true"] .imagePlaceholder > span,
+.section .elementShell[data-image-element="true"] .imagePlaceholder > small {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 38ch;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-height: 1.35;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder > svg {
+  flex: none;
+  width: 30px;
+  height: 30px;
+}
+.section .elementShell[data-image-element="true"] .imageMediaFrame:not([data-custom-height="true"]):not([data-aspect="square"]):not([data-aspect="16:9"]):not([data-aspect="portrait"]) {
+  min-height: clamp(180px, 23vw, 390px);
+  aspect-ratio: 4 / 3;
+}
+/* Never override an explicitly authored width after the user resizes a frame. */
+@container institutional-site (max-width: 720px) {
+  .section .elementShell[data-image-element="true"] .imagePlaceholder { min-height: 195px; }
+}
+
+.customIcon img {
+  width: 60%;
+  height: 60%;
+  display: block;
+  object-fit: contain;
+}
+
+.section .elementShell[data-image-element="true"] {
+  min-inline-size: min(180px, 100%);
+  justify-self: stretch;
+}
+.section .elementShell[data-image-element="true"] .editableMedia,
+.section .elementShell[data-image-element="true"] .imageMediaRoot {
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame {
+  background: color-mix(in srgb, var(--org-primary, #315e8b) 7%, var(--org-background, #fff));
+  min-height: 180px;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame[data-aspect="16:9"] {
+  aspect-ratio: 16 / 9;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame[data-aspect="portrait"] {
+  aspect-ratio: 3 / 4;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame[data-frame="circle"] {
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame[data-frame="arch"] {
+  border-radius: 48% 48% 18px 18px / 42% 42% 18px 18px;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame[data-frame="blob"] {
+  border-radius: 38% 62% 58% 42% / 45% 38% 62% 55%;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame[data-frame="diagonal-left"] {
+  clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame[data-frame="diagonal-right"] {
+  clip-path: polygon(0 0, 92% 0, 100% 100%, 8% 100%);
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame[data-custom-height="true"] {
+  min-height: 0;
+}
+.section .elementShell[data-image-element="true"] .imagePlaceholder.imageMediaFrame > small {
+  max-width: 34ch;
+}
+@container institutional-site (max-width: 720px) {
+  .section .elementShell[data-image-element="true"] {
+    min-inline-size: 0;
+  }
+}
+
+
+/* Native editorial: ten distinct compositions with one responsive contract. */
+.section[data-design-family][data-visual-style$="-hero"] {
+  isolation: isolate;
+  overflow: clip;
+}
+.section[data-design-family][data-visual-style$="-hero"] .sectionInner,
+.section[data-design-family][data-visual-style$="-hero"] .columns,
+.section[data-design-family][data-visual-style$="-hero"] .stack {
+  min-width: 0;
+}
+.section[data-design-family][data-visual-style$="-hero"] .display {
+  max-width: 100%;
+  min-width: 0;
+  font-size: clamp(2.8rem, 5.4cqi, 5.6rem);
+  line-height: 1.035;
+  letter-spacing: -.035em;
+  overflow-wrap: break-word;
+  word-break: normal;
+  text-wrap: balance;
+}
+.section[data-design-family][data-visual-style$="-hero"] .lead {
+  max-width: 52ch;
+  line-height: 1.5;
+  font-size: clamp(1.05rem, 1.55cqi, 1.3rem);
+}
+.section[data-design-family][data-visual-style$="-hero"] .imageMediaRoot,
+.section[data-design-family][data-visual-style$="-hero"] .imageMediaFrame {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.section[data-design-family][data-visual-style$="-hero"] .imageMediaFrame {
+  max-height: 720px;
+  overflow: hidden;
+}
+.section[data-design-family][data-visual-style$="-hero"] .imageMediaImage {
+  object-fit: cover;
+}
+.section[data-design-family][data-visual-style$="-hero"] .primaryAction,
+.section[data-design-family][data-visual-style$="-hero"] .secondaryAction {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+.section[data-design-family] .cardImage,
+.section[data-design-family] .imageMediaFrame,
+.section[data-design-family] .mediaFrame {
+  background-color: color-mix(in srgb, var(--org-primary) 9%, var(--org-background));
+}
+.section[data-design-family] .imageMediaFrame[data-image-unavailable="true"]:after {
+  content: "Fotografia indisponível · substitua na biblioteca";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  text-align: center;
+  color: var(--org-text);
+  font-size: 14px;
+}
+/* Horizonte: magazine spread with an asymmetrical crop and an open type area. */
+.section[data-design-family][data-visual-style="horizonte-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+  align-items: end;
+  gap: clamp(26px, 3cqi, 65px);
+}
+.section[data-design-family][data-visual-style="horizonte-hero"] .display {
+  font-family: Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -.055em;
+  max-width: 12ch;
+}
+.section[data-design-family][data-visual-style="horizonte-hero"] .imageMediaFrame {
+  min-height: 520px;
+  border-radius: 140px 8px 8px 8px;
+  clip-path: none;
+}
+/* Território Vivo: the story overlays the landscape, rather than sitting beside it. */
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+  min-height: 610px;
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :first-child {
+  position: relative;
+  z-index: 2;
+  max-width: min(650px, 66%);
+  padding: 48px 0;
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :last-child {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :last-child:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(2 29 18 / 90%), rgb(2 29 18 / 58%) 52%, transparent);
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .imageMediaRoot,
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .imageMediaFrame {
+  height: 100%;
+  min-height: 610px;
+  max-height: none;
+  border-radius: 0;
+}
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .display,
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .lead,
+.section[data-design-family][data-visual-style="territorio-vivo-hero"] .eyebrow { color: #fff; }
+/* Acolher: softer inverted composition and an organic portrait window. */
+.section[data-design-family][data-visual-style="acolher-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+  align-items: center;
+  gap: clamp(24px, 4cqi, 80px);
+}
+.section[data-design-family][data-visual-style="acolher-hero"] .sectionInner > .columns > :last-child { order: -1; }
+.section[data-design-family][data-visual-style="acolher-hero"] .imageMediaFrame {
+  min-height: 520px;
+  border-radius: 42% 42% 34px 34px;
+  clip-path: none;
+}
+.section[data-design-family][data-visual-style="acolher-hero"] .display {
+  font-family: Georgia, serif;
+  max-width: 13ch;
+}
+/* Essencial: legible emergency information card laid over a full photo bleed. */
+.section[data-design-family][data-visual-style="essencial-hero"] .sectionInner > .columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 610px;
+  position: relative;
+}
+.section[data-design-family][data-visual-style="essencial-hero"] .sectionInner > .columns > :last-child {
+  position: absolute;
+  inset: 0 0 0 24%;
+  z-index: 0;
+}
+.section[data-design-family][data-visual-style="essencial-hero"] .sectionInner > .columns > :first-child {
+  position: relative;
+  z-index: 2;
+  width: min(510px, 57%);
+  padding: clamp(24px, 3cqi, 44px);
+  border-left: 8px solid var(--org-primary);
+  background: #161e24;
+  color: #fff;
+  box-shadow: 0 20px 65px rgb(0 0 0 / 17%);
+}
+.section[data-design-family][data-visual-style="essencial-hero"] .display {
+  font-family: "Arial Narrow", Impact, sans-serif;
+  font-size: clamp(2.7rem, 4.3cqi, 4.8rem);
+  line-height: 1.08;
+  max-width: 13ch;
+  text-transform: uppercase;
+  color: #fff;
+}
+.section[data-design-family][data-visual-style="essencial-hero"] .lead,
+.section[data-design-family][data-visual-style="essencial-hero"] .eyebrow { color: #fff; }
+.section[data-design-family][data-visual-style="essencial-hero"] .imageMediaRoot,
+.section[data-design-family][data-visual-style="essencial-hero"] .imageMediaFrame {
+  height: 100%; min-height: 610px; max-height: none; border-radius: 16px;
+}
+/* Comunidade: photo first, with the narrative offset like a neighborhood journal. */
+.section[data-design-family][data-visual-style="comunidade-hero"] .sectionInner > .columns { grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); }
+.section[data-design-family][data-visual-style="comunidade-hero"] .sectionInner > .columns > :last-child { order: -1; }
+.section[data-design-family][data-visual-style="comunidade-hero"] .imageMediaFrame {
+  min-height: 520px;
+  border-radius: 12px;
+  transform: rotate(-2deg);
+}
+.section[data-design-family][data-visual-style="comunidade-hero"] .display { font-family: Georgia, serif; max-width: 14ch; }
+/* Vozes: campaign manifesto, tall portrait, very open margins. */
+.section[data-design-family][data-visual-style="vozes-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+  gap: clamp(30px, 4cqi, 74px);
+}
+.section[data-design-family][data-visual-style="vozes-hero"] .display {
+  font-family: Georgia, serif;
+  font-style: italic;
+  letter-spacing: -.052em;
+  max-width: 13ch;
+}
+.section[data-design-family][data-visual-style="vozes-hero"] .imageMediaFrame {
+  min-height: 590px;
+  border-radius: 360px 360px 20px 20px;
+}
+/* Pulso: poster typography and an athletic, angled image slab. */
+.section[data-design-family][data-visual-style="pulso-hero"] .sectionInner > .columns { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
+.section[data-design-family][data-visual-style="pulso-hero"] .display {
+  font-family: Impact, "Arial Narrow", sans-serif;
+  letter-spacing: -.012em;
+  text-transform: uppercase;
+  max-width: 10ch;
+  font-size: clamp(3rem, 6.4cqi, 6.9rem);
+}
+.section[data-design-family][data-visual-style="pulso-hero"] .imageMediaFrame {
+  min-height: 520px;
+  clip-path: polygon(7% 0, 100% 8%, 93% 100%, 0 92%);
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Profundezas: ocean scene with a glass research card over the photograph. */
+.section[data-design-family][data-visual-style="profundezas-hero"] .sectionInner > .columns { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+.section[data-design-family][data-visual-style="profundezas-hero"] .sectionInner > .columns > :first-child {
+  position: relative;
+  z-index: 2;
+  width: calc(100% + 55px);
+  margin-right: -55px;
+  padding: clamp(20px, 2.9cqi, 40px);
+  background: rgb(5 33 51 / 87%);
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 16px;
+}
+.section[data-design-family][data-visual-style="profundezas-hero"] .imageMediaFrame { min-height: 610px; border-radius: 16px; }
+.section[data-design-family][data-visual-style="profundezas-hero"] :is(.display, .lead, .eyebrow) { color: #fff; }
+/* Sereno: quiet typographic story centered around a soft portrait. */
+.section[data-design-family][data-visual-style="sereno-hero"] .sectionInner > .columns { grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); }
+.section[data-design-family][data-visual-style="sereno-hero"] .display { font-family: Georgia, serif; font-weight: 400; max-width: 13ch; }
+.section[data-design-family][data-visual-style="sereno-hero"] .imageMediaFrame {
+  min-height: 560px;
+  border-radius: 300px 300px 16px 16px;
+}
+/* Conexão: editorial network with a framed photo and modular text. */
+.section[data-design-family][data-visual-style="conexao-hero"] .sectionInner > .columns {
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: clamp(18px, 4cqi, 60px);
+}
+.section[data-design-family][data-visual-style="conexao-hero"] .sectionInner > .columns > :last-child {
+  padding: 12px;
+  background: color-mix(in srgb, var(--org-accent) 14%, var(--org-background));
+  border: 1px solid color-mix(in srgb, var(--org-primary) 18%, transparent);
+  border-radius: 36px;
+}
+.section[data-design-family][data-visual-style="conexao-hero"] .display { font-weight: 800; max-width: 12ch; }
+.section[data-design-family][data-visual-style="conexao-hero"] .imageMediaFrame { min-height: 520px; border-radius: 26px; }
+/* All families: real canvas size, not viewport width, controls the responsive reflow. */
+@container institutional-site (max-width: 800px) {
+  .section[data-design-family][data-visual-style$="-hero"] {
+    min-height: 0;
+    padding: clamp(24px, 5cqi, 48px);
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns,
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .stack > .columns {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > *,
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .stack > .columns > * {
+    position: relative;
+    inset: auto;
+    order: initial;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > :last-child { order: 2; }
+  .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > :first-child { order: 1; }
+  .section[data-design-family][data-visual-style$="-hero"] .display {
+    max-width: 100%;
+    font-size: clamp(2rem, 8.5cqi, 4rem);
+    line-height: 1.08;
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .imageMediaRoot,
+  .section[data-design-family][data-visual-style$="-hero"] .imageMediaFrame {
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    max-height: 440px;
+    aspect-ratio: 4 / 3;
+    transform: none;
+    clip-path: none;
+    border-radius: 20px;
+  }
+  .section[data-design-family][data-visual-style$="-hero"] .imageMediaFrame:after {
+    background: none;
+  }
+  .section[data-design-family][data-visual-style="essencial-hero"] .sectionInner > .columns > :first-child,
+  .section[data-design-family][data-visual-style="profundezas-hero"] .sectionInner > .columns > :first-child {
+    padding: clamp(22px, 4cqi, 32px);
+  }
+  .section[data-design-family][data-visual-style="essencial-hero"] .display { font-size: clamp(2rem, 8cqi, 3.5rem); }
+  .section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :last-child:after { display: none; }
+  .section[data-design-family][data-visual-style="territorio-vivo-hero"] .sectionInner > .columns > :first-child {
+    padding: clamp(22px, 4cqi, 32px);
+    background: #163b29;
+    border-radius: 16px;
+  }
+}
+/* Previews are scaled canvases; avoid shaping the text into unreadable narrow strips. */
+.section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > * {
+  min-width: 0;
 }

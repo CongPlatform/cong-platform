@@ -1,3 +1,8 @@
+import NativeVariantCanvas from "../preview/NativeVariantCanvas";
+import LibraryHoverPreview from "./LibraryHoverPreview";
+import IconifyBrowser from "./IconifyBrowser";
+import type { StockMediaItem } from "../../../services/stockMediaService";
+import StockVideoBrowser from "./StockVideoBrowser";
 import { useState, type CSSProperties } from "react";
 import {
   FiActivity,
@@ -12,7 +17,16 @@ import {
   FiEyeOff,
   FiGrid,
   FiHeart,
+  FiHelpCircle,
   FiImage,
+  FiVideo,
+  FiClock,
+  FiMessageCircle,
+  FiCreditCard,
+  FiBarChart2,
+  FiCamera,
+  FiFolder,
+  FiColumns,
   FiLayers,
   FiLayout,
   FiLink,
@@ -32,11 +46,6 @@ import {
   FiUpload,
 } from "react-icons/fi";
 
-import {
-  filterInstitutionalIcons,
-  institutionalIconCategories,
-  type InstitutionalIconCategory,
-} from "../../../data/institutional/iconLibrary";
 import { getSectionDefinition, sectionCatalog } from "../../../data/institutional/sectionCatalog";
 import {
   findNativeDesignFamilyById,
@@ -62,10 +71,14 @@ import {
 } from "../../../utils/institutionalLayout";
 import LiveSectionThumbnail from "../preview/LiveSectionThumbnail";
 import ColorPickerControl from "./ColorPickerControl";
+import CompositionStudio from "./CompositionStudio";
+import RichBlockGallery from "./RichBlockGallery";
+import EditorialPieceGallery from "./EditorialPieceGallery";
+import FreeImageBrowser from "./FreeImageBrowser";
 
 import styles from "./SectionLibrary.module.css";
 
-type LibraryCategory = "structure" | "sections" | "backgrounds" | "text" | "media" | "actions" | "icons" | "shapes" | "information" | "layout";
+type LibraryCategory = "structure" | "sections" | "rich" | "backgrounds" | "text" | "media" | "actions" | "icons" | "shapes" | "information" | "layout";
 type SectionGroup = "all" | "presentation" | "action" | "trust" | "structure";
 
 const sectionGroups: Array<{ id: SectionGroup; name: string }> = [
@@ -91,6 +104,7 @@ const categories: Array<{
 }> = [
   { id: "structure", name: "Camadas", icon: FiLayers, tone: "navy" },
   { id: "sections", name: "Seções", icon: FiLayout, tone: "blue" },
+  { id: "rich", name: "Interativos", icon: FiZap, tone: "violet" },
   { id: "backgrounds", name: "Fundos", icon: FiSun, tone: "yellow" },
   { id: "text", name: "Texto", icon: FiType, tone: "violet" },
   { id: "media", name: "Mídia", icon: FiImage, tone: "green" },
@@ -125,6 +139,17 @@ const elementItems: Array<{
   { type: "shape", value: "blob", name: "Forma orgânica", description: "Forma fluida para fundos e destaques", category: "shapes", icon: FiCircle },
   { type: "shape", value: "line", name: "Linha", description: "Linha decorativa independente", category: "shapes", icon: FiMinus },
   { type: "metric", name: "Número em destaque", description: "Um número importante com uma explicação curta", category: "information", icon: FiActivity },
+  { type: "faq", name: "Perguntas frequentes", description: "Respostas que o visitante abre conforme precisa", category: "information", icon: FiHelpCircle },
+  { type: "progress", name: "Barra de progresso", description: "Meta de campanha com percentual editável", category: "information", icon: FiActivity },
+  { type: "campaign_card", name: "Campanha visual", description: "Card de campanha com foto, meta, progresso e ação", category: "actions", icon: FiFolder },
+  { type: "media_gallery", name: "Galeria de imagens", description: "Molduras substituíveis com legendas e recorte", category: "media", icon: FiCamera },
+  { type: "video_embed", name: "Vídeo", description: "Player seguro de YouTube ou Vimeo", category: "media", icon: FiVideo },
+  { type: "data_chart", name: "Gráfico de impacto", description: "Barras e rosca com dados próprios", category: "information", icon: FiBarChart2 },
+  { type: "story_tabs", name: "Abas de conteúdo", description: "Histórias e orientações em cartões interativos", category: "information", icon: FiColumns },
+  { type: "community_timeline", name: "Linha do tempo", description: "Marcos da história da ONG em narrativa editorial", category: "rich", icon: FiClock },
+  { type: "testimonial_slider", name: "Depoimentos navegáveis", description: "Histórias e relatos com navegação acessível", category: "rich", icon: FiMessageCircle },
+  { type: "action_grid", name: "Cartões de participação", description: "Caminhos para doar, participar e acompanhar", category: "rich", icon: FiHeart },
+  { type: "donation_choices", name: "Valores de doação", description: "Escolha visual com destino seguro configurável", category: "rich", icon: FiCreditCard },
   { type: "divider", name: "Linha divisória", description: "Uma separação visual sutil", category: "layout", icon: FiMinus },
   { type: "spacer", name: "Espaço", description: "Mais respiro entre conteúdos", category: "layout", icon: FiBox },
 ];
@@ -132,10 +157,13 @@ const elementItems: Array<{
 function categoryDescription(category: LibraryCategory): string {
   if (category === "structure") return "Veja a ordem das seções e dos elementos. Você pode selecionar, ocultar, travar e reorganizar.";
   if (category === "sections") return "Escolha o tipo de seção e compare composições prontas antes de inserir.";
+  if (category === "rich") return "Explore composições interativas e personalize cada parte.";
   if (category === "backgrounds") return "Troque cor, foto e detalhes visuais sem alterar o conteúdo da seção.";
-  if (category === "icons") return "Escolha ícones vetoriais da biblioteca Lucide. Eles continuam nítidos em qualquer tamanho.";
+  if (category === "icons") return "Explore ícones vetoriais por categoria e coloque-os no site.";
+  if (category === "media") return "Explore fotografias reais, molduras, galerias e vídeos em um só lugar.";
+  if (category === "layout") return "Ajuste a largura, os espaços e a ordem dos elementos desta seção.";
   if (category === "shapes") return "Adicione formas vetoriais e redimensione largura e altura livremente.";
-  return "Adicione peças simples. A CONG cuida da adaptação para telas diferentes.";
+  return "Explore peças visuais e escolha o estilo que combina com sua página.";
 }
 
 function layerLabel(node: Extract<InstitutionalLayoutNode, { type: "slot" | "element" }>): string {
@@ -162,6 +190,17 @@ function layerLabel(node: Extract<InstitutionalLayoutNode, { type: "slot" | "ele
     shape: "Forma",
     metric: "Número em destaque",
     quote: "Destaque",
+    faq: "Perguntas frequentes",
+    progress: "Barra de progresso",
+    campaign_card: "Campanha visual",
+    media_gallery: "Galeria de imagens",
+    video_embed: "Vídeo",
+    data_chart: "Gráfico de impacto",
+    story_tabs: "Abas de conteúdo",
+    community_timeline: "Linha do tempo",
+    testimonial_slider: "Depoimentos navegáveis",
+    action_grid: "Cartões de participação",
+    donation_choices: "Valores de doação",
     divider: "Linha divisória",
     spacer: "Espaço",
   };
@@ -181,6 +220,10 @@ export default function SectionLibrary({
   onToggleCollapsed,
   onAddSection,
   onAddElement,
+  onAddRichPreset,
+  onAddEditorialPiece,
+  onInsertStockImage,
+  onInsertStockVideo,
   onSelectSection,
   onSelectElement,
   onMoveSection,
@@ -202,8 +245,12 @@ export default function SectionLibrary({
   selectedElementIds?: string[];
   collapsed: boolean;
   onToggleCollapsed: () => void;
-  onAddSection: (sectionType: InstitutionalSectionType, variantVersionId?: string) => void;
+  onAddSection: (sectionType: InstitutionalSectionType, variantVersionId?: string, compositionId?: string) => void;
   onAddElement: (elementType: InstitutionalElementType, initialValue?: string) => void;
+  onAddRichPreset?: (presetId: string, inheritBrand?: boolean) => void;
+  onAddEditorialPiece?: (pieceId: string, inheritBrand: boolean) => void;
+  onInsertStockImage?: (file: File, label: string) => Promise<void>;
+  onInsertStockVideo?: (item: StockMediaItem) => void;
   onSelectSection?: (sectionId: string) => void;
   onSelectElement?: (sectionId: string, elementId: string, additive?: boolean) => void;
   onMoveSection?: (sectionId: string, direction: -1 | 1) => void;
@@ -217,10 +264,14 @@ export default function SectionLibrary({
 }) {
   const [category, setCategory] = useState<LibraryCategory>("structure");
   const [sectionGroup, setSectionGroup] = useState<SectionGroup>("all");
+  const [sectionView, setSectionView] = useState<"compositions" | "variants">("compositions");
+  const [variantHover, setVariantHover] = useState<{ versionId: string; anchor: DOMRect } | null>(null);
   const [backgroundScope, setBackgroundScope] = useState<"section" | "all">("section");
   const [query, setQuery] = useState("");
   const [sectionType, setSectionType] = useState<InstitutionalSectionType>("organization_intro");
-  const [iconCategory, setIconCategory] = useState<InstitutionalIconCategory>("all");
+  const [mediaTab, setMediaTab] = useState<"images" | "frames" | "gallery" | "video">("images");
+  const [actionTab, setActionTab] = useState<"campaigns" | "participation" | "donations" | "buttons">("campaigns");
+  const [dataTab, setDataTab] = useState<"charts" | "goals" | "guides">("charts");
   const [draggedLayer, setDraggedLayer] = useState<{ sectionId: string; layerId: string } | null>(null);
 
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
@@ -235,12 +286,12 @@ export default function SectionLibrary({
       .toLocaleLowerCase("pt-BR")
       .includes(normalizedQuery);
   });
+  const richElementTypes: readonly InstitutionalElementType[] = ["campaign_card", "media_gallery", "video_embed", "data_chart", "story_tabs", "community_timeline", "testimonial_slider", "action_grid", "donation_choices"];
   const filteredElements = elementItems.filter((item) => {
-    if (item.category !== category) return false;
+    if (category === "rich" ? !richElementTypes.includes(item.type) : item.category !== category) return false;
     if (!normalizedQuery) return true;
     return `${item.name} ${item.description}`.toLocaleLowerCase("pt-BR").includes(normalizedQuery);
   });
-  const filteredIcons = filterInstitutionalIcons(query, iconCategory);
   const activeSectionType = filteredSections.some((definition) => definition.type === sectionType)
     ? sectionType
     : filteredSections[0]?.type ?? sectionType;
@@ -253,6 +304,9 @@ export default function SectionLibrary({
     .sort((left, right) => nativeFamilyOrder(left.name) - nativeFamilyOrder(right.name));
 
   const selectedSectionStyle = selectedSection ? getSectionStyle(selectedSection.settings) : {};
+  const freeSectionVariant = variants.find((variant) =>
+    variant.sectionType === "custom_content" && (variant.isSystem || variant.status === "published"),
+  );
   const firstMovableIndex = sections.findIndex(
     (section) => !["site_header", "site_footer"].includes(section.sectionType),
   );
@@ -325,13 +379,13 @@ export default function SectionLibrary({
             </div>
           </div>
 
-          {category !== "structure" && category !== "backgrounds" ? (
+          {category !== "structure" && category !== "backgrounds" && category !== "icons" && category !== "layout" && !(category === "media" && mediaTab === "images") ? (
             <label className={styles.search}>
               <FiSearch aria-hidden="true" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={category === "sections" ? "Buscar seção ou estilo" : category === "icons" ? "Buscar ícone (ex.: pessoas, mapa, doação)" : "Buscar peça"}
+                placeholder={category === "sections" ? "Buscar seção ou estilo" : "Buscar peça"}
               />
             </label>
           ) : null}
@@ -476,6 +530,69 @@ export default function SectionLibrary({
                   </div>
 
                   <div className={styles.backgroundGroup}>
+                    <div className={styles.backgroundGroupTitle}>
+                      <strong>Combinações de fundo</strong>
+                      <span>Comece por um estilo e ajuste as cores como quiser.</span>
+                    </div>
+                    <div className={styles.backgroundPresetGrid}>
+                      {([
+                        { id: "paper", name: "Papel editorial", background: "background", decor: "none", tone: "primary" },
+                        { id: "soft", name: "Aurora", background: "background", decor: "soft-glow", tone: "accent" },
+                        { id: "brand", name: "Cores da marca", background: "background", decor: "corner-glow", tone: "primary" },
+                        { id: "contrast", name: "Órbitas", background: "background", decor: "rings", tone: "secondary" },
+                        { id: "editorial", name: "Duotone", background: "background", decor: "wash", tone: "mixed" },
+                        { id: "highlight", name: "Holofote", background: "background", decor: "soft-glow", tone: "primary" },
+                        { id: "midnight", name: "Noturno", background: "#10273b", decor: "rings", tone: "accent" },
+                        { id: "forest", name: "Bosque", background: "#123d34", decor: "wash", tone: "accent" },
+                        { id: "terracotta", name: "Terracota", background: "#f7e7da", decor: "corner-glow", tone: "secondary" },
+                        { id: "violet", name: "Ametista", background: "#efe7f9", decor: "rings", tone: "primary" },
+                        { id: "sand", name: "Editorial areia", background: "#f7efd9", decor: "wash", tone: "accent" },
+                        { id: "blueprint", name: "Blueprint", background: "#e8f2fd", decor: "rings", tone: "primary" },
+                      ] as const).map((preset) => (
+                        <button
+                          type="button"
+                          key={preset.id}
+                          className={styles.backgroundPresetButton}
+                          onClick={() => applyBackgroundStyle({
+                            backgroundColor: preset.background,
+                            backgroundDecor: preset.decor,
+                            backgroundDecorTone: preset.tone,
+                            backgroundImage: null,
+                            backgroundTreatment: "original",
+                          })}
+                        >
+                          <span
+                            className={styles.backgroundPresetVisual}
+                            data-preset={preset.id}
+                            data-decor={preset.decor}
+                            style={{
+                              backgroundColor: preset.background === "background"
+                                ? brand?.backgroundColor ?? "#ffffff"
+                                : preset.background,
+                              "--preview-decor-color": preset.tone === "secondary"
+                                ? brand?.secondaryColor ?? "#245d79"
+                                : preset.tone === "primary"
+                                  ? brand?.primaryColor ?? "#245d79"
+                                  : brand?.accentColor ?? "#e5a14c",
+                              "--preview-decor-secondary": preset.tone === "mixed"
+                                ? brand?.secondaryColor ?? "#245d79"
+                                : preset.tone === "secondary"
+                                  ? brand?.secondaryColor ?? "#245d79"
+                                  : preset.tone === "primary"
+                                    ? brand?.primaryColor ?? "#245d79"
+                                    : brand?.accentColor ?? "#e5a14c",
+                            } as CSSProperties}
+                            aria-hidden="true"
+                          >
+                            <i /><b /><em />
+                          </span>
+                          <strong>{preset.name}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.backgroundGroup}>
                     <div className={styles.backgroundGroupTitle}><strong>Cor do fundo</strong><span>As cores da identidade vêm primeiro, mas você pode escolher outra.</span></div>
                     <div className={styles.backgroundColorGrid}>
                       {([
@@ -590,6 +707,26 @@ export default function SectionLibrary({
           ) : null}
 
           {category === "sections" ? (
+            <div className={styles.sectionViewTabs} role="group" aria-label="Tipo de biblioteca">
+              <button type="button" aria-pressed={sectionView === "compositions"} data-active={sectionView === "compositions"} onClick={() => setSectionView("compositions")}>Composições</button>
+              <button type="button" aria-pressed={sectionView === "variants"} data-active={sectionView === "variants"} onClick={() => setSectionView("variants")}>Modelos existentes</button>
+            </div>
+          ) : null}
+
+          {category === "sections" && sectionView === "compositions" ? (
+            <div className={styles.scrollContent}>
+              <div className={styles.richDiscovery}>
+                <div>
+                  <strong>Elementos para completar sua composição</strong>
+                  <p>Combine fotografias, indicadores, histórias e ações em uma mesma seção.</p>
+                </div>
+                <button type="button" onClick={() => { setCategory("rich"); setQuery(""); }}>Ver componentes</button>
+              </div>
+              <CompositionStudio brand={brand} variants={variants} query={query} disabled={disabled} onAdd={onAddSection} />
+            </div>
+          ) : null}
+
+          {category === "sections" && sectionView === "variants" ? (
             <div className={styles.scrollContent}>
               <div className={styles.sectionDiscovery}>
                 <div className={styles.sectionDiscoveryHeading}>
@@ -660,6 +797,10 @@ export default function SectionLibrary({
                         <article
                           key={variant.versionId}
                           className={styles.variantCard}
+                          onMouseEnter={(event) => setVariantHover({ versionId: variant.versionId, anchor: event.currentTarget.getBoundingClientRect() })}
+                          onMouseLeave={() => setVariantHover(null)}
+                          onFocusCapture={(event) => setVariantHover({ versionId: variant.versionId, anchor: event.currentTarget.getBoundingClientRect() })}
+                          onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setVariantHover(null); }}
                           data-family={family?.id}
                           data-family-match={matchesCurrentFamily || undefined}
                           draggable={!disabled}
@@ -726,7 +867,13 @@ export default function SectionLibrary({
 
           {category !== "sections" && category !== "structure" && category !== "backgrounds" ? (
             <div className={styles.scrollContent}>
-              {!selectedSection ? (
+              {category === "rich" && !selectedSection && freeSectionVariant ? (
+                <button type="button" className={styles.addSectionShortcut} disabled={disabled}
+                  onClick={() => onAddSection("custom_content", freeSectionVariant.versionId)}>
+                  <FiPlus aria-hidden="true" /> Criar seção para este componente
+                </button>
+              ) : null}
+              {category !== "rich" && !selectedSection ? (
                 <div className={styles.selectionHint}>
                   <FiLayout aria-hidden="true" />
                   <div><strong>Escolha onde colocar</strong><span>Clique numa seção do site. Depois adicione a peça.</span></div>
@@ -744,52 +891,189 @@ export default function SectionLibrary({
                 </div>
               ) : null}
 
-              {category === "icons" ? (
-                <div className={styles.iconLibrary}>
-                  <div className={styles.iconCategoryTabs} aria-label="Categorias de ícones">
-                    {institutionalIconCategories.map((item) => (
-                      <button
-                        type="button"
-                        key={item.id}
-                        data-active={iconCategory === item.id}
-                        onClick={() => setIconCategory(item.id)}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className={styles.iconLibraryMeta}>
-                    <strong>{filteredIcons.length} ícones</strong>
-                    <span>SVG vetorial · Lucide</span>
-                  </div>
-                  <div className={styles.iconLibraryGrid}>
-                    {filteredIcons.map((item) => {
-                      const Icon = item.icon;
-                      return (
+              {category === "layout" && selectedSection ? (
+                <div className={styles.layoutPresets}>
+                  <button type="button" onClick={() => onAddElement("divider")} disabled={disabled}>
+                    <span className={styles.layoutDividerPreview} aria-hidden="true"><i /></span>
+                    <strong>Divisória</strong><small>Separe assuntos com uma linha discreta</small>
+                  </button>
+                  <button type="button" onClick={() => onAddElement("spacer")} disabled={disabled}>
+                    <span className={styles.layoutSpacingPreview} aria-hidden="true"><i /><i /></span>
+                    <strong>Respiro</strong><small>Adicione espaço entre elementos</small>
+                  </button>
+                </div>
+              ) : null}
+
+              {category === "layout" ? (
+                <div className={styles.layoutControls}>
+                  <div className={styles.layoutControlGroup}>
+                    <strong>Largura do conteúdo</strong>
+                    <div className={styles.layoutChoiceGrid}>
+                      {([
+                        ["normal", "Equilibrado", "normal"],
+                        ["wide", "Amplo", "wide"],
+                        ["full", "Página inteira", "full"],
+                      ] as const).map(([value, label, preview]) => (
                         <button
                           type="button"
-                          key={item.id}
-                          className={styles.iconLibraryItem}
-                          onClick={() => onAddElement("icon", item.id)}
+                          key={value}
+                          data-active={(selectedSectionStyle.contentWidth ?? "normal") === value}
                           disabled={disabled || !selectedSection}
-                          draggable={!disabled && Boolean(selectedSection)}
-                          onDragStart={(event) => {
-                            event.dataTransfer.effectAllowed = "copy";
-                            event.dataTransfer.setData("application/x-cong-element", "icon");
-                            event.dataTransfer.setData("application/x-cong-element-value", item.id);
-                          }}
-                          title={`Adicionar ${item.label}`}
+                          onClick={() => selectedSection && onSectionStyleChange?.(selectedSection.id, { contentWidth: value })}
                         >
-                          <span><Icon aria-hidden="true" /></span>
-                          <small>{item.label}</small>
+                          <span className={styles.layoutWidthSample} data-width={preview} aria-hidden="true"><i /></span>
+                          <span>{label}</span>
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
-                  {filteredIcons.length === 0 ? (
-                    <div className={styles.iconEmptyState}>Nenhum ícone encontrado para esta busca.</div>
-                  ) : null}
+                  <div className={styles.layoutControlGroup}>
+                    <strong>Espaçamento da seção</strong>
+                    <div className={styles.layoutChoiceGrid}>
+                      {([
+                        ["compact", "Compacto"],
+                        ["normal", "Equilibrado"],
+                        ["comfortable", "Confortável"],
+                        ["generous", "Amplo"],
+                      ] as const).map(([value, label]) => (
+                        <button
+                          type="button"
+                          key={value}
+                          data-active={(selectedSectionStyle.spacing ?? "normal") === value}
+                          disabled={disabled || !selectedSection}
+                          onClick={() => selectedSection && onSectionStyleChange?.(selectedSection.id, { spacing: value })}
+                        >
+                          <span className={styles.layoutSpacingSample} data-spacing={value} aria-hidden="true"><i /><i /></span>
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.layoutLayersLink}
+                    onClick={() => setCategory("structure")}
+                  >
+                    <FiLayers aria-hidden="true" /> Reordenar elementos em Camadas
+                    <FiChevronRight aria-hidden="true" />
+                  </button>
                 </div>
+              ) : category === "rich" ? (
+                <RichBlockGallery brand={brand} query={query} disabled={disabled || !onAddRichPreset} canInsert={Boolean(selectedSection && onAddRichPreset)} onInsert={onAddRichPreset ?? (() => {})} />
+              ) : category === "media" ? (
+                <div className={styles.mediaDiscovery}>
+                  <div className={styles.libraryTabs} role="group" aria-label="Tipo de mídia">
+                    <button type="button" data-active={mediaTab === "images"} onClick={() => setMediaTab("images")}>
+                      <FiCamera /> Imagens
+                    </button>
+                    <button type="button" data-active={mediaTab === "frames"} onClick={() => setMediaTab("frames")}>
+                      <FiImage /> Molduras
+                    </button>
+                    <button type="button" data-active={mediaTab === "gallery"} onClick={() => setMediaTab("gallery")}>
+                      <FiGrid /> Galerias
+                    </button>
+                    <button type="button" data-active={mediaTab === "video"} onClick={() => setMediaTab("video")}>
+                      <FiVideo /> Vídeos
+                    </button>
+                  </div>
+                  {mediaTab === "images" ? (
+                    <FreeImageBrowser
+                      disabled={disabled || !selectedSection}
+                      onChosen={onInsertStockImage ?? (async () => {})}
+                    />
+                  ) : mediaTab === "video" ? (
+                    <StockVideoBrowser disabled={Boolean(disabled || !selectedSection || !onInsertStockVideo)} onChoose={onInsertStockVideo ?? (() => {})} />
+                  ) : (
+                    <RichBlockGallery
+                      brand={brand}
+                      query={query}
+                      disabled={disabled}
+                      canInsert={Boolean(selectedSection)}
+                      onInsert={onAddRichPreset ?? (() => {})}
+                      initialCategory="media"
+                      categoryOnly
+                      allowedTypes={mediaTab === "frames"
+                        ? ["image"]
+                        : mediaTab === "gallery"
+                          ? ["media_gallery"]
+                          : ["video_embed"]}
+                    />
+                  )}
+                </div>
+              ) : category === "actions" ? (
+                <div className={styles.librarySubgroup}>
+                  <div className={styles.libraryTabs} role="group" aria-label="Modelos de ações">
+                    {([
+                      ["campaigns", "Campanhas"],
+                      ["participation", "Participar"],
+                      ["donations", "Doação"],
+                      ["buttons", "Botões"],
+                    ] as const).map(([id, label]) => (
+                      <button type="button" key={id} data-active={actionTab === id} onClick={() => setActionTab(id)}>{label}</button>
+                    ))}
+                  </div>
+                  {actionTab === "buttons" ? (
+                    <div className={styles.actionButtonGallery}>
+                      <button type="button" onClick={() => onAddElement("button")} disabled={disabled || !selectedSection}>
+                        <span className={styles.actionButtonDemo}>Quero participar <FiArrowUp /></span>
+                        <strong>Chamada principal</strong>
+                        <small>Configure texto e destino após inserir</small>
+                      </button>
+                    </div>
+                  ) : (
+                    <RichBlockGallery
+                      brand={brand}
+                      query={query}
+                      disabled={disabled}
+                      canInsert={Boolean(selectedSection)}
+                      onInsert={onAddRichPreset ?? (() => {})}
+                      initialCategory="all"
+                      categoryOnly
+                      allowedTypes={actionTab === "campaigns" ? ["campaign_card"] : actionTab === "participation" ? ["action_grid"] : ["donation_choices"]}
+                    />
+                  )}
+                </div>
+              ) : category === "information" ? (
+                <div className={styles.librarySubgroup}>
+                  <div className={styles.libraryTabs} role="group" aria-label="Modelos de dados">
+                    {([
+                      ["charts", "Gráficos"],
+                      ["goals", "Metas"],
+                      ["guides", "Informações"],
+                    ] as const).map(([id, label]) => (
+                      <button type="button" key={id} data-active={dataTab === id} onClick={() => setDataTab(id)}>{label}</button>
+                    ))}
+                  </div>
+                  {dataTab === "goals" ? (
+                    <div className={styles.libraryShortcut}>
+                      <button type="button" onClick={() => onAddElement("metric")} disabled={disabled || !selectedSection}>
+                        <strong>1.240+</strong><small>Número em destaque</small>
+                      </button>
+                    </div>
+                  ) : null}
+                  <RichBlockGallery
+                    brand={brand}
+                    query={query}
+                    disabled={disabled}
+                    canInsert={Boolean(selectedSection)}
+                    onInsert={onAddRichPreset ?? (() => {})}
+                    initialCategory="all"
+                    categoryOnly
+                    allowedTypes={dataTab === "charts" ? ["data_chart"] : dataTab === "goals" ? ["progress"] : ["faq", "story_tabs"]}
+                  />
+                </div>
+              ) : category === "text" ? (
+                <EditorialPieceGallery
+                  brand={brand}
+                  disabled={disabled}
+                  canInsert={Boolean(selectedSection)}
+                  onInsert={onAddEditorialPiece ?? (() => {})}
+                />
+              ) : category === "icons" ? (
+                <IconifyBrowser
+                  disabled={Boolean(disabled || !selectedSection)}
+                  onChoose={(id) => onAddElement("icon", id)}
+                />
               ) : (
                 <div className={styles.elementList}>
                   {filteredElements.map((item) => {
@@ -810,23 +1094,41 @@ export default function SectionLibrary({
                         }}
                         title={item.description}
                       >
-                        <span className={styles.elementIcon}><Icon aria-hidden="true" /></span>
-                        <strong>{item.name}</strong>
-                        <i className={styles.dragDots} aria-hidden="true">⋮⋮</i>
+                        <span className={styles.elementVisual} data-type={item.type} aria-hidden="true">
+                          {item.type === "heading" ? <span className={styles.elementMockHeading}>Uma causa. Muitas histórias.</span>
+                            : item.type === "text" ? <span className={styles.elementMockText}>Uma história de solidariedade<i /><i /></span>
+                            : item.type === "quote" ? <span className={styles.elementMockQuote}>“Cada gesto transforma.”</span>
+                            : item.type === "button" ? <span className={styles.elementMockButton}>Participar <FiArrowUp /></span>
+                            : item.type === "shape" ? <span className={styles.elementMockShape} data-shape={item.value ?? "square"} />
+                            : item.type === "metric" ? <span className={styles.elementMockMetric}>+1.240<small>pessoas</small></span>
+                            : item.type === "progress" ? <span className={styles.elementMockProgress}><strong>72%</strong><i><b /></i></span>
+                            : item.type === "divider" ? <span className={styles.elementMockDivider} />
+                            : item.type === "spacer" ? <span className={styles.elementMockSpacer}><i /><i /><i /></span>
+                            : <span className={styles.elementMockIcon}><Icon aria-hidden="true" /></span>}
+                        </span>
+                        <span className={styles.elementCardInfo}><strong>{item.name}</strong><small>{item.description}</small></span>
                       </button>
                     );
                   })}
                 </div>
               )}
 
-              <div className={styles.bottomTip}>
-                <strong>Você continua no controle</strong>
-                <span>Use o mouse para ajustar posição e tamanho. A CONG avisa quando algo pode sair da área segura.</span>
-              </div>
+
             </div>
           ) : null}
         </div>
       ) : null}
+      {category === "sections" && sectionView === "variants" && variantHover ? (() => {
+        const variant = sectionVariants.find((item) => item.versionId === variantHover.versionId);
+        if (!variant) return null;
+        return <LibraryHoverPreview
+          anchor={variantHover.anchor}
+          title={variant.name}
+          description={variant.description || "Composição editável para esta seção."}
+        >
+          <NativeVariantCanvas sectionType={activeSectionType} variant={variant} />
+        </LibraryHoverPreview>;
+      })() : null}
     </aside>
   );
 }

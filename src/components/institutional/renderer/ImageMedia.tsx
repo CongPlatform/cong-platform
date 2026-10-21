@@ -12,6 +12,7 @@ import type {
 } from "../../../services/institutionalService";
 import { institutionalColorCssVar } from "../../../utils/institutionalColors";
 
+import { getNativeEditorialPhoto } from "../../../data/institutional/nativeEditorialPhotos";
 import FloatingCanvasHint from "./FloatingCanvasHint";
 import styles from "./InstitutionalRenderer.module.css";
 
@@ -41,6 +42,7 @@ export default function ImageMedia({
   presentation = "image",
   editable,
   selected,
+  showEmptyMediaPreview = false,
   style = {},
   guidance,
   onRequest,
@@ -53,6 +55,7 @@ export default function ImageMedia({
   presentation?: string;
   editable: boolean;
   selected: boolean;
+  showEmptyMediaPreview?: boolean;
   style?: InstitutionalElementStyle;
   guidance?: { title: string; text?: string; note?: string } | null;
   onRequest?: () => void;
@@ -61,6 +64,8 @@ export default function ImageMedia({
   onInteractionCommit?: () => void;
   onFile?: (file: File) => void;
 }) {
+  const nativePhoto = getNativeEditorialPhoto(image?.assetId);
+  const sourceUrl = image?.url || nativePhoto?.url;
   const dragRef = useRef<DragState | null>(null);
   const hintAnchorRef = useRef<HTMLDivElement>(null);
   const focalX = style.focalX ?? 50;
@@ -81,7 +86,7 @@ export default function ImageMedia({
   } as CSSProperties;
 
   function beginFocalDrag(event: ReactPointerEvent<HTMLDivElement>): void {
-    if (!editable || !selected || !onStyleChange || !image?.url) return;
+    if (!editable || !selected || !onStyleChange || !sourceUrl) return;
     if ((event.target as HTMLElement).closest("button")) return;
     if (!event.currentTarget.closest('[data-crop-mode="true"]')) return;
 
@@ -148,8 +153,17 @@ export default function ImageMedia({
     }
   }
 
-  if (!image?.url) {
-    if (!editable) return null;
+  if (!sourceUrl) {
+    if (!editable && !showEmptyMediaPreview) return null;
+    if (!editable && showEmptyMediaPreview) {
+      return (
+        <div className={`${styles.imageMediaFrame} ${styles[presentation] ?? ""} ${styles.mediaPreviewPlaceholder}`}
+          style={frameStyle} data-frame={imageFrame} data-aspect={imageAspect} aria-label="Espaço reservado para imagem da organização" role="img">
+          <FiImage aria-hidden="true" />
+          <span>Sua imagem aqui</span>
+        </div>
+      );
+    }
     return (
       <div
         ref={hintAnchorRef}
@@ -164,7 +178,12 @@ export default function ImageMedia({
       >
         <button
           type="button"
-          className={`${styles.imagePlaceholder} ${styles[presentation] ?? ""}`}
+          className={`${styles.imagePlaceholder} ${styles.imageMediaFrame} ${styles[presentation] ?? ""}`}
+          data-frame={imageFrame}
+          data-aspect={imageAspect}
+          data-custom-height={style.heightPx !== undefined}
+          data-media-empty="true"
+          style={frameStyle}
           onClick={(event) => {
             event.stopPropagation();
             onRequest?.();
@@ -213,7 +232,17 @@ export default function ImageMedia({
         onPointerUp={finishFocalDrag}
         onPointerCancel={finishFocalDrag}
       >
-        <img className={styles.imageMediaImage} src={image.url} alt={image.alt} draggable={false} />
+        <img key={sourceUrl} className={styles.imageMediaImage} src={sourceUrl} alt={image?.alt || "Fotografia ilustrativa"} draggable={false}
+          onError={(event) => {
+            const fallback = nativePhoto?.fallback;
+            if (fallback && !event.currentTarget.dataset.nativeFallback) {
+              event.currentTarget.dataset.nativeFallback = "true";
+              event.currentTarget.src = fallback;
+              return;
+            }
+            event.currentTarget.hidden = true;
+            event.currentTarget.parentElement?.setAttribute("data-image-unavailable", "true");
+          }} />
         <span className={styles.imageMediaOverlay} aria-hidden="true" />
 
         {editable && selected ? (

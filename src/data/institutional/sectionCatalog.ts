@@ -66,25 +66,25 @@ export const sectionCatalog: readonly InstitutionalSectionDefinition[] = [
         {
           id: "0f100000-0000-4000-8000-000000000001",
           label: "Início",
-          href: "#top",
+          href: "/",
         },
         {
           id: "0f100000-0000-4000-8000-000000000002",
-          label: "Impacto",
-          href: "#impacto",
+          label: "Sobre nós",
+          href: "/sobre",
         },
         {
           id: "0f100000-0000-4000-8000-000000000003",
           label: "Projetos",
-          href: "#projetos",
+          href: "/projetos",
         },
         {
           id: "0f100000-0000-4000-8000-000000000004",
-          label: "Sobre",
-          href: "#sobre",
+          label: "Impacto",
+          href: "/impacto",
         },
       ],
-      primaryAction: { label: "Como ajudar", href: "#como-ajudar" },
+      primaryAction: { label: "Quero ajudar", href: "/como-ajudar" },
     },
   },
   {

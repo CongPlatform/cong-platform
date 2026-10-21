@@ -1,0 +1,352 @@
+/* Horizonte Editorial — one family, one editorial art direction.
+   Scoped to its authored variants; works inside the exact same DOM tree in
+   thumbnail, canvas and published site. No independent preview mock-up. */
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] {
+  --he-rule: color-mix(in srgb, var(--org-text) 15%, transparent);
+  --he-paper: color-mix(in srgb, var(--org-background) 95%, var(--org-primary) 5%);
+  position: relative;
+  isolation: isolate;
+  overflow-wrap: break-word;
+}
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-layout-container] {
+  min-inline-size: 0;
+}
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-shell="true"] {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="heading"] [data-font-target] {
+  max-inline-size: 21ch;
+  line-height: 1.075;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="text"] [data-font-target] {
+  line-height: 1.7;
+  max-inline-size: 67ch;
+}
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="button"] a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-inline-size: 100%;
+  white-space: normal;
+  line-height: 1.3;
+  min-block-size: 46px;
+  padding: 13px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  text-align: center;
+}
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="button"] a:hover {
+  transform: translateY(-2px);
+}
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="image"] {
+  overflow: hidden;
+}
+section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="image"] img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Magazine cover: visual weight sits in one broad photograph, a purposeful
+   typographic counterweight and small nondecorative navigation controls. */
+section[data-visual-style="horizonte-cover"] {
+  background: color-mix(in srgb, var(--org-background) 95%, var(--org-accent) 5%);
+  padding-block: clamp(64px, 8cqi, 112px) clamp(50px, 6cqi, 92px);
+}
+section[data-visual-style="horizonte-cover"] [data-layout-kind="columns"] {
+  grid-template-columns: minmax(0, 1.07fr) minmax(0, .93fr);
+  align-items: center;
+  gap: clamp(24px, 4.8cqi, 74px);
+}
+section[data-visual-style="horizonte-cover"] [data-cong-node-id="he-cover-title"] [data-font-target],
+section[data-visual-style="horizonte-about-intro"] [data-cong-node-id="he-about-intro-h"] [data-font-target],
+section[data-visual-style="horizonte-actions-intro"] [data-cong-node-id="he-actions-intro-h"] [data-font-target],
+section[data-visual-style="horizonte-trust-intro"] [data-cong-node-id="he-trust-intro-h"] [data-font-target],
+section[data-visual-style="horizonte-join-cover"] [data-cong-node-id="he-join-cover-h"] [data-font-target] {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.65rem, 5.4cqi, 5.7rem);
+  font-weight: 700;
+  letter-spacing: -.055em;
+  line-height: .99;
+  max-inline-size: 16ch;
+  hyphens: none;
+}
+section[data-visual-style="horizonte-cover"] [data-cong-node-id="he-cover-photo"] {
+  position: relative;
+  isolation: isolate;
+  max-block-size: 600px;
+}
+section[data-visual-style="horizonte-cover"] [data-cong-node-id="he-cover-photo"] img {
+  object-position: 45% 35%;
+}
+section[data-visual-style="horizonte-cover"] [data-cong-node-id="hs-cover-actions"] {
+  align-items: flex-start;
+}
+
+/* Index: open editorial columns rather than three interchangeable SaaS cards. */
+section[data-visual-style="horizonte-index"] [data-layout-kind="grid"] {
+  margin-top: clamp(12px, 2cqi, 28px);
+  border-top: 2px solid var(--org-primary);
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 0;
+}
+section[data-visual-style="horizonte-index"] [data-layout-kind="grid"] > [data-surface="card"] {
+  background: transparent;
+  padding: clamp(16px, 2.4cqi, 35px);
+  border: 0;
+  border-right: 1px solid var(--he-rule);
+  border-radius: 0;
+  box-shadow: none;
+  align-items: flex-start;
+}
+section[data-visual-style="horizonte-index"] [data-layout-kind="grid"] > [data-surface="card"]:last-child {
+  border-right: 0;
+}
+section[data-visual-style="horizonte-index"] [data-layout-kind="grid"] a {margin-top: auto;}
+
+/* Reportage: the image intentionally breaks the symmetrical column rhythm. */
+section[data-visual-style="horizonte-reportage"] [data-layout-kind="columns"] {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+  align-items: center;
+  gap: clamp(30px, 5cqi, 86px);
+}
+section[data-visual-style="horizonte-reportage"] [data-cong-node-id="he-reportage-photo"] {
+  box-shadow: 20px 22px 0 color-mix(in srgb, var(--org-accent) 22%, transparent);
+}
+section[data-visual-style="horizonte-reportage"] [data-cong-node-id="he-reportage-title"] [data-font-target] {max-inline-size: 14ch;}
+
+/* Manifestos and final invitations: typography and rules, not glow effects. */
+section[data-visual-style="horizonte-principles"],
+section[data-visual-style="horizonte-about-end"],
+section[data-visual-style="horizonte-actions-end"],
+section[data-visual-style="horizonte-trust-end"],
+section[data-visual-style="horizonte-join-end"],
+section[data-visual-style="horizonte-contact-end"] {
+  background: var(--org-primary);
+  color: var(--org-background);
+}
+section[data-visual-style="horizonte-principles"] [data-layout-kind="columns"] > :last-child {
+  border-left: 1px solid color-mix(in srgb,var(--org-background) 37%,transparent);
+  padding-left: clamp(20px, 4cqi, 72px);
+}
+section[data-visual-style="horizonte-principles"] [data-element-type="text"] [data-font-target] {
+  color: var(--org-background);
+}
+section[data-visual-style="horizonte-principles"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-about-end"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-actions-end"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-trust-end"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-join-end"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-contact-end"] [data-element-type="heading"] [data-font-target] {
+  color: var(--org-background);
+}
+section[data-visual-style="horizonte-about-end"] [data-layout-kind="columns"],
+section[data-visual-style="horizonte-actions-end"] [data-layout-kind="columns"],
+section[data-visual-style="horizonte-trust-end"] [data-layout-kind="columns"],
+section[data-visual-style="horizonte-join-end"] [data-layout-kind="columns"],
+section[data-visual-style="horizonte-contact-end"] [data-layout-kind="columns"] {
+  border-top: 1px solid color-mix(in srgb,var(--org-background) 35%,transparent);
+  padding-top: clamp(25px, 3cqi, 46px);
+}
+section[data-visual-style="horizonte-principles"] [data-cong-node-id="he-principles-h"] [data-font-target] {
+  font-family: Georgia, serif;
+  font-size: clamp(2.25rem, 3.8cqi, 4.7rem);
+}
+
+/* Inner page leads: a deliberate magazine title strip, not mini hero copies. */
+section[data-visual-style="horizonte-about-intro"] [data-cong-node-id="he-about-intro-h"],
+section[data-visual-style="horizonte-actions-intro"] [data-cong-node-id="he-actions-intro-h"],
+section[data-visual-style="horizonte-trust-intro"] [data-cong-node-id="he-trust-intro-h"] {
+  max-inline-size: min(960px, 100%);
+}
+section[data-visual-style="horizonte-about-intro"] [data-cong-node-id="he-about-intro-b"],
+section[data-visual-style="horizonte-actions-intro"] [data-cong-node-id="he-actions-intro-b"],
+section[data-visual-style="horizonte-trust-intro"] [data-cong-node-id="he-trust-intro-b"] {
+  max-inline-size: 740px;
+  padding-top: 20px;
+  border-top: 1px solid var(--he-rule);
+}
+section[data-visual-style="horizonte-about-portrait"] [data-layout-kind="columns"] {
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+}
+section[data-visual-style="horizonte-about-portrait"] [data-cong-node-id="he-about-portrait-photo"] {
+  transform: translateY(22px);
+}
+
+/* Timelines, routes and document indexes employ horizontal rules and large
+   numerals instead of stacked, repeated card panels. */
+section[data-visual-style="horizonte-about-path"] [data-layout-kind="grid"],
+section[data-visual-style="horizonte-trust-docs"] [data-layout-kind="grid"],
+section[data-visual-style="horizonte-join-steps"] [data-layout-kind="grid"],
+section[data-visual-style="horizonte-contact-paths"] [data-layout-kind="grid"] {
+  gap: clamp(14px, 2cqi, 38px);
+}
+section[data-visual-style="horizonte-about-path"] [data-surface="list"],
+section[data-visual-style="horizonte-trust-docs"] [data-surface="list"],
+section[data-visual-style="horizonte-join-steps"] [data-surface="list"],
+section[data-visual-style="horizonte-contact-paths"] [data-surface="list"] {
+  border-top: 3px solid var(--org-primary);
+  border-bottom: 0;
+  padding: 28px 0;
+}
+section[data-visual-style="horizonte-actions-card-one"] [data-layout-kind="columns"] {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr);
+}
+section[data-visual-style="horizonte-actions-card-two"] [data-layout-kind="columns"] {
+  grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
+}
+section[data-visual-style="horizonte-actions-card-one"] [data-element-type="image"],
+section[data-visual-style="horizonte-actions-card-two"] [data-element-type="image"] {
+  max-block-size: 490px;
+}
+section[data-visual-style="horizonte-actions-list"] [data-surface="card"],
+section[data-visual-style="horizonte-join-options"] [data-surface="card"] {
+  border-radius: 0;
+  padding: clamp(18px, 3cqi, 44px);
+  background: var(--org-background);
+  border: 1px solid var(--he-rule);
+  box-shadow: 0 1px 0 var(--he-rule);
+  align-items: flex-start;
+}
+section[data-visual-style="horizonte-actions-list"] [data-surface="card"]:nth-child(2),
+section[data-visual-style="horizonte-join-options"] [data-surface="card"]:nth-child(2) {
+  border-top: 4px solid var(--org-accent);
+}
+section[data-visual-style="horizonte-trust-indicators"] [data-cong-node-id="he-trust-indicators-note"] {
+  border-left: 4px solid var(--org-accent);
+  padding: 14px 16px;
+  background: var(--he-paper);
+}
+section[data-visual-style="horizonte-trust-indicators"] [data-cong-node-id="he-trust-chart"] {
+  max-width: 100%;
+}
+section[data-visual-style="horizonte-contact-intro"] [data-layout-kind="columns"] {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+}
+
+@container institutional-site (max-width: 1040px) {
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] {
+    padding-inline: clamp(20px, 4cqi, 44px);
+  }
+  section[data-visual-style="horizonte-cover"] [data-layout-kind="columns"] {
+    gap: 30px;
+  }
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="heading"] [data-font-target] {
+    font-size: min(var(--element-font-size, 3rem), clamp(1.6rem, 4.1cqi, 3.2rem));
+    letter-spacing: -.035em;
+    line-height: 1.09;
+  }
+  section[data-visual-style="horizonte-cover"] [data-cong-node-id="he-cover-title"] [data-font-target],
+  section[data-visual-style="horizonte-about-intro"] [data-cong-node-id="he-about-intro-h"] [data-font-target],
+  section[data-visual-style="horizonte-actions-intro"] [data-cong-node-id="he-actions-intro-h"] [data-font-target],
+  section[data-visual-style="horizonte-trust-intro"] [data-cong-node-id="he-trust-intro-h"] [data-font-target],
+  section[data-visual-style="horizonte-join-cover"] [data-cong-node-id="he-join-cover-h"] [data-font-target] {
+    font-size: clamp(2.3rem, 4.6cqi, 4.1rem);
+  }
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-layout-kind="grid"][data-layout-columns="3"] {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+  section[data-visual-style="horizonte-index"] [data-layout-kind="grid"] > [data-surface="card"]:nth-child(2) {border-right:0;}
+}
+@container institutional-site (max-width: 720px) {
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] {
+    padding-inline: 20px;
+    padding-block: clamp(42px, 9cqi, 70px);
+  }
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-layout-kind="columns"],
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-layout-kind="grid"],
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-layout-kind="grid"][data-layout-columns="3"] {
+    grid-template-columns: minmax(0,1fr);
+    gap: clamp(21px, 5cqi, 34px);
+  }
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="heading"] [data-font-target] {
+    font-size: min(var(--element-font-size, 2.4rem), clamp(1.55rem, 6.7cqi, 2.55rem));
+    max-inline-size: 100%;
+  }
+  section[data-visual-style="horizonte-cover"] [data-cong-node-id="he-cover-title"] [data-font-target],
+  section[data-visual-style="horizonte-about-intro"] [data-cong-node-id="he-about-intro-h"] [data-font-target],
+  section[data-visual-style="horizonte-actions-intro"] [data-cong-node-id="he-actions-intro-h"] [data-font-target],
+  section[data-visual-style="horizonte-trust-intro"] [data-cong-node-id="he-trust-intro-h"] [data-font-target],
+  section[data-visual-style="horizonte-join-cover"] [data-cong-node-id="he-join-cover-h"] [data-font-target] {
+    font-size: clamp(2.0rem, 8.4cqi, 3.5rem);
+  }
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="text"] [data-font-target] {
+    font-size: min(var(--element-font-size, 1.1rem), clamp(.9rem, 3.7cqi, 1.125rem));
+    line-height: 1.6;
+  }
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="image"] {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="image"] [data-frame]:not([data-custom-height="true"]) {
+    max-block-size: 360px;
+  }
+  /* Never override a frame's own aspect, crop or authored height. */
+  section[data-visual-style="horizonte-cover"] [data-cong-node-id="he-cover-photo"] {
+    order: -1;
+    max-block-size: 350px;
+  }
+  section[data-visual-style="horizonte-reportage"] [data-cong-node-id="he-reportage-photo"] {
+    box-shadow: 10px 12px 0 color-mix(in srgb, var(--org-accent) 24%, transparent);
+  }
+  section[data-visual-style="horizonte-about-portrait"] [data-cong-node-id="he-about-portrait-photo"] {
+    transform: none;
+  }
+  section[data-visual-style="horizonte-index"] [data-layout-kind="grid"] > [data-surface="card"],
+  section[data-visual-style="horizonte-index"] [data-layout-kind="grid"] > [data-surface="card"]:nth-child(2) {
+    border: 0;
+    border-bottom: 1px solid var(--he-rule);
+    padding-inline: 0;
+  }
+  section[data-visual-style="horizonte-principles"] [data-layout-kind="columns"] > :last-child {
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb,var(--org-background) 37%,transparent);
+    padding: 26px 0 0;
+  }
+  section[data-visual-style="horizonte-index"] [data-layout-kind="grid"] {border-top-width:1px;}
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] [data-element-type="button"] a {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  section[data-section-type="custom_content"][data-visual-style^="horizonte-"] a {
+    transition: none;
+  }
+}
+
+/* Accessible foreground on the dark editorial panels, scoped to this family. */
+section[data-section-type="custom_content"][data-visual-style="horizonte-principles"],
+section[data-section-type="custom_content"][data-visual-style="horizonte-about-end"],
+section[data-section-type="custom_content"][data-visual-style="horizonte-actions-end"],
+section[data-section-type="custom_content"][data-visual-style="horizonte-trust-end"],
+section[data-section-type="custom_content"][data-visual-style="horizonte-join-end"],
+section[data-section-type="custom_content"][data-visual-style="horizonte-contact-end"] {
+  --org-text: #ffffff;
+  --he-rule: rgb(255 255 255 / .38);
+}
+section[data-visual-style="horizonte-principles"] [data-element-type="text"] [data-font-target],
+section[data-visual-style="horizonte-principles"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-about-end"] [data-element-type="text"] [data-font-target],
+section[data-visual-style="horizonte-about-end"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-actions-end"] [data-element-type="text"] [data-font-target],
+section[data-visual-style="horizonte-actions-end"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-trust-end"] [data-element-type="text"] [data-font-target],
+section[data-visual-style="horizonte-trust-end"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-join-end"] [data-element-type="text"] [data-font-target],
+section[data-visual-style="horizonte-join-end"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="horizonte-contact-end"] [data-element-type="text"] [data-font-target],
+section[data-visual-style="horizonte-contact-end"] [data-element-type="heading"] [data-font-target] {
+  color: #ffffff;
+}
+
+/* The builtin footer uses an independently computed accessible foreground.
+   Do not affect buttons, whose background may use the accent color. */
+section[data-section-type="site_footer"][data-visual-style^="horizonte-"] [data-element-type="heading"] [data-font-target],
+section[data-section-type="site_footer"][data-visual-style^="horizonte-"] [data-element-type="text"] [data-font-target],
+section[data-section-type="site_footer"][data-visual-style^="horizonte-"] [data-element-type="quote"] [data-font-target] {
+  color: var(--section-foreground, #ffffff) !important;
+}

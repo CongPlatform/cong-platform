@@ -3,6 +3,10 @@ import type { Request, Response } from "express";
 import {
   addInstitutionalSection,
   createInstitutionalSite,
+  createInstitutionalPage,
+  synchronizeInstitutionalNavigation,
+  updateInstitutionalPage,
+  deleteInstitutionalPage,
   deleteInstitutionalSite,
   deleteInstitutionalSection,
   duplicateInstitutionalSection,
@@ -14,6 +18,7 @@ import {
   unpublishInstitutionalSite,
   reorderInstitutionalSections,
   updateInstitutionalBrand,
+  updateInstitutionalSiteBrand,
   updateInstitutionalSection,
 } from "../services/institutional-site.service.js";
 import {
@@ -406,6 +411,7 @@ export async function renameSite(req: Request, res: Response): Promise<void> {
       organizationId,
       siteId,
       req.body.name,
+      res.locals.authUser.id,
     );
     res.status(200).json({ site });
   } catch (error) {
@@ -413,19 +419,36 @@ export async function renameSite(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function updateSiteBrand(req: Request, res: Response): Promise<void> {
+  try {
+    const brand = await updateInstitutionalSiteBrand(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      req.body,
+      res.locals.authUser.id,
+    );
+    res.status(200).json({ brand });
+  } catch (error) { handleError(error, res); }
+}
+
 export async function updateBrand(req: Request, res: Response): Promise<void> {
   try {
     const organizationId = res.locals.organizationContext.organizationId;
-    const brand = await updateInstitutionalBrand(organizationId, {
-      logoAssetId: req.body.logoAssetId ?? null,
-      primaryColor: req.body.primaryColor,
-      secondaryColor: req.body.secondaryColor,
-      accentColor: req.body.accentColor,
-      backgroundColor: req.body.backgroundColor,
-      textColor: req.body.textColor,
-      headingFont: req.body.headingFont,
-      bodyFont: req.body.bodyFont,
-    });
+    const brand = await updateInstitutionalBrand(
+      organizationId,
+      {
+        logoAssetId: req.body.logoAssetId ?? null,
+        primaryColor: req.body.primaryColor,
+        secondaryColor: req.body.secondaryColor,
+        accentColor: req.body.accentColor,
+        backgroundColor: req.body.backgroundColor,
+        textColor: req.body.textColor,
+        headingFont: req.body.headingFont,
+        bodyFont: req.body.bodyFont,
+        designSystem: req.body.designSystem,
+      },
+      res.locals.authUser.id,
+    );
     res.status(200).json({ brand });
   } catch (error) {
     handleError(error, res);
@@ -453,6 +476,65 @@ export async function uploadMedia(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function createPage(req: Request, res: Response): Promise<void> {
+  try {
+    const site = await createInstitutionalPage(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      req.body,
+      res.locals.authUser.id,
+    );
+    res.status(201).json({ site });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function syncSiteNavigation(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const site = await synchronizeInstitutionalNavigation(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      res.locals.authUser.id,
+    );
+    res.status(200).json({ site });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function updatePage(req: Request, res: Response): Promise<void> {
+  try {
+    const site = await updateInstitutionalPage(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      paramString(req, "pageId", "PAGE_ID_REQUIRED"),
+      req.body,
+      res.locals.authUser.id,
+    );
+    res.status(200).json({ site });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
+export async function deletePage(req: Request, res: Response): Promise<void> {
+  try {
+    const site = await deleteInstitutionalPage(
+      res.locals.organizationContext.organizationId,
+      paramString(req, "siteId", "SITE_ID_REQUIRED"),
+      paramString(req, "pageId", "PAGE_ID_REQUIRED"),
+      res.locals.authUser.id,
+    );
+    res.status(200).json({ site });
+  } catch (error) {
+    handleError(error, res);
+  }
+}
+
 export async function addSection(req: Request, res: Response): Promise<void> {
   try {
     const pageId = paramString(req, "pageId", "PAGE_ID_REQUIRED");
@@ -460,6 +542,7 @@ export async function addSection(req: Request, res: Response): Promise<void> {
       res.locals.organizationContext.organizationId,
       pageId,
       req.body,
+      res.locals.authUser.id,
     );
     res.status(201).json({ site });
   } catch (error) {
@@ -477,6 +560,7 @@ export async function updateSection(
       res.locals.organizationContext.organizationId,
       sectionId,
       req.body,
+      res.locals.authUser.id,
     );
     res.status(200).json({ site });
   } catch (error) {
@@ -493,6 +577,7 @@ export async function duplicateSection(
     const site = await duplicateInstitutionalSection(
       res.locals.organizationContext.organizationId,
       sectionId,
+      res.locals.authUser.id,
     );
     res.status(201).json({ site });
   } catch (error) {
@@ -509,6 +594,7 @@ export async function deleteSection(
     const site = await deleteInstitutionalSection(
       res.locals.organizationContext.organizationId,
       sectionId,
+      res.locals.authUser.id,
     );
     res.status(200).json({ site });
   } catch (error) {
@@ -526,6 +612,7 @@ export async function reorderSections(
       res.locals.organizationContext.organizationId,
       pageId,
       req.body.sectionIds,
+      res.locals.authUser.id,
     );
     res.status(200).json({ site });
   } catch (error) {
@@ -556,6 +643,7 @@ export async function unpublishSite(
     await unpublishInstitutionalSite(
       res.locals.organizationContext.organizationId,
       siteId,
+      res.locals.authUser.id,
     );
     res.status(204).send();
   } catch (error) {
@@ -569,6 +657,7 @@ export async function deleteSite(req: Request, res: Response): Promise<void> {
     await deleteInstitutionalSite(
       res.locals.organizationContext.organizationId,
       siteId,
+      res.locals.authUser.id,
     );
     res.status(204).send();
   } catch (error) {

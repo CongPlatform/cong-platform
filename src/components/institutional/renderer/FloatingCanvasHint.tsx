@@ -65,8 +65,16 @@ export default function FloatingCanvasHint({
         if (roomRight >= width || roomLeft >= width) {
           const placeRight = roomRight >= width || roomRight >= roomLeft;
           const left = placeRight
-            ? clamp(rect.right + gap, margin, Math.max(margin, window.innerWidth - width - margin))
-            : clamp(rect.left - width - gap, margin, Math.max(margin, window.innerWidth - width - margin));
+            ? clamp(
+                rect.right + gap,
+                margin,
+                Math.max(margin, window.innerWidth - width - margin),
+              )
+            : clamp(
+                rect.left - width - gap,
+                margin,
+                Math.max(margin, window.innerWidth - width - margin),
+              );
           const top = clamp(
             rect.top + rect.height / 2 - height / 2,
             margin,
@@ -78,17 +86,31 @@ export default function FloatingCanvasHint({
 
         const placeBelow = roomBelow >= height || roomBelow >= roomAbove;
         const top = placeBelow
-          ? clamp(rect.bottom + gap, margin, Math.max(margin, window.innerHeight - height - margin))
-          : clamp(rect.top - height - gap, margin, Math.max(margin, window.innerHeight - height - margin));
+          ? clamp(
+              rect.bottom + gap,
+              margin,
+              Math.max(margin, window.innerHeight - height - margin),
+            )
+          : clamp(
+              rect.top - height - gap,
+              margin,
+              Math.max(margin, window.innerHeight - height - margin),
+            );
         const idealLeft = rect.left + rect.width / 2 - width / 2;
-        const left = clamp(idealLeft, margin, Math.max(margin, window.innerWidth - width - margin));
+        const left = clamp(
+          idealLeft,
+          margin,
+          Math.max(margin, window.innerWidth - width - margin),
+        );
         setPosition({ top, left, visible: true });
       });
     };
 
     update();
-    const anchorObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
-    const hintObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    const anchorObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    const hintObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
     anchorObserver?.observe(anchor);
     if (hintRef.current) hintObserver?.observe(hintRef.current);
     window.addEventListener("resize", update);

@@ -1,0 +1,33 @@
+/* Sereno / Arquivo de Presenças — native institutional variants only */
+section[data-visual-style^="sr8-"]{isolation:isolate;overflow-wrap:anywhere}
+section[data-visual-style^="sr8-"] [data-layout-container],section[data-visual-style^="sr8-"] [data-element-shell="true"]{min-width:0;max-width:100%}
+section[data-visual-style^="sr8-"] [data-element-type="heading"] [data-font-target]{font-family:"Fraunces",Georgia,serif;font-weight:570;letter-spacing:-.037em;line-height:1.09;text-wrap:balance}
+section[data-visual-style^="sr8-"] [data-element-type="text"] [data-font-target]{line-height:1.67;max-width:67ch}
+section[data-visual-style^="sr8-"] [data-element-type="button"] :is(a,button):focus-visible{outline:3px solid #dca255;outline-offset:4px}
+section[data-visual-style="sr8-capa-fotografica"]{min-height:clamp(460px,70svh,820px);position:relative}
+section[data-visual-style="sr8-capa-fotografica"]::before,section[data-visual-style="sr8-cena-de-companhia"]::before{content:"";position:absolute;inset:0;background:rgba(10,28,21,.32);pointer-events:none;z-index:0}
+section[data-visual-style="sr8-capa-fotografica"] [data-section-content],section[data-visual-style="sr8-cena-de-companhia"] [data-section-content]{position:relative;z-index:1}
+section[data-visual-style="sr8-capa-fotografica"] [data-layout-kind="stack"]{max-width:900px;margin-left:clamp(0px,6vw,100px)}
+section[data-visual-style="sr8-capa-fotografica"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,76px),clamp(45px,6.8vw,100px));max-width:14ch}
+section[data-visual-style="sr8-abertura-manifesto"] [data-layout-kind="columns"]{align-items:center;gap:clamp(28px,6vw,110px)}
+section[data-visual-style="sr8-abertura-manifesto"] [data-element-type="image"]{max-width:550px;margin:0 auto}
+section[data-visual-style="sr8-abertura-manifesto"] [data-layout-kind="columns"]>:last-child{border-bottom:2px solid #8F4E35;padding-bottom:22px}
+section[data-visual-style="sr8-agenda-viva"] [data-layout-kind="grid"]> [data-layout-kind="stack"]{padding:25px 16px;border-top:2px solid #28483C}
+section[data-visual-style="sr8-documentario-de-referencia"] [data-layout-kind="columns"]{align-items:center;gap:clamp(24px,4vw,72px)}
+section[data-visual-style="sr8-documentario-de-referencia"] [data-element-type="video_embed"]{min-width:0}
+section[data-visual-style="sr8-documentario-de-referencia"] [data-element-type="video_embed"] iframe{aspect-ratio:16/9;width:100%;min-height:260px;border:0}
+section[data-visual-style="sr8-cta-retorno"] [data-layout-kind="columns"]{align-items:center}
+section[data-visual-style="sr8-historia-capa"] [data-layout-kind="columns"],section[data-visual-style="sr8-oficina-na-mesa"] [data-layout-kind="columns"]{align-items:center}
+section[data-visual-style="sr8-principios-em-voz-alta"] [data-layout-kind="grid"]>[data-layout-kind="stack"]{border-left:2px solid #8F4E35;padding-inline:clamp(14px,2vw,34px)}
+section[data-visual-style="sr8-fotografia-de-grupo"] [data-element-type="image"]{max-height:590px;overflow:hidden}
+section[data-visual-style="sr8-caderno-de-campo"] [data-element-type="image"]{width:min(960px,100%);margin-inline:auto}
+section[data-visual-style="sr8-caderno-de-campo"] [data-layout-kind="stack"]{max-width:1050px;margin-inline:auto}
+section[data-visual-style="sr8-horta-do-encontro"] [data-layout-kind="columns"]{align-items:center;gap:clamp(30px,7vw,120px)}
+section[data-visual-style="sr8-o-que-prestamos-contas"] [data-layout-kind="grid"]>[data-layout-kind="stack"]{border-top:2px solid #28483C;padding-top:22px}
+section[data-visual-style="sr8-participacao-abertura"] [data-layout-kind="columns"]{align-items:center}
+section[data-visual-style="sr8-contato-rotas"] [data-layout-kind="grid"]>[data-layout-kind="stack"]{padding:20px 14px}
+section[data-visual-style="sr8-cena-de-companhia"]{min-height:420px}
+section[data-visual-style^="sr8-"] [data-element-type="heading"] [data-font-target]{overflow-wrap:break-word}
+@container institutional-site (max-width:980px){section[data-visual-style^="sr8-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,50px),clamp(34px,5cqi,65px))}}
+@container institutional-site (max-width:720px){section[data-visual-style^="sr8-"]{padding-inline:clamp(16px,4cqi,34px)}section[data-visual-style^="sr8-"] [data-layout-kind="columns"],section[data-visual-style^="sr8-"] [data-layout-kind="grid"]{grid-template-columns:minmax(0,1fr);gap:clamp(18px,5cqi,36px)}section[data-visual-style^="sr8-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,50px),clamp(31px,8cqi,53px))}section[data-visual-style="sr8-capa-fotografica"]{min-height:490px}section[data-visual-style="sr8-capa-fotografica"] [data-element-type="heading"] [data-font-target]{font-size:clamp(39px,9cqi,56px)}section[data-visual-style="sr8-documentario-de-referencia"] [data-element-type="video_embed"] iframe{min-height:180px}section[data-visual-style="sr8-principios-em-voz-alta"] [data-layout-kind="grid"]>[data-layout-kind="stack"]{border-left:0;border-top:2px solid #8F4E35}}
+@media(prefers-reduced-motion:reduce){section[data-visual-style^="sr8-"] *,section[data-visual-style^="sr8-"] *::before{transition:none!important;animation:none!important}}

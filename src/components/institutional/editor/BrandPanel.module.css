@@ -453,3 +453,94 @@
   border-radius: 7px;
   box-shadow: inset 0 0 0 1px rgb(9 28 48 / 0.08);
 }
+
+/* Builder 2.0: scoped, non-destructive theme editor. */
+.designSectionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.resetDesign { flex: none; padding: 7px 10px; border: 1px solid var(--color-slate-200); border-radius: 9px; color: var(--color-slate-700); font-size: var(--font-xs); }
+.resetDesign:hover { background: var(--color-slate-100); }
+.designControls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.previewShell {
+  display: grid;
+  gap: calc(10px * var(--org-space-scale, 1));
+  padding: calc(22px * var(--org-space-scale, 1));
+  border: 1px solid color-mix(in srgb, var(--org-text) 10%, transparent);
+  border-radius: var(--org-radius-card);
+  color: var(--org-text);
+  background: var(--org-background);
+  font-family: var(--org-body-font);
+}
+.previewOverline { color: var(--org-primary); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+.previewHeading { font-size: calc(24px * var(--org-heading-scale)); line-height: 1.12; font-family: var(--org-heading-font); font-weight: 700; }
+.previewParagraph { margin: 0; font-size: calc(14px * var(--org-body-scale)); line-height: 1.55; }
+.previewButton { justify-self: start; padding: 9px 14px; border-radius: var(--org-radius-button); background: var(--org-accent); color: var(--org-text); font-size: 12px; font-weight: 700; }
+.previewSurface { padding: calc(13px * var(--org-space-scale)); border-radius: var(--org-radius-card); background: color-mix(in srgb, var(--org-primary) 8%, var(--org-background)); font-size: 12px; }
+.designHint { margin: 0; font-size: var(--font-xs); line-height: 1.5; color: var(--color-slate-500); }
+@media (max-width: 440px) {
+  .designSectionHeading { flex-direction: column; }
+  .designControls { grid-template-columns: 1fr; }
+}
+
+/* Brand library: conventional modal with an unobtrusive navigation rail. */
+.brandDialog { width: min(910px, calc(100vw - 24px)); max-height: min(760px, calc(100dvh - 30px)); height: min(760px, calc(100dvh - 30px)); margin: auto; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 72px rgb(12 31 58 / 24%); }
+.brandWorkspace { display: flex; flex: 1; min-height: 0; }
+.brandNav { width: 178px; flex-shrink: 0; background: #f5f8fc; border-right: 1px solid #e2e8f0; padding: 16px 9px; display: grid; align-content: start; gap: 5px; }
+.brandNav button { display: flex; align-items: center; gap: 10px; min-height: 43px; padding: 9px 12px; border-radius: 9px; color: #425269; text-align: left; font-weight: 600; font-size: 13px; }
+.brandNav button[data-active="true"] { background: #e3edfb; color: #17448b; }
+.brandNav button:hover { background: #e9eff8; }
+.brandNav svg { font-size: 17px; }
+.brandWorkspace .body { flex: 1; min-width: 0; overflow: auto; display: grid; align-content: start; padding: 24px; }
+.typeFamilies { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.typeStyleList { display: grid; gap: 12px; }
+.typeStyleRow { display: grid; gap: 11px; padding: 16px; border: 1px solid #dee6f0; border-radius: 12px; background: #fff; }
+.typeStyleRowHeading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.typeStyleRowHeading strong { color: #102a47; font-size: 14px; }
+.typeStyleRowHeading small { color: #66768a; font-size: 11px; }
+.typeStyleControls { display: grid; grid-template-columns: minmax(0,2fr) 85px 80px; align-items: end; gap: 10px; }
+.typeSize, .typeWeight { display: grid; gap: 5px; font-size: 12px; font-weight: 650; }
+.typeSize input, .typeWeight select { width: 100%; height: 38px; min-width: 0; background: #fff; color: #19314f; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 8px; }
+.typeSample { margin: 0; min-height: 44px; line-height: 1.18; overflow-wrap: anywhere; color: #203650; }
+.resetType { justify-self: start; font-size: 12px; color: #335ca4; text-decoration: underline; }
+@media (max-width: 700px) { .brandDialog { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; } .brandWorkspace { flex-direction: column; } .brandNav { width: 100%; display: flex; flex-wrap: nowrap; overflow-x: auto; border-right: 0; border-bottom: 1px solid #e2e8f0; padding: 8px; } .brandNav button { white-space: nowrap; } .brandWorkspace .body { padding: 16px; } .typeFamilies { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .typeStyleControls { grid-template-columns: 1fr 86px; } .typeStyleControls > :first-child { grid-column: 1 / -1; } }
+
+.advancedArea { border-top: 1px solid #e2e8f0; padding-top: 14px; display: grid; gap: 12px; }
+.advancedToggle { justify-self: start; border: 1px solid #cbd5e1; padding: 9px 13px; border-radius: 8px; color: #335682; background: #f8fafc; font-size: 12px; font-weight: 650; }
+.advancedControls { display: grid; gap: 12px; padding: 14px; background: #f5f8fc; border-radius: 10px; }
+.advancedControls p { margin: 0; font-size: 12px; line-height: 1.5; color: #50647c; }
+
+/* Controles visuais: escolher pelo resultado, não por códigos em listas. */
+.visualChoiceGroup { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 9px; }
+.visualChoiceGroup legend { padding: 0 0 9px; color: #1a3451; font-size: 13px; font-weight: 700; }
+.visualChoices { display: flex; flex-wrap: wrap; gap: 8px; }
+.visualChoice { min-width: 103px; min-height: 79px; flex: 1; display: grid; place-items: center; gap: 7px; padding: 10px 8px; border: 1px solid #dce4ef; border-radius: 12px; background: #fff; color: #30485f; font-size: 11px; font-weight: 650; cursor: pointer; }
+.visualChoice:hover { border-color: #77a3dc; background: #f6faff; }
+.visualChoice[data-active="true"] { border: 2px solid #326bb4; padding: 9px 7px; background: #edf4ff; color: #174a8e; }
+.choiceIllustration { width: 64px; height: 35px; display: grid; align-content: center; justify-items: start; gap: 4px; }
+.choiceIllustration i { display: block; height: 4px; width: 80%; border-radius: 3px; background: #91a7bd; }
+.choiceIllustration i:first-child { width: 60%; height: 7px; background: #6685aa; }
+.choiceIllustration i:last-child { width: 45%; }
+.choiceIllustration[data-kind="headingScale"][data-choice="compact"] i:first-child { height: 5px; }
+.choiceIllustration[data-kind="headingScale"][data-choice="expressive"] i:first-child { height: 14px; }
+.choiceIllustration[data-kind="bodyScale"][data-choice="compact"] i { height: 3px; }
+.choiceIllustration[data-kind="bodyScale"][data-choice="relaxed"] i { height: 7px; }
+.choiceIllustration[data-kind="spacing"][data-choice="compact"] { gap: 1px; }
+.choiceIllustration[data-kind="spacing"][data-choice="spacious"] { gap: 8px; }
+.choiceIllustration[data-kind="corners"] { display: flex; align-items: center; justify-content: center; }
+.choiceIllustration[data-kind="corners"] i:first-child { width: 34px; height: 30px; border: 3px solid #91a7bd; background: #dceafa; border-radius: 0; }
+.choiceIllustration[data-kind="corners"] i:not(:first-child) { display: none; }
+.choiceIllustration[data-kind="corners"][data-choice="original"] i:first-child { border-radius: 11px; }
+.choiceIllustration[data-kind="corners"][data-choice="subtle"] i:first-child { border-radius: 6px; }
+.choiceIllustration[data-kind="corners"][data-choice="rounded"] i:first-child { border-radius: 16px; }
+.simpleChoices, .weightChoices { display: flex; flex-wrap: wrap; gap: 5px; }
+.simpleChoices button, .weightChoices button { flex: 1; padding: 8px 6px; border-radius: 8px; border: 1px solid #d7e1ee; background: #fff; color: #3c5270; cursor: pointer; font-size: 11px; }
+.simpleChoices button[data-active="true"], .weightChoices button[data-active="true"] { border-color: #316bb3; background: #eaf2ff; color: #194b85; }
+.weightChoices button { min-width: 37px; }
+.typeStyleControls { grid-template-columns: minmax(0, 1fr) 92px; }
+.typeWeight { grid-column: 1 / -1; }
+@media (max-width: 700px) { .visualChoice { min-width: calc(50% - 6px); } }
+
+.siteLogoUsage { display:grid; gap:10px; padding:15px; margin:14px 0; border:1px solid #d9e5e3; border-radius:12px; background:#f6faf9; color:#163b39; }
+.siteLogoUsage label { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; font-size:13px; font-weight:650; }
+.siteLogoUsage select { min-width:150px; max-width:100%; padding:8px; border:1px solid #a6bdb9; border-radius:8px; color:#193631; background:white; }
+.siteLogoUsage button { justify-self:start; padding:9px 12px; border-radius:9px; border:1px solid #41695f; color:#1f4d43; background:white; font-weight:700; }
+.siteLogoUsage small { color:#48625e; font-size:12px; line-height:1.5; }

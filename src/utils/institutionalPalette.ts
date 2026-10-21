@@ -70,7 +70,9 @@ export function nearestAccessibleColor(
 ): string {
   const normalizedForeground = normalizeHex(foreground);
   const normalizedBackground = normalizeHex(background);
-  if (contrastRatio(normalizedForeground, normalizedBackground) >= minimumRatio) {
+  if (
+    contrastRatio(normalizedForeground, normalizedBackground) >= minimumRatio
+  ) {
     return normalizedForeground.toLowerCase();
   }
 
@@ -99,7 +101,11 @@ export function nearestAccessibleColor(
       const delta = index * step;
       for (const candidateLightness of [lightness - delta, lightness + delta]) {
         if (candidateLightness < 0 || candidateLightness > 1) continue;
-        const candidate = oklchToHex(candidateLightness, chroma * chromaFactor, hue);
+        const candidate = oklchToHex(
+          candidateLightness,
+          chroma * chromaFactor,
+          hue,
+        );
         if (contrastRatio(candidate, normalizedBackground) >= minimumRatio) {
           return candidate.toLowerCase();
         }
@@ -110,7 +116,8 @@ export function nearestAccessibleColor(
   const black = "#000000";
   const white = "#ffffff";
   const candidates = [black, white].filter(
-    (candidate) => contrastRatio(candidate, normalizedBackground) >= minimumRatio,
+    (candidate) =>
+      contrastRatio(candidate, normalizedBackground) >= minimumRatio,
   );
   return (candidates[0] ?? black).toLowerCase();
 }
@@ -126,7 +133,6 @@ function luminanceScore(hex: string): number {
   const [r, g, b] = hexToRgb(hex);
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
-
 
 function hueDegrees(hex: string): number | null {
   const [red, green, blue] = hexToRgb(hex).map((value) => value / 255) as [

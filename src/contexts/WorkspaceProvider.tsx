@@ -21,7 +21,11 @@ function resolveWorkspace(
   return { kind: "personal" };
 }
 
-export default function WorkspaceProvider({ children }: { children: ReactNode }) {
+export default function WorkspaceProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const {
     activeCollaborationProfile,
     activateCollaborationProfile,
@@ -46,7 +50,11 @@ export default function WorkspaceProvider({ children }: { children: ReactNode })
     } finally {
       setSwitchingWorkspace(false);
     }
-  }, [activeCollaborationProfile, deactivateCollaborationProfile, setActiveOrganization]);
+  }, [
+    activeCollaborationProfile,
+    deactivateCollaborationProfile,
+    setActiveOrganization,
+  ]);
 
   const selectCollaborationWorkspace = useCallback(
     async (profile: CollaborationProfile): Promise<void> => {
@@ -77,7 +85,11 @@ export default function WorkspaceProvider({ children }: { children: ReactNode })
         setSwitchingWorkspace(false);
       }
     },
-    [activeCollaborationProfile, deactivateCollaborationProfile, setActiveOrganization],
+    [
+      activeCollaborationProfile,
+      deactivateCollaborationProfile,
+      setActiveOrganization,
+    ],
   );
 
   const value = useMemo(
@@ -97,5 +109,9 @@ export default function WorkspaceProvider({ children }: { children: ReactNode })
     ],
   );
 
-  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
+  return (
+    <WorkspaceContext.Provider value={value}>
+      {children}
+    </WorkspaceContext.Provider>
+  );
 }

@@ -1,0 +1,73 @@
+/* PULSO V3 — compact street-poster language, deliberately unlike editorial/territorial families.
+   Scoped to the new variants so existing Pulso user sites are unaffected. */
+section[data-section-type="custom_content"][data-visual-style^="pulso3-"] {
+  --pulso-ink:#171c24; --pulso-accent:#ffb327; --pulso-paper:#f5f0e7;
+  --pulso-rule:rgba(23,28,36,.16); isolation:isolate; overflow-wrap:break-word;
+}
+section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-layout-container],
+section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-element-shell="true"] {min-width:0;}
+section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-element-type="heading"] [data-font-target] {
+  font-family:"Barlow Condensed", "Arial Narrow", "Arial", sans-serif;
+  font-weight:900; line-height:1.01;letter-spacing:-.023em;text-wrap:balance;max-width: min(100%,22ch);
+}
+section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-element-type="text"] [data-font-target] {line-height:1.65;max-width:65ch;}
+section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-element-type="button"] a {
+  border-radius:2px; min-height:48px; padding:12px 21px; max-width:100%; white-space:normal; font-weight:750;text-align:center;
+}
+/* Dark panels include explicit foreground overrides. Never infer contrast from a theme token. */
+section[data-visual-style="pulso3-hero"],section[data-visual-style="pulso3-home-end"],
+section[data-visual-style="pulso3-story-culture"],section[data-visual-style="pulso3-program-open"],
+section[data-visual-style="pulso3-program-media"],section[data-visual-style="pulso3-trust-end"],
+section[data-visual-style="pulso3-join-open"],section[data-visual-style="pulso3-join-end"] {color:#fff;--org-text:#ffffff;}
+section[data-visual-style="pulso3-hero"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="pulso3-hero"] [data-element-type="text"] [data-font-target],
+section[data-visual-style="pulso3-home-end"] [data-font-target],
+section[data-visual-style="pulso3-story-culture"] [data-font-target],
+section[data-visual-style="pulso3-program-open"] [data-font-target],
+section[data-visual-style="pulso3-program-media"] [data-font-target],
+section[data-visual-style="pulso3-trust-end"] [data-font-target],
+section[data-visual-style="pulso3-join-open"] [data-font-target],
+section[data-visual-style="pulso3-join-end"] [data-font-target] {color:#fff;}
+section[data-visual-style="pulso3-hero"] {min-height:600px;padding-block:clamp(95px,10cqi,160px);background-color:#111922;}
+section[data-visual-style="pulso3-hero"] [data-layout-container] {max-width:1250px;}
+section[data-visual-style="pulso3-hero"] [data-layout-kind="stack"] {max-width:min(100%,810px);}
+section[data-visual-style="pulso3-hero"] [data-element-type="heading"] [data-font-target] {font-size:clamp(3.6rem,7cqi,7.7rem);max-width:14ch;}
+section[data-visual-style="pulso3-program-open"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="pulso3-join-open"] [data-element-type="heading"] [data-font-target] {font-size:clamp(3rem,6cqi,6.3rem);max-width:14ch;}
+section[data-visual-style="pulso3-story-open"] [data-element-type="heading"] [data-font-target],
+section[data-visual-style="pulso3-trust-open"] [data-element-type="heading"] [data-font-target] {font-size:clamp(3rem,5cqi,6rem);max-width:17ch;}
+section[data-visual-style="pulso3-stripes"] [data-layout-kind="grid"] {gap:0;border-top:5px solid #171c24;}
+section[data-visual-style="pulso3-stripes"] [data-surface="card"] {border-radius:0;background:transparent;box-shadow:none;border:0;border-right:1px solid var(--pulso-rule);padding:clamp(18px,2.8cqi,38px);}
+section[data-visual-style="pulso3-stripes"] [data-surface="card"]:last-child {border-right:0;}
+section[data-visual-style="pulso3-stripes"] [data-element-type="heading"] [data-font-target] {font-size:clamp(2rem,3.3cqi,3.3rem);}
+section[data-visual-style="pulso3-mosaic"] [data-layout-kind="grid"] {gap:12px;}
+section[data-visual-style="pulso3-mosaic"] [data-layout-kind="grid"] > *:nth-child(2) {margin-top:45px;}
+section[data-visual-style="pulso3-home-end"] [data-layout-kind="columns"],
+section[data-visual-style="pulso3-movement"] [data-layout-kind="columns"] {align-items:center;gap:clamp(28px,6cqi,80px);}
+section[data-visual-style="pulso3-story-open"] [data-element-type="image"] {margin-top:28px;}
+section[data-visual-style="pulso3-story-values"] [data-surface="card"],
+section[data-visual-style="pulso3-trust-principles"] [data-surface="card"],
+section[data-visual-style="pulso3-trust-docs"] [data-surface="card"] {background:transparent;border-radius:0;border-top:3px solid #171c24;box-shadow:none;}
+section[data-visual-style="pulso3-join-options"] [data-surface="card"] {border-radius:8px;border:1px solid rgba(23,28,36,.16);box-shadow:none;}
+section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-element-type="image"] img {max-width:100%;}
+/* Never impose aspect-ratio, border-radius, image height, imageFit or objectFit on user frames. */
+@container institutional-site (max-width:1020px) {
+ section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-layout-kind="grid"][data-layout-columns="3"] {grid-template-columns:repeat(2,minmax(0,1fr));}
+ section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-element-type="heading"] [data-font-target] {font-size:min(var(--element-font-size,3.3rem),clamp(2.1rem,5.4cqi,4.5rem));}
+}
+@container institutional-site (max-width:700px) {
+ section[data-section-type="custom_content"][data-visual-style^="pulso3-"] {padding-inline:clamp(16px,5cqi,26px);padding-block:clamp(40px,8cqi,76px);}
+ section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-layout-kind="columns"],
+ section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-layout-kind="grid"],
+ section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-layout-kind="grid"][data-layout-columns="3"] {grid-template-columns:minmax(0,1fr);gap:20px;}
+ section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-element-type="heading"] [data-font-target],
+ section[data-visual-style="pulso3-hero"] [data-element-type="heading"] [data-font-target],
+ section[data-visual-style="pulso3-join-open"] [data-element-type="heading"] [data-font-target],
+ section[data-visual-style="pulso3-program-open"] [data-element-type="heading"] [data-font-target] {font-size:min(var(--element-font-size,3rem),clamp(2rem,8.8cqi,3.8rem));max-width:100%;line-height:1.08;}
+ section[data-section-type="custom_content"][data-visual-style^="pulso3-"] [data-element-type="text"] [data-font-target] {font-size:min(var(--element-font-size,1.16rem),clamp(.96rem,4cqi,1.16rem));}
+ section[data-visual-style="pulso3-stripes"] [data-surface="card"] {padding-inline:0;border:0;border-bottom:1px solid var(--pulso-rule);}
+ section[data-visual-style="pulso3-mosaic"] [data-layout-kind="grid"] > *:nth-child(2) {margin-top:0;}
+ section[data-visual-style="pulso3-hero"] {min-height:590px;background-position:68% 50%!important;}
+ section[data-visual-style="pulso3-hero"] [data-layout-container] {align-items:center;}
+}
+@media(prefers-reduced-motion:reduce){section[data-section-type="custom_content"][data-visual-style^="pulso3-"] * {scroll-behavior:auto;}}

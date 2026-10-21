@@ -40,16 +40,15 @@ export default function LiveSiteThumbnail({
     <div
       ref={viewportRef}
       className={styles.viewport}
-      style={{
-        "--preview-height": `${height}px`,
-        "--preview-source-width": `${sourceWidth}px`,
-      } as CSSProperties}
+      style={
+        {
+          "--preview-height": `${height}px`,
+          "--preview-source-width": `${sourceWidth}px`,
+        } as CSSProperties
+      }
       aria-hidden="true"
     >
-      <div
-        className={styles.scaled}
-        style={{ transform: `scale(${scale})` }}
-      >
+      <div className={styles.scaled} style={{ transform: `scale(${scale})` }}>
         <InstitutionalSiteView site={site} page={page} />
       </div>
       <div className={styles.guard} />

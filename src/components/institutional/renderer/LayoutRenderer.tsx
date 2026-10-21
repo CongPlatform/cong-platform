@@ -23,7 +23,10 @@ function joinClassNames(...values: Array<string | undefined>): string {
   return values.filter(Boolean).join(" ");
 }
 
-function repeatContext(path: Array<string | number>): { source?: string; index?: number } {
+function repeatContext(path: Array<string | number>): {
+  source?: string;
+  index?: number;
+} {
   if (path.length < 2) return {};
   const index = path[path.length - 1];
   const source = path[path.length - 2];
@@ -39,6 +42,7 @@ export default function LayoutRenderer({
   path = [],
   sectionDefinition,
   showGuidance = false,
+  showEmptyMediaPreview = false,
   selectedElementId,
   selectedElementIds = [],
   onSelectElement,
@@ -69,6 +73,7 @@ export default function LayoutRenderer({
   path?: Array<string | number>;
   sectionDefinition: InstitutionalSectionDefinition;
   showGuidance?: boolean;
+  showEmptyMediaPreview?: boolean;
   selectedElementId?: string | null;
   selectedElementIds?: string[];
   onSelectElement?: (elementId: string, additive?: boolean) => void;
@@ -82,7 +87,11 @@ export default function LayoutRenderer({
     elementId: string,
     style: Partial<InstitutionalElementStyle>,
   ) => void;
-  onMoveSelection?: (deltaX: number, deltaY: number, elementIds?: string[]) => void;
+  onMoveSelection?: (
+    deltaX: number,
+    deltaY: number,
+    elementIds?: string[],
+  ) => void;
   onMoveElement?: (elementId: string, direction: -1 | 1) => void;
   onRemoveElement?: (elementId: string) => void;
   onCopyElement?: () => void;
@@ -99,10 +108,16 @@ export default function LayoutRenderer({
   const repeatMeta = repeatContext(path);
 
   if (node.type === "slot") {
-    const selectionId = node.id ? institutionalSelectionId(node.id, path) : null;
-    const effectiveNode = selectionId && instanceStyles[selectionId]
-      ? { ...node, style: { ...(node.style ?? {}), ...instanceStyles[selectionId] } }
-      : node;
+    const selectionId = node.id
+      ? institutionalSelectionId(node.id, path)
+      : null;
+    const effectiveNode =
+      selectionId && instanceStyles[selectionId]
+        ? {
+            ...node,
+            style: { ...(node.style ?? {}), ...instanceStyles[selectionId] },
+          }
+        : node;
     const fieldDefinition =
       path.length === 0
         ? sectionDefinition.fields.find((field) => field.key === node.slot)
@@ -113,9 +128,12 @@ export default function LayoutRenderer({
         presentation={node.presentation}
         data={data}
         editable={editable}
+        showEmptyMediaPreview={showEmptyMediaPreview}
         path={path}
         fieldDefinition={fieldDefinition}
-        showGuidance={Boolean(selectionId && showGuidance && selectedElementId === selectionId)}
+        showGuidance={Boolean(
+          selectionId && showGuidance && selectedElementId === selectionId,
+        )}
         selected={Boolean(selectionId && selectedElementId === selectionId)}
         imageStyle={effectiveNode.style}
         onValueChange={onValueChange}
@@ -137,11 +155,17 @@ export default function LayoutRenderer({
         editable={editable}
         selectionId={selectionId ?? node.id}
         selected={selectedElementId === selectionId}
-        multiSelected={Boolean(selectionId && selectedElementIds.includes(selectionId))}
+        multiSelected={Boolean(
+          selectionId && selectedElementIds.includes(selectionId),
+        )}
         selectedIds={selectedElementIds}
         removable={path.length === 0}
-        onSelect={(additive) => selectionId && onSelectElement?.(selectionId, additive)}
-        onStyleChange={(style) => onElementStyleChange?.(selectionId ?? node.id!, style)}
+        onSelect={(additive) =>
+          selectionId && onSelectElement?.(selectionId, additive)
+        }
+        onStyleChange={(style) =>
+          onElementStyleChange?.(selectionId ?? node.id!, style)
+        }
         onMoveCommit={onMoveSelection}
         onRemove={() => selectionId && onRemoveElement?.(selectionId)}
         onCopy={onCopyElement}
@@ -160,13 +184,23 @@ export default function LayoutRenderer({
 
   if (node.type === "element") {
     const selectionId = institutionalSelectionId(node.id, path);
-    const effectiveNode = (instanceStyles[selectionId] || Object.prototype.hasOwnProperty.call(instanceValues, selectionId))
-      ? {
-          ...node,
-          ...(Object.prototype.hasOwnProperty.call(instanceValues, selectionId) ? { value: instanceValues[selectionId] as typeof node.value } : {}),
-          style: { ...(node.style ?? {}), ...(instanceStyles[selectionId] ?? {}) },
-        }
-      : node;
+    const effectiveNode =
+      instanceStyles[selectionId] ||
+      Object.prototype.hasOwnProperty.call(instanceValues, selectionId)
+        ? {
+            ...node,
+            ...(Object.prototype.hasOwnProperty.call(
+              instanceValues,
+              selectionId,
+            )
+              ? { value: instanceValues[selectionId] as typeof node.value }
+              : {}),
+            style: {
+              ...(node.style ?? {}),
+              ...(instanceStyles[selectionId] ?? {}),
+            },
+          }
+        : node;
     return (
       <ElementShell
         node={effectiveNode}
@@ -269,6 +303,7 @@ export default function LayoutRenderer({
               path={[...path, node.source, index]}
               sectionDefinition={sectionDefinition}
               showGuidance={false}
+              showEmptyMediaPreview={showEmptyMediaPreview}
               selectedElementId={selectedElementId}
               selectedElementIds={selectedElementIds}
               onSelectElement={onSelectElement}
@@ -315,6 +350,7 @@ export default function LayoutRenderer({
     path,
     sectionDefinition,
     showGuidance,
+    showEmptyMediaPreview,
     selectedElementId,
     selectedElementIds,
     onSelectElement,
@@ -351,7 +387,9 @@ export default function LayoutRenderer({
             : undefined,
         )}
         data-gap={node.gap}
-        data-surface={node.surface && node.surface !== "none" ? node.surface : undefined}
+        data-surface={
+          node.surface && node.surface !== "none" ? node.surface : undefined
+        }
         data-layout-container="true"
         data-layout-kind="columns"
         data-layout-ratio={node.ratio}
@@ -376,7 +414,9 @@ export default function LayoutRenderer({
             : undefined,
         )}
         data-gap={node.gap}
-        data-surface={node.surface && node.surface !== "none" ? node.surface : undefined}
+        data-surface={
+          node.surface && node.surface !== "none" ? node.surface : undefined
+        }
         data-layout-container="true"
         data-layout-kind="grid"
         data-layout-columns={node.columns}
@@ -401,7 +441,9 @@ export default function LayoutRenderer({
           : undefined,
       )}
       data-gap={node.gap}
-      data-surface={node.surface && node.surface !== "none" ? node.surface : undefined}
+      data-surface={
+        node.surface && node.surface !== "none" ? node.surface : undefined
+      }
       data-layout-container="true"
       data-layout-kind="stack"
       data-layout-direction={node.direction ?? "column"}

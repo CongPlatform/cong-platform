@@ -1,0 +1,55 @@
+/* Profundezas Atlas: scientific field journal with responsive native layout nodes.
+   Scoped to deep5; all individual images, masks and frames remain user editable. */
+section[data-section-type="custom_content"][data-visual-style^="deep5-"]{isolation:isolate;overflow-wrap:break-word;}
+section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-layout-container],
+section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-element-shell="true"]{min-width:0;max-width:100%;}
+section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-element-type="heading"] [data-font-target]{font-family:"Space Grotesk","DM Sans",sans-serif;font-weight:650;letter-spacing:-.042em;line-height:1.09;text-wrap:balance;overflow-wrap:break-word;}
+section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-element-type="text"] [data-font-target]{line-height:1.62;max-width:66ch;}
+section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-element-type="button"] a {min-height:46px;border-radius:3px;padding:12px 19px;font-weight:700;white-space:normal;max-width:100%;text-align:center;}
+section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-layout-kind="columns"]{align-items:center;gap:clamp(25px,5cqi,82px);}
+/* Deep ocean opener: actual backgroundImage asset, not a mocked floating image. */
+section[data-visual-style="deep5-ocean-cover"]{min-height:610px;display:flex;align-items:center;position:relative;}
+section[data-visual-style="deep5-ocean-cover"] [data-section-content="true"]{width:100%;}
+section[data-visual-style="deep5-ocean-cover"] [data-layout-kind="stack"]{max-width:min(690px,57%);gap:clamp(16px,2.5cqi,36px);}
+section[data-visual-style="deep5-ocean-cover"] [data-element-type="heading"] [data-font-target]{font-size:clamp(3.15rem,6.8cqi,7rem);line-height:1.02;max-width:14ch;}
+section[data-visual-style="deep5-coordinate"] [data-layout-kind="columns"]{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);}
+section[data-visual-style="deep5-coordinate"] [data-element-type="heading"] [data-font-target]{max-width:12ch;}
+/* The indicator strip reads like measured instrument dials, not three SaaS cards. */
+section[data-visual-style="deep5-reading"] [data-layout-kind="grid"]{border-top:1px solid #6e9da3;border-bottom:1px solid #6e9da3;gap:0;}
+section[data-visual-style="deep5-reading"] [data-layout-kind="grid"] > [data-surface="card"]{border:0;border-right:1px solid #6e9da3;border-radius:0;background:transparent;box-shadow:none;padding:clamp(18px,3cqi,42px);}
+section[data-visual-style="deep5-reading"] [data-layout-kind="grid"] > [data-surface="card"]:last-child{border-right:0;}
+section[data-visual-style="deep5-sonar-feature"] [data-layout-kind="columns"]{grid-template-columns:minmax(0,1fr) minmax(0,1.18fr);}
+section[data-visual-style="deep5-sonar-feature"] [data-element-type="heading"] [data-font-target]{max-width:12ch;}
+section[data-visual-style="deep5-research-index"] [data-element-type="heading"] [data-font-target]{font-size:clamp(3rem,7cqi,6.9rem);max-width:12ch;}
+section[data-visual-style="deep5-research-index"]{border-bottom:4px solid #0a566f;}
+section[data-visual-style="deep5-sea-depth"] [data-layout-kind="columns"]{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);}
+section[data-visual-style="deep5-reef"] [data-layout-kind="columns"]{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);}
+section[data-visual-style="deep5-chart-series"] [data-layout-kind="stack"]{width:100%;}
+section[data-visual-style="deep5-origin"] [data-layout-kind="columns"]{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);}
+
+/* Full-sheet plates and data-graphic sections: intentionally unlike split heros. */
+section[data-visual-style="deep5-coordinate"] [data-layout-kind="stack"] > [data-layout-kind="stack"] {max-width:min(850px,100%);}
+section[data-visual-style="deep5-coordinate"] [data-layout-kind="stack"] > [data-element-shell="true"]:last-child {width:100%;}
+section[data-visual-style="deep5-waterline"] [data-layout-kind="stack"] > [data-layout-kind="stack"] {max-width:780px;margin-left:auto;}
+section[data-visual-style="deep5-sea-depth"] [data-layout-kind="stack"] > [data-layout-kind="stack"] {max-width:700px;}
+section[data-visual-style="deep5-sea-depth"] [data-layout-kind="stack"] > [data-element-shell="true"]:last-child{border-left:6px solid #105d70;padding-left:clamp(10px,2cqi,26px);}
+section[data-visual-style="deep5-currents"] [data-layout-kind="stack"] > [data-layout-kind="stack"] {max-width:880px;}
+section[data-visual-style="deep5-open-data"] [data-layout-kind="stack"] > [data-layout-kind="stack"] {max-width:850px;}
+section[data-visual-style="deep5-contact-map"] [data-layout-kind="stack"] > [data-layout-kind="stack"] {max-width:680px;}
+section[data-visual-style="deep5-join-intro"] [data-layout-kind="stack"] > [data-layout-kind="stack"] {max-width:880px;}
+
+/* Scoped contrasts: preserve authored pale body and luminous labels on dark sheets. */
+section[data-visual-style="deep5-sonar-feature"],section[data-visual-style="deep5-ethics"],section[data-visual-style="deep5-currents"],section[data-visual-style="deep5-methods"],section[data-visual-style="deep5-join-final"],section[data-visual-style="deep5-contact-end"],section[data-visual-style="deep5-home-end"]{--org-text-base:#F7FFFE;--org-secondary-strong:#9AEAD9;}
+@container institutional-site (max-width:980px){section[data-visual-style="deep5-ocean-cover"] [data-layout-kind="stack"]{max-width:min(740px,78%);}section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,3rem),clamp(2rem,5.5cqi,4.25rem));}}
+@container institutional-site (max-width:720px){
+ section[data-section-type="custom_content"][data-visual-style^="deep5-"]{padding-block:clamp(32px,8cqi,58px);padding-inline:clamp(16px,4cqi,26px);}
+ section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-layout-kind="columns"],section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-layout-kind="grid"]{grid-template-columns:minmax(0,1fr);gap:clamp(20px,5cqi,34px);}
+ section[data-visual-style="deep5-reading"] [data-layout-kind="grid"] > [data-surface="card"]{border-right:0;border-bottom:1px solid #6e9da3;padding-inline:0;}
+ section[data-visual-style="deep5-reading"] [data-layout-kind="grid"] > [data-surface="card"]:last-child{border-bottom:0;}
+ section[data-visual-style="deep5-ocean-cover"]{min-height:560px;background-position:66% center !important;}
+ section[data-visual-style="deep5-ocean-cover"] [data-layout-kind="stack"]{max-width:100%;}
+ section[data-visual-style="deep5-ocean-cover"] [data-element-type="heading"] [data-font-target]{font-size:clamp(2.2rem,8cqi,4rem);max-width:100%;}
+ section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,3rem),clamp(1.8rem,7cqi,3rem));}
+ section[data-section-type="custom_content"][data-visual-style^="deep5-"] [data-element-type="text"] [data-font-target]{font-size:min(var(--element-font-size,1.1rem),clamp(.94rem,3.7cqi,1.14rem));}
+}
+@media(prefers-reduced-motion:reduce){section[data-section-type="custom_content"][data-visual-style^="deep5-"] *{transition:none!important;animation:none!important;}}

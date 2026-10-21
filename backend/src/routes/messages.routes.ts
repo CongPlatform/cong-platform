@@ -1,50 +1,121 @@
 import { Router } from "express";
-import multer from "multer";
-
-import { messageHandlers, getSettings, saveSettings, getIdentity, registerIdentity, resetIdentity } from "../controllers/messages.controller.js";
 import { authenticate } from "../middlewares/authenticate.js";
 import { requireOrganizationContext } from "../middlewares/organization-context.js";
 import { validateBody } from "../middlewares/validate.js";
 import { communityRateLimit } from "../middlewares/community-rate-limit.js";
 import {
-  contactDecisionSchema, deleteMessageSchema, createDirectConversationSchema, sendMessageSchema, updateMessageSettingsSchema, registerIdentityKeySchema, resetIdentityKeySchema,
+  messageHandlers,
+  getSettings,
+  saveSettings,
+} from "../controllers/messages.controller.js";
+import {
+  createDirectConversationSchema,
+  createGroupSchema,
+  contactDecisionSchema,
+  sendMessageSchema,
+  deleteMessageSchema,
+  reactMessageSchema,
+  createAttachmentSchema,
+  updateMessageSettingsSchema,
 } from "../validators/messages.validator.js";
+import { z } from "zod";
+import { parseAvatarUpload } from "../middlewares/avatar-upload.js";
 
 const router = Router();
-// This file is encrypted on the device. MIME is intentionally opaque to the server.
-const encryptedFileUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1_100_000, files: 1 } });
-const searchLimit = communityRateLimit({ name: "messages-search", windowMs: 60_000, max: 30 });
-const startLimit = communityRateLimit({ name: "messages-start", windowMs: 60_000, max: 12 });
-const sendLimit = communityRateLimit({ name: "messages-send", windowMs: 60_000, max: 45 });
 router.use(authenticate);
-router.get("/identity", getIdentity);
-router.post("/identity", validateBody(registerIdentityKeySchema), registerIdentity);
-router.post("/identity/reset", validateBody(resetIdentityKeySchema), resetIdentity);
-
-function mount(scopeRouter: Router, scope: "global" | "organization") {
-  const handlers = messageHandlers(scope);
-  scopeRouter.get("/people", searchLimit, handlers.recipients);
-  scopeRouter.get("/conversations", handlers.conversations);
-  scopeRouter.post("/conversations", startLimit, validateBody(createDirectConversationSchema), handlers.create);
-  scopeRouter.get("/conversations/:conversationId/messages", handlers.messages);
-  scopeRouter.get("/conversations/:conversationId/keys", handlers.keys);
-  scopeRouter.post("/conversations/:conversationId/contact", validateBody(contactDecisionSchema), handlers.respond);
-  scopeRouter.post("/conversations/:conversationId/messages/:messageId/delete", validateBody(deleteMessageSchema), handlers.remove);
-  scopeRouter.post("/conversations/:conversationId/attachments", sendLimit, encryptedFileUpload.single("file"), handlers.uploadAttachment);
-  scopeRouter.get("/conversations/:conversationId/attachments/:attachmentId", handlers.downloadAttachment);
-  scopeRouter.post("/conversations/:conversationId/messages", sendLimit, validateBody(sendMessageSchema), handlers.send);
-  scopeRouter.post("/conversations/:conversationId/read", handlers.read);
+const searchLimit = communityRateLimit({
+  name: "chat-search",
+  windowMs: 60_000,
+  max: 30,
+});
+const startLimit = communityRateLimit({
+  name: "chat-create",
+  windowMs: 60_000,
+  max: 10,
+});
+const sendLimit = communityRateLimit({
+  name: "chat-send",
+  windowMs: 60_000,
+  max: 40,
+});
+function mount(r: Router, scope: "global" | "organization") {
+  const h = messageHandlers(scope);
+  r.get("/people", searchLimit, h.people);
+  r.get("/conversations", h.conversations);
+  r.post(
+    "/conversations",
+    startLimit,
+    validateBody(createDirectConversationSchema),
+    h.create,
+  );
+  r.post("/groups", startLimit, validateBody(createGroupSchema), h.createGroup);
+  r.post(
+    "/conversations/:conversationId/group",
+    validateBody(
+      z.discriminatedUnion("action", [
+        z.object({ action: z.literal("add"), userId: z.uuid() }),
+        z.object({ action: z.literal("remove"), userId: z.uuid() }),
+        z.object({ action: z.literal("leave") }),
+        z.object({
+          action: z.literal("rename"),
+          title: z.string().trim().min(2).max(100),
+        }),
+        z.object({
+          action: z.literal("describe"),
+          description: z.string().trim().max(500),
+        }),
+        z.object({ action: z.literal("promote"), userId: z.uuid() }),
+        z.object({ action: z.literal("demote"), userId: z.uuid() }),
+      ]),
+    ),
+    h.manageGroup,
+  );
+  r.get("/conversations/:conversationId/messages", h.messages);
+  r.get("/conversations/:conversationId/media", h.media);
+  r.post(
+    "/conversations/:conversationId/group/photo",
+    parseAvatarUpload,
+    h.photo,
+  );
+  r.delete("/conversations/:conversationId/group/photo", h.removePhoto);
+  r.post(
+    "/conversations/:conversationId/messages",
+    sendLimit,
+    validateBody(sendMessageSchema),
+    h.send,
+  );
+  r.post(
+    "/conversations/:conversationId/contact",
+    validateBody(contactDecisionSchema),
+    h.respond,
+  );
+  r.post(
+    "/conversations/:conversationId/messages/:messageId/delete",
+    validateBody(deleteMessageSchema),
+    h.remove,
+  );
+  r.post(
+    "/conversations/:conversationId/messages/:messageId/reaction",
+    sendLimit,
+    validateBody(reactMessageSchema),
+    h.reaction,
+  );
+  r.post("/conversations/:conversationId/read", h.read);
+  r.post(
+    "/conversations/:conversationId/attachments/prepare",
+    sendLimit,
+    validateBody(createAttachmentSchema),
+    h.createUpload,
+  );
+  r.get("/conversations/:conversationId/attachments/:attachmentId", h.download);
 }
-
 const global = Router();
 mount(global, "global");
 router.use("/global", global);
-
-const organization = Router();
-organization.use(requireOrganizationContext);
-organization.get("/settings", getSettings);
-organization.patch("/settings", validateBody(updateMessageSettingsSchema), saveSettings);
-mount(organization, "organization");
-router.use("/organization", organization);
-
+const org = Router();
+org.use(requireOrganizationContext);
+org.get("/settings", getSettings);
+org.patch("/settings", validateBody(updateMessageSettingsSchema), saveSettings);
+mount(org, "organization");
+router.use("/organization", org);
 export default router;

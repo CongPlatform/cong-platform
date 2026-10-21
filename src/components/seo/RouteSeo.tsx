@@ -11,25 +11,30 @@ interface PublicPageSeo {
 
 const PUBLIC_PAGES: Record<string, PublicPageSeo> = {
   "/": {
-    "title": "CONG | Construtor Operacional para ONGs",
-    "description": "A CONG conecta organizações e pessoas para criar, adaptar e compartilhar soluções digitais para o terceiro setor."
+    title: "CONG | Construtor Operacional para ONGs",
+    description:
+      "A CONG conecta organizações e pessoas para criar, adaptar e compartilhar soluções digitais para o terceiro setor.",
   },
   "/como-funciona": {
-    "title": "Como funciona | CONG",
-    "description": "Entenda como a CONG conecta organizações, colaboradores e recursos para criar soluções digitais modulares para o terceiro setor."
+    title: "Como funciona | CONG",
+    description:
+      "Entenda como a CONG conecta organizações, colaboradores e recursos para criar soluções digitais modulares para o terceiro setor.",
   },
   "/documentacao": {
-    "title": "Documentação | CONG",
-    "description": "Conheça a proposta, a arquitetura, os módulos e os fundamentos técnicos que orientam o desenvolvimento da plataforma CONG."
+    title: "Documentação | CONG",
+    description:
+      "Conheça a proposta, a arquitetura, os módulos e os fundamentos técnicos que orientam o desenvolvimento da plataforma CONG.",
   },
   "/comunidade": {
-    "title": "Comunidade | CONG",
-    "description": "Conheça a comunidade da CONG e descubra formas de colaborar com soluções digitais, projetos e oportunidades voltadas ao terceiro setor."
+    title: "Comunidade | CONG",
+    description:
+      "Conheça a comunidade da CONG e descubra formas de colaborar com soluções digitais, projetos e oportunidades voltadas ao terceiro setor.",
   },
   "/sobre": {
-    "title": "Sobre a CONG | Construtor Operacional para ONGs",
-    "description": "Conheça a história, a equipe e a proposta da CONG, uma plataforma criada para ampliar o acesso de organizações sociais a soluções digitais."
-  }
+    title: "Sobre a CONG | Construtor Operacional para ONGs",
+    description:
+      "Conheça a história, a equipe e a proposta da CONG, uma plataforma criada para ampliar o acesso de organizações sociais a soluções digitais.",
+  },
 };
 
 function upsertMeta(

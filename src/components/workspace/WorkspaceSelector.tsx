@@ -57,11 +57,13 @@ export default function WorkspaceSelector({
         : "Conta pessoal";
 
   const currentIcon =
-    workspace.kind === "organization"
-      ? <FiUsers aria-hidden="true" />
-      : workspace.kind === "collaboration"
-        ? roleIcon(workspace.profile.role)
-        : <FiUser aria-hidden="true" />;
+    workspace.kind === "organization" ? (
+      <FiUsers aria-hidden="true" />
+    ) : workspace.kind === "collaboration" ? (
+      roleIcon(workspace.profile.role)
+    ) : (
+      <FiUser aria-hidden="true" />
+    );
 
   async function switchWorkspace(action: () => Promise<void>): Promise<void> {
     await action();
@@ -71,7 +73,10 @@ export default function WorkspaceSelector({
 
   return (
     <>
-      <div className={styles.root} data-collapsed={collapsed ? "true" : "false"}>
+      <div
+        className={styles.root}
+        data-collapsed={collapsed ? "true" : "false"}
+      >
         <button
           type="button"
           className={styles.trigger}
@@ -80,9 +85,7 @@ export default function WorkspaceSelector({
           title={collapsed ? `Atuando como ${currentLabel}` : undefined}
           aria-haspopup="dialog"
         >
-          <span className={styles.icon}>
-            {currentIcon}
-          </span>
+          <span className={styles.icon}>{currentIcon}</span>
           <span className={styles.triggerText}>
             <small>Atuando como</small>
             <strong>{currentLabel}</strong>
@@ -101,7 +104,8 @@ export default function WorkspaceSelector({
         mensagem={
           <div className={styles.modalContent}>
             <p className={styles.modalLead}>
-              A CONG reorganiza as ferramentas de acordo com o contexto escolhido. Você pode trocar quando quiser.
+              A CONG reorganiza as ferramentas de acordo com o contexto
+              escolhido. Você pode trocar quando quiser.
             </p>
 
             <section className={styles.modalGroup}>
@@ -112,7 +116,9 @@ export default function WorkspaceSelector({
                 data-active={workspace.kind === "personal" ? "true" : "false"}
                 onClick={() => void switchWorkspace(selectPersonalWorkspace)}
               >
-                <span className={styles.modalIcon}><FiUser /></span>
+                <span className={styles.modalIcon}>
+                  <FiUser />
+                </span>
                 <span>
                   <strong>Conta pessoal</strong>
                   <small>Comunidade, perfil e atividades pessoais.</small>
@@ -126,19 +132,27 @@ export default function WorkspaceSelector({
                 <div className={styles.optionGrid}>
                   {collaborationProfiles.map((profile) => {
                     const icon = roleIcon(profile.role);
-                    const active = workspace.kind === "collaboration" && workspace.profile.id === profile.id;
+                    const active =
+                      workspace.kind === "collaboration" &&
+                      workspace.profile.id === profile.id;
                     return (
                       <button
                         type="button"
                         key={profile.id}
                         className={styles.modalOption}
                         data-active={active ? "true" : "false"}
-                        onClick={() => void switchWorkspace(() => selectCollaborationWorkspace(profile))}
+                        onClick={() =>
+                          void switchWorkspace(() =>
+                            selectCollaborationWorkspace(profile),
+                          )
+                        }
                       >
                         <span className={styles.modalIcon}>{icon}</span>
                         <span>
                           <strong>{collaborationLabel(profile.role)}</strong>
-                          <small>Ferramentas e oportunidades deste perfil.</small>
+                          <small>
+                            Ferramentas e oportunidades deste perfil.
+                          </small>
                         </span>
                       </button>
                     );
@@ -152,19 +166,31 @@ export default function WorkspaceSelector({
                 <span>Organizações</span>
                 <div className={styles.optionGrid}>
                   {organizations.map((organization) => {
-                    const active = workspace.kind === "organization" && workspace.organization.id === organization.id;
+                    const active =
+                      workspace.kind === "organization" &&
+                      workspace.organization.id === organization.id;
                     return (
                       <button
                         type="button"
                         key={organization.id}
                         className={styles.modalOption}
                         data-active={active ? "true" : "false"}
-                        onClick={() => void switchWorkspace(() => selectOrganizationWorkspace(organization))}
+                        onClick={() =>
+                          void switchWorkspace(() =>
+                            selectOrganizationWorkspace(organization),
+                          )
+                        }
                       >
-                        <span className={styles.modalIcon}><FiUsers /></span>
+                        <span className={styles.modalIcon}>
+                          <FiUsers />
+                        </span>
                         <span>
                           <strong>{organization.name}</strong>
-                          <small>{organization.organizationType === "ngo" ? "ONG ou projeto social" : "Empresa apoiadora"}</small>
+                          <small>
+                            {organization.organizationType === "ngo"
+                              ? "ONG ou projeto social"
+                              : "Empresa apoiadora"}
+                          </small>
                         </span>
                       </button>
                     );

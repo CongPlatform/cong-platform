@@ -1,0 +1,38 @@
+/* Conexão 09 · rede gráfica e mosaicos editoriais */
+section[data-visual-style^="cx9-"]{isolation:isolate;overflow-wrap:break-word}
+section[data-visual-style^="cx9-"] [data-layout-container],section[data-visual-style^="cx9-"] [data-element-shell="true"]{min-width:0;max-width:100%}
+section[data-visual-style^="cx9-"] [data-element-type="heading"] [data-font-target]{font-family:"Space Grotesk",Inter,Arial,sans-serif;letter-spacing:-.056em;font-weight:760;line-height:1.07;text-wrap:balance;overflow-wrap:normal}
+section[data-visual-style^="cx9-"] [data-element-type="text"] [data-font-target]{font-family:Inter,Arial,sans-serif;line-height:1.65;max-width:66ch}
+section[data-visual-style^="cx9-"] :is(a,button):focus-visible{outline:3px solid #F2B64A;outline-offset:4px}
+section[data-visual-style="cx9-mosaico"]{min-height:clamp(490px,76svh,880px);display:flex;flex-direction:column;justify-content:center;position:relative}
+section[data-visual-style="cx9-mosaico"] [data-layout-kind="stack"]{max-width:850px;margin-left:0}
+section[data-visual-style="cx9-mosaico"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,68px),clamp(42px,6.2vw,90px));max-width:17ch}
+section[data-visual-style="cx9-mosaico"]::after{content:"◉";position:absolute;bottom:3%;right:7%;font-size:clamp(110px,16vw,220px);color:rgb(242 182 74 / .28);pointer-events:none}
+section[data-visual-style="cx9-painel"] [data-layout-kind="columns"]{align-items:center;gap:clamp(24px,6vw,105px)}
+section[data-visual-style="cx9-painel"] [data-layout-kind="grid"]{transform:rotate(-2deg)}
+section[data-visual-style="cx9-painel"] [data-layout-kind="grid"] [data-element-type="image"]{border:5px solid #fff;box-shadow:0 8px 20px rgb(0 0 0 / .1)}
+section[data-visual-style="cx9-valores"] [data-layout-kind="grid"]>[data-layout-kind="stack"]{border-top:3px solid #F2B64A;padding:24px 16px;background:#EFF3E8}
+section[data-visual-style="cx9-caderno"] [data-layout-kind="grid"]>[data-layout-kind="stack"]{background:#fff;border:1px solid #DCE5DA;padding:13px 13px 25px;border-bottom:5px solid #365BA8}
+section[data-visual-style="cx9-caderno"] [data-element-type="heading"] [data-font-target]{font-size:clamp(23px,2.6vw,33px)}
+section[data-visual-style="cx9-retrato"] [data-layout-kind="columns"],section[data-visual-style="cx9-encontros"] [data-layout-kind="columns"]{align-items:center}
+section[data-visual-style="cx9-audiovisual"] [data-layout-kind="columns"]{align-items:center;gap:clamp(25px,5vw,90px)}
+section[data-visual-style="cx9-audiovisual"] [data-element-type="video_embed"]{min-width:0}
+section[data-visual-style="cx9-audiovisual"] [data-element-type="video_embed"] iframe{width:100%;aspect-ratio:16/9;border:0}
+section[data-visual-style="cx9-participe"]{min-height:clamp(390px,59svh,650px);display:flex;flex-direction:column;justify-content:center}
+section[data-visual-style="cx9-chamada"],section[data-visual-style="cx9-encerrar"]{border-top:6px solid #F2B64A}
+section[data-visual-style="cx9-chamada"] [data-element-type="heading"] [data-font-target]{max-width:17ch}
+section[data-visual-style="cx9-origem"] [data-layout-kind="columns"]{align-items:center}
+@container institutional-site (max-width:960px){section[data-visual-style^="cx9-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,56px),clamp(34px,5cqi,65px))}}
+@container institutional-site (max-width:720px){section[data-visual-style^="cx9-"] [data-layout-kind="columns"],section[data-visual-style^="cx9-"] [data-layout-kind="grid"]{grid-template-columns:minmax(0,1fr);gap:clamp(18px,4cqi,34px)}section[data-visual-style="cx9-painel"] [data-layout-kind="grid"]{grid-template-columns:repeat(2,minmax(0,1fr));transform:none}section[data-visual-style="cx9-mosaico"]{min-height:480px}section[data-visual-style="cx9-mosaico"]::after{display:none}section[data-visual-style^="cx9-"] [data-element-type="heading"] [data-font-target]{font-size:min(var(--element-font-size,48px),clamp(29px,7cqi,51px))}}
+@media(prefers-reduced-motion:reduce){section[data-visual-style^="cx9-"] *,section[data-visual-style^="cx9-"] *::before{animation:none!important;transition:none!important}}
+
+/* Fix 09/10: rich/text nodes without authored widths must fill their layout tracks.
+   The editor still owns explicit widths and all image/frame geometries. */
+section[data-visual-style^="cx9-"] [data-element-shell="true"][data-explicit-width="false"]:is([data-text-box="true"], [data-element-type="action_grid"], [data-element-type="media_gallery"], [data-element-type="video_embed"], [data-element-type="data_chart"], [data-element-type="story_tabs"], [data-element-type="faq"], [data-element-type="community_timeline"], [data-element-type="testimonial_slider"], [data-element-type="donation_choices"], [data-element-type="campaign_card"]) {
+  width: 100% !important;
+  min-width: 0;
+}
+section[data-visual-style^="cx9-"] [data-text-box="true"][data-explicit-width="false"] .editableText {
+  width: 100%;
+  max-width: 100%;
+}

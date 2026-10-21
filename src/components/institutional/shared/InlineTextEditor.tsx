@@ -3,12 +3,15 @@ import { useLayoutEffect, useRef, useState, type ClipboardEvent } from "react";
 import styles from "./InlineTextEditor.module.css";
 
 function readEditorValue(element: HTMLElement, multiline: boolean): string {
-  const raw = multiline ? element.innerText : element.textContent ?? "";
+  const raw = multiline ? element.innerText : (element.textContent ?? "");
   const normalized = raw.replace(/\u00a0/g, " ").replace(/\r\n/g, "\n");
   return multiline ? normalized : normalized.replace(/\s*\n+\s*/g, " ");
 }
 
-function insertPlainText(event: ClipboardEvent<HTMLElement>, multiline: boolean): void {
+function insertPlainText(
+  event: ClipboardEvent<HTMLElement>,
+  multiline: boolean,
+): void {
   event.preventDefault();
   const raw = event.clipboardData.getData("text/plain");
   const text = multiline ? raw : raw.replace(/\s*\r?\n+\s*/g, " ");
@@ -87,7 +90,11 @@ export default function InlineTextEditor({
       data-inline-text-editor="true"
       role="textbox"
       aria-multiline={multiline}
-      aria-label={editing ? "Editando texto" : "Texto. Clique duas vezes ou pressione Enter para editar"}
+      aria-label={
+        editing
+          ? "Editando texto"
+          : "Texto. Clique duas vezes ou pressione Enter para editar"
+      }
       tabIndex={0}
       onClick={(event) => {
         // Um clique apenas seleciona/move o elemento no canvas.
@@ -101,7 +108,10 @@ export default function InlineTextEditor({
       }}
       onFocus={(event) => {
         if (!editing) return;
-        if ((event.currentTarget.textContent ?? "") !== latestExternalValueRef.current) {
+        if (
+          (event.currentTarget.textContent ?? "") !==
+          latestExternalValueRef.current
+        ) {
           event.currentTarget.textContent = latestExternalValueRef.current;
         }
       }}
@@ -116,7 +126,10 @@ export default function InlineTextEditor({
       }}
       onBlur={(event) => {
         if (!editing) return;
-        const nextValue = readEditorValue(event.currentTarget, multiline).trim();
+        const nextValue = readEditorValue(
+          event.currentTarget,
+          multiline,
+        ).trim();
         latestExternalValueRef.current = nextValue;
         onCommit(nextValue);
         setEditing(false);

@@ -787,7 +787,10 @@ export default function Register() {
               <span className={styles.stepCount}>{step} de 3</span>
             </div>
 
-            <div className={styles.stepIndicator} aria-label={`Etapa ${step} de 3`}>
+            <div
+              className={styles.stepIndicator}
+              aria-label={`Etapa ${step} de 3`}
+            >
               {[1, 2, 3].map((item) => (
                 <span
                   key={item}
@@ -1025,7 +1028,10 @@ export default function Register() {
               >
                 {isSubmitting ? (
                   <>
-                    <LoaderCircle className={styles.spinner} aria-hidden="true" />
+                    <LoaderCircle
+                      className={styles.spinner}
+                      aria-hidden="true"
+                    />
                     Criando sua conta…
                   </>
                 ) : step < 3 ? (
@@ -1037,7 +1043,8 @@ export default function Register() {
             </div>
 
             <p className={styles.loginPromptBottom}>
-              Já tem uma conta? <TransitionLink to="/login">Entrar</TransitionLink>
+              Já tem uma conta?{" "}
+              <TransitionLink to="/login">Entrar</TransitionLink>
             </p>
           </form>
         </section>

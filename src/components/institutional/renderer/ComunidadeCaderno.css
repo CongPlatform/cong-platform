@@ -1,0 +1,50 @@
+/* Comunidade — caderno urbano, materialidade e mapas. Scoped to co6 and standalone template navigation. */
+section[data-visual-style^="co6-"] { overflow-wrap:anywhere; isolation:isolate; }
+section[data-visual-style^="co6-"] [data-layout-container], section[data-visual-style^="co6-"] [data-element-shell="true"] { min-width:0; max-width:100%; }
+section[data-visual-style^="co6-"] [data-element-type="heading"] [data-font-target] { font-family:"DM Sans",system-ui,sans-serif; font-weight:780;letter-spacing:-.052em;line-height:1.06;text-wrap:balance; }
+section[data-visual-style^="co6-"] [data-element-type="text"] [data-font-target] { line-height:1.56;max-width:68ch; }
+/* The photograph is behind the entire layout, rather than an additional rectangular column. */
+section[data-visual-style="co6-abertura-da-rua"] {min-height:clamp(580px,70cqi,920px);display:flex;align-items:flex-end; background-color:#163d34; background-repeat:no-repeat;position:relative;}
+section[data-visual-style="co6-abertura-da-rua"]::before {content:"01 / TERRITÓRIO";position:absolute;right:clamp(18px,3vw,60px);top:clamp(30px,5vw,70px);font-size:clamp(13px,1.3vw,22px);font-weight:800;letter-spacing:.1em;color:#fff;border-top:2px solid #fff;padding-top:9px;}
+section[data-visual-style="co6-abertura-da-rua"] [data-layout-kind="stack"] {max-width:min(880px,88%);}
+section[data-visual-style="co6-abertura-da-rua"] [data-element-type="heading"] [data-font-target] {text-shadow:0 3px 12px #102b2380;}
+section[data-visual-style="co6-quatro-pontos-do-bairro"] [data-layout-kind="grid"] > [data-layout-kind="stack"] {border-right:1px solid #b8b0a4;padding:1.1rem 1.4rem 1.1rem .4rem;}
+section[data-visual-style="co6-quatro-pontos-do-bairro"] [data-layout-kind="grid"] > [data-layout-kind="stack"]:last-child {border-right:none;}
+section[data-visual-style="co6-quatro-pontos-do-bairro"] [data-element-type="heading"] [data-font-target] {font-family:Georgia,serif;font-weight:600;}
+/* A manifesto behaves as one typeset newspaper spread, not three repeat cards. */
+section[data-visual-style="co6-faixa-manifesto"] {text-align:left;border-block:12px solid #bf6340;padding-inline:clamp(20px,8vw,150px);}
+section[data-visual-style="co6-faixa-manifesto"] [data-layout-kind="stack"] {max-width:1150px;}
+section[data-visual-style="co6-faixa-manifesto"] [data-element-type="heading"] [data-font-target] {font-family:Georgia,serif;letter-spacing:-.045em;font-weight:600;}
+section[data-visual-style="co6-convite-em-cartaz"],section[data-visual-style="co6-convite-em-movimento"] {background-image:repeating-linear-gradient(135deg,transparent 0 34px,#ffffff13 35px 36px);}
+section[data-visual-style="co6-convite-em-cartaz"] [data-layout-kind="stack"],section[data-visual-style="co6-convite-em-movimento"] [data-layout-kind="stack"]{max-width:900px;}
+section[data-visual-style="co6-convite-em-cartaz"] [data-element-type="heading"] [data-font-target],section[data-visual-style="co6-convite-em-movimento"] [data-element-type="heading"] [data-font-target] {font-family:Georgia,serif;font-weight:600;}
+/* First-class native media gallery and video keep their built-in editor controls. */
+section[data-visual-style="co6-cartografia-de-historias"] [data-layout-kind="columns"] {align-items:start;}
+section[data-visual-style="co6-cinema-de-bairro"] [data-layout-kind="columns"] {align-items:center;}
+section[data-visual-style="co6-retratos-em-camadas"] [data-layout-kind="grid"] > [data-layout-kind="stack"]:nth-child(2) {transform:translateY(35px);border-top:5px solid #b75d3f;padding:20px 0;}
+section[data-visual-style="co6-grande-obra-em-foco"] [data-layout-kind="columns"] {align-items:center;}
+section[data-visual-style="co6-grande-obra-em-foco"] [data-layout-kind="columns"] > :last-child {min-width:0;}
+section[data-visual-style="co6-planta-do-territorio"] [data-layout-kind="columns"] {align-items:center;}
+section[data-visual-style="co6-documentacao-de-bairro"] {background-image:linear-gradient(180deg,#ebe5d7 0%,#ede7d8 100%);}
+section[data-visual-style="co6-transparencia-sem-atalhos"],section[data-visual-style="co6-rodape-de-confianca"],section[data-visual-style="co6-compromisso-com-o-cuidado"] {border-left:clamp(8px,3cqi,34px) solid #bf633f;}
+section[data-visual-style="co6-transparencia-sem-atalhos"] [data-element-type="heading"] [data-font-target] {color:#fff!important;}
+section[data-visual-style="co6-transparencia-sem-atalhos"] [data-element-type="text"] [data-font-target] {color:#fff!important;}
+section[data-visual-style^="co6-"] [data-element-type="button"] a:focus-visible {outline:3px solid #f3a765;outline-offset:4px;}
+@container institutional-site (max-width:960px) {
+ section[data-visual-style^="co6-"] [data-element-type="heading"] [data-font-target] {font-size:min(var(--element-font-size,3rem),clamp(2rem,6.1cqi,4.7rem));}
+ section[data-visual-style="co6-quatro-pontos-do-bairro"] [data-layout-kind="grid"] {grid-template-columns:repeat(2,minmax(0,1fr));}
+ section[data-visual-style="co6-quatro-pontos-do-bairro"] [data-layout-kind="grid"] > [data-layout-kind="stack"]:nth-child(2){border-right:0;}
+}
+@container institutional-site (max-width:720px) {
+ section[data-visual-style^="co6-"] {padding-inline:clamp(16px,4cqi,28px);}
+ section[data-visual-style^="co6-"] [data-layout-kind="columns"],section[data-visual-style^="co6-"] [data-layout-kind="grid"]{grid-template-columns:minmax(0,1fr);gap:clamp(24px,5cqi,40px);}
+ section[data-visual-style^="co6-"] [data-element-type="heading"] [data-font-target] {font-size:min(var(--element-font-size,3rem),clamp(2rem,8cqi,3.2rem));}
+ section[data-visual-style="co6-abertura-da-rua"] {min-height:560px;background-position:55% center!important;}
+ section[data-visual-style="co6-abertura-da-rua"] [data-layout-kind="stack"]{max-width:100%;}
+ section[data-visual-style="co6-abertura-da-rua"]::before{display:none;}
+ section[data-visual-style="co6-quatro-pontos-do-bairro"] [data-layout-kind="grid"] > [data-layout-kind="stack"] {border-right:0;border-bottom:1px solid #b8b0a4;padding-inline:0;}
+ section[data-visual-style="co6-quatro-pontos-do-bairro"] [data-layout-kind="grid"] > [data-layout-kind="stack"]:last-child{border-bottom:0;}
+ section[data-visual-style="co6-retratos-em-camadas"] [data-layout-kind="grid"] > [data-layout-kind="stack"]:nth-child(2){transform:none;}
+ section[data-visual-style="co6-faixa-manifesto"] {padding-inline:clamp(18px,5cqi,28px);}
+}
+@media(prefers-reduced-motion:reduce){section[data-visual-style^="co6-"] *,section[data-visual-style^="co6-"] *::before,section[data-visual-style^="co6-"] *::after{animation:none!important;transition:none!important;}}

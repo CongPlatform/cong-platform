@@ -7,9 +7,8 @@
 }
 
 .scaled {
-  width: 650px;
+  width: 960px;
   min-height: 420px;
-  transform: scale(0.225);
   transform-origin: top left;
   background: var(--color-white);
 }
@@ -39,7 +38,5 @@
 /* Native families v2.1 — preview a meaningful desktop slice instead of
    magnifying only the first words of the section. */
 .viewport[data-size="large"] .scaled {
-  width: 960px;
   min-height: 560px;
-  transform: scale(0.43);
 }

@@ -1,17 +1,14 @@
 import {
   apiGet,
   apiPost,
+  apiRequest,
   apiTenantGet,
   apiTenantPatch,
   apiTenantPost,
-  getStoredAuthToken,
+  apiDelete,
+  apiTenantDelete,
 } from "./api";
-import { getStoredActiveOrganizationId } from "./organizationStorage";
-import type {
-  EncryptedPayload,
-  MessageParticipantKey,
-  MessagePublicKey,
-} from "./messageCrypto";
+import { supabase } from "./supabase";
 
 export type MessageScope = "global" | "organization";
 export interface MessageContact {
@@ -22,37 +19,67 @@ export interface MessageContact {
 }
 export interface MessageConversation {
   id: string;
-  peerId: string;
-  peerName: string;
+  kind: "direct" | "group";
+  title: string | null;
+  description: string | null;
+  peerId: string | null;
+  peerName: string | null;
   peerUsername: string | null;
   avatarUrl: string | null;
   createdBy: string | null;
   contactStatus: "pending" | "accepted" | "rejected";
+  lastMessage: string | null;
   lastMessageAt: string | null;
   unreadCount: number;
+  memberCount: number;
+}
+export interface MessageGalleryItem {
+  id: string;
+  messageId: string;
+  name: string;
+  mime: string;
+  size: number;
+  createdAt: string;
+  url: string | null;
+}
+export interface MessageGalleryPage {
+  items: MessageGalleryItem[];
+  hasMore: boolean;
+}
+export interface MessageParticipant {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  role: "owner" | "admin" | "member";
+  lastReadAt: string | null;
+  lastDeliveredAt: string | null;
+}
+export interface MessageReaction {
+  emoji: string;
+  userId: string;
 }
 export interface MessageEntry {
   id: string;
   senderUserId: string;
   senderName: string;
   avatarUrl: string | null;
-  encryptedPayload: EncryptedPayload | null;
+  body: string;
+  attachmentId: string | null;
+  attachmentName: string | null;
+  attachmentMime: string | null;
+  attachmentSize: number | null;
+  replyToId: string | null;
+  replyBody: string | null;
+  replySenderName: string | null;
+  reactions: MessageReaction[];
   createdAt: string;
   deletedForAllAt: string | null;
-}
-export interface MessageMessageReceipt {
-  peerLastReadAt: string | null;
-  peerLastDeliveredAt: string | null;
 }
 export interface MessageModuleSettings {
   enabled: boolean;
   directMessagesEnabled: boolean;
   readReceiptsEnabled: boolean;
   canManage: boolean;
-}
-export interface MessageIdentity {
-  publicKey: MessagePublicKey;
-  keyVersion: number;
 }
 const prefix = (scope: MessageScope) => `/messages/${scope}`;
 const get = <T>(scope: MessageScope, path: string) =>
@@ -63,15 +90,13 @@ const post = <T>(scope: MessageScope, path: string, data?: unknown) =>
   scope === "organization"
     ? apiTenantPost<T>(`${prefix(scope)}${path}`, data)
     : apiPost<T>(`${prefix(scope)}${path}`, data);
-export async function searchMessageContacts(
-  scope: MessageScope,
-  search: string,
-) {
-  const data = await get<{ users: MessageContact[] }>(
-    scope,
-    `/people?q=${encodeURIComponent(search)}`,
-  );
-  return data.users;
+export async function searchMessageContacts(scope: MessageScope, q: string) {
+  return (
+    await get<{ users: MessageContact[] }>(
+      scope,
+      `/people?q=${encodeURIComponent(q)}`,
+    )
+  ).users;
 }
 export function fetchConversations(scope: MessageScope) {
   return get<{ viewerId: string; conversations: MessageConversation[] }>(
@@ -80,9 +105,8 @@ export function fetchConversations(scope: MessageScope) {
   );
 }
 export async function fetchGlobalMessageUnreadCount() {
-  const response = await fetchConversations("global");
-  return response.conversations.reduce(
-    (total, conversation) => total + conversation.unreadCount,
+  return (await fetchConversations("global")).conversations.reduce(
+    (sum, c) => sum + c.unreadCount,
     0,
   );
 }
@@ -90,150 +114,167 @@ export async function beginConversation(
   scope: MessageScope,
   recipientUserId: string,
 ) {
-  const response = await post<{ conversation: { id: string } }>(
-    scope,
-    "/conversations",
-    { recipientUserId },
-  );
-  return response.conversation.id;
+  return (
+    await post<{ conversation: { id: string } }>(scope, "/conversations", {
+      recipientUserId,
+    })
+  ).conversation.id;
 }
-export async function respondToContactRequest(
+export async function createMessageGroup(
   scope: MessageScope,
-  conversationId: string,
+  title: string,
+  participantUserIds: string[],
+  description = "",
+) {
+  return (
+    await post<{ conversation: { id: string } }>(scope, "/groups", {
+      title,
+      participantUserIds,
+      description,
+    })
+  ).conversation.id;
+}
+export function manageMessageGroup(
+  scope: MessageScope,
+  id: string,
+  change:
+    | { action: "leave" }
+    | { action: "rename"; title: string }
+    | { action: "describe"; description: string }
+    | { action: "add" | "remove" | "promote" | "demote"; userId: string },
+) {
+  return post<{ ok: boolean }>(scope, `/conversations/${id}/group`, change);
+}
+export function respondToContactRequest(
+  scope: MessageScope,
+  id: string,
   decision: "accepted" | "rejected",
 ) {
-  return post<{ ok: boolean; contactStatus: string }>(
+  return post(scope, `/conversations/${id}/contact`, { decision });
+}
+export function fetchMessages(scope: MessageScope, id: string) {
+  return get<{ messages: MessageEntry[]; participants: MessageParticipant[] }>(
     scope,
-    `/conversations/${conversationId}/contact`,
-    { decision },
+    `/conversations/${id}/messages`,
   );
 }
-export async function deleteMessage(
+export function acknowledgeMessages(scope: MessageScope, id: string) {
+  return post(scope, `/conversations/${id}/read`);
+}
+export function sendMessage(
   scope: MessageScope,
-  conversationId: string,
+  id: string,
+  clientMessageId: string,
+  body: string,
+  attachmentId?: string,
+  replyToId?: string,
+) {
+  return post(scope, `/conversations/${id}/messages`, {
+    clientMessageId,
+    body,
+    attachmentId,
+    replyToId,
+  });
+}
+export function deleteMessage(
+  scope: MessageScope,
+  id: string,
   messageId: string,
   mode: "me" | "everyone",
 ) {
-  return post<{ ok: boolean }>(
-    scope,
-    `/conversations/${conversationId}/messages/${messageId}/delete`,
-    { mode },
-  );
+  return post(scope, `/conversations/${id}/messages/${messageId}/delete`, {
+    mode,
+  });
 }
-export function fetchMessages(scope: MessageScope, conversationId: string) {
-  return get<{ messages: MessageEntry[]; receipt: MessageMessageReceipt }>(
-    scope,
-    `/conversations/${conversationId}/messages`,
-  );
-}
-export async function fetchConversationKeys(
+export function toggleMessageReaction(
   scope: MessageScope,
-  conversationId: string,
+  id: string,
+  messageId: string,
+  emoji: string,
 ) {
-  const response = await get<{ keys: MessageParticipantKey[] }>(
-    scope,
-    `/conversations/${conversationId}/keys`,
-  );
-  return response.keys;
+  return post(scope, `/conversations/${id}/messages/${messageId}/reaction`, {
+    emoji,
+  });
 }
-export async function sendMessage(
+export async function uploadMessageAttachment(
   scope: MessageScope,
-  conversationId: string,
-  clientMessageId: string,
-  encryptedPayload: EncryptedPayload,
-  attachmentId?: string,
+  id: string,
+  file: File,
 ) {
-  const response = await post<{ message: MessageEntry }>(
-    scope,
-    `/conversations/${conversationId}/messages`,
-    { clientMessageId, encryptedPayload, attachmentId },
-  );
-  return response.message;
+  if (!file.size || file.size > 25_000_000)
+    throw new Error("O arquivo deve ter até 25 MB.");
+  const metadata = await post<{
+    attachmentId: string;
+    path: string;
+    token: string;
+    bucket: string;
+  }>(scope, `/conversations/${id}/attachments/prepare`, {
+    fileName: file.name.slice(0, 255),
+    mimeType: file.type || "application/octet-stream",
+    size: file.size,
+  });
+  const { error } = await supabase.storage
+    .from(metadata.bucket)
+    .uploadToSignedUrl(metadata.path, metadata.token, file, {
+      contentType: "application/octet-stream",
+    });
+  if (error)
+    throw new Error("Não foi possível enviar o arquivo. Tente novamente.");
+  return metadata.attachmentId;
 }
-export function acknowledgeMessages(
+export function getMessageAttachmentLink(
   scope: MessageScope,
-  conversationId: string,
+  id: string,
+  attachment: string,
 ) {
-  return post<{ ok: boolean }>(scope, `/conversations/${conversationId}/read`);
-}
-export async function getMessageIdentity() {
-  return apiGet<{ viewerId: string; identity: MessageIdentity | null }>(
-    "/messages/identity",
+  return get<{ url: string; name: string; mime: string; size: number }>(
+    scope,
+    `/conversations/${id}/attachments/${attachment}`,
   );
-}
-export async function registerMessageIdentity(publicKey: MessagePublicKey) {
-  const result = await apiPost<{ identity: MessageIdentity }>(
-    "/messages/identity",
-    { publicKey },
-  );
-  return result.identity;
-}
-export async function resetMessageIdentity(publicKey: MessagePublicKey) {
-  const result = await apiPost<{ identity: MessageIdentity }>(
-    "/messages/identity/reset",
-    {
-      publicKey,
-      confirmation: "PERDER_HISTORICO",
-    },
-  );
-  return result.identity;
 }
 export async function fetchMessageSettings() {
-  const response = await apiTenantGet<{ settings: MessageModuleSettings }>(
-    "/messages/organization/settings",
-  );
-  return response.settings;
+  return (
+    await apiTenantGet<{ settings: MessageModuleSettings }>(
+      "/messages/organization/settings",
+    )
+  ).settings;
 }
 export async function saveMessageSettings(
   changes: Partial<Omit<MessageModuleSettings, "canManage">>,
 ) {
-  const response = await apiTenantPatch<{ settings: MessageModuleSettings }>(
-    "/messages/organization/settings",
-    changes,
-  );
-  return response.settings;
+  return (
+    await apiTenantPatch<{ settings: MessageModuleSettings }>(
+      "/messages/organization/settings",
+      changes,
+    )
+  ).settings;
 }
 
-const apiBase = (
-  import.meta.env.VITE_API_URL?.trim() || (import.meta.env.DEV ? "/api" : "")
-).replace(/\/$/, "");
-export async function uploadEncryptedAttachment(
+export function fetchConversationMedia(
   scope: MessageScope,
-  conversationId: string,
-  bytes: Blob,
+  id: string,
+  offset = 0,
 ) {
-  const data = new FormData();
-  data.append("file", bytes, "encrypted.bin");
-  const token = getStoredAuthToken();
-  const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (scope === "organization") {
-    const organization = getStoredActiveOrganizationId();
-    if (organization) headers["X-Organization-Id"] = organization;
-  }
-  const response = await fetch(
-    `${apiBase}${prefix(scope)}/conversations/${conversationId}/attachments`,
+  return get<MessageGalleryPage>(
+    scope,
+    `/conversations/${id}/media?offset=${offset}`,
+  );
+}
+export function uploadGroupPhoto(scope: MessageScope, id: string, file: File) {
+  const form = new FormData();
+  form.append("avatar", file);
+  return apiRequest<{ avatarUrl: string | null }>(
+    `${prefix(scope)}/conversations/${id}/group/photo`,
     {
       method: "POST",
-      headers,
-      body: data,
+      body: form,
+      organizationScoped: scope === "organization",
     },
   );
-  const result = (await response.json()) as {
-    attachmentId?: string;
-    error?: string;
-  };
-  if (!response.ok || !result.attachmentId)
-    throw new Error(result.error || "Falha ao enviar o anexo.");
-  return result.attachmentId;
 }
-export async function downloadEncryptedAttachment(
-  scope: MessageScope,
-  conversationId: string,
-  attachmentId: string,
-) {
-  return get<{ ciphertext: string }>(
-    scope,
-    `/conversations/${conversationId}/attachments/${attachmentId}`,
-  );
+export function removeGroupPhoto(scope: MessageScope, id: string) {
+  const path = `${prefix(scope)}/conversations/${id}/group/photo`;
+  return scope === "organization"
+    ? apiTenantDelete<{ ok: boolean }>(path)
+    : apiDelete<{ ok: boolean }>(path);
 }

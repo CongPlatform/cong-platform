@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { searchStockMedia } from "../controllers/institutional-stock-media.controller.js";
 
 import {
   addSection,
@@ -6,6 +7,10 @@ import {
   createImageFrameItem,
   createDesignerTemplateItem,
   createSite,
+  createPage,
+  syncSiteNavigation,
+  updatePage,
+  deletePage,
   createVariant,
   deleteSite,
   deleteSection,
@@ -28,6 +33,7 @@ import {
   renameSite,
   reorderSections,
   updateBrand,
+  updateSiteBrand,
   updateDesignPaletteItem,
   updateImageFrameItem,
   updateDesignerTemplateItem,
@@ -47,6 +53,8 @@ import {
   createInstitutionalImageFrameSchema,
   createDesignerTemplateSchema,
   createInstitutionalSiteSchema,
+  createInstitutionalPageSchema,
+  updateInstitutionalPageSchema,
   createVariantSchema,
   renameInstitutionalSiteSchema,
   reorderInstitutionalSectionsSchema,
@@ -64,6 +72,7 @@ institutionalRouter.use(authenticate);
 
 institutionalRouter.get("/native-design-access", getNativeDesignAccess);
 institutionalRouter.get("/templates", listTemplates);
+institutionalRouter.get("/media/stock", searchStockMedia);
 institutionalRouter.get("/variants", listVariants);
 
 institutionalRouter.get("/design/palettes", listDesignPaletteItems);
@@ -196,11 +205,47 @@ institutionalRouter.delete(
 );
 
 institutionalRouter.patch(
+  "/sites/:siteId/brand",
+  requireOrganizationContext,
+  requirePermission("institutional.edit"),
+  validateBody(updateBrandProfileSchema),
+  updateSiteBrand,
+);
+institutionalRouter.post(
+  "/sites/:siteId/navigation/sync",
+  requireOrganizationContext,
+  requirePermission("institutional.edit"),
+  syncSiteNavigation,
+);
+
+institutionalRouter.post(
+  "/sites/:siteId/pages",
+  requireOrganizationContext,
+  requirePermission("institutional.edit"),
+  validateBody(createInstitutionalPageSchema),
+  createPage,
+);
+institutionalRouter.patch(
+  "/sites/:siteId/pages/:pageId",
+  requireOrganizationContext,
+  requirePermission("institutional.edit"),
+  validateBody(updateInstitutionalPageSchema),
+  updatePage,
+);
+institutionalRouter.delete(
+  "/sites/:siteId/pages/:pageId",
+  requireOrganizationContext,
+  requirePermission("institutional.edit"),
+  deletePage,
+);
+
+institutionalRouter.patch(
   "/brand",
   requireOrganizationContext,
   requirePermission("institutional.edit"),
   validateBody(updateBrandProfileSchema),
   updateBrand,
+  updateSiteBrand,
 );
 institutionalRouter.post(
   "/media",

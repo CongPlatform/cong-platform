@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FiEdit3, FiExternalLink, FiInfo, FiX } from "react-icons/fi";
 
 import type { InstitutionalSite } from "../../../services/institutionalService";
@@ -33,7 +33,10 @@ export default function SitePreviewModal({
   onClose: () => void;
   onAction?: () => void;
 }) {
-  const page = site.pages.find((item) => item.isHome) ?? site.pages[0];
+  const [activePageId, setActivePageId] = useState<string | null>(null);
+  const page = site.pages.find((item) => item.id === activePageId)
+    ?? site.pages.find((item) => item.isHome)
+    ?? site.pages[0];
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -83,12 +86,27 @@ export default function SitePreviewModal({
         </header>
 
         <div className={styles.previewLayout} data-has-details={hasDetails}>
-          <div className={styles.browserShell}>
+          <div className={styles.browserShell} data-multipage={site.pages.length > 1}>
             <div className={styles.browserBar} aria-hidden="true">
               <span /><span /><span />
               <div>{title}</div>
             </div>
-            <div className={styles.siteViewport}>
+            {site.pages.length > 1 ? (
+              <nav className={styles.pageNavigation} aria-label="Páginas deste site">
+                {site.pages.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className={styles.pageTab}
+                    aria-current={page.id === item.id ? "page" : undefined}
+                    onClick={() => setActivePageId(item.id)}
+                  >
+                    {item.title}
+                  </button>
+                ))}
+              </nav>
+            ) : null}
+            <div className={styles.siteViewport} key={page.id}>
               <InstitutionalSiteView site={site} page={page} />
             </div>
           </div>

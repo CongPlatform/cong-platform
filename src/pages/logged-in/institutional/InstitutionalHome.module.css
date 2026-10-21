@@ -1252,3 +1252,30 @@
     min-height: 220px;
   }
 }
+
+.sitePreview,
+.templatePreview {
+  position: relative;
+}
+.previewTrigger {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  cursor: zoom-in;
+  border: 0;
+  background: transparent;
+}
+.previewTrigger:disabled { cursor: wait; }
+.previewTrigger:focus-visible {
+  outline: 3px solid var(--color-primary, #3567a4);
+  outline-offset: -3px;
+}
+.sitePreview:focus-within .previewOverlay,
+.templatePreview:focus-within .previewOverlay {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

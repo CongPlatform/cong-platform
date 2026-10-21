@@ -916,6 +916,8 @@ export async function reviewCommunityReport(
       requireRouteParam(req, "reportId"),
       req.body.action,
       req.body.note,
+      req.body.guidance,
+      req.body.responseHours,
     );
     res.status(204).send();
   } catch (error) {
