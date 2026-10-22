@@ -159,7 +159,7 @@ export default function LayoutRenderer({
           selectionId && selectedElementIds.includes(selectionId),
         )}
         selectedIds={selectedElementIds}
-        removable={path.length === 0}
+        removable={path.length === 0 || repeatMeta.index !== undefined}
         onSelect={(additive) =>
           selectionId && onSelectElement?.(selectionId, additive)
         }
@@ -209,7 +209,7 @@ export default function LayoutRenderer({
         selected={selectedElementId === selectionId}
         multiSelected={selectedElementIds.includes(selectionId)}
         selectedIds={selectedElementIds}
-        removable={path.length === 0}
+        removable={path.length === 0 || repeatMeta.index !== undefined}
         onSelect={(additive) => onSelectElement?.(selectionId, additive)}
         onStyleChange={(style) => onElementStyleChange?.(selectionId, style)}
         onMoveCommit={onMoveSelection}

@@ -18,6 +18,7 @@ import { ActionGrid, CommunityTimeline, DonationChoices, TestimonialSlider } fro
 import type { InstitutionalCampaignValue, InstitutionalGalleryValue, InstitutionalVideoValue, InstitutionalChartValue, InstitutionalStoryTabsValue, InstitutionalActionGridValue, InstitutionalDonationChoicesValue, InstitutionalTestimonialsValue, InstitutionalTimelineValue } from "../../../services/institutionalService";
 
 import styles from "./InstitutionalRenderer.module.css";
+import CongSiteElement from "./CongSiteElement";
 import richStyles from "./RichVariants.module.css";
 
 function asAction(value: unknown): InstitutionalAction {
@@ -87,6 +88,8 @@ export default function ElementRenderer({
     return <div className={richStyles.richModel} style={customPalette} data-rich-variant={node.style?.graphicVariant ?? "standard"}>{content}</div>;
   }
 
+
+  if (type === "cong_form" || type === "cong_login") return <CongSiteElement node={node}/>;
 
   if (type === "divider") return <hr className={styles.customDivider} />;
   if (type === "spacer") return <div className={styles.customSpacer} aria-hidden="true" />;

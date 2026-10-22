@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
   type DragEvent,
 } from "react";
 
@@ -31,6 +32,7 @@ import SectionFrame from "../editor/SectionFrame";
 import SectionRenderer from "./SectionRenderer";
 
 import styles from "./InstitutionalSiteView.module.css";
+import {CongSiteContext} from "./CongSiteContext";
 
 function fontValue(font: "brand" | "interface" | "system"): string {
   if (font === "brand") {
@@ -80,6 +82,9 @@ export default function InstitutionalSiteView({
   frames = [],
   editorConstraints,
   responsiveSizeOverride,
+  beforeFooter,
+  portalHref = "",
+  portalEnabled = false,
 }: {
   site: InstitutionalSite;
   page: InstitutionalPage;
@@ -157,6 +162,9 @@ export default function InstitutionalSiteView({
   frames?: InstitutionalImageFrameResource[];
   editorConstraints?: InstitutionalEditorConstraints;
   responsiveSizeOverride?: "desktop" | "tablet" | "mobile";
+  beforeFooter?: ReactNode;
+  portalHref?: string;
+  portalEnabled?: boolean;
 }) {
   const siteRef = useRef<HTMLDivElement>(null);
   const [designSectionId, setDesignSectionId] = useState<string | null>(null);
@@ -277,6 +285,7 @@ export default function InstitutionalSiteView({
   }
 
   return (
+    <CongSiteContext.Provider value={{editable:Boolean(editor),siteId:site.id,slug:site.slug,page:page.slug,portalHref,portalEnabled}}>
     <div
       ref={siteRef}
       className={styles.site}
@@ -617,6 +626,7 @@ export default function InstitutionalSiteView({
         })}
       </main>
 
+      {beforeFooter}
       {footerSections.map((section) => {
         const rendered = (
           <SectionRenderer
@@ -722,5 +732,6 @@ export default function InstitutionalSiteView({
         );
       })}
     </div>
+    </CongSiteContext.Provider>
   );
 }

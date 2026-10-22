@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useEffect, useMemo, useState } from "react";
 import {
   FiArrowLeft,
@@ -226,7 +227,7 @@ export default function CommunityProfilePage() {
   if (loading) {
     return (
       <main className={styles.page}>
-        <div className={styles.loading}>Carregando perfil da comunidade...</div>
+        <div className={styles.loading}><CongLoadingState variant="page" count={3} label="Preparando perfil"/></div>
       </main>
     );
   }

@@ -1,3 +1,4 @@
+import CongLoadingState from "../feedback/CongLoadingState";
 import {
   useCallback,
   useEffect,
@@ -473,7 +474,7 @@ export default function CommunityEventModal({
                   role="status"
                   aria-live="polite"
                 >
-                  Carregando eventos...
+                  <CongLoadingState variant="inline" label="Preparando eventos"/>
                 </div>
               ) : events.length ? (
                 <div className={styles.eventList}>
@@ -658,7 +659,7 @@ export default function CommunityEventModal({
               </footer>
             </form>
           ) : loadingEvent ? (
-            <div className={styles.listState}>Carregando evento...</div>
+            <div className={styles.listState}><CongLoadingState variant="inline" label="Preparando evento"/></div>
           ) : currentEvent ? (
             <div className={styles.eventView}>
               {currentEvent.status === "cancelled" ? (

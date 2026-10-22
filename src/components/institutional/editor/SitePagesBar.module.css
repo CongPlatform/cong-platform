@@ -20,3 +20,10 @@
 .actions button {display:inline-flex;align-items:center;gap:5px;padding:9px 11px;border:1px solid #d7deea;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;background:#fff;}
 .actions .save {background:#192d50;color:white;border-color:#192d50;}.actions .delete {color:#b5282d;}.spacer {flex:1;}
 @media(max-width:720px){.bar{padding:6px;gap:4px}.add{font-size:0}.add svg{font-size:18px}.modal{padding:18px}.actions{gap:4px}.actions .spacer{flex-basis:100%}}
+
+.connectSite {display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;flex:none;padding:8px 12px;border-radius:9px;border:1px solid #a9cfb7;background:#f5faf6;color:#1b6646;font:700 12px/1.2 var(--font-interface);cursor:pointer;transition:background .15s,border-color .15s;}
+.connectSite:hover:not(:disabled){background:#e5f5eb;border-color:#72ad8c;}
+.connectSite:focus-visible{outline:2px solid #23825a;outline-offset:2px;}
+.connectSite:disabled{opacity:.55;cursor:not-allowed;}
+.connectSite svg{flex:none;font-size:14px;}
+@media(max-width:720px){.connectSite{font-size:11px;padding:8px 9px;gap:5px;}}

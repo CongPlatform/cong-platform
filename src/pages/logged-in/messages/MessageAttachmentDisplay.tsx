@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useEffect, useState } from "react";
 import { FiDownload, FiFile, FiMaximize2 } from "react-icons/fi";
 import MessageMediaViewer from "./MessageMediaViewer";
@@ -116,7 +117,7 @@ export default function MessageAttachmentDisplay({
         </button>
       ) : null}
       {(image || video || audio) && !url ? (
-        <div className={styles.loading}>Carregando mídia...</div>
+        <div className={styles.loading}><CongLoadingState variant="inline" label="Preparando mídia"/></div>
       ) : null}
       {viewer && url && (image || video) ? (
         <MessageMediaViewer

@@ -48,3 +48,20 @@ export function institutionalSelectionInstancePath(
     .filter(Boolean)
     .map((part) => (/^\d+$/.test(part) ? Number(part) : part));
 }
+
+export function institutionalRepeatItemLocations(selectionIds: string[]): Array<{path: Array<string | number>; indices: number[]}> {
+  const groups = new Map<string, {path: Array<string | number>; indices: Set<number>}>();
+  for (const selectionId of selectionIds) {
+    const path = institutionalSelectionInstancePath(selectionId);
+    if (path.length < 2) continue;
+    const index = path[path.length - 1];
+    const source = path[path.length - 2];
+    if (typeof index !== "number" || !Number.isInteger(index) || index < 0 || typeof source !== "string") continue;
+    const collectionPath = path.slice(0, -1);
+    const key = JSON.stringify(collectionPath);
+    const group = groups.get(key) ?? {path: collectionPath, indices: new Set<number>()};
+    group.indices.add(index);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map(group => ({path: group.path, indices: [...group.indices]}));
+}

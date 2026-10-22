@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import {
   useCallback,
   useEffect,
@@ -31,7 +32,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { supabase } from "../../../services/supabase";
-import { getStoredAuthToken } from "../../../services/api";
+import { getUsableAuthToken } from "../../../services/api";
 import { useWorkspace } from "../../../contexts/workspace-context";
 import { useAuth } from "../../../contexts/auth-context";
 import ModalMensagem from "../../../components/modalMensagem/ModalMensagem";
@@ -347,7 +348,7 @@ function MessageScreen({
         );
       });
     async function join() {
-      const token = getStoredAuthToken();
+      const token = await getUsableAuthToken();
       if (token) await supabase.realtime.setAuth(token);
       if (ended) return;
       channel.subscribe((status) => {
@@ -595,7 +596,7 @@ function MessageScreen({
         </div>
       ) : null}
       {loading ? (
-        <div className={styles.empty}>Carregando conversas...</div>
+        <div className={styles.empty}><CongLoadingState variant="list" count={5} label="Preparando conversas"/></div>
       ) : !enabled ? (
         <div className={styles.empty}>
           <FiMessageCircle />

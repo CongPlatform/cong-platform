@@ -1,3 +1,4 @@
+import CongLoadingState from "../feedback/CongLoadingState";
 import { useCallback, useEffect, useState } from "react";
 import {
   FiArchive,
@@ -171,7 +172,7 @@ export default function SecurityAuditPanel() {
         </p>
       )}
       {busy ? (
-        <p className={styles.empty}>Carregando histórico...</p>
+        <div className={styles.empty}><CongLoadingState variant="list" count={4} label="Preparando histórico"/></div>
       ) : tab === "events" ? (
         events.length ? (
           <div className={styles.entries}>

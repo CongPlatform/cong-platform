@@ -1,3 +1,4 @@
+import CongLoadingState from "../feedback/CongLoadingState";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FiCheck,
@@ -281,7 +282,7 @@ export default function CommunityModerationPanel({
       ) : null}
       <div className={styles.list}>
         {loading ? (
-          <div className={styles.state}>Carregando...</div>
+          <div className={styles.state}><CongLoadingState variant="list" count={3} label="Preparando moderação"/></div>
         ) : status === "deletions" ? (
           <section
             className={styles.deletionQueue}

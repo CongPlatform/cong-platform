@@ -53,6 +53,7 @@ export function storeAuthTokens(
   storage.setItem(TOKEN_KEY, accessToken);
 
   storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  window.dispatchEvent(new Event("cong:auth-token-updated"));
 }
 
 export function isAuthStoredPersistently(): boolean {
@@ -133,6 +134,43 @@ async function refreshStoredSession(): Promise<RefreshResponse> {
   return refreshRequest;
 }
 
+function readJwtClaims(token: string): { exp?: number; sub?: string } | null {
+  try {
+    const encoded = token.split(".")[1];
+    if (!encoded) return null;
+    const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="))) as unknown;
+    if (!decoded || typeof decoded !== "object") return null;
+    const claims = decoded as Record<string, unknown>;
+    return {
+      exp: typeof claims.exp === "number" ? claims.exp : undefined,
+      sub: typeof claims.sub === "string" ? claims.sub : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getUsableAuthToken(): Promise<string | null> {
+  const token = getStoredAuthToken();
+  if (!token) return null;
+  const expiresAt = readJwtClaims(token)?.exp;
+  if (expiresAt !== undefined && expiresAt * 1000 < Date.now() + 60_000) {
+    if (!getStoredRefreshToken()) {
+      throw new ApiError("Sua sessão expirou. Entre novamente para continuar.", 401, "AUTH_SESSION_EXPIRED");
+    }
+    return (await refreshStoredSession()).accessToken;
+  }
+  return token;
+}
+
+export function getJwtAuthSubject(token: string): string | null {
+  const subject = readJwtClaims(token)?.sub;
+  return subject && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(subject)
+    ? subject
+    : null;
+}
+
 export async function apiRequest<T>(
   endpoint: string,
   options: ApiRequestOptions = {},
@@ -164,7 +202,7 @@ export async function apiRequest<T>(
   }
 
   if (authenticated) {
-    const token = getStoredAuthToken();
+    const token = await getUsableAuthToken();
 
     if (token) {
       requestHeaders.set("Authorization", `Bearer ${token}`);
@@ -587,4 +625,8 @@ export function apiTenantUpload<T>(
     ...options,
     organizationScoped: true,
   });
+}
+
+export function apiTenantDeleteWithBody<T>(endpoint:string,data:unknown):Promise<T>{
+  return apiRequest<T>(endpoint,{method:"DELETE",body:JSON.stringify(data),organizationScoped:true});
 }

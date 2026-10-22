@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { IconType } from "react-icons";
@@ -1671,7 +1672,7 @@ export default function LoggedCommunity() {
                   <div className={styles.dropdownProfiles}>
                     {profilesLoading ? (
                       <span className={styles.dropdownLoading}>
-                        Carregando perfis...
+                        <CongLoadingState variant="inline" label="Preparando perfis"/>
                       </span>
                     ) : (
                       profiles.map((profile: CongProfile) => (
@@ -1822,7 +1823,7 @@ export default function LoggedCommunity() {
                   <section className={styles.featuredProject}>
                     {highlightsLoading ? (
                       <div className={styles.highlightLoading}>
-                        Carregando projeto em destaque...
+                        <CongLoadingState variant="cards" count={1} label="Preparando destaque"/>
                       </div>
                     ) : featuredProject && featuredDetails ? (
                       <>
@@ -2049,7 +2050,7 @@ export default function LoggedCommunity() {
                     >
                       {highlightsLoading ? (
                         <div className={styles.opportunityEmpty}>
-                          Buscando oportunidades compatíveis...
+                          <CongLoadingState variant="inline" label="Buscando oportunidades"/>
                         </div>
                       ) : null}
                       {!highlightsLoading && highlights?.opportunities.length
@@ -2392,7 +2393,7 @@ export default function LoggedCommunity() {
                       disabled={postsLoadingMore}
                     >
                       {postsLoadingMore
-                        ? "Carregando..."
+                        ? <CongLoadingState variant="inline" label="Buscando publicações"/>
                         : "Ver publicações mais antigas"}
                       {!postsLoadingMore ? <FiChevronDown /> : null}
                     </button>
@@ -2551,7 +2552,7 @@ export default function LoggedCommunity() {
                   {collaborationProfilesLoading &&
                   !participationProfileOptions.length ? (
                     <p className={styles.profileSwitchHelp}>
-                      Carregando seus perfis de participação...
+                      <CongLoadingState variant="inline" label="Preparando perfis de participação"/>
                     </p>
                   ) : !collaborationProfilesLoading &&
                     !participationProfileOptions.length ? (

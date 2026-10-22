@@ -1,3 +1,4 @@
+import CongLoadingState from "../feedback/CongLoadingState";
 import { useEffect, useRef, useState } from "react";
 import { FiX, FiLink, FiFileText, FiPaperclip } from "react-icons/fi";
 import FileUploader from "../upload/FileUploader";
@@ -258,7 +259,7 @@ export default function CommunityMediaEditor({
       ) : null}
 
       {previewBusy && candidate !== link?.url && candidate !== dismissedUrl ? (
-        <small role="status">Carregando prévia do link...</small>
+        <CongLoadingState variant="inline" label="Preparando prévia"/>
       ) : null}
 
       {link ? (

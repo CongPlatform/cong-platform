@@ -45,7 +45,8 @@ import { authenticate } from "../middlewares/authenticate.js";
 import { parseInstitutionalUpload } from "../middlewares/institutional-upload.js";
 import { requireActiveCollaborationRole } from "../middlewares/require-active-collaboration-role.js";
 import { requireOrganizationContext } from "../middlewares/organization-context.js";
-import { requirePermission } from "../middlewares/require-permission.js";
+import { requireInstitutionalPermission } from "../middlewares/require-institutional-permission.js";
+import institutionalMemberAccessRouter from "../modules/institutional/institutional-member-access.routes.js";
 import { validateBody } from "../middlewares/validate.js";
 import {
   addInstitutionalSectionSchema,
@@ -69,6 +70,7 @@ import {
 const institutionalRouter = Router();
 
 institutionalRouter.use(authenticate);
+institutionalRouter.use("/site-access", institutionalMemberAccessRouter);
 
 institutionalRouter.get("/native-design-access", getNativeDesignAccess);
 institutionalRouter.get("/templates", listTemplates);
@@ -162,87 +164,87 @@ institutionalRouter.post(
 institutionalRouter.get(
   "/sites",
   requireOrganizationContext,
-  requirePermission("institutional.read"),
+  requireInstitutionalPermission("read"),
   listSites,
 );
 institutionalRouter.post(
   "/sites",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(createInstitutionalSiteSchema),
   createSite,
 );
 institutionalRouter.get(
   "/sites/:siteId",
   requireOrganizationContext,
-  requirePermission("institutional.read"),
+  requireInstitutionalPermission("read"),
   getSite,
 );
 institutionalRouter.patch(
   "/sites/:siteId",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(renameInstitutionalSiteSchema),
   renameSite,
 );
 institutionalRouter.post(
   "/sites/:siteId/publish",
   requireOrganizationContext,
-  requirePermission("institutional.publish"),
+  requireInstitutionalPermission("publish"),
   publishSite,
 );
 institutionalRouter.post(
   "/sites/:siteId/unpublish",
   requireOrganizationContext,
-  requirePermission("institutional.publish"),
+  requireInstitutionalPermission("publish"),
   unpublishSite,
 );
 institutionalRouter.delete(
   "/sites/:siteId",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   deleteSite,
 );
 
 institutionalRouter.patch(
   "/sites/:siteId/brand",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(updateBrandProfileSchema),
   updateSiteBrand,
 );
 institutionalRouter.post(
   "/sites/:siteId/navigation/sync",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   syncSiteNavigation,
 );
 
 institutionalRouter.post(
   "/sites/:siteId/pages",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(createInstitutionalPageSchema),
   createPage,
 );
 institutionalRouter.patch(
   "/sites/:siteId/pages/:pageId",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(updateInstitutionalPageSchema),
   updatePage,
 );
 institutionalRouter.delete(
   "/sites/:siteId/pages/:pageId",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   deletePage,
 );
 
 institutionalRouter.patch(
   "/brand",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(updateBrandProfileSchema),
   updateBrand,
   updateSiteBrand,
@@ -250,41 +252,41 @@ institutionalRouter.patch(
 institutionalRouter.post(
   "/media",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   parseInstitutionalUpload,
   uploadMedia,
 );
 institutionalRouter.post(
   "/pages/:pageId/sections",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(addInstitutionalSectionSchema),
   addSection,
 );
 institutionalRouter.post(
   "/pages/:pageId/reorder-sections",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(reorderInstitutionalSectionsSchema),
   reorderSections,
 );
 institutionalRouter.patch(
   "/sections/:sectionId",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   validateBody(updateInstitutionalSectionSchema),
   updateSection,
 );
 institutionalRouter.post(
   "/sections/:sectionId/duplicate",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   duplicateSection,
 );
 institutionalRouter.delete(
   "/sections/:sectionId",
   requireOrganizationContext,
-  requirePermission("institutional.edit"),
+  requireInstitutionalPermission("edit"),
   deleteSection,
 );
 

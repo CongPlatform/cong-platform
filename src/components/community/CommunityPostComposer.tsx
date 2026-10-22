@@ -1,3 +1,4 @@
+import CongLoadingState from "../feedback/CongLoadingState";
 import { useEffect, useState, type FormEvent } from "react";
 import CommunityMediaEditor from "./CommunityMediaEditor";
 import CommunityMentionInput from "./CommunityMentionInput";
@@ -2198,7 +2199,7 @@ export default function CommunityPostComposer({
                   ) : null}
                 </select>
                 {collaborationProfilesLoading || organizationsLoading ? (
-                  <small>Carregando identidades...</small>
+                  <CongLoadingState variant="inline" label="Preparando identidades"/>
                 ) : null}
               </label>
               {organizationsError ? (

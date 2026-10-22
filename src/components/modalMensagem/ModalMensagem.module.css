@@ -1088,7 +1088,7 @@
 
   .paper {
     max-height: calc(100svh - 24px);
-    overflow-y: auto;
+    overflow-y: hidden;
   }
 
   .header,

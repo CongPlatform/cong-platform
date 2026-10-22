@@ -257,6 +257,8 @@ const elementTypeSchema = z.enum([
   "testimonial_slider",
   "action_grid",
   "donation_choices",
+  "cong_form",
+  "cong_login",
   "divider",
   "spacer",
 ]);
@@ -553,6 +555,8 @@ const elementValueSchema = z.union([
   testimonialSliderValueSchema,
   actionGridValueSchema,
   donationChoicesValueSchema,
+  z.object({kind:z.literal("cong_form"),formId:z.union([z.literal(""),z.string().uuid()]),title:z.string().trim().max(140)}).strict(),
+  z.object({kind:z.literal("cong_login"),label:z.string().trim().min(1).max(100),caption:z.string().trim().max(180)}).strict(),
   z.null(),
 ]);
 
