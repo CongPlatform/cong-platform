@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiArrowRight,
@@ -11,6 +12,7 @@ import {
   FiPauseCircle,
   FiPlus,
   FiTrash2,
+  FiShield,
 } from "react-icons/fi";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -24,6 +26,7 @@ import SitePreviewModal from "../../../components/institutional/preview/SitePrev
 import { findNativeDesignFamilyById, findNativeDesignFamilyByName } from "../../../data/institutional/nativeDesignFamilies";
 import { useWorkspace } from "../../../contexts/workspace-context";
 import { ApiError } from "../../../services/api";
+import SitePermissionsDialog from "./SitePermissionsDialog";
 import {
   createInstitutionalSite,
   deleteInstitutionalSite,
@@ -178,6 +181,9 @@ export default function InstitutionalHome() {
   const [creating, setCreating] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [error, setError] = useState("");
+  const [sitesDenied, setSitesDenied] = useState(false);
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
+  const canManageSitesAccess = workspace.kind === "organization" && ["organization_admin", "organization_representative"].includes(workspace.organization.role.code);
   const [createOpen, setCreateOpen] = useState(() => searchParams.get("create") === "1");
   const [selectedTemplate, setSelectedTemplate] = useState<InstitutionalTemplate | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -207,7 +213,10 @@ export default function InstitutionalHome() {
         setSitePreviews(next);
       })
       .catch((caught) => {
-        if (active) setError(errorMessage(caught));
+        if (active) {
+          if (caught instanceof ApiError && caught.status === 403) setSitesDenied(true);
+          else setError(errorMessage(caught));
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -309,7 +318,7 @@ export default function InstitutionalHome() {
     }
   }
 
-  if (loading) return <div className={styles.loading}>Carregando seus sites...</div>;
+  if (loading) return <div className={styles.loading}><CongLoadingState variant="cards" count={3} label="Preparando sites"/></div>;
 
   return (
     <main className={styles.page}>
@@ -319,12 +328,16 @@ export default function InstitutionalHome() {
           <h1>Sites da organização</h1>
           <p>Crie, visualize e publique sua presença institucional sem sair da CONG.</p>
         </div>
-        <button type="button" className={styles.createButton} onClick={() => openCreate(null)}><FiPlus /> Criar site</button>
+        <div className={styles.headerActions}>
+          {canManageSitesAccess && <button type="button" className={styles.permissionButton} onClick={() => setPermissionsOpen(true)}><FiShield /> Permissões dos sites</button>}
+          {!sitesDenied && <button type="button" className={styles.createButton} onClick={() => openCreate(null)}><FiPlus /> Criar site</button>}
+        </div>
       </header>
 
-      {error ? <div className={styles.error}>{error}</div> : null}
+      {error ? <div className={styles.error} role="alert">{error}</div> : null}
+      {sitesDenied && <section className={styles.permissionDenied} role="status"><FiShield /><div><h2>Você ainda não tem acesso aos sites</h2><p>Os sites da organização não foram apagados. Peça a alguém responsável para liberar sua visualização ou edição em <strong>Sites da organização → Permissões dos sites</strong>.</p></div></section>}
 
-      <section className={styles.siteSection}>
+      {!sitesDenied && <section className={styles.siteSection}>
         <div className={styles.sectionHeading}>
           <div>
             <h2>{sites.length ? "Seus sites" : "Comece seu primeiro site"}</h2>
@@ -356,9 +369,9 @@ export default function InstitutionalHome() {
             />
           ))}
         </div>
-      </section>
+      </section>}
 
-      {allTemplates.length > 0 ? (
+      {!sitesDenied && allTemplates.length > 0 ? (
         <section className={styles.templateSection} ref={templateSectionRef}>
           <div className={styles.sectionHeading}>
             <div>
@@ -409,6 +422,8 @@ export default function InstitutionalHome() {
           ) : null}
         </section>
       ) : null}
+
+      {permissionsOpen && <SitePermissionsDialog onClose={() => setPermissionsOpen(false)} />}
 
       {createOpen ? (
         <SiteCreationModal

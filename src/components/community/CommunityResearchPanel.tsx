@@ -1,3 +1,4 @@
+import CongLoadingState from "../feedback/CongLoadingState";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -389,7 +390,7 @@ export default function CommunityResearchPanel({
 
         <div className={styles.content}>
           {loading ? (
-            <div className={styles.loadingState}>Carregando pesquisa...</div>
+            <div className={styles.loadingState}><CongLoadingState variant="cards" count={2} label="Preparando pesquisa"/></div>
           ) : null}
           {error ? (
             <div className={styles.error} role="alert">

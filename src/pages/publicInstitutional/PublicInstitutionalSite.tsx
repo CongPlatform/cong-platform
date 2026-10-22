@@ -1,8 +1,13 @@
+import CongLoadingState from "../../components/feedback/CongLoadingState";
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useParams } from "react-router-dom";
 
 import InstitutionalSiteView from "../../components/institutional/renderer/InstitutionalSiteView";
+import SiteConnectedForms from "../../components/operational/SiteConnectedForms";
 import { ApiError } from "../../services/api";
+import {publicPortalInfo} from "../../features/operational/operationalPortalService";
+import {institutionalRootDomain} from "../../utils/institutionalDomain";
+import {placedOperationalPieces} from "../../utils/institutionalOperational";
 import {
   getPublicInstitutionalSite,
   type InstitutionalSite,
@@ -27,6 +32,10 @@ export default function PublicInstitutionalSite({
   const [site, setSite] = useState<InstitutionalSite | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [portalInfo,setPortalInfo] = useState<{slug:string;available:boolean}|null>(null);
+  const portalAvailable=Boolean(site&&portalInfo?.slug===site.slug&&portalInfo.available);
+
+  useEffect(()=>{if(!site)return;let active=true;void publicPortalInfo(site.slug).then(result=>{if(active)setPortalInfo({slug:site.slug,available:Boolean(result.portal)});}).catch(()=>{if(active)setPortalInfo({slug:site.slug,available:false});});return()=>{active=false;};},[site]);
 
   useEffect(() => {
     let active = true;
@@ -92,7 +101,7 @@ export default function PublicInstitutionalSite({
   }, [site, pageSlug]);
 
   if (loading) {
-    return <main className={styles.state}>Carregando...</main>;
+    return <main className={styles.state}><CongLoadingState variant="page" count={3} label="Preparando site"/></main>;
   }
 
   if (!site || !home) {
@@ -133,9 +142,21 @@ export default function PublicInstitutionalSite({
     );
   }
 
+  const portalPath=`/app/portal/${encodeURIComponent(site.slug)}`;
+  const defaultOrigin=`https://${institutionalRootDomain()}`;
+  const configuredOrigin=(import.meta.env.VITE_PLATFORM_ORIGIN as string|undefined)?.trim();
+  const platformOrigin=configuredOrigin&&/^https:\/\/[-a-z0-9.]+(?::443)?$/i.test(configuredOrigin)?configuredOrigin:defaultOrigin;
+  const portalHref=slugOverride?`${platformOrigin}${portalPath}`:portalPath;
+
+  const placed=placedOperationalPieces(home);
+  const header=site.pages.flatMap(candidate=>candidate.sections).find(section=>section.sectionType==="site_header"&&section.visible);
+  const headerLinks=Array.isArray(header?.content.links)?header.content.links as Array<{href?:string}>:[];
+  const headerAction=header?.content.primaryAction as {href?:string}|null|undefined;
+  const hasHeaderLogin=headerAction?.href==="#cong-portal"||headerLinks.some(link=>link?.href==="#cong-portal");
   return (
     <div onClickCapture={navigateInternalLink}>
-      <InstitutionalSiteView site={site} page={home} />
+      {portalAvailable&&!placed.hasLogin&&!hasHeaderLogin&&<div className={styles.portalAccess}><span>Área da organização</span><a href={portalHref}>Entrar com minha conta CONG <span aria-hidden="true">↗</span></a></div>}
+      <InstitutionalSiteView site={site} page={home} portalHref={portalHref} portalEnabled={portalAvailable} beforeFooter={<SiteConnectedForms slug={site.slug} page={home.slug} excludedFormIds={placed.formIds}/>} />
     </div>
   );
 }

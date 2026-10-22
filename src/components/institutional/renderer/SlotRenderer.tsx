@@ -26,6 +26,7 @@ import FloatingCanvasHint from "./FloatingCanvasHint";
 import ImageMedia from "./ImageMedia";
 
 import styles from "./InstitutionalRenderer.module.css";
+import {useCongSite} from "./CongSiteContext";
 
 function asString(value: unknown): string {
   return typeof value === "string" ? value : "";
@@ -304,6 +305,7 @@ export default function SlotRenderer({
   onInteractionCommit?: () => void;
   onImageFile?: (path: Array<string | number>, file: File) => void;
 }) {
+  const portal=useCongSite();
   const value = data[slot];
   const valuePath = [...path, slot];
   const textAnchorRef = useRef<HTMLDivElement>(null);
@@ -325,6 +327,8 @@ export default function SlotRenderer({
   if (["primaryAction", "secondaryAction"].includes(presentation)) {
     const action = asAction(value);
     if (!action) return null;
+    if(action.href==="#cong-portal"&&!editable&&(!portal?.portalEnabled||!portal.portalHref))return <span className={`${presentation==="primaryAction"?styles.primaryAction:styles.secondaryAction} ${styles.portalUnavailable}`} title="Portal da organização ainda não habilitado" aria-disabled="true">{action.label}</span>;
+    const destination=action.href==="#cong-portal"?portal?.portalHref??"#":action.href;
     const actionClass =
       presentation === "primaryAction"
         ? styles.primaryAction
@@ -343,12 +347,12 @@ export default function SlotRenderer({
     }
 
     const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-      handleSemanticNavigation(event, action.href, editable);
+      handleSemanticNavigation(event, destination, editable);
     };
 
     return (
       <a
-        href={safeInstitutionalHref(action.href) ?? "#"}
+        href={safeInstitutionalHref(destination) ?? "#"}
         onClick={handleClick}
         className={actionClass}
         data-font-target="true"
@@ -446,13 +450,15 @@ export default function SlotRenderer({
     }
 
     if (!href) return null;
+    if(href==="#cong-portal"&&!editable&&(!portal?.portalEnabled||!portal.portalHref))return <span className={`${styles.navLink} ${styles.portalUnavailable}`} title="Portal da organização ainda não habilitado" aria-disabled="true">{label}</span>;
+    const destination=href==="#cong-portal"?portal?.portalHref??"#":href;
     const handleNavigation = (event: MouseEvent<HTMLAnchorElement>) => {
-      handleSemanticNavigation(event, href, editable);
+      handleSemanticNavigation(event, destination, editable);
     };
     return (
       <a
         className={styles.navLink}
-        href={safeInstitutionalHref(href) ?? "#"}
+        href={safeInstitutionalHref(destination) ?? "#"}
         onClick={handleNavigation}
       >
         {label}

@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useEffect, useState } from "react";
 import {
   FiArrowRight,
@@ -118,7 +119,7 @@ export default function DesignerTemplates() {
   }
 
   if (loading)
-    return <div className={styles.loading}>Carregando seus templates...</div>;
+    return <div className={styles.loading}><CongLoadingState variant="cards" count={4} label="Preparando modelos"/></div>;
 
   return (
     <main className={styles.page}>

@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiChevronLeft, FiHelpCircle, FiX } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
@@ -690,7 +691,7 @@ export default function DesignerTemplateEditor() {
 
   if (!template || !previewPage || !previewSite) {
     return (
-      <div className={styles.loading}>Carregando editor de template...</div>
+      <div className={styles.loading}><CongLoadingState variant="page" count={4} label="Preparando editor de modelos"/></div>
     );
   }
 
@@ -730,6 +731,7 @@ export default function DesignerTemplateEditor() {
 
       <div className={styles.workspace}>
         <SectionLibrary
+          siteId=""
           disabled={savingState === "saving"}
           brand={previewSite.brand}
           selectedSection={selectedSection}

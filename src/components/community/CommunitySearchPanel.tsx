@@ -1,3 +1,4 @@
+import CongLoadingState from "../feedback/CongLoadingState";
 import {
   FiCalendar,
   FiFileText,
@@ -72,7 +73,7 @@ export default function CommunitySearchPanel({
         </div>
       ) : loading ? (
         <div className={styles.state} role="status" aria-live="polite">
-          Buscando...
+          <CongLoadingState variant="inline" label="Preparando busca"/>
         </div>
       ) : error ? (
         <div className={`${styles.state} ${styles.error}`} role="alert">

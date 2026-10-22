@@ -52,6 +52,8 @@ export const institutionalElementTypes = [
   "testimonial_slider",
   "action_grid",
   "donation_choices",
+  "cong_form",
+  "cong_login",
   "divider",
   "spacer",
 ] as const;
@@ -334,6 +336,9 @@ export interface InstitutionalDonationChoicesValue {
   trustNote: string;
 }
 
+export interface InstitutionalConnectedFormValue { kind: "cong_form"; formId: string; title: string }
+export interface InstitutionalLoginValue { kind: "cong_login"; label: string; caption: string }
+
 export type InstitutionalElementValue =
   | string
   | InstitutionalAction
@@ -350,6 +355,8 @@ export type InstitutionalElementValue =
   | InstitutionalTestimonialsValue
   | InstitutionalActionGridValue
   | InstitutionalDonationChoicesValue
+  | InstitutionalConnectedFormValue
+  | InstitutionalLoginValue
   | null;
 
 export interface InstitutionalDesignPalette {

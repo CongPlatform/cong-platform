@@ -44,7 +44,7 @@ import {
   type CommunitySearchResult,
 } from "../services/communityService";
 import { fetchGlobalMessageUnreadCount } from "../services/messagesService";
-import { getStoredAuthToken } from "../services/api";
+import { getJwtAuthSubject, getUsableAuthToken } from "../services/api";
 import { supabase } from "../services/supabase";
 
 import logoCompact from "../assets/brand/logo-mark.webp";
@@ -226,7 +226,7 @@ export default function LoggedInLayout() {
           {
             label: "Módulos",
             icon: FiBox,
-            to: "/em-construcao?feature=modulos",
+            to: "/app/sistemas",
           },
           {
             label: "Eventos",
@@ -306,7 +306,6 @@ export default function LoggedInLayout() {
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
-    let channelActive = false;
 
     async function loadMessageBadges(notify = false) {
       try {
@@ -328,70 +327,82 @@ export default function LoggedInLayout() {
     }
 
     void loadMessageBadges();
-    const channel = supabase
-      .channel(`cong:message-user:${user.id}`, { config: { private: true } })
-      .on("broadcast", { event: "message_changed" }, ({ payload }) => {
-        if (cancelled) return;
-        window.dispatchEvent(
-          new CustomEvent("cong:messages-event", { detail: payload }),
-        );
-        void loadMessageBadges(true);
-      });
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let warningReported = false;
+    const sendStatus = (detail: "offline" | "connecting" | "connected") => {
+      if (!cancelled) {
+        window.dispatchEvent(new CustomEvent("cong:messages-status", { detail }));
+      }
+    };
 
     async function join() {
-      const token = getStoredAuthToken();
-      if (!token) {
-        window.dispatchEvent(
-          new CustomEvent("cong:messages-status", { detail: "offline" }),
-        );
+      const token = await getUsableAuthToken();
+      if (cancelled) return;
+      const authSubject = token ? getJwtAuthSubject(token) : null;
+      if (!token || !authSubject) {
+        sendStatus("offline");
         return;
       }
       await supabase.realtime.setAuth(token);
       if (cancelled) return;
+      channel = supabase
+        .channel(`cong:message-user:${authSubject}`, { config: { private: true } })
+        .on("broadcast", { event: "message_changed" }, ({ payload }) => {
+          if (cancelled) return;
+          window.dispatchEvent(new CustomEvent("cong:messages-event", { detail: payload }));
+          void loadMessageBadges(true);
+        });
       channel.subscribe((status, error) => {
         if (cancelled) return;
-        const nextStatus =
-          status === "SUBSCRIBED"
-            ? "connected"
-            : status === "CHANNEL_ERROR" || status === "TIMED_OUT"
-              ? "offline"
-              : "connecting";
-        if (status === "SUBSCRIBED") channelActive = true;
-        window.dispatchEvent(
-          new CustomEvent("cong:messages-status", { detail: nextStatus }),
-        );
-        if (error)
-          console.warn(
-            "CONG Realtime: assinatura de mensagens não estabelecida",
-            error.message,
-          );
-        if (status === "SUBSCRIBED" && channelActive) void loadMessageBadges();
+        const nextStatus = status === "SUBSCRIBED"
+          ? "connected"
+          : status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED"
+            ? "offline"
+            : "connecting";
+        sendStatus(nextStatus);
+        if (status === "SUBSCRIBED") {
+          warningReported = false;
+          void loadMessageBadges();
+        }
+        if (error && !warningReported) {
+          warningReported = true;
+          console.warn("CONG Realtime: assinatura de mensagens não estabelecida", error.message);
+        }
       });
     }
+
     void join().catch((error: unknown) => {
-      console.warn("CONG Realtime: não foi possível conectar", error);
-      window.dispatchEvent(
-        new CustomEvent("cong:messages-status", { detail: "offline" }),
-      );
+      if (cancelled) return;
+      if (!warningReported) {
+        warningReported = true;
+        console.warn("CONG Realtime: não foi possível conectar", error);
+      }
+      sendStatus("offline");
     });
 
     const poll = window.setInterval(() => {
       if (document.visibilityState === "visible") void loadMessageBadges();
     }, 12000);
-    const refreshToken = window.setInterval(() => {
-      const token = getStoredAuthToken();
-      if (token) void supabase.realtime.setAuth(token);
-    }, 60000);
+    const syncRealtimeToken = () => {
+      void getUsableAuthToken()
+        .then((token) => {
+          if (token && !cancelled) return supabase.realtime.setAuth(token);
+        })
+        .catch(() => sendStatus("offline"));
+    };
+    const refreshToken = window.setInterval(syncRealtimeToken, 60000);
     const onLocalChange = () => {
       void loadMessageBadges();
     };
     window.addEventListener("cong:messages-local-change", onLocalChange);
+    window.addEventListener("cong:auth-token-updated", syncRealtimeToken);
     return () => {
       cancelled = true;
       window.clearInterval(poll);
       window.clearInterval(refreshToken);
       window.removeEventListener("cong:messages-local-change", onLocalChange);
-      void supabase.removeChannel(channel);
+      window.removeEventListener("cong:auth-token-updated", syncRealtimeToken);
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [user?.id]);
 

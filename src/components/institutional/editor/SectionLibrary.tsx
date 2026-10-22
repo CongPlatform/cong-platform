@@ -31,6 +31,8 @@ import {
   FiLayout,
   FiLink,
   FiLock,
+  FiFileText,
+  FiLogIn,
   FiMinus,
   FiMove,
   FiPlus,
@@ -77,8 +79,9 @@ import EditorialPieceGallery from "./EditorialPieceGallery";
 import FreeImageBrowser from "./FreeImageBrowser";
 
 import styles from "./SectionLibrary.module.css";
+import CongResourceGallery from "./CongResourceGallery";
 
-type LibraryCategory = "structure" | "sections" | "rich" | "backgrounds" | "text" | "media" | "actions" | "icons" | "shapes" | "information" | "layout";
+type LibraryCategory = "modules" | "structure" | "sections" | "rich" | "backgrounds" | "text" | "media" | "actions" | "icons" | "shapes" | "information" | "layout";
 type SectionGroup = "all" | "presentation" | "action" | "trust" | "structure";
 
 const sectionGroups: Array<{ id: SectionGroup; name: string }> = [
@@ -103,6 +106,7 @@ const categories: Array<{
   tone: string;
 }> = [
   { id: "structure", name: "Camadas", icon: FiLayers, tone: "navy" },
+  { id: "modules", name: "Módulos CONG", icon: FiBox, tone: "blue" },
   { id: "sections", name: "Seções", icon: FiLayout, tone: "blue" },
   { id: "rich", name: "Interativos", icon: FiZap, tone: "violet" },
   { id: "backgrounds", name: "Fundos", icon: FiSun, tone: "yellow" },
@@ -123,6 +127,8 @@ const elementItems: Array<{
   icon: typeof FiType;
   value?: string;
 }> = [
+  { type: "cong_form", name: "Formulário conectado", description: "Posicione um formulário operacional existente no site", category: "modules", icon: FiFileText },
+  { type: "cong_login", name: "Acesso CONG", description: "Entrada para o portal autorizado de voluntários e beneficiários", category: "modules", icon: FiLogIn },
   { type: "heading", name: "Título", description: "Uma chamada principal ou subtítulo", category: "text", icon: FiType },
   { type: "text", name: "Texto", description: "Um bloco de texto para explicar uma ideia", category: "text", icon: FiAlignLeft },
   { type: "quote", name: "Destaque", description: "Uma frase ou relato importante", category: "text", icon: FiHeart },
@@ -155,6 +161,7 @@ const elementItems: Array<{
 ];
 
 function categoryDescription(category: LibraryCategory): string {
+  if (category === "modules") return "Arraste para a página e configure a peça em Propriedades. Só dados autorizados serão exibidos.";
   if (category === "structure") return "Veja a ordem das seções e dos elementos. Você pode selecionar, ocultar, travar e reorganizar.";
   if (category === "sections") return "Escolha o tipo de seção e compare composições prontas antes de inserir.";
   if (category === "rich") return "Explore composições interativas e personalize cada parte.";
@@ -201,6 +208,8 @@ function layerLabel(node: Extract<InstitutionalLayoutNode, { type: "slot" | "ele
     testimonial_slider: "Depoimentos navegáveis",
     action_grid: "Cartões de participação",
     donation_choices: "Valores de doação",
+    cong_form: "Formulário conectado",
+    cong_login: "Acesso CONG",
     divider: "Linha divisória",
     spacer: "Espaço",
   };
@@ -210,6 +219,10 @@ function layerLabel(node: Extract<InstitutionalLayoutNode, { type: "slot" | "ele
 export default function SectionLibrary({
   disabled,
   brand,
+  siteId,
+  onHeaderAccess,
+  onConnectSystem,
+  siteConnectionRevision,
   selectedSection,
   variants = [],
   sections = [],
@@ -237,6 +250,10 @@ export default function SectionLibrary({
 }: {
   disabled?: boolean;
   brand?: InstitutionalBrand;
+  siteId: string;
+  onHeaderAccess?: (position:"menu"|"primary")=>void;
+  onConnectSystem?:()=>void;
+  siteConnectionRevision?:number;
   selectedSection: InstitutionalSection | null;
   variants?: InstitutionalVariant[];
   sections?: InstitutionalSection[];
@@ -1062,11 +1079,22 @@ export default function SectionLibrary({
                     allowedTypes={dataTab === "charts" ? ["data_chart"] : dataTab === "goals" ? ["progress"] : ["faq", "story_tabs"]}
                   />
                 </div>
+              ) : category === "modules" ? (
+                <CongResourceGallery
+                  siteId={siteId}
+                  disabled={Boolean(disabled)}
+                  canInsert={Boolean(selectedSection && !["site_header","site_footer"].includes(selectedSection.sectionType))}
+                  onInsert={(initialValue)=>onAddElement("cong_form",initialValue)}
+                  onInsertLogin={()=>onAddElement("cong_login")}
+                  onHeaderAccess={onHeaderAccess}
+                  onConnectSystem={onConnectSystem}
+                  siteConnectionRevision={siteConnectionRevision}
+                />
               ) : category === "text" ? (
                 <EditorialPieceGallery
                   brand={brand}
                   disabled={disabled}
-                  canInsert={Boolean(selectedSection)}
+                  canInsert={Boolean(selectedSection && !["site_header","site_footer"].includes(selectedSection.sectionType))}
                   onInsert={onAddEditorialPiece ?? (() => {})}
                 />
               ) : category === "icons" ? (
@@ -1099,6 +1127,8 @@ export default function SectionLibrary({
                             : item.type === "text" ? <span className={styles.elementMockText}>Uma história de solidariedade<i /><i /></span>
                             : item.type === "quote" ? <span className={styles.elementMockQuote}>“Cada gesto transforma.”</span>
                             : item.type === "button" ? <span className={styles.elementMockButton}>Participar <FiArrowUp /></span>
+                            : item.type === "cong_form" ? <span className={styles.congFormSample}><i /><i /><i /><b>Enviar</b></span>
+                            : item.type === "cong_login" ? <span className={styles.congLoginSample}><FiLock /><b>Entrar com CONG</b></span>
                             : item.type === "shape" ? <span className={styles.elementMockShape} data-shape={item.value ?? "square"} />
                             : item.type === "metric" ? <span className={styles.elementMockMetric}>+1.240<small>pessoas</small></span>
                             : item.type === "progress" ? <span className={styles.elementMockProgress}><strong>72%</strong><i><b /></i></span>

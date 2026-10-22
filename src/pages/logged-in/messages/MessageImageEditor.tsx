@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -258,7 +259,7 @@ export default function MessageImageEditor({
               </div>
             </div>
           ) : (
-            <p>Carregando foto...</p>
+            <CongLoadingState variant="cards" count={1} label="Preparando imagem"/>
           )}
           <span className={styles.dragHelp}>
             Arraste a imagem para ajustar o enquadramento

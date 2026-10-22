@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -459,11 +460,11 @@ export default function MessageConversationDetails({
                   disabled={mediaBusy}
                   onClick={() => void loadMore(items.length)}
                 >
-                  {mediaBusy ? "Carregando..." : "Carregar mais"}
+                  {mediaBusy ? <CongLoadingState variant="inline" label="Preparando mídias"/> : "Carregar mais"}
                 </button>
               ) : null}
               {mediaBusy && !items.length ? (
-                <p className={styles.sectionHint}>Carregando mídias...</p>
+                <div className={styles.sectionHint}><CongLoadingState variant="inline" label="Preparando mídias"/></div>
               ) : null}
             </div>
           ) : (

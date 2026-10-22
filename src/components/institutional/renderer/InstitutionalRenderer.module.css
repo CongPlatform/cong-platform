@@ -7411,3 +7411,5 @@
 .section[data-design-family][data-visual-style$="-hero"] .sectionInner > .columns > * {
   min-width: 0;
 }
+
+.portalUnavailable{opacity:.55;cursor:not-allowed;pointer-events:none}

@@ -911,3 +911,4 @@
 .openProperties { pointer-events: auto; }
 
 @media (max-width: 1180px) { .propertiesDock[data-open="true"] { width: min(310px, 92vw); } }
+

@@ -1315,3 +1315,12 @@
 @media (max-width: 1180px) {
   .iconInspectorGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+.congHeaderAccess{display:flex;flex-direction:column;gap:9px;border:1px solid #c7d9e7;border-radius:12px;background:#f5fafc;padding:12px;margin:10px 12px}
+.congHeaderAccess>strong{font-size:13px;color:#244765}
+.congHeaderAccess>span,.congHeaderAccess>small{font-size:11px;line-height:1.5;color:#586c7d}
+.congHeaderAccess>div{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.congHeaderAccess button{min-height:38px;border:1px solid #b8cddd;border-radius:8px;background:#fff;color:#245673;cursor:pointer;font-size:11px;font-weight:700;padding:6px}
+.congHeaderAccess button:hover:not(:disabled){background:#e9f6fc}.congHeaderAccess button:disabled{opacity:.5;cursor:default}
+
+.congHeaderAccess .restoreHeader{align-self:flex-start;width:auto;min-height:30px;background:transparent;text-decoration:underline;border:0}
