@@ -28,7 +28,7 @@ export function requirePermission(permissionCode: string) {
 
       if (!allowed) {
         throw new AppError(
-          "You do not have permission to perform this action",
+          "Você não tem permissão para realizar esta ação na organização.",
           403,
           "ORGANIZATION_PERMISSION_DENIED",
         );

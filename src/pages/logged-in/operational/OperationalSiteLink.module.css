@@ -1,0 +1,13 @@
+.identity{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.logo{width:34px;height:34px;flex:none;display:grid;place-items:center;border:1px solid #d5e7d9;border-radius:10px;background:#eaf5ed;color:#256b4b}
+.logo img{width:100%;height:100%;object-fit:contain;padding:3px}
+.name{min-width:0;flex:1;display:grid;gap:3px}
+.name h1{font-size:1.13rem;line-height:1.2;margin:0;font-weight:760;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.name small{font-size:.69rem;color:#32734e;display:flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.actions{display:flex;align-items:center;gap:7px;flex:none}
+.actions button{font-size:.74rem}
+.connectButton,.linkedButton{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #91c0a5;border-radius:9px;background:#e9f7ed;padding:8px 12px;color:#186445;font-weight:750;cursor:pointer;white-space:nowrap}
+.connectButton:hover,.linkedButton:hover{background:#d8f0df}
+.linkedButton{background:#fff;border-color:#cadfd2}
+.connectButton:focus-visible,.linkedButton:focus-visible{outline:2px solid #298b5c;outline-offset:2px}
+@media(max-width:1120px){.actions .connectButton span,.actions .linkedButton span{display:none}.actions .connectButton,.actions .linkedButton{padding:8px}}

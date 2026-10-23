@@ -26,3 +26,8 @@
   margin: 8px 0 0;
   line-height: var(--line-readable);
 }
+
+.portalAccess{display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:9px clamp(16px,4vw,64px);background:#eff6f0;color:#254c38;border-bottom:1px solid #d9e8dd;font-size:13px;font-weight:650;font-family:inherit}
+.portalAccess a{display:inline-flex;gap:8px;align-items:center;color:#1d6345;background:#fff;border:1px solid #bdd8c5;border-radius:8px;padding:8px 12px;text-decoration:none;font-weight:750}
+.portalAccess a:hover,.portalAccess a:focus-visible{border-color:#246c4b;background:#e5f2e9}
+@media(max-width:560px){.portalAccess{justify-content:space-between;gap:8px;font-size:12px}.portalAccess a{font-size:12px;padding:8px}}

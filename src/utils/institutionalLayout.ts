@@ -275,6 +275,18 @@ export function createElementNode(
     };
   }
 
+  if (type === "cong_form") {
+    let selected:{formId:string;title:string}|null=null;
+    if(typeof initialValue==="string"){
+      try{
+        const value=JSON.parse(initialValue) as {kind?:unknown;formId?:unknown;title?:unknown};
+        if(value.kind==="cong_form"&&typeof value.formId==="string"&&/^[a-f0-9-]{36}$/i.test(value.formId)&&typeof value.title==="string")selected={formId:value.formId,title:value.title.slice(0,160)};
+      }catch{selected=null;}
+    }
+    return { type: "element", id, elementType: type, value: { kind: "cong_form", formId: selected?.formId??"", title: selected?.title??"" }, style: { width: "100", radius: "large" } };
+  }
+  if (type === "cong_login") return { type: "element", id, elementType: type, value: { kind: "cong_login", label: "Entrar com minha conta CONG", caption: "Acesse seus serviços e atividades." }, style: { width: "100", radius: "large" } };
+
   if (type === "button") {
     return {
       type: "element",

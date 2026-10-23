@@ -1,3 +1,4 @@
+import CongLoadingState from "../../feedback/CongLoadingState";
 import { useEffect, useState } from "react";
 import { FiExternalLink, FiPlay, FiSearch } from "react-icons/fi";
 import { searchPixabay, type StockMediaItem } from "../../../services/stockMediaService";
@@ -52,7 +53,7 @@ export default function StockVideoBrowser({
         <strong>{item.title || "Vídeo"}</strong>
       </button>)}
     </div>
-    {busy ? <p className={styles.notice}>Carregando vídeos...</p> : null}
+    {busy ? <div className={styles.notice}><CongLoadingState variant="cards" count={3} label="Preparando vídeos"/></div> : null}
     {hasMore && !busy ? <button type="button" className={styles.more} onClick={() => setPage((value) => value + 1)}>Mostrar mais vídeos</button> : null}
     {selected ? <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}>
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-label="Prévia do vídeo">

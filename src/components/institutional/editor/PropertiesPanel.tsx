@@ -52,6 +52,7 @@ import freeMediaStyles from "./RichElementInspector.module.css";
 import FontFamilyPicker from "./FontFamilyPicker";
 import ImageFramePicker from "./ImageFramePicker";
 import styles from "./PropertiesPanel.module.css";
+import CongSiteFormPicker from "./CongSiteFormPicker";
 
 function asAction(value: unknown): InstitutionalAction | null {
   if (
@@ -575,6 +576,7 @@ function bestReadableElementColor(
 }
 
 function ElementOptions({
+  siteId,
   node,
   brand,
   sectionBackground,
@@ -588,6 +590,7 @@ function ElementOptions({
   onValueChange,
   onRemove,
 }: {
+  siteId?: string;
   node: InstitutionalLayoutNode;
   brand?: InstitutionalBrand;
   sectionBackground?: InstitutionalSectionStyle["backgroundColor"];
@@ -793,6 +796,14 @@ function ElementOptions({
           />
         </label>
       ) : null}
+
+      {custom && node.elementType === "cong_form" ? <CongSiteFormPicker siteId={siteId} value={node.value&&typeof node.value==="object"&&"formId" in node.value?String(node.value.formId):""} onChange={form=>onValueChange({kind:"cong_form",formId:form.id,title:form.title})}/> : null}
+
+      {custom && node.elementType === "cong_login" ? <div>
+        <label className={styles.field}><span>Texto do acesso</span><input maxLength={100} value={node.value&&typeof node.value==="object"&&"label" in node.value?String(node.value.label):""} onChange={event=>onValueChange({kind:"cong_login",label:event.target.value,caption:node.value&&typeof node.value==="object"&&"caption" in node.value?String(node.value.caption):""})}/></label>
+        <label className={styles.field}><span>Descrição</span><input maxLength={180} value={node.value&&typeof node.value==="object"&&"caption" in node.value?String(node.value.caption):""} onChange={event=>onValueChange({kind:"cong_login",label:node.value&&typeof node.value==="object"&&"label" in node.value?String(node.value.label):"Entrar com minha conta CONG",caption:event.target.value})}/></label>
+        <small>Utiliza o login CONG e somente permite acesso ao portal quando habilitado pela ONG.</small>
+      </div> : null}
 
       {custom && node.elementType === "button" ? (
         <>
@@ -1354,6 +1365,14 @@ function ElementOptions({
       </div>
       ) : null}
 
+      {custom && node.elementType === "cong_form" ? <CongSiteFormPicker siteId={siteId} value={node.value&&typeof node.value==="object"&&"formId" in node.value?String(node.value.formId):""} onChange={form=>onValueChange({kind:"cong_form",formId:form.id,title:form.title})}/> : null}
+
+      {custom && node.elementType === "cong_login" ? <div>
+        <label className={styles.field}><span>Texto do acesso</span><input maxLength={100} value={node.value&&typeof node.value==="object"&&"label" in node.value?String(node.value.label):""} onChange={event=>onValueChange({kind:"cong_login",label:event.target.value,caption:node.value&&typeof node.value==="object"&&"caption" in node.value?String(node.value.caption):""})}/></label>
+        <label className={styles.field}><span>Descrição</span><input maxLength={180} value={node.value&&typeof node.value==="object"&&"caption" in node.value?String(node.value.caption):""} onChange={event=>onValueChange({kind:"cong_login",label:node.value&&typeof node.value==="object"&&"label" in node.value?String(node.value.label):"Entrar com minha conta CONG",caption:event.target.value})}/></label>
+        <small>Utiliza o login CONG e somente permite acesso ao portal quando habilitado pela ONG.</small>
+      </div> : null}
+
       {custom && node.elementType === "button" ? (
         <div className={styles.colorOptions}>
           <span>Fundo do botão</span>
@@ -1435,11 +1454,14 @@ function ElementOptions({
 }
 
 export default function PropertiesPanel({
+  siteId,
   section,
   pages = [],
   variants,
   onCollapse,
   onContentChange,
+  onHeaderAccess,
+  onRestoreHeaderAction,
   onVariantChange,
   onUploadImage,
   selectedElement,
@@ -1456,11 +1478,14 @@ export default function PropertiesPanel({
   designerMode = false,
   onElementConstraintsChange,
 }: {
+  siteId?: string;
   section: InstitutionalSection | null;
   pages?: InstitutionalPage[];
   variants: InstitutionalVariant[];
   onCollapse: () => void;
   onContentChange: (path: Array<string | number>, value: unknown) => void;
+  onHeaderAccess?: (position:"menu"|"primary")=>void;
+  onRestoreHeaderAction?: ()=>void;
   onVariantChange: (variantVersionId: string) => void;
   onUploadImage: (path: Array<string | number>, file: File) => void;
   selectedElement?: InstitutionalLayoutNode | null;
@@ -1540,6 +1565,16 @@ export default function PropertiesPanel({
         <button type="button" role="tab" aria-selected={panelTab === "layout"} data-active={panelTab === "layout"} onClick={() => setPanelTab("layout")}>Layout</button>
       </div>
 
+      {section.sectionType==="site_header"&&panelTab==="content" ? <div className={styles.congHeaderAccess}>
+        <strong>Acesso CONG no cabeçalho</strong>
+        <span>Adicione o login da própria CONG, mantendo as permissões de acesso da organização.</span>
+        <div>
+          <button type="button" onClick={()=>onHeaderAccess?.("menu")} disabled={Array.isArray(section.content.links)&&((section.content.links as Array<{href:string}>).some(item=>item.href==="#cong-portal")||(section.content.links as unknown[]).length>=8)}>{Array.isArray(section.content.links)&&(section.content.links as Array<{href:string}>).some(item=>item.href==="#cong-portal")?"Já está no menu":"Adicionar ao menu"}</button>
+          <button type="button" onClick={()=>onHeaderAccess?.("primary")} disabled={Boolean(section.content.primaryAction&&typeof section.content.primaryAction==="object"&&"href" in section.content.primaryAction&&section.content.primaryAction.href==="#cong-portal")}>Usar botão principal</button>
+        </div>
+        {section.settings.congHeaderPreviousAction&&section.content.primaryAction&&typeof section.content.primaryAction==="object"&&"href" in section.content.primaryAction&&section.content.primaryAction.href==="#cong-portal"?<button type="button" className={styles.restoreHeader} onClick={onRestoreHeaderAction}>Restaurar botão anterior</button>:null}
+        <small>A opção principal substitui a ação atual, que é guardada para restauração. O portal precisa estar habilitado para os visitantes.</small>
+      </div> : null}
       <div className={styles.guidedIntro} data-tab={panelTab}>
         <strong>{panelTab === "content" ? "O que esta seção diz" : panelTab === "design" ? "Como esta seção aparece" : "Como o conteúdo ocupa o espaço"}</strong>
         <span>{panelTab === "content" ? "Edite textos, imagens e ações. A CONG mantém o restante organizado." : panelTab === "design" ? "Escolha uma composição e personalize o visual sem perder seu conteúdo." : "Ajuste espaço e largura. As opções recomendadas funcionam melhor em mais tamanhos de tela."}</span>
@@ -1560,6 +1595,7 @@ export default function PropertiesPanel({
 
         {selectedElement && onElementStyleChange && onElementValueChange && onRemoveElement ? (
           <ElementOptions
+            siteId={siteId}
             node={selectedElement}
             brand={brand}
             sectionBackground={sectionStyle.backgroundColor}

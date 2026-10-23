@@ -4,6 +4,7 @@ import {
   FiCopy,
   FiEdit2,
   FiHome,
+  FiLink,
   FiPlus,
   FiRefreshCw,
   FiTrash2,
@@ -32,6 +33,8 @@ export default function SitePagesBar({
   onUpdate,
   onDelete,
   onSyncNavigation,
+  onConnectSite,
+  connectedSiteSystemNames,
   hasHeader,
 }: {
   pages: InstitutionalPage[];
@@ -47,6 +50,8 @@ export default function SitePagesBar({
   onDelete: (id: string) => Promise<void>;
   hasHeader: boolean;
   onSyncNavigation: () => Promise<void>;
+  onConnectSite: () => void;
+  connectedSiteSystemNames: string[];
 }) {
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [title, setTitle] = useState("");
@@ -106,27 +111,17 @@ export default function SitePagesBar({
           </button>
         ))}
       </div>
-      {hasHeader ? (
-        <button
-          type="button"
-          className={styles.add}
-          onClick={async () => {
-            setWorking(true);
-            setLocalError("");
-            try {
-              await onSyncNavigation();
-            } catch {
-              setLocalError("Não foi possível conectar as páginas do menu.");
-            } finally {
-              setWorking(false);
-            }
-          }}
-          disabled={disabled || working}
-          title="Criar páginas para os links internos que ainda não existem"
-        >
-          <FiRefreshCw aria-hidden="true" /> Conectar menu
-        </button>
-      ) : null}
+      <button
+        type="button"
+        className={styles.connectSite}
+        onClick={onConnectSite}
+        disabled={disabled || working}
+        aria-label={connectedSiteSystemNames.length ? `Site conectado a ${connectedSiteSystemNames.join(", ")}. Gerenciar conexões.` : "Conectar site a um sistema"}
+        title={connectedSiteSystemNames.length ? `Gerenciar conexão: ${connectedSiteSystemNames.join(", ")}` : "Conectar este site a um sistema da ONG"}
+      >
+        {connectedSiteSystemNames.length ? <FiCheck aria-hidden="true" /> : <FiLink aria-hidden="true" />}
+        <span>{connectedSiteSystemNames.length ? "Site conectado" : "Conectar site"}</span>
+      </button>
       <button
         type="button"
         className={styles.add}
@@ -247,6 +242,27 @@ export default function SitePagesBar({
                           <FiHome /> Definir como inicial
                         </button>
                       )}
+                      {hasHeader ? (
+                        <button
+                          type="button"
+                          disabled={disabled || working}
+                          title="Criar páginas para links internos do cabeçalho que ainda não têm destino"
+                          onClick={async () => {
+                            setWorking(true);
+                            setLocalError("");
+                            try {
+                              await onSyncNavigation();
+                              setEditing(null);
+                            } catch {
+                              setLocalError("Não foi possível criar as páginas dos links do cabeçalho.");
+                            } finally {
+                              setWorking(false);
+                            }
+                          }}
+                        >
+                          <FiRefreshCw aria-hidden="true" /> Criar páginas dos links do cabeçalho
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         disabled={working}

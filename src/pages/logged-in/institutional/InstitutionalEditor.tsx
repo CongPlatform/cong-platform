@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import type { StockMediaItem } from "../../../services/stockMediaService";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -16,6 +17,8 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 
 import SitePagesBar from "../../../components/institutional/editor/SitePagesBar";
+import SiteSystemConnectionPanel from "../../../components/institutional/editor/SiteSystemConnectionPanel";
+import { useSiteBuilderResources } from "../../../components/institutional/editor/useSiteBuilderResources";
 import BrandPanel from "../../../components/institutional/editor/BrandPanel";
 import ConfirmActionModal from "../../../components/institutional/editor/ConfirmActionModal";
 import EditorToolbar, {
@@ -90,6 +93,8 @@ import {
 } from "../../../utils/institutionalVariants";
 import {
   institutionalSelectionIdForSource,
+  institutionalRepeatItemLocations,
+  isInstitutionalInstanceSelectionId,
   institutionalSourceNodeId,
   uniqueInstitutionalSourceNodeIds,
 } from "../../../utils/institutionalSelection";
@@ -147,7 +152,6 @@ export default function InstitutionalEditor() {
     setElementId: setSelectedElementId,
     setElementIds: setSelectedElementIds,
     selectElement: selectEditorElement,
-    selectElements: selectEditorElements,
   } = useEditorSelection();
   const [propertiesOpen, setPropertiesOpen] = useState(false);
   const [richEditorRequest, setRichEditorRequest] = useState<{ nodeId: string; revision: number } | null>(null);
@@ -164,6 +168,12 @@ export default function InstitutionalEditor() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [exampleView, setExampleView] = useState(true);
   const [brandOpen, setBrandOpen] = useState(false);
+  const [siteConnectionOpen, setSiteConnectionOpen] = useState(false);
+  const [siteConnectionRevision, setSiteConnectionRevision] = useState(0);
+  const { access: siteConnectionAccess, refresh: refreshSiteConnection } = useSiteBuilderResources(site?.id);
+  useEffect(() => {
+    if (siteConnectionRevision > 0) refreshSiteConnection();
+  }, [siteConnectionRevision, refreshSiteConnection]);
   const [brandSaving, setBrandSaving] = useState(false);
   const [suggestedPalette, setSuggestedPalette] = useState<string[]>([]);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -919,27 +929,55 @@ export default function InstitutionalEditor() {
     [updateSectionLayout],
   );
 
+  const removeRepeatedItems = useCallback(
+    (sectionId: string, selectionIds: string[]): void => {
+      const groups = institutionalRepeatItemLocations(selectionIds).sort((a,b)=>b.path.length-a.path.length);
+      for (const group of groups) {
+        const content = latestContentRef.current.get(sectionId);
+        if (!content) continue;
+        const collection = group.path.reduce<unknown>((value, key) => {
+          if (!value || typeof value !== "object") return undefined;
+          return (value as Record<string | number, unknown>)[key];
+        }, content);
+        if (!Array.isArray(collection)) continue;
+        const indices = new Set(group.indices);
+        if (![...indices].some(index => index < collection.length)) continue;
+        changeSectionContent(sectionId, group.path, collection.filter((_, index) => !indices.has(index)));
+      }
+    },
+    [changeSectionContent],
+  );
+
   const removeElement = useCallback(
     (sectionId: string, elementId: string): void => {
-      updateSectionLayout(sectionId, (layout) =>
-        removeLayoutNode(layout, institutionalSourceNodeId(elementId)),
-      );
-      setSelectedElementId(null);
+      if (isInstitutionalInstanceSelectionId(elementId)) {
+        removeRepeatedItems(sectionId, [elementId]);
+      } else {
+        updateSectionLayout(sectionId, (layout) =>
+          removeLayoutNode(layout, institutionalSourceNodeId(elementId)),
+        );
+      }
+      setSelectedElementIds([]);
     },
-    [setSelectedElementId, updateSectionLayout],
+    [removeRepeatedItems, setSelectedElementIds, updateSectionLayout],
   );
 
   const removeSelectedElements = useCallback((): void => {
     if (!selectedSectionId || selectedElementIds.length === 0) return;
-    const sourceIds = uniqueInstitutionalSourceNodeIds(selectedElementIds);
-    updateSectionLayout(selectedSectionId, (layout) =>
-      removeLayoutNodes(layout, sourceIds),
-    );
+    const repeatedIds = selectedElementIds.filter(isInstitutionalInstanceSelectionId);
+    if (repeatedIds.length > 0) removeRepeatedItems(selectedSectionId, repeatedIds);
+    const sourceIds = uniqueInstitutionalSourceNodeIds(selectedElementIds.filter(id => !isInstitutionalInstanceSelectionId(id)));
+    if (sourceIds.length > 0) {
+      updateSectionLayout(selectedSectionId, (layout) =>
+        removeLayoutNodes(layout, sourceIds),
+      );
+    }
     setSelectedElementIds([]);
   }, [
     selectedElementIds,
     selectedSectionId,
     setSelectedElementIds,
+    removeRepeatedItems,
     updateSectionLayout,
   ]);
 
@@ -971,32 +1009,9 @@ export default function InstitutionalEditor() {
         return;
       }
 
-      const section = site?.pages.flatMap((candidatePage) => candidatePage.sections).find((item) => item.id === sectionId);
-      if (!section) {
-        selectEditorElement(sectionId, elementId, false);
-        return;
-      }
-      const layout = ensureLayoutNodeIds(
-        effectiveSectionLayout(section.layout, section.settings),
-      );
-      const node = findLayoutNode(layout, institutionalSourceNodeId(elementId));
-      const groupId =
-        node && (node.type === "slot" || node.type === "element")
-          ? node.style?.groupId
-          : undefined;
-      if (groupId) {
-        const members = collectGroupMemberIds(layout, groupId).map((memberId) =>
-          institutionalSelectionIdForSource(memberId, elementId),
-        );
-        selectEditorElements(sectionId, [
-          ...members.filter((id) => id !== elementId),
-          elementId,
-        ]);
-      } else {
-        selectEditorElement(sectionId, elementId, false);
-      }
+      selectEditorElement(sectionId, elementId, false);
     },
-    [site, selectEditorElement, selectEditorElements, setSelectedSectionId],
+    [selectEditorElement, setSelectedSectionId],
   );
 
   const groupSelectedElements = useCallback((): void => {
@@ -1373,6 +1388,39 @@ export default function InstitutionalEditor() {
     setSelectedSectionId(selectedSection.id);
     setSelectedElementId(videoNode.id);
   }, [selectedSection, setSelectedElementId, setSelectedSectionId, updateSectionLayout]);
+
+  const addPortalToHeader = useCallback((position:"menu"|"primary"):void=>{
+    const current=siteRef.current;
+    const header=current?.pages.flatMap(page=>page.sections).find(section=>section.sectionType==="site_header");
+    if(!header){setError("Inclua um cabeçalho no site antes de adicionar o acesso CONG.");return;}
+    if(position==="menu"){
+      const links=Array.isArray(header.content.links)?header.content.links as Array<{id:string;label:string;href:string}>:[];
+      if(links.some(link=>link.href==="#cong-portal")){
+        setSelectedSectionId(header.id);setPropertiesOpen(true);return;
+      }
+      if(links.length>=8){setError("O cabeçalho já tem o limite de oito itens. Remova um antes de adicionar o acesso.");return;}
+      changeSectionContent(header.id,["links"],[...links,{id:crypto.randomUUID(),label:"Entrar",href:"#cong-portal"}]);
+    }else{
+      const existing=header.content.primaryAction;
+      const settings=latestSettingsRef.current.get(header.id)??header.settings;
+      if(existing&&typeof existing==="object"&&"href" in existing&&existing.href!=="#cong-portal"&&!settings.congHeaderPreviousAction){
+        changeSectionSettings(header.id,{...settings,congHeaderPreviousAction:existing});
+      }
+      changeSectionContent(header.id,["primaryAction"],{label:"Entrar",href:"#cong-portal"});
+    }
+    setSelectedSectionId(header.id);setSelectedElementId(null);setPropertiesOpen(true);
+  },[changeSectionContent,changeSectionSettings,setSelectedSectionId,setSelectedElementId]);
+
+  const restoreHeaderAction = useCallback(():void=>{
+    const header=siteRef.current?.pages.flatMap(page=>page.sections).find(section=>section.sectionType==="site_header");
+    if(!header)return;
+    const settings=latestSettingsRef.current.get(header.id)??header.settings;
+    const previous=settings.congHeaderPreviousAction;
+    if(!previous||typeof previous!=="object"||!("label" in previous)||!("href" in previous))return;
+    changeSectionContent(header.id,["primaryAction"],previous);
+    const updated={...settings};delete updated.congHeaderPreviousAction;
+    changeSectionSettings(header.id,updated);
+  },[changeSectionContent,changeSectionSettings]);
 
   const addElement = useCallback(
     (elementType: InstitutionalElementType, initialValue?: string): void => {
@@ -1756,7 +1804,7 @@ export default function InstitutionalEditor() {
   }
 
   if (loading || !site || !page) {
-    return <div className={styles.loading}>Carregando editor...</div>;
+    return <div className={styles.loading}><CongLoadingState variant="page" count={4} label="Preparando editor"/></div>;
   }
 
   const canvasWidth =
@@ -1796,6 +1844,7 @@ export default function InstitutionalEditor() {
         </div>
       ) : null}
 
+      <ModalMensagem aberto={siteConnectionOpen} titulo="Conexões do site" tamanho="grande" mostrarBotaoOk={false} onFechar={() => setSiteConnectionOpen(false)} mensagem={<SiteSystemConnectionPanel siteId={site.id} siteName={site.name} published={Boolean(site.publishedAt && site.isPrimary)} onConnected={() => setSiteConnectionRevision(value => value + 1)}/>} />
       <SitePagesBar
         pages={site.pages}
         selectedId={page.id}
@@ -1806,10 +1855,16 @@ export default function InstitutionalEditor() {
         onUpdate={updatePage}
         onDelete={deletePage}
         hasHeader={Boolean(site.pages.some((p) => p.sections.some((section) => section.sectionType === "site_header")))}
+        connectedSiteSystemNames={siteConnectionAccess?.systems.map((system) => system.name) ?? []}
+        onConnectSite={() => setSiteConnectionOpen(true)}
         onSyncNavigation={syncNavigation}
       />
       <div className={styles.workspace}>
         <SectionLibrary
+          siteId={site.id}
+          onHeaderAccess={addPortalToHeader}
+          onConnectSystem={() => setSiteConnectionOpen(true)}
+          siteConnectionRevision={siteConnectionRevision}
           disabled={busy || showExampleView}
           brand={site.brand}
           selectedSection={selectedSection}
@@ -1872,7 +1927,7 @@ export default function InstitutionalEditor() {
                 {showExampleView
                   ? `${nativeFamily?.name ?? "Design nativo"} · visualização preenchida para você conhecer o design.`
                   : selectedSection
-                    ? `${page.title} › ${getSectionDefinition(selectedSection.sectionType).name}${selectedElement ? ` › ${selectedElement.type === "element" ? ({ heading: "Título", text: "Texto", image: "Imagem", button: "Botão", icon: "Ícone", shape: "Forma", metric: "Número em destaque", quote: "Destaque", faq: "Perguntas frequentes", progress: "Barra de progresso", campaign_card: "Campanha visual", media_gallery: "Galeria", video_embed: "Vídeo", data_chart: "Gráfico", story_tabs: "Abas", community_timeline: "Linha do tempo", testimonial_slider: "Depoimentos", action_grid: "Participação", donation_choices: "Opções de doação", divider: "Linha divisória", spacer: "Espaço" } as const)[selectedElement.elementType] : selectedElement.type === "slot" ? "Conteúdo" : "Elemento"}` : ""}`
+                    ? `${page.title} › ${getSectionDefinition(selectedSection.sectionType).name}${selectedElement ? ` › ${selectedElement.type === "element" ? ({ heading: "Título", text: "Texto", image: "Imagem", button: "Botão", icon: "Ícone", shape: "Forma", metric: "Número em destaque", quote: "Destaque", faq: "Perguntas frequentes", progress: "Barra de progresso", campaign_card: "Campanha visual", media_gallery: "Galeria", video_embed: "Vídeo", data_chart: "Gráfico", story_tabs: "Abas", community_timeline: "Linha do tempo", testimonial_slider: "Depoimentos", action_grid: "Participação", donation_choices: "Opções de doação", cong_form: "Formulário conectado", cong_login: "Acesso CONG", divider: "Linha divisória", spacer: "Espaço" } as const)[selectedElement.elementType] : selectedElement.type === "slot" ? "Conteúdo" : "Elemento"}` : ""}`
                     : "Clique no próprio site para editar. Use os controles entre as seções para adicionar conteúdo."}
               </span>
             </div>
@@ -2161,6 +2216,9 @@ export default function InstitutionalEditor() {
         <div className={styles.propertiesDock} data-open={propertiesOpen}>
           {propertiesOpen ? (
             <PropertiesPanel
+              siteId={site.id}
+              onHeaderAccess={addPortalToHeader}
+              onRestoreHeaderAction={restoreHeaderAction}
               section={selectedSection}
               pages={site.pages}
               variants={variants}

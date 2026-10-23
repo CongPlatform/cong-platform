@@ -11,6 +11,7 @@ export default function ConfirmActionModal({
   confirmLabel,
   tone = "primary",
   busy = false,
+  confirmDisabled = false,
   onCancel,
   onConfirm,
 }: {
@@ -20,6 +21,7 @@ export default function ConfirmActionModal({
   confirmLabel: string;
   tone?: "primary" | "danger";
   busy?: boolean;
+  confirmDisabled?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -46,7 +48,7 @@ export default function ConfirmActionModal({
               type="button"
               className={tone === "danger" ? styles.danger : styles.confirm}
               onClick={onConfirm}
-              disabled={busy}
+              disabled={busy || confirmDisabled}
             >
               {busy ? "Processando..." : confirmLabel}
             </button>

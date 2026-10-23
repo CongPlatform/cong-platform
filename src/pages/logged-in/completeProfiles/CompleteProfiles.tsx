@@ -1,3 +1,4 @@
+import CongLoadingState from "../../../components/feedback/CongLoadingState";
 import { useEffect, useMemo, useState, type SubmitEvent } from "react";
 import {
   ArrowLeft,
@@ -989,7 +990,7 @@ function CompleteProfilesWorkspace({
             {activeRepresentation && representationsLoading && (
               <div className={styles.loadingInline}>
                 <LoaderCircle className={styles.spinner} aria-hidden="true" />
-                Carregando vínculos...
+                <CongLoadingState variant="inline" label="Preparando vínculos"/>
               </div>
             )}
 

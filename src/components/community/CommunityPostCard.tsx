@@ -1,3 +1,4 @@
+import CongLoadingState from "../feedback/CongLoadingState";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -907,7 +908,7 @@ export default function CommunityPostCard({
           </header>
 
           {commentsLoading ? (
-            <p className={styles.commentsStatus}>Carregando...</p>
+            <div className={styles.commentsStatus}><CongLoadingState variant="inline" label="Preparando comentários"/></div>
           ) : null}
           {!commentsLoading && topLevelComments.length === 0 ? (
             <p className={styles.commentsStatus}>

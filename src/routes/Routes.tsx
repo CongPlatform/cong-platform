@@ -79,6 +79,9 @@ const Pending = lazy(() => import("../pages/pending/Pending"));
 const InstitutionalHome = lazy(
   () => import("../pages/logged-in/institutional/InstitutionalHome"),
 );
+const OperationalHome = lazy(() => import("../pages/logged-in/operational/OperationalHome"));
+const OperationalWorkspace = lazy(() => import("../pages/logged-in/operational/OperationalWorkspace"));
+const OperationalPortal = lazy(() => import("../pages/operationalPortal/OperationalPortal"));
 const InstitutionalEditor = lazy(
   () => import("../pages/logged-in/institutional/InstitutionalEditor"),
 );
@@ -180,6 +183,10 @@ export default function AppRoutes() {
                   SISTEMA PRINCIPAL
                   ---------------------------------------------- */}
 
+              <Route path="/app/portal/:slug" element={<OperationalPortal />} />
+
+              <Route path="/app/sistemas/:systemId" element={<OrganizationProvider><WorkspaceProvider><WorkspaceRoute kind="organization" organizationType="ngo"><OperationalWorkspace /></WorkspaceRoute></WorkspaceProvider></OrganizationProvider>} />
+
               <Route
                 element={
                   <OrganizationProvider>
@@ -189,6 +196,7 @@ export default function AppRoutes() {
                   </OrganizationProvider>
                 }
               >
+                <Route path="/app/sistemas" element={<WorkspaceRoute kind="organization" organizationType="ngo"><OperationalHome /></WorkspaceRoute>} />
                 <Route path="/app/comunidade" element={<LoggedInCommunity />} />
                 <Route
                   path="/app/comunidade/minha-atividade"
