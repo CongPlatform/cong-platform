@@ -15,6 +15,8 @@ import {publicPortalRouter,memberPortalRouter,managementPortalRouter} from "../m
 
 import {publicFormRouter,managementFormRouter} from "../modules/operational/operational.forms.routes.js";
 
+import studyOverlayRouter from "../study-overlay/routes.js";
+
 const router = Router();
 
 router.get("/", (_req, res) => {
@@ -48,5 +50,7 @@ router.use("/api/operational", managementFormRouter);
 router.use("/api/messages", messagesRouter);
 router.use("/api/operational", operationalAccessRouter);
 router.use("/api/operational", operationalRouter);
+
+router.use("/api/study", studyOverlayRouter);
 
 export default router;
