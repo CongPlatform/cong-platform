@@ -6,6 +6,7 @@ import {
   FiBookmark,
   FiBox,
   FiCalendar,
+  FiCpu,
   FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
@@ -218,6 +219,7 @@ export default function LoggedInLayout() {
           COMMUNITY_ITEM,
           MESSAGES_ITEM,
           { label: "Sites", icon: FiGlobe, to: "/app/site-institucional" },
+          { label: "Assistente IA", icon: FiCpu, to: "/app/assistente-ia" },
           {
             label: "Projetos",
             icon: FiFolder,
