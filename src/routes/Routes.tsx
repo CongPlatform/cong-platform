@@ -82,6 +82,7 @@ const InstitutionalHome = lazy(
 const OperationalHome = lazy(() => import("../pages/logged-in/operational/OperationalHome"));
 const OperationalWorkspace = lazy(() => import("../pages/logged-in/operational/OperationalWorkspace"));
 const OperationalPortal = lazy(() => import("../pages/operationalPortal/OperationalPortal"));
+const AiAssistant = lazy(() => import("../pages/logged-in/aiAssistant/AiAssistant"));
 const InstitutionalEditor = lazy(
   () => import("../pages/logged-in/institutional/InstitutionalEditor"),
 );
@@ -197,6 +198,7 @@ export default function AppRoutes() {
                 }
               >
                 <Route path="/app/sistemas" element={<WorkspaceRoute kind="organization" organizationType="ngo"><OperationalHome /></WorkspaceRoute>} />
+                <Route path="/app/assistente-ia" element={<WorkspaceRoute kind="organization" organizationType="ngo"><AiAssistant /></WorkspaceRoute>} />
                 <Route path="/app/comunidade" element={<LoggedInCommunity />} />
                 <Route
                   path="/app/comunidade/minha-atividade"

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import {sessionRouter, workerRouter} from "../modules/ai/ai.routes.js";
 
 import authRouter from "./auth.routes.js";
 import securityAuditRouter from "./security-audit.routes.js";
@@ -29,6 +30,8 @@ router.get("/api/health", (_req, res) => {
   });
 });
 
+router.use("/api/ai-worker",workerRouter);
+router.use("/api/ai",sessionRouter);
 router.use("/api/auth", authRouter);
 router.use("/api/admin/security-audit", securityAuditRouter);
 router.use("/api/account", accountRouter);
