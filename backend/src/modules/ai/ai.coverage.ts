@@ -2,14 +2,25 @@
  * Esta verificacao nao significa que uma ligacao foi executada no builder.
  */
 export type AiGoal = 'system'|'site'|'both';
+// Tipos estruturais compatíveis com o contrato da proposta, sem usar `any`.
+type AiModule = {alias:string;blueprint_key:string;name:string;description:string};
+type AiSection = {type:string;linked_module_alias:string;text:string};
+type AiPage = {slug:string;title:string;sections:AiSection[]};
+type AiPublicForm = {name:string;target_module_alias:string;form_module_alias:string;page_slug:string;bindings:unknown[]};
+export type AiPlan = {
+ system:{modules:AiModule[]}|null;
+ site:{pages:AiPage[]}|null;
+ connection:{link_system:boolean;public_forms:AiPublicForm[]};
+ limitations:string[];
+};
 export type AiTurn = {role:'usuario'|'assistente';text:string};
 export type AiIssue = {code:string;message:string};
 export const fold = (s: unknown): string => String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-const roleText = (m:any):string => fold([m?.name,m?.description].join(' '));
-export function auditAiPlan(goal:AiGoal,turns:AiTurn[],plan:any,previousPlan?:any):AiIssue[]{
+const roleText = (m:AiModule):string => fold([m?.name,m?.description].join(' '));
+export function auditAiPlan(goal:AiGoal,turns:AiTurn[],plan:AiPlan,previousPlan?:unknown):AiIssue[]{
  const said=fold(turns.filter(t=>t.role==='usuario').map(t=>t.text).join('\n'));
- const mods:any[]=Array.isArray(plan?.system?.modules)?plan.system.modules:[];
- const forms:any[]=Array.isArray(plan?.connection?.public_forms)?plan.connection.public_forms:[];
+ const mods=Array.isArray(plan?.system?.modules)?plan.system.modules:[];
+ const forms=Array.isArray(plan?.connection?.public_forms)?plan.connection.public_forms:[];
  const site=plan?.site;const issues:AiIssue[]=[];
  const add=(code:string,message:string)=>{if(!issues.some(i=>i.code===code))issues.push({code,message})};
  const have=(pattern:RegExp)=>mods.some(m=>pattern.test(roleText(m)));
@@ -24,8 +35,8 @@ export function auditAiPlan(goal:AiGoal,turns:AiTurn[],plan:any,previousPlan?:an
  const linked=(pat:RegExp)=>forms.some(f=>{
   const target=mods.find(m=>m.alias===f?.target_module_alias);
   const formMod=mods.find(m=>m.alias===f?.form_module_alias);
-  const page=site?.pages?.find((p:any)=>p.slug===f.page_slug);
-  return target&&pat.test(roleText(target))&&formMod?.blueprint_key==='forms'&&Array.isArray(f.bindings)&&f.bindings.length>0&&page?.sections?.some((s:any)=>s.type==='form'&&s.linked_module_alias===f.form_module_alias);
+  const page=site?.pages?.find((p)=>p.slug===f.page_slug);
+  return target&&pat.test(roleText(target))&&formMod?.blueprint_key==='forms'&&Array.isArray(f.bindings)&&f.bindings.length>0&&page?.sections?.some((s)=>s.type==='form'&&s.linked_module_alias===f.form_module_alias);
  });
  if(requestsPublic&&!linked(/solicit|pedido|benefici|familia|atendimento|roup/))add('form_clothing','Falta formulário público de pedidos de roupas ligado a um cadastro interno.');
  if(volunteersPublic&&!linked(/voluntar|inscri/))add('form_volunteers','Falta formulário público de inscrição de voluntários ligado ao sistema.');
@@ -50,10 +61,11 @@ export function auditAiPlan(goal:AiGoal,turns:AiTurn[],plan:any,previousPlan?:an
  const last=fold(turns.filter(t=>t.role==='usuario').at(-1)?.text);
  const explicitlyRemoved=/\b(remova|remover|exclua|excluir|apague|apagar|tire|retire|retirar|substitua|substituir)\b/.test(last);
  if(previousPlan&&!explicitlyRemoved){
-  const prevModules:any[]=previousPlan?.system?.modules||[];
-  const prevPages:any[]=previousPlan?.site?.pages||[];
+  const previous = previousPlan && typeof previousPlan==='object' ? previousPlan as Partial<AiPlan> : undefined;
+  const prevModules=Array.isArray(previous?.system?.modules)?previous.system.modules:[];
+  const prevPages=Array.isArray(previous?.site?.pages)?previous.site.pages:[];
   if(prevModules.some(m=>!mods.some(n=>n.alias===m.alias)))add('module_lost','A revisão deixou de incluir módulos anteriores sem pedido explícito de remoção.');
-  if(prevPages.some(pg=>!site?.pages?.some((p:any)=>p.slug===pg.slug)))add('page_lost','A revisão deixou de incluir páginas anteriores sem pedido explícito de remoção.');
+  if(prevPages.some(pg=>!site?.pages?.some((p)=>p.slug===pg.slug)))add('page_lost','A revisão deixou de incluir páginas anteriores sem pedido explícito de remoção.');
  }
  if(goal==='both'&&plan?.site&&plan?.system){
   const incompatible=(plan?.limitations||[]).some((l:unknown)=>/apenas (o )?sistema|site (sera|ainda nao foi) (configurado|criado)/.test(fold(l)));
