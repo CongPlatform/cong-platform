@@ -434,6 +434,7 @@ export default function InstitutionalHome() {
           busy={creating}
           onClose={closeCreate}
           onBrowseTemplates={browseTemplates}
+          onAiGuide={() => navigate("/app/assistente-ia?goal=site")}
           onCreate={(request) => void createSite(request)}
         />
       ) : null}

@@ -165,10 +165,10 @@ export default function OperationalHome() {
         {createStep === "choose" ? <>
           <p className={styles.newSystemLead}>Não precisa decidir tudo agora. Escolha como prefere dar o primeiro passo.</p>
           <div className={styles.newSystemOptions}>
-            <button type="button" className={styles.newSystemOption} onClick={() => chooseStart("guided")}>
+            <button type="button" className={styles.newSystemOption} onClick={() => navigate("/app/assistente-ia?goal=system")}>
               <span className={styles.newSystemOptionIcon}><FiCompass /></span>
               <strong>Me ajude a começar</strong>
-              <span>Explorar ideias e escolher o que faz sentido para minha organização.</span>
+              <span>Conversar com a IA para montar módulos e fluxos reais, editáveis.</span>
               <em>Recomendado</em>
               <FiArrowRight className={styles.newSystemOptionArrow} />
             </button>

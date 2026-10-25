@@ -52,7 +52,7 @@ export async function configureOperationalDashboard(org:string,actor:string,syst
   const client=await pool.connect();
   try {
     await client.query("BEGIN");
-    const system=await client.query<{version:number}>("select version from public.operational_systems where organization_id=$1 and id=$2 and status <> 'archived' for update",[org,systemId]);
+    const system=await client.query<{version:number;status:string}>("select version,status from public.operational_systems where organization_id=$1 and id=$2 and status <> 'archived' for update",[org,systemId]);
     if (!system.rowCount) throw missing();
     if (system.rows[0]?.version!==version) throw conflict();
     if (visibleModuleIds!==null) {
@@ -77,12 +77,12 @@ export async function setOperationalBrandSite(org:string,actor:string,systemId:s
   const client=await pool.connect();
   try {
     await client.query("BEGIN");
-    const system=await client.query<{version:number}>("select version from public.operational_systems where organization_id=$1 and id=$2 and status <> 'archived' for update",[org,systemId]);
+    const system=await client.query<{version:number;status:string}>("select version,status from public.operational_systems where organization_id=$1 and id=$2 and status <> 'archived' for update",[org,systemId]);
     if (!system.rowCount) throw missing();
     if (system.rows[0]?.version!==version) throw conflict();
     if(siteId){
-      const site=await client.query("select id from public.institutional_sites where organization_id=$1 and id=$2 and published_at is not null",[org,siteId]);
-      if(!site.rowCount) throw new AppError("Escolha um site publicado desta organização.",400,"INVALID_OPERATIONAL_BRAND_SITE");
+      const site=await client.query("select id from public.institutional_sites where organization_id=$1 and id=$2 and (published_at is not null or $3='draft')",[org,siteId,system.rows[0]?.status]);
+      if(!site.rowCount) throw new AppError("Escolha um site da sua organização. Se o sistema estiver ativo, o site precisa estar publicado.",400,"INVALID_OPERATIONAL_BRAND_SITE");
     }
     await client.query("update public.operational_systems set brand_site_id=$3,version=version+1 where organization_id=$1 and id=$2",[org,systemId,siteId]);
     await client.query("insert into public.operational_events (organization_id,system_id,action,actor_auth_user_id) values ($1,$2,'system.updated',$3)",[org,systemId,actor]);
