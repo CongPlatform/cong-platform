@@ -210,7 +210,9 @@ workerRouter.post("/jobs/:jobId/fail",invoke(async(req,res)=>{
 workerRouter.post("/jobs/:jobId/complete",invoke(async(req,res)=>{
  const p=completeInput.safeParse(req.body);if(!p.success)return error(res,422,"Resultado inválido.","AI_RESULT_INVALID");
  const c=await pool.connect();try{await c.query("begin");const j=await leased(req,res,c);if(!j){await c.query("rollback");return error(res,409,"Reserva inválida ou expirada.","AI_LEASE_INVALID")}
- if(!validateProposal(p.data.proposal,j.goal,j.asked)){await c.query("rollback");return error(res,422,"Proposta incompatível com o contrato.","AI_PROPOSAL_INVALID")}
+ // O contrato legada usa `asked` como cota; na v4 é histórico/telemetria,
+ // nunca motivo para rejeitar uma pergunta pertinente. As demais regras seguem validadas.
+ if(!validateProposal(p.data.proposal,j.goal,0)){await c.query("rollback");return error(res,422,"Proposta incompatível com o contrato.","AI_PROPOSAL_INVALID")}
  const v=p.data.proposal; // validateProposal e um type guard: conserva o tipo validado, inclusive v.plan.
  const s=(await c.query<SessionRow>("select * from public.ai_sessions where id=$1 for update",[j.session_id])).rows[0];
  if(!s||s.status==="cancelled"){await c.query("rollback");return error(res,409,"Sessão cancelada.","AI_SESSION_CANCELLED")}
