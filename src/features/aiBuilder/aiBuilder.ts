@@ -17,12 +17,20 @@ import {
 import {
   createInstitutionalSite, createInstitutionalPage, getInstitutionalSite,
   getInstitutionalTemplates, getInstitutionalVariants, addInstitutionalSection,
-  updateInstitutionalSection, deleteInstitutionalSection, type InstitutionalSite,
+  updateInstitutionalSection, deleteInstitutionalSection, updateInstitutionalSiteBrand, uploadInstitutionalMedia, type InstitutionalSite,
   type InstitutionalSectionType, type InstitutionalVariant, type InstitutionalLayoutNode,
 } from "../../services/institutionalService";
 import { createDefaultSectionContent } from "../../data/institutional/sectionCatalog";
 
 export type SiteLook = "human" | "impact" | "institutional";
+export type SitePalette = {id:string;label:string;description:string;primary:string;secondary:string;accent:string;background:string;text:string};
+export const SITE_PALETTES:SitePalette[] = [
+ {id:"oceano",label:"Oceano",description:"Calma e movimento",primary:"#176B83",secondary:"#2A9D8F",accent:"#E9B44C",background:"#F4FAFA",text:"#173843"},
+ {id:"terra",label:"Terra",description:"Calor e proximidade",primary:"#8D563F",secondary:"#C37A55",accent:"#E2AF62",background:"#FFF8EF",text:"#382B2B"},
+ {id:"natureza",label:"Natureza",description:"Crescimento e equilíbrio",primary:"#317451",secondary:"#79A874",accent:"#D8AA55",background:"#F4FAF1",text:"#273B2E"},
+ {id:"violeta",label:"Violeta",description:"Criatividade e expressão",primary:"#61489B",secondary:"#9883C8",accent:"#E4AB64",background:"#FAF7FF",text:"#302944"},
+ {id:"grafite",label:"Grafite",description:"Simplicidade e contraste",primary:"#2C3947",secondary:"#5A7688",accent:"#D39B56",background:"#F5F7F8",text:"#1E2933"},
+];
 export const SITE_LOOKS: Array<{ id: SiteLook; label: string; description: string }> = [
   {id:"human",label:"Acolhedor",description:"Pessoas, histórias e proximidade"},
   {id:"impact",label:"Moderno",description:"Ações, campanhas e resultados reais"},
@@ -35,6 +43,9 @@ export type BuildRecord = {
   siteId: string | null;
   formIds: Record<string,string>;
   lastPlanSignature: string;
+  logoAssetId?:string|null;
+  lastLogoFingerprint?:string;
+  lastLook?:SiteLook;
   updatedAt: string;
 };
 export type BuildResult = { record: BuildRecord; warnings: string[]; modules: number; pages: number; forms: number };
@@ -303,13 +314,13 @@ async function writeForms(plan:AiPlan,turns:string[],record:BuildRecord,
 }
 
 export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:string[];look:SiteLook;
- report:(text:string)=>void}):Promise<BuildResult>{
+ palette?:SitePalette|null;logoFile?:File|null;report:(text:string)=>void}):Promise<BuildResult>{
  const {org}=key(input.sessionId);
  let record:BuildRecord=existingDraft(input.sessionId)??{
    organizationId:org,sessionId:input.sessionId,systemId:null,siteId:null,formIds:{},lastPlanSignature:"",updatedAt:"",
  };
  const warnings:string[]=[];
- const signature=JSON.stringify(input.plan);
+ const signature=JSON.stringify({plan:input.plan,look:input.look,palette:input.palette?.id||null,logo:input.logoFile?`${input.logoFile.name}:${input.logoFile.size}:${input.logoFile.lastModified}`:null});
  if(record.lastPlanSignature===signature){
    input.report("Esse rascunho já foi montado. Não serão criados itens repetidos.");
    return {record,warnings,modules:0,pages:0,forms:Object.keys(record.formIds).length};
@@ -358,7 +369,33 @@ export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:str
    }
  }
  let site:InstitutionalSite|null=null;
- if(input.plan.site){site=await writeSite(input.plan.site,input.look,record,input.report,warnings);}
+ if(input.plan.site){
+   if(record.siteId&&record.lastLook&&record.lastLook!==input.look)warnings.push("O modelo visual escolhido na criação anterior permanece no rascunho. Para trocar a estrutura do modelo existente, use o editor do site.");
+   site=await writeSite(input.plan.site,input.look,record,input.report,warnings);
+   if(input.palette||input.logoFile){
+     input.report("Aplicando cores e identidade visual ao site...");
+     const fresh=await getInstitutionalSite(site.id);
+     let logoId=fresh.brand.logoAssetId;
+     if(input.logoFile){
+       if(!["image/png","image/jpeg","image/webp"].includes(input.logoFile.type)||input.logoFile.size>5_000_000)
+         throw new Error("Envie uma logo PNG, JPG, WebP ou SVG de até 5 MB.");
+       const logoFingerprint=`${input.logoFile.name}:${input.logoFile.size}:${input.logoFile.lastModified}`;
+       if(record.logoAssetId&&record.lastLogoFingerprint===logoFingerprint){logoId=record.logoAssetId;}
+       else {const uploaded=await uploadInstitutionalMedia(input.logoFile);logoId=uploaded.id;record.logoAssetId=logoId;record.lastLogoFingerprint=logoFingerprint;saveDraft(record);}
+     }
+     const p=input.palette;
+     await updateInstitutionalSiteBrand(site.id,{
+       logoAssetId:logoId,
+       primaryColor:p?.primary??fresh.brand.primaryColor,
+       secondaryColor:p?.secondary??fresh.brand.secondaryColor,
+       accentColor:p?.accent??fresh.brand.accentColor,
+       backgroundColor:p?.background??fresh.brand.backgroundColor,
+       textColor:p?.text??fresh.brand.textColor,
+       headingFont:fresh.brand.headingFont,bodyFont:fresh.brand.bodyFont,
+       ...(fresh.brand.designSystem?{designSystem:fresh.brand.designSystem}:{})
+     });
+   }
+ }
  if(operational&&site){
    input.report("Associando site e sistema no construtor...");
    operational=await getOperationalSystem(operational.id);
@@ -369,6 +406,6 @@ export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:str
  if(input.plan.connection.link_system&&(!operational||!site))warnings.push("A conexão solicitada exige um site e um sistema.");
  if(input.plan.connection.link_system&&count===0&&Object.keys(record.formIds).length===0)
    warnings.push("Nenhum formulário conectado pôde ser gerado; abra o editor de formulários para concluir.");
- record={...record,lastPlanSignature:signature,updatedAt:new Date().toISOString()};saveDraft(record);
+ record={...record,lastPlanSignature:signature,lastLook:input.look,updatedAt:new Date().toISOString()};saveDraft(record);
  return {record,warnings,modules:operational?.modules.length??0,pages:site?.pages.length??0,forms:Object.keys(record.formIds).length};
 }
