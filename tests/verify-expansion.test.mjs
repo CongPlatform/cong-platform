@@ -1,0 +1,14 @@
+import { strict as assert } from 'node:assert';
+import { readFileSync } from 'node:fs';
+const router=readFileSync(new URL('../backend/src/study-overlay/routes.ts',import.meta.url),'utf8');
+const sql=readFileSync(new URL('../backend/supabase/migrations/20261023070000_study_overlay_expansion_v2.sql',import.meta.url),'utf8');
+const importer=readFileSync(new URL('../backend/src/study-overlay/csv-import.ts',import.meta.url),'utf8');
+assert.match(router,/pg_advisory_xact_lock\(26023, 6071\)/);
+assert.match(router,/chooseAdditionalAssignment/);
+assert.match(router,/reused_scenario\)/);
+assert.match(router,/cohort,family,group_code/);
+assert.match(router,/help_request','observer_help/);
+assert.match(sql,/cohort IN \('Principal','Reserva','Adicional'\)/);
+assert.match(sql,/\^P\[0-9\]\{3,\}\$/);
+assert.match(importer,/2026-10-operacional-v2/);
+console.log('PASSOU: proteção transacional, expansão P1000+, cohort adicional, registro de ajuda, protocolo versionado');

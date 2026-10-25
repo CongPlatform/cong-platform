@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { useWorkspace } from "../../../contexts/workspace-context";
+import { buildAiDraft, existingDraft, SITE_LOOKS, type BuildResult, type SiteLook } from "../../../features/aiBuilder/aiBuilder";
 import { FiAlertCircle, FiArrowRight, FiCheckCircle, FiCpu, FiFileText, FiLayers, FiMessageCircle, FiPlus, FiRefreshCw, FiSend, FiServer, FiXCircle } from "react-icons/fi";
 import {
   aiCancel, aiDelete, aiDetail, aiReply, aiRetry, aiSessions, aiStart, aiStatus,
@@ -31,10 +34,21 @@ function Proposal({ plan, coverage, missing }: { plan: AiPlan; coverage?: string
 }
 
 export default function AiAssistant() {
+  const { workspace } = useWorkspace();
+  const organizationName = workspace.kind === "organization" ? workspace.organization.name : "Organização";
+  const [look,setLook] = useState<SiteLook>("human");
+  const [nameSite,setNameSite] = useState("");
+  const [nameSystem,setNameSystem] = useState("");
+  const [approved,setApproved] = useState(false);
+  const [building,setBuilding] = useState(false);
+  const [buildProgress,setBuildProgress] = useState("");
+  const [buildResult,setBuildResult] = useState<BuildResult|null>(null);
+  const [existing,setExisting] = useState(false);
+  const [buildError,setBuildError] = useState("");
   const [availability, setAvailability] = useState<AiAvailability | null>(null);
   const [sessions, setSessions] = useState<AiSessionSummary[]>([]);
   const [current, setCurrent] = useState<AiSessionDetail | null>(null);
-  const [goal, setGoal] = useState<AiGoal>("both");
+  const [goal, setGoal] = useState<AiGoal>(()=>{ const q=new URLSearchParams(window.location.search).get("goal"); return q==="site"||q==="system"?q:"both"; });
   const [text, setText] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -49,6 +63,8 @@ export default function AiAssistant() {
   }, []);
   const select = useCallback(async (id: string) => {
     selectedRef.current = id; setSessionId(id); setError(""); setLoading(true); setCurrent(null);
+    setApproved(false);setBuildError("");setBuildProgress("");setBuildResult(null);
+    setExisting(Boolean(existingDraft(id)));
     try { await refresh(id); } catch (e) { setError(errorText(e)); } finally { setLoading(false); }
   }, [refresh]);
   const reloadList = useCallback(async () => { const response = await aiSessions(); setSessions(response.sessions); }, []);
@@ -99,7 +115,25 @@ export default function AiAssistant() {
     catch(e){setError(errorText(e));}
     finally {setSubmitting(false);}
   }
-  function newConversation() { selectedRef.current = null; setSessionId(null); setCurrent(null); setError(""); setText(""); }
+  function newConversation() { selectedRef.current = null; setSessionId(null); setCurrent(null); setError(""); setText("");setApproved(false);setBuildResult(null);setExisting(false); }
+  async function buildConfirmedDraft(){
+    if(!sessionId || !approved || building || current?.session.status!=="propose" || !current.session.plan)return;
+    if(!window.confirm("Criar ou atualizar rascunhos REAIS nos construtores da sua ONG? Nada será publicado ou ativado automaticamente."))return;
+    setBuilding(true);setBuildError("");setBuildProgress("Preparando os construtores...");
+    try{
+      const plan=current.session.plan;
+      const userSiteName=nameSite.trim() || `Site de ${organizationName}`;
+      const userSystemName=nameSystem.trim() || `Sistema de ${organizationName}`;
+      const adjusted:AiPlan={...plan,
+        system:plan.system?{...plan.system,name:userSystemName}:null,
+        site:plan.site?{...plan.site,name:userSiteName}:null};
+      const result=await buildAiDraft({plan:adjusted,sessionId,
+        turns:current.session.turns.filter(t=>t.role==="usuario").map(t=>t.text),look,
+        report:setBuildProgress});
+      setBuildResult(result);setExisting(true);setBuildProgress("Rascunhos criados. Abra os construtores para revisar e finalizar.");
+    }catch(e){setBuildError(errorText(e));setBuildProgress("Alguns recursos podem ter sido criados. Verifique os links e tente novamente na mesma sessão.");setExisting(Boolean(existingDraft(sessionId)));}
+    finally{setBuilding(false);}
+  }
   const status = current?.session.status;
   return <main className={styles.page}>
     <header className={styles.header}><div><div className={styles.eyebrow}><FiCpu aria-hidden="true" /> CONG IA · Assistente da organização</div><h1>Construa conversando</h1><p>Explique suas necessidades com suas próprias palavras. A IA pode esclarecer detalhes, sugerir uma solução e ajudar a revisá-la. Nenhuma alteração é aplicada automaticamente.</p><p className={styles.privacyNote}>As mensagens são enviadas ao agente de IA autorizado, que pode estar em outro computador. Não informe dados pessoais reais de beneficiários nesta fase.</p></div><div className={styles.headerActions}><button type="button" className={styles.newButton} onClick={newConversation}><FiPlus aria-hidden="true" /> Nova conversa</button>{sessionId&&<button type="button" className={styles.deleteButton} onClick={()=>{void deleteConversation();}} disabled={submitting}>Excluir conversa</button>}</div></header>
@@ -114,7 +148,60 @@ export default function AiAssistant() {
           {busy(status) && <div className={styles.processing}><FiCpu aria-hidden="true" /> {status === "pending" ? "Aguardando agente disponível na fila..." : "A IA está preparando uma resposta..."}</div>}
           {status === "failed" && <div className={styles.warning}><FiXCircle aria-hidden="true" /> Não foi possível gerar a resposta ({current?.error_code || "erro de processamento"}). <button type="button" onClick={() => {void action("retry");}} disabled={submitting}>Tentar novamente</button></div>}
           {status === "cancelled" && <div className={styles.notice}>Esta conversa foi cancelada. Inicie outra conversa para continuar.</div>}
-          {status === "propose" && current?.session.plan && <Proposal plan={current.session.plan} coverage={current.metrics?.coverage_status} missing={current.metrics?.unmet_requirements} />}
+          {status === "propose" && current?.session.plan && <>
+            <Proposal plan={current.session.plan} coverage={current.metrics?.coverage_status} missing={current.metrics?.unmet_requirements} />
+            <section className={styles.realBuilder} aria-label="Montar projeto de verdade">
+              <h2>Montar de verdade na CONG</h2>
+              <p>O próximo passo usa os construtores reais da CONG. Você escolhe o visual e confirma a criação de <strong>rascunhos editáveis</strong>. Nada é ativado ou publicado automaticamente.</p>
+              {current.session.plan.site && <>
+                <strong>Qual aparência você prefere para o site?</strong>
+                <div className={styles.lookGrid} role="radiogroup" aria-label="Estilo do site">
+                  {SITE_LOOKS.map(style => <label key={style.id} className={styles.lookCard} data-selected={look===style.id}>
+                    <input type="radio" name="ai-site-look" checked={look===style.id} onChange={()=>setLook(style.id)} disabled={building}/>
+                    <span><strong>{style.label}</strong><small>{style.description}</small></span>
+                  </label>)}
+                </div>
+                <label className={styles.builderField}>Nome do site (opcional)
+                  <input value={nameSite} onChange={e=>setNameSite(e.target.value)} maxLength={100} placeholder={`Site de ${organizationName}`} disabled={building}/>
+                </label>
+              </>}
+              {current.session.plan.system && <label className={styles.builderField}>Nome do sistema (opcional)
+                <input value={nameSystem} onChange={e=>setNameSystem(e.target.value)} maxLength={100} placeholder={`Sistema de ${organizationName}`} disabled={building}/>
+              </label>}
+              {Boolean(current.metrics?.unmet_requirements?.length) && <div className={styles.warning}>
+                <FiAlertCircle aria-hidden="true"/> Existem pendências na proposta. A CONG tentará montar os componentes válidos; confira os avisos e os vínculos antes de publicar.
+              </div>}
+              <label className={styles.buildConsent}><input type="checkbox" checked={approved} disabled={building} onChange={e=>setApproved(e.target.checked)}/>
+                Confirmo a criação de rascunhos reais na minha organização e entendo que precisarei revisá-los antes de ativar/publicar.
+              </label>
+              <button type="button" className={styles.buildButton} onClick={()=>{void buildConfirmedDraft();}} disabled={!approved||building}>
+                <FiLayers aria-hidden="true"/>{building?"Montando rascunhos...":existing?"Atualizar rascunhos existentes":"Criar sistema e/ou site de verdade"}
+              </button>
+              {existing && !buildResult && sessionId && (()=>{
+                const draft=existingDraft(sessionId);
+                return draft && <div className={styles.buildSuccess}>
+                  <strong>Esta conversa já possui rascunhos salvos</strong>
+                  <div className={styles.buildLinks}>
+                    {draft.systemId && <Link to={`/app/sistemas/${draft.systemId}`}>Abrir sistema criado</Link>}
+                    {draft.siteId && <Link to={`/app/site-institucional/${draft.siteId}/editor`}>Abrir site criado</Link>}
+                  </div>
+                  <small>Os links são recuperados deste navegador; as permissões continuam verificadas pela API da CONG.</small>
+                </div>;
+              })()}
+              {buildProgress && <p className={styles.buildProgress} role="status">{buildProgress}</p>}
+              {buildError && <p className={styles.error} role="alert">{buildError}</p>}
+              {buildResult && <div className={styles.buildSuccess}>
+                <strong>Rascunhos criados nos construtores</strong>
+                <p>{buildResult.modules} módulo(s) · {buildResult.pages} página(s) · {buildResult.forms} formulário(s) preparado(s).</p>
+                <div className={styles.buildLinks}>
+                  {buildResult.record.systemId && <Link to={`/app/sistemas/${buildResult.record.systemId}`}><FiLayers/> Abrir sistema</Link>}
+                  {buildResult.record.siteId && <Link to={`/app/site-institucional/${buildResult.record.siteId}/editor`}><FiArrowRight/> Editar site</Link>}
+                </div>
+                {buildResult.warnings.length>0 && <ul>{buildResult.warnings.map((warning,i)=><li key={i}>{warning}</li>)}</ul>}
+                <small>Os formulários ficam desativados até a publicação e a ativação dos respectivos recursos. Revise seus campos e a associação ao site antes disso.</small>
+              </div>}
+            </section>
+          </>}
           <div ref={bottomRef} />
         </div>
         {error && <div className={styles.error} role="alert">{error}</div>}

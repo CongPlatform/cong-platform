@@ -2,3 +2,23 @@
 
 .headerActions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.deleteButton{border:1px solid #dfcad2;border-radius:12px;padding:11px 14px;background:#fff;color:#904c5b;cursor:pointer;font-weight:650}.deleteButton:disabled{opacity:.5;cursor:not-allowed}
 .privacyNote{font-size:12px!important;color:#847a90!important;margin-top:7px!important;max-width:800px!important}
+
+/* Builder real: a criação é explícita e os dois recursos permanecem em rascunho. */
+.realBuilder{margin:12px 0 26px;border:1px solid #d9cde8;background:#fff;border-radius:16px;padding:22px;max-width:850px;display:grid;gap:13px}
+.realBuilder h2{font-size:19px;color:#47346f;margin:0}
+.realBuilder p{font-size:13px;line-height:1.6;margin:0;color:#645d70}
+.lookGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.lookCard{display:flex;gap:9px;padding:13px;border:1px solid #e6e1eb;border-radius:12px;cursor:pointer;align-items:start;min-width:0}
+.lookCard[data-selected="true"]{border-color:#7960ac;background:#f6f0ff}
+.lookCard span{display:grid;gap:4px}.lookCard small{font-size:11px;line-height:1.45;color:#746e79}
+.builderField{font-size:12px;font-weight:650;display:grid;gap:6px;color:#50455f}
+.builderField input{border:1px solid #ded5e8;border-radius:9px;padding:11px 12px;font:inherit;font-weight:400;max-width:520px}
+.buildConsent{display:flex;align-items:start;gap:9px;font-size:12px;line-height:1.55;color:#595066}
+.buildConsent input{margin-top:3px;flex-shrink:0}
+.buildButton{border:0;background:#60479b;color:white;display:flex;justify-content:center;align-items:center;gap:9px;border-radius:11px;padding:12px 16px;font-weight:700;width:fit-content;cursor:pointer}
+.buildButton:disabled{opacity:.48;cursor:not-allowed}.buildProgress{color:#55407e!important}
+.buildSuccess{display:grid;gap:10px;border:1px solid #c9e5d4;background:#f5fff8;border-radius:12px;padding:15px;font-size:12px;color:#295943}
+.buildSuccess p{color:#346b4b}.buildSuccess small{line-height:1.55}
+.buildSuccess ul{margin:5px 0;padding-left:18px;line-height:1.55}
+.buildLinks{display:flex;gap:8px;flex-wrap:wrap}.buildLinks a{display:flex;gap:8px;align-items:center;border:1px solid #b4d4c0;border-radius:9px;padding:9px 12px;color:#226241;text-decoration:none;font-weight:700}
+@media(max-width:680px){.lookGrid{grid-template-columns:1fr}.realBuilder{padding:14px}}

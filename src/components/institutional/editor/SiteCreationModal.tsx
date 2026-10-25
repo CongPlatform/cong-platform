@@ -71,6 +71,7 @@ export default function SiteCreationModal({
   busy,
   onClose,
   onBrowseTemplates,
+  onAiGuide,
   onCreate,
 }: {
   open: boolean;
@@ -80,6 +81,7 @@ export default function SiteCreationModal({
   busy: boolean;
   onClose: () => void;
   onBrowseTemplates: () => void;
+  onAiGuide: () => void;
   onCreate: (request: SiteCreationRequest) => void;
 }) {
   const [step, setStep] = useState<Step>(initialTemplate ? "name" : "choose");
@@ -158,15 +160,15 @@ export default function SiteCreationModal({
                   type="button"
                   className={styles.startCard}
                   data-featured="true"
-                  onClick={() => setStep("guided")}
+                  onClick={onAiGuide}
                 >
                   <span className={styles.startIcon}>
                     <FiStar />
                   </span>
                   <strong>Me guie</strong>
                   <small>
-                    Responda sobre a ONG. A CONG organiza estrutura, hierarquia
-                    e design inicial.
+                    Converse com a IA, escolha um estilo e monte um site real
+                    e editável com sua confirmação.
                   </small>
                   <em>Recomendado</em>
                 </button>
