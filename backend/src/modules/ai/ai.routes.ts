@@ -48,9 +48,16 @@ type Turn={role:"usuario"|"assistente";text:string;time:string};
 type SessionRow={id:string;organization_id:string;created_by_auth_user_id:string;goal:"system"|"site"|"both";status:string;round:number;asked:number;revision_count:number;retries:number;turns:Turn[];memory:{summary:string;facts:{key:string;value:string}[];assumptions:string[]};plan:unknown;last_job_id:string|null;updated_at:string};
 const summary=(s:SessionRow)=>({id:s.id,goal:s.goal,status:s.status,round:s.round,asked:s.asked,revision_count:s.revision_count,turns:s.turns,memory:s.memory,plan:s.plan,last_job_id:s.last_job_id,updated_at:s.updated_at});
 function conversation(s:Pick<SessionRow,"goal"|"memory"|"plan"|"turns">):string {
+ // A model-generated summary is not a factual source. Every job instead
+ // receives the participant's own words and the previous draft as an
+ // explicitly unconfirmed reference (never a source of NGO activities).
  const plan=s.plan && typeof s.plan==="object" ? JSON.stringify(s.plan).slice(0,4300):"";
- const start=`META: ${s.goal}\nCONTEXTO PERSISTIDO (resumo do modelo, não confirmado automaticamente): ${JSON.stringify(s.memory).slice(0,3500)}\n${plan?`PLANO_ATUAL para revisar (nenhuma alteração aplicada): ${plan}\n`:""}HISTÓRICO:\n`;
- return start+s.turns.map(t=>`${t.role}: ${t.text}`).join("\n").slice(-(23000-start.length));
+ const start=`META: ${s.goal}\n${plan?`PLANO_ATUAL (rascunho não confirmado; descarte qualquer detalhe que contrarie o participante): ${plan}\n`:""}HISTÓRICO:\n`;
+ const all=s.turns.map(t=>`${t.role}: ${t.text}`).join("\n");
+ // Preserve the first description and recent corrections even in a long chat.
+ const room=Math.max(1000,23000-start.length);
+ const body=all.length>room ? s.turns.slice(0,2).map(t=>`${t.role}: ${t.text}`).join("\n").slice(0,1800)+"\n"+all.slice(-(room-1850)) : all;
+ return (start+body).slice(0,23000);
 }
 async function ensureGoalAllowed(res:Response,goal:"system"|"site"|"both") {
  const context=res.locals.organizationContext;
@@ -210,18 +217,25 @@ workerRouter.post("/jobs/:jobId/complete",invoke(async(req,res)=>{
  // Nunca usar a autodeclaracao "passed" enviada pelo proprio modelo como veredito.
  // Inspeciona solicitacoes reais do usuario, mapeamentos, duplicacoes e contradicoes.
  const issues=v.phase==="propose"?auditAiPlan(s.goal,s.turns,v.plan,s.plan):[];
- const metrics={...(p.data.metrics??{}),coverage_status:v.phase==="propose"?(issues.length?"needs_review":"no_known_gaps"):"not_applicable",unmet_requirements:issues.map(i=>i.message),coverage_codes:issues.map(i=>i.code),coverage_verified_by:"cong_backend_v2"};
+ const suppliedChoices=(p.data.metrics??{}).ui_choices;
+ const uiChoices=v.phase==="clarify"&&Array.isArray(suppliedChoices)
+   ?[...new Set(suppliedChoices.filter((choice):choice is string=>typeof choice==="string"&&choice.length>=2&&choice.length<=95&&!/[\r\n<>]/.test(choice)))].slice(0,4)
+   :[];
+ const metrics={...(p.data.metrics??{}),ui_choices:uiChoices,coverage_status:v.phase==="propose"?(issues.length?"needs_review":"no_known_gaps"):"not_applicable",unmet_requirements:issues.map(i=>i.message),coverage_codes:issues.map(i=>i.code),coverage_verified_by:"cong_backend_v2"};
  await c.query(`update public.ai_jobs set status='completed',proposal=$2::jsonb,metrics=$3::jsonb,updated_at=now() where id=$1`,[j.id,JSON.stringify(v),JSON.stringify(metrics)]);
- const note=issues.length?"\n\nPontos ainda pendentes de revisão: "+issues.slice(0,5).map(i=>i.message).join("; "):"";
- const turns=s.turns.concat({role:"assistente",text:v.reply+(v.questions.length?"\nPergunta: "+v.questions[0]:"")+note,time:new Date().toISOString()});
- const previous=s.memory??emptyMemory;
+ const turns=s.turns.concat({role:"assistente",text:v.reply+(v.questions.length?"\n\n"+v.questions[0]:""),time:new Date().toISOString()});
  const text=turns.filter(t=>t.role==="usuario").map(t=>t.text).join(" ").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
- const facts=new Map((previous.facts??[]).map(f=>[f.key,f.value]));
+ const facts=new Map<string,string>(); // Do not perpetuate an outdated model assumption after participant corrections.
  for(const f of v.memory.facts){
    const key=f.key.toLowerCase();
    if(["meta","goal","objetivo","modo"].includes(key))continue; // Objetivo pertence a sessão autenticada, não ao modelo.
    const n=f.value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
-   if(n.length>2&&text.includes(n))facts.set(f.key,f.value);
+   if(n.length>2&&text.includes(n)){
+     // An explicit negation is not affirmative evidence for a model-made fact.
+     const pos=text.lastIndexOf(n);
+     const context=text.slice(Math.max(0,pos-45),pos);
+     if(!/\b(?:nao|nunca|sem|nem)\b.{0,38}$/.test(context))facts.set(f.key,f.value);
+   }
  }
  const memory={summary:v.memory.summary,facts:[...facts].slice(-30).map(([key,value])=>({key,value})),assumptions:v.memory.assumptions};
  await c.query(`update public.ai_sessions set status=$2,round=round+$3,asked=asked+$3,turns=$4::jsonb,memory=$5::jsonb,plan=$6::jsonb,updated_at=now() where id=$1`,[s.id,v.phase,v.phase==="clarify"?1:0,JSON.stringify(turns),JSON.stringify(memory),JSON.stringify(v.phase==="propose"?v.plan:s.plan)]);
