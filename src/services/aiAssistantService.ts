@@ -1,7 +1,8 @@
-import { apiTenantGet, apiTenantPost, apiTenantDelete } from "./api";
+import { apiTenantGet, apiTenantPost, apiTenantDelete, apiTenantPatch } from "./api";
 
+export interface AiProjectContext { kind: "site" | "system"; title: string; updated_at: string; structure: string }
 export type AiGoal = "system" | "site" | "both";
-export type AiPhase = "clarify" | "propose";
+export type AiPhase = "clarify" | "propose" | "guide";
 export type AiStatus = "pending" | "processing" | AiPhase | "failed" | "cancelled";
 export interface AiTurn { role: "usuario" | "assistente"; text: string; time: string }
 export interface AiField { key: string; label: string; type: string; required: boolean; help: string; options: string[] }
@@ -19,9 +20,10 @@ export interface AiPlan {
   connection: { link_system: boolean; public_forms: AiPublicForm[] };
   limitations: string[]; confirmations: string[];
 }
+export interface AiMemory { summary: string; facts: { key: string; value: string }[]; assumptions: string[]; verifiedFacts?: {key:string;value:string}[]; excludedFacts?: string[]; verifiedSummary?: string; projectContext?: AiProjectContext | null }
 export interface AiProposal {
   schema_version: "cong.assistant.v2"; phase: AiPhase; reply: string; questions: string[];
-  memory: { summary: string; facts: { key: string; value: string }[]; assumptions: string[] };
+  memory: AiMemory;
   plan: AiPlan;
 }
 export interface AiSession {
@@ -39,9 +41,11 @@ export interface AiAccepted { session_id: string; job_id: string; status: "pendi
 export const aiStatus = () => apiTenantGet<AiAvailability>("/ai/status");
 export const aiSessions = () => apiTenantGet<{ sessions: AiSessionSummary[] }>("/ai/sessions");
 export const aiDetail = (id: string) => apiTenantGet<AiSessionDetail>(`/ai/sessions/${encodeURIComponent(id)}`);
-export const aiStart = (goal: AiGoal, prompt: string) => apiTenantPost<AiAccepted>("/ai/sessions", { goal, prompt });
-export const aiReply = (id: string, answer: string) => apiTenantPost<AiAccepted>(`/ai/sessions/${encodeURIComponent(id)}/reply`, { answer });
+export const aiStart = (goal: AiGoal, prompt: string, project_context?:AiProjectContext|null) => apiTenantPost<AiAccepted>("/ai/sessions", { goal, prompt, ...(project_context === undefined ? {} : {project_context}) });
+export const aiReply = (id: string, answer: string, project_context?:AiProjectContext|null, goal?:AiGoal) => apiTenantPost<AiAccepted>(`/ai/sessions/${encodeURIComponent(id)}/reply`, { answer, ...(project_context === undefined ? {} : {project_context}), ...(goal ? {goal} : {}) });
 export const aiRetry = (id: string) => apiTenantPost<AiAccepted>(`/ai/sessions/${encodeURIComponent(id)}/retry`, {});
 export const aiCancel = (id: string) => apiTenantPost<{ ok: boolean }>(`/ai/sessions/${encodeURIComponent(id)}/cancel`, {});
 
+export const aiRevokeProject = (id:string) => apiTenantDelete<{ok:boolean}>(`/ai/sessions/${encodeURIComponent(id)}/project-context`);
+export const aiSaveMemory = (id: string, memory: Pick<AiMemory,"summary"|"facts"|"assumptions">) => apiTenantPatch<{memory:AiMemory}>(`/ai/sessions/${encodeURIComponent(id)}/memory`, memory);
 export const aiDelete = (id: string) => apiTenantDelete<{ok:boolean}>(`/ai/sessions/${encodeURIComponent(id)}`);
