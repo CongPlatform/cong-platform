@@ -82,7 +82,7 @@ sessionRouter.get("/status",invoke(async(_,res)=>{
  res.json({worker_online:workers.rows.length>0,model:workers.rows[0]?.model??"",busy:workers.rows[0]?.busy??false,queue_size:await rowCount()});
 }));
 sessionRouter.get("/sessions",invoke(async(req,res)=>{
- const data=await pool.query("select id,goal,status,updated_at from public.ai_sessions where organization_id=$1 and created_by_auth_user_id=$2 order by updated_at desc limit 20",[orgId(res),actorId(res)]);
+ const data=await pool.query("select id,goal,status,updated_at,left(turns->0->>'text',100) as title from public.ai_sessions where organization_id=$1 and created_by_auth_user_id=$2 order by updated_at desc limit 20",[orgId(res),actorId(res)]);
  res.json({sessions:data.rows});
 }));
 sessionRouter.post("/sessions",invoke(async(req,res)=>{
