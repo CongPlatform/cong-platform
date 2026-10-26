@@ -15,7 +15,7 @@ import { intentWithoutGeneration, explainProposal } from "./ai.intent.js";
 const enabled = () => process.env.CONG_AI_ENABLED === "true";
 const workerSecret = () => process.env.CONG_AI_WORKER_TOKEN || "";
 const uuid = z.string().uuid();
-const createInput = z.object({ goal: z.enum(["system", "site", "both"]), prompt: z.string().trim().min(12).max(6500) }).strict();
+const createInput = z.object({ goal: z.enum(["system", "site", "both"]), prompt: z.string().trim().min(1).max(6500) }).strict();
 const answerInput = z.object({ answer: z.string().trim().min(1).max(3500) }).strict();
 const workerId = z.string().regex(/^[a-zA-Z0-9_-]{2,60}$/);
 const workerSignal = z.object({ model: z.string().max(120), busy: z.boolean() });
@@ -23,6 +23,25 @@ const leaseInput = z.object({ lease_token: z.string().min(32).max(128) });
 const failInput = leaseInput.extend({ error_code: z.string().regex(/^[A-Z0-9_]{2,50}$/).default("MODEL_ERROR") });
 const completeInput = leaseInput.extend({proposal:z.unknown(),metrics:z.record(z.string(),z.unknown()).optional()});
 const emptyMemory = {summary:"",facts:[],assumptions:[]};
+// "guide" é uma resposta conversacional sem execução ou proposta de builder.
+// Mantém o status SQL em "clarify" para compatibilidade com a base existente.
+const guidanceResult = z.object({
+  schema_version: z.literal("cong.assistant.v2"),
+  phase: z.literal("guide"),
+  reply: z.string().trim().min(2).max(2600),
+  questions: z.array(z.never()).length(0),
+  memory: z.object({
+    summary: z.string().max(1700),
+    facts: z.array(z.object({key:z.string().min(1).max(70),value:z.string().min(1).max(380)}).strict()).max(30),
+    assumptions: z.array(z.string().min(1).max(350)).max(12),
+  }).strict(),
+  plan: z.object({
+    system: z.null(), site: z.null(),
+    connection: z.object({link_system:z.literal(false),public_forms:z.array(z.never()).length(0)}).strict(),
+    limitations:z.array(z.never()).length(0), confirmations:z.array(z.never()).length(0),
+  }).strict(),
+}).strict();
+
 // A fila pertence ao backend publicado: nenhuma URL temporaria / trycloudflare e usada.
 const MAX_DAILY_SESSIONS=12;
 const MAX_DAILY_JOBS=80;
@@ -212,8 +231,13 @@ workerRouter.post("/jobs/:jobId/complete",invoke(async(req,res)=>{
  const c=await pool.connect();try{await c.query("begin");const j=await leased(req,res,c);if(!j){await c.query("rollback");return error(res,409,"Reserva inválida ou expirada.","AI_LEASE_INVALID")}
  // O contrato legada usa `asked` como cota; na v4 é histórico/telemetria,
  // nunca motivo para rejeitar uma pergunta pertinente. As demais regras seguem validadas.
- if(!validateProposal(p.data.proposal,j.goal,0)){await c.query("rollback");return error(res,422,"Proposta incompatível com o contrato.","AI_PROPOSAL_INVALID")}
- const v=p.data.proposal; // validateProposal e um type guard: conserva o tipo validado, inclusive v.plan.
+ const parsedGuide=guidanceResult.safeParse(p.data.proposal);
+ let v;
+ if(parsedGuide.success){v=parsedGuide.data;}
+ else {
+  if(!validateProposal(p.data.proposal,j.goal,0)){await c.query("rollback");return error(res,422,"Proposta incompatível com o contrato.","AI_PROPOSAL_INVALID")}
+  v=p.data.proposal;
+ }
  const s=(await c.query<SessionRow>("select * from public.ai_sessions where id=$1 for update",[j.session_id])).rows[0];
  if(!s||s.status==="cancelled"){await c.query("rollback");return error(res,409,"Sessão cancelada.","AI_SESSION_CANCELLED")}
  // Nunca usar a autodeclaracao "passed" enviada pelo proprio modelo como veredito.
@@ -240,7 +264,7 @@ workerRouter.post("/jobs/:jobId/complete",invoke(async(req,res)=>{
    }
  }
  const memory={summary:v.memory.summary,facts:[...facts].slice(-30).map(([key,value])=>({key,value})),assumptions:v.memory.assumptions};
- await c.query(`update public.ai_sessions set status=$2,round=round+$3,asked=asked+$3,turns=$4::jsonb,memory=$5::jsonb,plan=$6::jsonb,updated_at=now() where id=$1`,[s.id,v.phase,v.phase==="clarify"?1:0,JSON.stringify(turns),JSON.stringify(memory),JSON.stringify(v.phase==="propose"?v.plan:s.plan)]);
+ await c.query(`update public.ai_sessions set status=$2,round=round+$3,asked=asked+$3,turns=$4::jsonb,memory=$5::jsonb,plan=$6::jsonb,updated_at=now() where id=$1`,[s.id,v.phase==="guide"?"clarify":v.phase,v.phase==="clarify"?1:0,JSON.stringify(turns),JSON.stringify(memory),JSON.stringify(v.phase==="propose"?v.plan:s.plan)]);
  await c.query("commit");res.json({ok:true});
  }catch(e){await c.query("rollback");throw e}finally{c.release()}
 }));
