@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { listInstitutionalSites, getInstitutionalSite } from "../../../services/institutionalService";
+import { listOperationalSystems } from "../../../features/operational/operationalService";
 import { createPortal } from "react-dom";
 import { useWorkspace } from "../../../contexts/workspace-context";
 import { buildAiDraft, existingDraft, SITE_LOOKS, SITE_PALETTES, type BuildResult, type SiteLook, type SitePalette } from "../../../features/aiBuilder/aiBuilder";
 import { FiAlertCircle, FiArrowRight, FiFileText, FiLayers, FiMessageCircle, FiPlus, FiRefreshCw, FiSend, FiServer, FiXCircle, FiImage, FiDroplet, FiEdit3, FiArrowLeft, FiTrash2, FiInfo, FiClipboard, FiX } from "react-icons/fi";
 import {
-  aiCancel, aiDelete, aiDetail, aiReply, aiRetry, aiSessions, aiStart, aiStatus,
-  type AiAvailability, type AiGoal, type AiPlan, type AiSessionDetail, type AiSessionSummary,
+  aiCancel, aiDelete, aiDetail, aiReply, aiRetry, aiSessions, aiStart, aiStatus, aiSaveMemory, aiRevokeProject,
+  type AiAvailability, type AiGoal, type AiMemory, type AiPlan, type AiSessionDetail, type AiSessionSummary, type AiProjectContext,
 } from "../../../services/aiAssistantService";
 import congMark from "../../../assets/brand/logo-mark.webp";
 import mascotHappy from "../../../assets/mascot/cong-happy.webp";
@@ -25,6 +27,16 @@ const STARTERS = [
   { title: "Organizar processos", description: "Construa um sistema adequado à rotina", message: "Quero estudar possibilidades para organizar os processos da minha organização usando os módulos da CONG.", icon: FiLayers },
   { title: "Conectar recursos", description: "Site, sistema e formulários juntos", message: "Quais formas existem de conectar um site, um sistema interno e formulários na CONG? Primeiro, quero entender as possibilidades.", icon: FiArrowRight },
 ];
+type RecentProject={id:string;kind:"site"|"system";title:string;updatedAt:string;moduleCount?:number};
+// O foco nasce da conversa e pode mudar; escolher uma modalidade é opcional.
+function inferGoal(message:string, previous:AiGoal):AiGoal{
+ const normalized=message.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+ const create=/(?:\bcriar\b|\bmontar\b|\bconstruir\b|\bplanejar\b|\bgerar\b|\bdesenvolver\b|\bquero um\b|\bquero uma\b)/.test(normalized);
+ if(!create)return previous;
+ const site=/\bsite\b|\bpagina\b|\bwebsite\b/.test(normalized);
+ const system=/\bsistema\b|\bsistemas\b|\bmodulo\b/.test(normalized);
+ return site&&system?"both":site?"site":system?"system":previous;
+}
 const busy = (status?: string) => status === "pending" || status === "processing";
 const errorText = (error: unknown) => error instanceof Error ? error.message : "Não foi possível concluir a solicitação.";
 
@@ -44,11 +56,32 @@ function Proposal({ plan, coverage, missing }: { plan: AiPlan; coverage?: string
   </section>;
 }
 
+// Formatação segura (sem HTML, scripts ou links arbitrários): evita mostrar **Markdown** cru.
+function InlineText({value}:{value:string}){
+ const pieces=value.split(/(\*\*[^*\n]+\*\*)/g);
+ return <>{pieces.map((piece,i)=>piece.startsWith("**")&&piece.endsWith("**")?<strong key={i}>{piece.slice(2,-2)}</strong>:<span key={i}>{piece}</span>)}</>;
+}
+function ConversationalText({value}:{value:string}){
+ const paragraphs:ReactNode[]=[];let pending:string[]=[];
+ const flush=()=>{if(pending.length){const content=pending.join("\n");paragraphs.push(<p key={paragraphs.length}><InlineText value={content}/></p>);pending=[]}};
+ for(const line of value.trim().split("\n")){
+  const match=line.trim().match(/^(?:[-•]\s+|\d+[.)]\s+)(.+)$/);
+  if(match){flush();paragraphs.push(<div className={styles.messageListLine} key={paragraphs.length}><span aria-hidden="true">•</span><span><InlineText value={match[1]}/></span></div>)}
+  else if(!line.trim())flush();else pending.push(line);
+ }
+ flush();return <div className={styles.richMessage}>{paragraphs}</div>;
+}
+
 export default function AiAssistant() {
   const { workspace } = useWorkspace();
   const organizationName = workspace.kind === "organization" ? workspace.organization.name : "Organização";
   const [look,setLook] = useState<SiteLook>("human");
   const [palette,setPalette] = useState<SitePalette|null>(null);
+  const [customPalette,setCustomPalette] = useState<SitePalette>({id:"personalizada",label:"Minha paleta",description:"Criada aqui, para este projeto",primary:"#275b95",secondary:"#479c91",accent:"#e5a54c",background:"#f8fafc",text:"#203047"});
+  function changeCustomPalette(key:"primary"|"secondary"|"accent"|"background"|"text", value:string){
+    setCustomPalette(old=>{const next={...old,[key]:value};setPalette(next);return next;});
+  }
+
   const [logoFile,setLogoFile] = useState<File|null>(null);
   const [logoError,setLogoError] = useState("");
   const [logoPreview,setLogoPreview] = useState("");
@@ -72,6 +105,14 @@ export default function AiAssistant() {
   const [sessions, setSessions] = useState<AiSessionSummary[]>([]);
   const [current, setCurrent] = useState<AiSessionDetail | null>(null);
   const [goal, setGoal] = useState<AiGoal>(()=>{ const q=new URLSearchParams(window.location.search).get("goal"); return q==="site"||q==="system"?q:"both"; });
+  const [goalChosen, setGoalChosen] = useState(() => new URLSearchParams(window.location.search).has("goal"));
+  const [editingMemory,setEditingMemory] = useState<AiMemory|null>(null);
+  const [savingMemory,setSavingMemory] = useState(false);
+  const [recentProjects,setRecentProjects] = useState<RecentProject[]>([]);
+  const [projectListOpen,setProjectListOpen] = useState(false);
+  const [projectBusy,setProjectBusy] = useState(false);
+  const [projectConsent,setProjectConsent] = useState<AiProjectContext|null>(null);
+  const [projectNotice,setProjectNotice] = useState("");
   const [text, setText] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -89,13 +130,13 @@ export default function AiAssistant() {
   const selectedRef = useRef<string | null>(null);
   const refresh = useCallback(async (id: string) => {
     const detail = await aiDetail(id);
-    if (selectedRef.current === id) setCurrent(detail);
+    if (selectedRef.current === id) {setCurrent(detail);if(detail.session.memory.projectContext!==undefined)setProjectConsent(detail.session.memory.projectContext??null);}
     return detail;
   }, []);
   const select = useCallback(async (id: string) => {
     const changingConversation=selectedRef.current!==id;
     selectedRef.current = id; setSessionId(id); setError(""); setLoading(true); setCurrent(null);setInsightsOpen(false);
-    setApproved(false);setBuildError("");setBuildProgress("");setBuildResult(null);
+    setApproved(false);setBuildError("");setBuildProgress("");setBuildResult(null);setEditingMemory(null);setProjectConsent(null);setProjectListOpen(false);setProjectNotice("");
     setExisting(Boolean(existingDraft(id)));
     if(changingConversation){setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError("");}
     try { await refresh(id); } catch (e) { setError(errorText(e)); } finally { setLoading(false); }
@@ -126,7 +167,8 @@ export default function AiAssistant() {
     if(!message.trim()||busy(current?.session.status)||submitting)return;
     setSubmitting(true); setError("");
     try {
-      const result = sessionId ? await aiReply(sessionId,message.trim()) : await aiStart(goal,message.trim());
+      const inferredGoal=inferGoal(message,sessionId?(current?.session.goal??goal):goal);
+      const result = sessionId ? await aiReply(sessionId,message.trim(),projectConsent,inferredGoal) : await aiStart(inferredGoal,message.trim(),projectConsent);
       setText("");
       await select(result.session_id);
       await reloadList();
@@ -160,7 +202,7 @@ export default function AiAssistant() {
     } catch (e) { setError(errorText(e)); }
     finally { setSubmitting(false); }
   }
-  function newConversation() { setInsightsOpen(false);selectedRef.current = null; setSessionId(null); setCurrent(null); setError(""); setText("");setApproved(false);setBuildResult(null);setExisting(false);setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError(""); }
+  function newConversation() { setProjectConsent(null);setProjectListOpen(false);setProjectNotice("");setEditingMemory(null);setInsightsOpen(false);selectedRef.current = null; setSessionId(null); setCurrent(null); setError(""); setText("");setApproved(false);setBuildResult(null);setExisting(false);setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError(""); }
   async function buildConfirmedDraft(){
     if(!sessionId || !approved || building || current?.session.status!=="propose" || !current.session.plan || current.metrics?.coverage_status==="needs_review" || Boolean(current.metrics?.unmet_requirements?.length))return;
     if(!window.confirm("Criar ou atualizar rascunhos REAIS nos construtores da sua ONG? Nada será publicado ou ativado automaticamente."))return;
@@ -179,18 +221,59 @@ export default function AiAssistant() {
     }catch(e){setBuildError(errorText(e));setBuildProgress("Alguns recursos podem ter sido criados. Verifique os links e tente novamente na mesma sessão.");setExisting(Boolean(existingDraft(sessionId)));}
     finally{setBuilding(false);}
   }
+  async function findRecentProjects(){
+    setProjectBusy(true);setProjectNotice("");setProjectListOpen(true);
+    try{
+      const results=await Promise.allSettled([listInstitutionalSites(),listOperationalSystems()]);
+      const sites=results[0].status==="fulfilled" ? results[0].value : [];
+      const systems=results[1].status==="fulfilled" ? results[1].value : [];
+      const items:RecentProject[]=[
+        ...sites.map(site=>({id:site.id,kind:"site" as const,title:site.name,updatedAt:site.updatedAt})),
+        ...systems.map(system=>({id:system.id,kind:"system" as const,title:system.name,updatedAt:system.updatedAt,moduleCount:system.moduleCount})),
+      ].sort((a,b)=>new Date(b.updatedAt).getTime()-new Date(a.updatedAt).getTime()).slice(0,10);
+      setRecentProjects(items);
+      if(!items.length)setProjectNotice("Nenhum projeto acessível foi encontrado nesta organização.");
+      else if(results.some(x=>x.status==="rejected"))setProjectNotice("Mostrei só os projetos que consegui consultar com sua permissão.");
+    }catch(e){setProjectNotice(errorText(e));}
+    finally{setProjectBusy(false)}
+  }
+  async function allowProject(project:RecentProject){
+    if(!window.confirm(`Permitir que o CONG consulte a estrutura resumida de “${project.title}” nesta conversa? Acesso de leitura, sem registros de beneficiários e sem alterar o projeto.`))return;
+    setProjectBusy(true);setProjectNotice("");
+    try{
+      let structure:string;
+      if(project.kind==="site"){
+        const site=await getInstitutionalSite(project.id);
+        // Compartilhe somente estrutura, nunca conteúdo sensível, leads ou registros do formulário.
+        structure=JSON.stringify({paginas:site.pages.slice(0,15).map(page=>({titulo:page.title,secoes:page.sections.slice(0,20).map(section=>section.sectionType)}))});
+      }else{
+        structure=JSON.stringify({modulos:project.moduleCount??"quantidade não disponível",detalhes:"Consulta restrita ao resumo do sistema; não inclui registros de pessoas ou dados internos."});
+      }
+      setProjectConsent({kind:project.kind,title:project.title,updated_at:project.updatedAt,structure:structure.slice(0,2500)});
+      setProjectListOpen(false);setProjectNotice("Contexto pronto. Vou considerar a estrutura deste projeto na sua próxima mensagem, sem editá-lo.");
+    }catch(e){setProjectNotice("Não consegui acessar esse projeto com suas permissões: "+errorText(e));}
+    finally{setProjectBusy(false)}
+  }
+  async function revokeProject(){
+    if(sessionId){
+      setProjectBusy(true);
+      try{await aiRevokeProject(sessionId);setProjectConsent(null);await refresh(sessionId);setProjectNotice("A consulta foi revogada para as próximas respostas.");}
+      catch(e){setProjectNotice(errorText(e));}finally{setProjectBusy(false)}
+    }else{setProjectConsent(null);setProjectNotice("Contexto desativado.");}
+  }
+  async function saveUnderstanding(){
+    if(!sessionId||!editingMemory||savingMemory||busy(current?.session.status))return;
+    setSavingMemory(true);setError("");
+    try{
+      await aiSaveMemory(sessionId,{summary:editingMemory.summary,facts:editingMemory.facts.filter(f=>f.key.trim()&&f.value.trim()),assumptions:editingMemory.assumptions.filter(Boolean)});
+      setEditingMemory(null);await refresh(sessionId);
+    }catch(e){setError(errorText(e));}finally{setSavingMemory(false)}
+  }
+  const isGuidance=current?.last_result?.phase==="guide"||current?.metrics?.conversation_mode==="guidance";
   const status = current?.session.status;
   const wordsFromUser = current?.session.turns.filter(t => t.role === "usuario").map(t => t.text) ?? [];
   const composerRef = useRef<HTMLTextAreaElement>(null);
   function focusComposer() { composerRef.current?.focus(); }
-  function correctUnderstanding(subject: string, statement: string) {
-    // É uma correção explícita do participante no histórico, não uma
-    // tentativa de revelar raciocínio privado do modelo.
-    if (!sessionId || !["clarify", "propose"].includes(status ?? "")) return;
-    const clipped = statement.slice(0, 900);
-    setText(`Quero corrigir uma informação que você registrou sobre meu projeto (${subject}): “${clipped}”. O correto é: `);
-    window.requestAnimationFrame(() => composerRef.current?.focus());
-  }
   return createPortal(<main className={styles.page} data-cong-ai-studio="true" aria-label="Criar com o CONG">
     <header className={styles.studioToolbar}>
       <div className={styles.studioIdentity}>
@@ -224,9 +307,9 @@ export default function AiAssistant() {
           {!sessionId && <div className={styles.welcome}>
             <div className={styles.welcomeIntroduction}>
               <div className={styles.welcomePortrait}><img src={mascotHappy} alt="Mascote gorila da CONG" className={styles.welcomeMascot}/><span className={styles.portraitSparkle} aria-hidden="true">✦</span></div>
-              <div className={styles.welcomeText}><span className={styles.welcomeEyebrow}><span aria-hidden="true" className={styles.welcomeSignal}/> Seu parceiro de ideias</span>
-                <h2>Oi! Eu sou o CONG.</h2>
-                <p>Eu posso ouvir sua ideia, esclarecer dúvidas, explorar as possibilidades da plataforma e criar <strong>com você</strong> um site ou sistema que faça sentido para sua organização. Sem modelos engessados e sem pressa para adivinhar.</p>
+              <div className={styles.welcomeText}><span className={styles.welcomeEyebrow}><span aria-hidden="true" className={styles.welcomeSignal}/> Opa! Cheguei.</span>
+                <h2>Oi, eu sou o CONG!</h2>
+                <p>Chega mais! Pode trazer uma dúvida, uma ideia meio bagunçada ou um projeto já começado. Eu te ajudo a encontrar o caminho — e, quando você quiser construir, a gente capricha juntos.</p>
               </div>
             </div>
             <div className={styles.starterIntro}><strong>Como posso ajudar hoje?</strong><span>Escolha um caminho ou escreva do seu jeito.</span></div>
@@ -234,7 +317,7 @@ export default function AiAssistant() {
               <span className={styles.starterIcon}><item.icon aria-hidden="true"/></span><span className={styles.starterText}><strong>{item.title}</strong><small>{item.description}</small></span><FiArrowRight className={styles.starterArrow} aria-hidden="true" />
             </button>)}</div>
             <details className={styles.creationOptions}><summary>Já sabe o que quer criar? <span>Escolher foco do projeto</span></summary>
-              <div className={styles.goalGrid}>{GOALS.map(item => <button type="button" key={item.id} className={`${styles.goal} ${goal===item.id ? styles.selectedGoal : ""}`} onClick={() => {setGoal(item.id);focusComposer();}}><strong>{item.label}</strong><small>{item.description}</small></button>)}</div>
+              <div className={styles.goalGrid}>{GOALS.map(item => <button type="button" key={item.id} className={`${styles.goal} ${goalChosen && goal===item.id ? styles.selectedGoal : ""}`} onClick={() => {setGoal(item.id);setGoalChosen(true);focusComposer();}}><strong>{item.label}</strong><small>{item.description}</small></button>)}</div>
             </details>
             <p className={styles.welcomeFootnote}>Nenhuma alteração será aplicada à sua organização sem confirmação. Também posso apenas conversar e orientar.</p>
           </div>}
@@ -242,20 +325,20 @@ export default function AiAssistant() {
           {current?.session.turns.map((turn,i) => <div key={`${i}-${turn.time}`} className={`${styles.message} ${turn.role === "usuario" ? styles.user : styles.assistant}`}>
             {turn.role === "assistente" && <img src={mascotHappy} alt="" className={styles.messageMascot}/>}
             <div className={styles.messageBody}><div className={styles.messageLabel}>{turn.role === "usuario" ? "Você" : "CONG"}</div>
-              <div className={styles.messageContent}>{turn.role==="assistente"?turn.text.replace(/\nPergunta:\s*/i,"\n\n"):turn.text}</div>
+              <div className={styles.messageContent}>{turn.role==="assistente"?<ConversationalText value={turn.text.replace(/\nPergunta:\s*/i,"\n\n")}/>:turn.text}</div>
             </div></div>)}
           {status==="clarify"&&current?.metrics?.ui_choices && current.metrics.ui_choices.length>0 &&
             <section className={styles.choiceArea} aria-label="Sugestões de resposta do CONG">
               <span>Você pode escolher uma opção ou responder do seu jeito:</span>
               <div className={styles.choiceGrid}>{current.metrics.ui_choices.map(choice=><button key={choice} type="button" disabled={submitting} onClick={()=>{void sendMessage(choice);}}>{choice}<FiArrowRight aria-hidden="true"/></button>)}</div>
             </section>}
-          {status === "clarify" && wordsFromUser.length > 1 && <div className={styles.reviewActions}>
+          {status === "clarify" && !isGuidance && Boolean(current?.session.plan) && wordsFromUser.length > 1 && <div className={styles.reviewActions}>
             <span>Já deu contexto suficiente? Você pode pedir que eu avance — sem inventar detalhes que faltam.</span>
             <div><button type="button" disabled={submitting} onClick={() => {void sendMessage("Quero avançar com as informações que já forneci. Prepare uma proposta personalizada somente se houver contexto suficiente; se faltar uma decisão indispensável, faça apenas essa pergunta. Não use modelos genéricos nem invente atividades.");}}><FiArrowRight aria-hidden="true"/> Avançar com o que contei</button></div>
           </div>}
           {busy(status) && <div className={styles.activeThinking} role="status" aria-live="polite">
             <span className={styles.thinkingPortrait}><img src={mascotThinking} alt=""/></span>
-            <span className={styles.thinkingCopy}><strong>{status === "pending" ? "Sua mensagem está na fila" : "CONG está preparando sua resposta"}</strong><small>{status === "pending" ? "O processamento começará assim que o agente estiver disponível." : "Analisando o contexto para orientar, perguntar ou propor apenas o que fizer sentido."}</small></span>
+            <span className={styles.thinkingCopy}><strong>{status === "pending" ? "Já peguei sua mensagem!" : "Deixa comigo, tô juntando as ideias..."}</strong><small>{status === "pending" ? "Assim que chegar minha vez, te respondo." : "Só um instante, quero te ajudar direitinho."}</small></span>
             <span className={styles.thinkingDots} aria-hidden="true"><i/><i/><i/></span>
           </div>}
           {status === "failed" && <div className={styles.warning}><FiXCircle aria-hidden="true" /> Não foi possível gerar a resposta ({current?.error_code || "erro de processamento"}). <button type="button" onClick={() => {void action("retry");}} disabled={submitting}>Tentar novamente</button></div>}
@@ -287,6 +370,13 @@ export default function AiAssistant() {
                     <span className={styles.palettePreview} style={{background:p.background,color:p.text}} aria-hidden="true"><i style={{background:p.primary}}/><i style={{background:p.secondary}}/><i style={{background:p.accent}}/></span>
                     <span><strong>{p.label}</strong><small>{p.description}</small></span>
                   </label>)}
+                </div>
+                <div className={styles.customPalette}>
+                  <div><strong>Quer ajustar as cores do seu jeito?</strong><small>Você pode montar sua própria combinação e ver na prévia. Nada fica definitivo até confirmar.</small></div>
+                  <button type="button" className={styles.customPaletteToggle} onClick={()=>setPalette(customPalette)} disabled={building}>Usar minha combinação</button>
+                  {palette?.id==="personalizada" && <div className={styles.customColorGrid}>
+                    {([ ["primary","Principal"],["secondary","Apoio"],["accent","Destaque"],["background","Fundo"],["text","Texto"] ] as const).map(([key,label])=><label key={key}><input type="color" value={customPalette[key]} onChange={e=>changeCustomPalette(key,e.target.value)} disabled={building}/><span>{label}</span><small>{customPalette[key]}</small></label>)}
+                  </div>}
                 </div>
                 {palette&&<div className={styles.siteMockup} style={{"--preview-main":palette.primary,"--preview-secondary":palette.secondary,"--preview-accent":palette.accent,"--preview-bg":palette.background,"--preview-text":palette.text} as CSSProperties}>
                   <div className={styles.siteMockupNav}><span>{nameSite.trim()||organizationName}</span><span className={styles.siteMockupMenu}>{current.session.plan.site.pages.slice(0,3).map(page => page.title).join(" · ")}</span></div>
@@ -346,32 +436,41 @@ export default function AiAssistant() {
       </section>
       <aside id="cong-ai-understanding" className={`${styles.briefPanel} ${insightsOpen ? styles.insightsOpen : ""}`} aria-label="O que o CONG entendeu">
         <button type="button" className={styles.insightClose} aria-label="Fechar entendimento" onClick={() => setInsightsOpen(false)}><FiX aria-hidden="true"/></button>
-        <div className={styles.briefTop}><FiClipboard aria-hidden="true"/> O que o CONG entendeu</div>
-        <p className={styles.understandingIntro}>{current?.metrics?.conversation_mode === "guidance" ? "Aqui você pode conferir o contexto da dúvida atual. Conversar e tirar dúvidas não cria nem modifica projetos." : "Este é o resumo registrado pela IA sobre esta conversa. Confira os fatos e as suposições antes de criar seu projeto."}</p>
-        <div className={styles.briefSection}><h3>Foco da conversa</h3><span className={styles.briefTag}>{current?.metrics?.conversation_mode === "guidance" ? "Orientação e dúvidas" : sessionId ? GOALS.find(g => g.id === (current?.session.goal ?? goal))?.label ?? "Projeto" : "Você escolhe"}</span></div>
-        {current?.session.memory.summary?.trim() ? <div className={styles.briefSection}>
-          <div className={styles.briefSectionTitle}><h3>Resumo interpretado</h3><button type="button" disabled={busy(status) || submitting || !["clarify","propose"].includes(status ?? "")} onClick={() => correctUnderstanding("resumo", current?.session.memory.summary ?? "")}>Corrigir</button></div>
-          <p className={styles.memorySummary}>{current.session.memory.summary}</p>
-        </div> : null}
+        <div className={styles.briefTop}><FiClipboard aria-hidden="true"/> Meu entendimento</div>
+        <p className={styles.understandingIntro}>Vou juntando as peças da nossa conversa aqui. Se eu entender algo errado, você pode mudar direto.</p>
         <div className={styles.briefSection}>
-          <h3>Fatos identificados</h3>
-          {current?.session.memory.facts.length ? <ul className={styles.memoryList}>{current.session.memory.facts.map((fact, i) => <li key={`${fact.key}-${i}`}>
-            <div><strong>{fact.key}</strong><p>{fact.value}</p></div>
-            <button type="button" disabled={busy(status) || submitting || !["clarify","propose"].includes(status ?? "")} onClick={() => correctUnderstanding(fact.key, fact.value)}>Corrigir</button>
-          </li>)}</ul> : <p className={styles.briefEmpty}>Nenhum fato registrado ainda. O CONG deve usar apenas o que você informou.</p>}
+          <h3>Estamos falando de</h3>
+          <span className={styles.briefTag}>{!sessionId ? "Você decide" : isGuidance ? "Uma dúvida ou orientação" : current?.session.status === "propose" ? "Uma proposta para revisar" : "Conversando e descobrindo"}</span>
         </div>
         <div className={styles.briefSection}>
-          <h3>Suposições da IA <span className={styles.unconfirmed}>Não confirmadas</span></h3>
-          {current?.session.memory.assumptions.length ? <ul className={styles.memoryList}>{current.session.memory.assumptions.map((assumption, i) => <li key={`${assumption}-${i}`}>
-            <p>{assumption}</p><button type="button" disabled={busy(status) || submitting || !["clarify","propose"].includes(status ?? "")} onClick={() => correctUnderstanding("suposição não confirmada", assumption)}>Corrigir</button>
-          </li>)}</ul> : <p className={styles.briefEmpty}>Nenhuma suposição registrada.</p>}
+          <h3>Seu projeto, com sua permissão</h3>
+          <p className={styles.briefEmpty}>Posso consultar as páginas do seu site ou as informações básicas do sistema. Você escolhe o que compartilhar.</p>
+          {projectConsent && <div className={styles.consentCard}><strong>{projectConsent.kind==="site"?"Site":"Sistema"}: {projectConsent.title}</strong><small>Acesso de leitura autorizado para esta conversa.</small><button type="button" disabled={projectBusy||busy(status)} onClick={()=>void revokeProject()}>Revogar acesso</button></div>}
+          <button type="button" className={styles.editMemoryButton} disabled={projectBusy||busy(status)} onClick={()=>void findRecentProjects()}>{projectBusy?"Consultando...":projectConsent?"Escolher outro projeto":"Consultar meus projetos recentes"}</button>
+          {projectListOpen && <div className={styles.projectChoices}>{recentProjects.map(item=><button type="button" key={`${item.kind}-${item.id}`} disabled={projectBusy||busy(status)} onClick={()=>void allowProject(item)}><strong>{item.title}</strong><small>{item.kind==="site"?"Site":"Sistema"} · {item.updatedAt?new Date(item.updatedAt).toLocaleDateString("pt-BR"):"Recentemente"}</small></button>)}</div>}
+          {projectNotice && <p className={styles.projectNotice} role="status">{projectNotice}</p>}
         </div>
-        <div className={styles.briefSection}>
-          <h3>O que você escreveu</h3>
-          {wordsFromUser.length ? <p className={styles.briefQuote}>{wordsFromUser[wordsFromUser.length - 1]}</p> : <p className={styles.briefEmpty}>Sua ideia aparecerá aqui quando você começar a conversar.</p>}
-          {sessionId ? <button className={styles.briefAction} type="button" onClick={focusComposer}>Escrever outra correção</button> : null}
-        </div>
-        <p className={styles.memoryDisclaimer}>Isto é o entendimento salvo pela IA, não seus pensamentos nem o raciocínio interno do modelo. Ao corrigir, a mensagem será adicionada à conversa para a IA revisar.</p>
+        {sessionId && !editingMemory && <button type="button" className={styles.editMemoryButton} disabled={busy(status)||savingMemory} onClick={()=>setEditingMemory({summary:current?.session.memory.summary??"",facts:[...(current?.session.memory.facts??[])].map(f=>({...f})),assumptions:[...(current?.session.memory.assumptions??[])]})}><FiEdit3 aria-hidden="true"/> Editar o que entendi</button>}
+        {editingMemory ? <div className={styles.memoryEditor}>
+          <label>Resumo da conversa<textarea maxLength={1700} rows={4} value={editingMemory.summary} onChange={e=>setEditingMemory(m=>m?{...m,summary:e.target.value}:m)}/></label>
+          <div className={styles.memoryEditorHeading}><strong>Informações confirmadas</strong><button type="button" disabled={editingMemory.facts.length>=30} onClick={()=>setEditingMemory(m=>m?{...m,facts:[...m.facts,{key:"",value:""}]}:m)}><FiPlus/> Adicionar</button></div>
+          {editingMemory.facts.map((fact,index)=><div className={styles.factEditor} key={index}>
+            <input aria-label={`Nome da informação ${index+1}`} maxLength={70} placeholder="Assunto" value={fact.key} onChange={e=>setEditingMemory(m=>m?{...m,facts:m.facts.map((f,i)=>i===index?{...f,key:e.target.value}:f)}:m)}/>
+            <textarea aria-label={`Valor da informação ${index+1}`} maxLength={380} rows={2} placeholder="O que é correto?" value={fact.value} onChange={e=>setEditingMemory(m=>m?{...m,facts:m.facts.map((f,i)=>i===index?{...f,value:e.target.value}:f)}:m)}/>
+            <button type="button" title="Remover informação" onClick={()=>setEditingMemory(m=>m?{...m,facts:m.facts.filter((_,i)=>i!==index)}:m)}><FiTrash2/> Remover</button>
+          </div>)}
+          <div className={styles.memoryEditorHeading}><strong>Suposições (não confirmadas)</strong><button type="button" disabled={editingMemory.assumptions.length>=12} onClick={()=>setEditingMemory(m=>m?{...m,assumptions:[...m.assumptions,""]}:m)}><FiPlus/> Adicionar</button></div>
+          {editingMemory.assumptions.map((assumption,index)=><div className={styles.assumptionEditor} key={index}><textarea aria-label={`Suposição ${index+1}`} rows={2} maxLength={350} value={assumption} onChange={e=>setEditingMemory(m=>m?{...m,assumptions:m.assumptions.map((a,i)=>i===index?e.target.value:a)}:m)}/><button type="button" onClick={()=>setEditingMemory(m=>m?{...m,assumptions:m.assumptions.filter((_,i)=>i!==index)}:m)} aria-label="Remover suposição"><FiTrash2/></button></div>)}
+          <div className={styles.memoryActions}><button type="button" onClick={()=>setEditingMemory(null)} disabled={savingMemory}>Cancelar</button><button type="button" onClick={()=>void saveUnderstanding()} disabled={savingMemory||busy(status)}>{savingMemory?"Salvando...":"Salvar entendimento"}</button></div>
+          <p className={styles.memoryDisclaimer}>Só o que você salvar aqui será marcado como confirmação sua. Essas informações serão usadas nas próximas respostas desta conversa.</p>
+        </div> : <>
+          {current?.session.memory.summary?.trim() ? <div className={styles.briefSection}><h3>O que entendi até aqui</h3><p className={styles.memorySummary}>{current.session.memory.summary}</p></div> : null}
+          <div className={styles.briefSection}><h3>Informações da conversa</h3>
+            {current?.session.memory.facts.length ? <ul className={styles.memoryList}>{current.session.memory.facts.map((fact,i)=><li key={`${fact.key}-${i}`}><div><strong>{fact.key}</strong><p>{fact.value}</p></div></li>)}</ul> : <p className={styles.briefEmpty}>Ainda não registrei informações suficientes. Tudo bem: podemos só conversar.</p>}
+          </div>
+          {Boolean(current?.session.memory.assumptions.length) && <div className={styles.briefSection}><h3>Ideias para confirmar <span className={styles.unconfirmed}>Hipóteses</span></h3><ul className={styles.memoryList}>{current?.session.memory.assumptions.map((assumption,i)=><li key={i}><p>{assumption}</p></li>)}</ul></div>}
+          <p className={styles.memoryDisclaimer}>Isto é o contexto registrado da conversa, não o raciocínio privado do modelo. Nada aqui altera seu site ou sistema.</p>
+        </>}
       </aside>
     </div>
   </main>, document.body);

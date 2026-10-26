@@ -208,3 +208,51 @@
 @media(max-width:1060px){.page .welcome{max-width:670px}.welcomeIntroduction{padding:20px}.starterGrid{gap:9px}.starterCard{padding:12px}}
 @media(max-width:700px){.page .welcome{margin:22px auto 25px;padding:0 2px}.welcomeIntroduction{gap:12px;align-items:flex-start;padding:17px;border-radius:18px}.welcomePortrait{width:68px;height:74px;flex-basis:68px;border-radius:15px}.page .welcomeMascot{width:65px;height:68px}.portraitSparkle{font-size:17px}.page .welcome h2{font-size:27px}.welcomeEyebrow{font-size:9px}.page .welcome p{font-size:12px}.starterIntro{margin-top:22px;display:grid;gap:3px}.starterGrid{grid-template-columns:1fr;gap:9px}.starterCard:first-child{grid-column:auto}.starterCard{min-height:71px}.creationOptions summary{font-size:11px}.thinkingCopy small{font-size:10px}.activeThinking{gap:8px;padding:10px}.thinkingPortrait{width:39px;height:42px}.thinkingPortrait img{width:38px;height:40px}}
 @media(prefers-reduced-motion:reduce){.portraitSparkle,.thinkingPortrait img,.thinkingDots i,.page .message{animation:none!important}.starterCard{transition:none}.starterCard:hover{transform:none}.page .chatScroll{scroll-behavior:auto}}
+
+
+/* v4.3: CONG presente na conversa; o conteúdo respira, sem cartão de relatório. */
+.page .welcome{max-width:730px;margin:clamp(26px,5vh,60px) auto 26px}
+.page .welcomeIntroduction{background:linear-gradient(118deg,#f6faff,#fff 82%);border:1px solid #e4ebf6;box-shadow:0 8px 27px rgba(29,69,122,.04);padding:18px 22px;border-radius:24px;gap:17px}
+.page .welcomeIntroduction:before{opacity:.18}
+.page .welcomePortrait{background:transparent;box-shadow:none;width:100px;height:100px;flex-basis:100px;border-radius:0}
+.page .welcomeMascot{width:98px;height:98px;filter:drop-shadow(0 9px 8px rgba(30,57,91,.14))}
+.page .welcome h2{font-size:clamp(25px,2.4vw,35px);letter-spacing:-.045em}
+.page .welcome p{font-size:13px;line-height:1.7}
+.page .welcomeEyebrow{font-size:10px;letter-spacing:.045em;text-transform:none;color:#396da5}
+.page .message.assistant{align-items:flex-start;gap:9px}
+.page .message.assistant .messageBody{border:none;box-shadow:none!important;background:transparent!important;padding:4px 8px 14px!important;max-width:82ch;min-width:0}
+.page .message.assistant .messageMascot{border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0;width:42px;height:48px;object-fit:contain;padding:0!important}
+.page .message.assistant .messageContent{color:#273f5d;font-size:13px;line-height:1.72}
+.richMessage{display:grid;gap:12px;max-width:100%}
+.richMessage p{margin:0;white-space:pre-wrap}
+.richMessage strong{font-weight:780;color:#1e3d68}
+.messageListLine{display:grid;grid-template-columns:14px minmax(0,1fr);align-items:start;gap:4px;line-height:1.65;margin:0 0 0 4px}
+.messageListLine>span:first-child{color:#4c74ad;font-weight:750}
+.page .activeThinking{background:linear-gradient(110deg,#eff6ff 4%,#fffdf8 70%);max-width:440px;border:1px solid #e5ebf4;border-radius:19px;position:relative;overflow:hidden}
+.page .activeThinking:after{content:"";position:absolute;height:2px;left:0;bottom:0;width:38%;background:linear-gradient(90deg,transparent,#eab34e,#4979c1,transparent);animation:congWander 2.9s ease-in-out infinite}
+.page .thinkingPortrait{background:transparent;border-radius:0}
+@keyframes congWander{0%{left:-40%}100%{left:110%}}
+.editMemoryButton{display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #a9c6e9;background:#eaf3ff;color:#23568d;border-radius:11px;width:100%;min-height:38px;font:inherit;font-weight:750;font-size:12px;cursor:pointer;margin:13px 0}
+.editMemoryButton:hover{background:#dcecff}.editMemoryButton:disabled{opacity:.6;cursor:not-allowed}
+.memoryEditor{display:grid;gap:13px;font-size:12px}.memoryEditor label{display:grid;gap:6px;color:#294970;font-weight:730}
+.memoryEditor input,.memoryEditor textarea{width:100%;resize:vertical;min-height:36px;border:1px solid #cbd9e9;border-radius:9px;background:#fff;color:#273f5b;padding:9px;font:inherit;font-size:12px;line-height:1.5}
+.memoryEditor input:focus,.memoryEditor textarea:focus{outline:2px solid #9ec0e9}
+.memoryEditorHeading{display:flex;align-items:center;justify-content:space-between;gap:6px;border-top:1px solid #e2eaf4;padding-top:11px}.memoryEditorHeading button,.factEditor button,.assumptionEditor button{display:inline-flex;align-items:center;gap:4px;font-size:11px;border:0;background:transparent;color:#28588b;cursor:pointer;font-weight:740}
+.factEditor{display:grid;gap:6px;padding:9px;background:#f2f7fd;border:1px solid #e4eaf5;border-radius:10px}.factEditor button{justify-self:end}
+.assumptionEditor{display:flex;gap:6px;align-items:start}.assumptionEditor button{padding:8px}
+.memoryActions{display:flex;gap:7px}.memoryActions button{flex:1;padding:9px 7px;border-radius:9px;border:1px solid #cbd9e9;background:#fff;color:#2a4e78;font:inherit;font-size:11px;font-weight:750;cursor:pointer}.memoryActions button:last-child{background:#396db6;color:white;border-color:#396db6}
+@media(max-width:700px){.page .welcomePortrait{width:70px;height:74px;flex-basis:70px}.page .welcomeMascot{width:72px;height:74px}.page .welcomeIntroduction{padding:16px;gap:10px}.page .message.assistant .messageBody{padding:0 2px 8px!important}}
+@media(prefers-reduced-motion:reduce){.page .activeThinking:after{animation:none}}
+
+.consentCard{display:grid;gap:5px;padding:12px;border:1px solid #c1dbce;background:#f3fbf7;border-radius:12px;margin-top:8px}
+.consentCard strong{font-size:12px;color:#245f4e}.consentCard small{font-size:10px;color:#608078}
+.consentCard button{justify-self:start;font:inherit;border:0;background:transparent;padding:5px 0;color:#327a68;cursor:pointer;font-size:11px;font-weight:750}
+.projectChoices{display:grid;gap:7px;margin:10px 0}.projectChoices button{display:grid;gap:5px;text-align:left;background:white;border:1px solid #dce7f1;border-radius:10px;padding:10px;cursor:pointer;color:#2a4c74;font:inherit}
+.projectChoices button:hover{border-color:#8eafd6;background:#f7fbff}.projectChoices strong{font-size:12px}.projectChoices small{font-size:10px;color:#7791a8}
+.page .briefPanel .projectNotice{font-size:11px;line-height:1.5;color:#486581;margin:8px 0}
+
+.customPalette{display:grid;gap:12px;margin:16px 0;padding:16px;border:1px solid #d9e7f5;border-radius:15px;background:linear-gradient(100deg,#f5f9ff,#fff)}
+.customPalette>div:first-child{display:grid;gap:5px}.customPalette>div:first-child strong{font-size:13px;color:#2c4f79}.customPalette>div:first-child small{font-size:11px;color:#6f85a0;line-height:1.55}
+.customPaletteToggle{font:inherit;font-size:12px;font-weight:770;border:1px solid #91aed2;background:#fff;color:#265a99;padding:9px 12px;border-radius:9px;cursor:pointer;justify-self:start}
+.customColorGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}.customColorGrid label{display:flex;flex-direction:column;gap:5px;min-width:0;color:#335476;font-size:11px;font-weight:700}.customColorGrid input{width:100%;height:39px;border:1px solid #d4e0ec;background:white;padding:3px;border-radius:8px;cursor:pointer}.customColorGrid small{font-size:10px;color:#67819c;font-weight:500}
+@media(max-width:700px){.customColorGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
