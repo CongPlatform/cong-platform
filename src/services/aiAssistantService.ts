@@ -34,7 +34,7 @@ export interface AiSessionDetail {
   error_code: string | null;
 }
 export interface AiAvailability { worker_online: boolean; model: string; busy: boolean; queue_size: number }
-export interface AiSessionSummary { id: string; goal: AiGoal; status: AiStatus; updated_at: string }
+export interface AiSessionSummary { id: string; goal: AiGoal; status: AiStatus; updated_at: string; title?: string }
 export interface AiAccepted { session_id: string; job_id: string; status: "pending" }
 export const aiStatus = () => apiTenantGet<AiAvailability>("/ai/status");
 export const aiSessions = () => apiTenantGet<{ sessions: AiSessionSummary[] }>("/ai/sessions");

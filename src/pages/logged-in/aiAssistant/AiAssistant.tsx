@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { useWorkspace } from "../../../contexts/workspace-context";
 import { buildAiDraft, existingDraft, SITE_LOOKS, SITE_PALETTES, type BuildResult, type SiteLook, type SitePalette } from "../../../features/aiBuilder/aiBuilder";
-import { FiAlertCircle, FiArrowRight, FiCheckCircle, FiFileText, FiLayers, FiMessageCircle, FiPlus, FiRefreshCw, FiSend, FiServer, FiXCircle, FiImage, FiDroplet, FiEdit3 } from "react-icons/fi";
+import { FiAlertCircle, FiArrowRight, FiFileText, FiLayers, FiMessageCircle, FiPlus, FiRefreshCw, FiSend, FiServer, FiXCircle, FiImage, FiDroplet, FiEdit3, FiArrowLeft, FiTrash2, FiInfo, FiClipboard, FiX } from "react-icons/fi";
 import {
   aiCancel, aiDelete, aiDetail, aiReply, aiRetry, aiSessions, aiStart, aiStatus,
   type AiAvailability, type AiGoal, type AiPlan, type AiSessionDetail, type AiSessionSummary,
 } from "../../../services/aiAssistantService";
+import congMark from "../../../assets/brand/logo-mark.webp";
 import mascotHappy from "../../../assets/mascot/cong-happy.webp";
 import mascotThinking from "../../../assets/mascot/cong-thinking.webp";
 import styles from "./AiAssistant.module.css";
@@ -67,7 +69,15 @@ export default function AiAssistant() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const [error, setError] = useState("");
+  // O estúdio ocupa a janela inteira, inclusive quando chamado de dentro
+  // do layout autenticado. O conteúdo é montado diretamente no body.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<string | null>(null);
   const refresh = useCallback(async (id: string) => {
@@ -77,7 +87,7 @@ export default function AiAssistant() {
   }, []);
   const select = useCallback(async (id: string) => {
     const changingConversation=selectedRef.current!==id;
-    selectedRef.current = id; setSessionId(id); setError(""); setLoading(true); setCurrent(null);
+    selectedRef.current = id; setSessionId(id); setError(""); setLoading(true); setCurrent(null);setInsightsOpen(false);
     setApproved(false);setBuildError("");setBuildProgress("");setBuildResult(null);
     setExisting(Boolean(existingDraft(id)));
     if(changingConversation){setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError("");}
@@ -132,14 +142,18 @@ export default function AiAssistant() {
       await refresh(sessionId); await reloadList();
     } catch (e) { setError(errorText(e)); } finally { setSubmitting(false); }
   }
-  async function deleteConversation() {
-    if(!sessionId || submitting || !window.confirm("Excluir permanentemente esta conversa e suas propostas?"))return;
-    setSubmitting(true);setError("");
-    try {await aiDelete(sessionId);newConversation();await reloadList();}
-    catch(e){setError(errorText(e));}
-    finally {setSubmitting(false);}
+  async function deleteConversation(id: string) {
+    if (submitting || building) return;
+    if (!window.confirm("Excluir esta conversa e o contexto registrado nela? Esta ação não pode ser desfeita. Rascunhos já criados nos editores da CONG não serão excluídos.")) return;
+    setSubmitting(true); setError("");
+    try {
+      await aiDelete(id);
+      if (selectedRef.current === id) newConversation();
+      await reloadList();
+    } catch (e) { setError(errorText(e)); }
+    finally { setSubmitting(false); }
   }
-  function newConversation() { selectedRef.current = null; setSessionId(null); setCurrent(null); setError(""); setText("");setApproved(false);setBuildResult(null);setExisting(false);setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError(""); }
+  function newConversation() { setInsightsOpen(false);selectedRef.current = null; setSessionId(null); setCurrent(null); setError(""); setText("");setApproved(false);setBuildResult(null);setExisting(false);setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError(""); }
   async function buildConfirmedDraft(){
     if(!sessionId || !approved || building || current?.session.status!=="propose" || !current.session.plan || current.metrics?.coverage_status==="needs_review" || Boolean(current.metrics?.unmet_requirements?.length))return;
     if(!window.confirm("Criar ou atualizar rascunhos REAIS nos construtores da sua ONG? Nada será publicado ou ativado automaticamente."))return;
@@ -160,20 +174,47 @@ export default function AiAssistant() {
   }
   const status = current?.session.status;
   const wordsFromUser = current?.session.turns.filter(t => t.role === "usuario").map(t => t.text) ?? [];
-  const phaseIndex = status === "propose" ? 2 : sessionId ? 1 : 0;
   const composerRef = useRef<HTMLTextAreaElement>(null);
   function focusComposer() { composerRef.current?.focus(); }
-  return <main className={styles.page}>
-    <header className={styles.header}><div><div className={styles.eyebrow}><FiMessageCircle aria-hidden="true" /> CONG · Estúdio de criação</div><h1>Vamos construir algo que seja realmente seu.</h1><p>Conte como sua organização funciona. Eu ajudo a definir os recursos essenciais, preparar uma proposta sob medida e criar rascunhos editáveis.</p><p className={styles.privacyNote}>Para responder, utilizo um mecanismo de IA que pode funcionar em outro computador. Não informe dados pessoais reais de beneficiários nesta fase.</p></div><div className={styles.headerActions}><button type="button" className={styles.newButton} onClick={newConversation}><FiPlus aria-hidden="true" /> Nova conversa</button>{sessionId&&<button type="button" className={styles.deleteButton} onClick={()=>{void deleteConversation();}} disabled={submitting}>Excluir conversa</button>}</div></header>
-    <div className={styles.statusBar}><span className={availability?.worker_online ? styles.online : styles.offline}>{availability?.worker_online ? <FiCheckCircle aria-hidden="true" /> : <FiAlertCircle aria-hidden="true" />}{availability?.worker_online ? `CONG disponível para conversar` : "CONG está indisponível no momento"}</span><span>Fila: {availability?.queue_size ?? "—"}</span><button type="button" className={styles.textButton} onClick={() => {void Promise.allSettled([aiStatus().then(setAvailability),reloadList()]);}}><FiRefreshCw aria-hidden="true" /> Atualizar status</button></div>
-    <nav className={styles.stageBar} aria-label="Etapas da criação">
-      {(["Sua ideia", "Conversa", "Revisão e criação"] as const).map((label, i) => <span key={label} className={styles.stageStep} data-active={phaseIndex===i} data-done={phaseIndex>i} aria-current={phaseIndex===i?"step":undefined}><strong>{i+1}</strong>{label}</span>)}
-    </nav>
+  function correctUnderstanding(subject: string, statement: string) {
+    // É uma correção explícita do participante no histórico, não uma
+    // tentativa de revelar raciocínio privado do modelo.
+    if (!sessionId || !["clarify", "propose"].includes(status ?? "")) return;
+    const clipped = statement.slice(0, 900);
+    setText(`Quero corrigir uma informação que você registrou sobre meu projeto (${subject}): “${clipped}”. O correto é: `);
+    window.requestAnimationFrame(() => composerRef.current?.focus());
+  }
+  return createPortal(<main className={styles.page} data-cong-ai-studio="true" aria-label="Criar com o CONG">
+    <header className={styles.studioToolbar}>
+      <div className={styles.studioIdentity}>
+        <Link className={styles.backLink} to="/app/comunidade" title="Voltar à CONG"><FiArrowLeft aria-hidden="true"/><span>Voltar</span></Link>
+        <span className={styles.toolbarDivider} aria-hidden="true"/>
+        <img className={styles.studioMark} src={congMark} alt="" />
+        <div className={styles.studioName}><strong>Criar com o CONG</strong><small>Estúdio de criação</small></div>
+      </div>
+      <div className={styles.toolbarActions}>
+        <span className={availability?.worker_online ? styles.workerOnline : styles.workerOffline} role="status" aria-label={availability?.worker_online ? "Agente de IA disponível" : "Agente de IA indisponível"}>
+          <i aria-hidden="true"/>{availability?.worker_online ? "IA disponível" : "IA indisponível"}
+        </span>
+        <button type="button" className={styles.insightToggle} aria-expanded={insightsOpen} aria-controls="cong-ai-understanding" onClick={() => setInsightsOpen(value => !value)}><FiClipboard aria-hidden="true"/> <span>O que entendi</span></button>
+        <button className={styles.refreshButton} type="button" title="Atualizar disponibilidade" aria-label="Atualizar disponibilidade" onClick={() => {void Promise.allSettled([aiStatus().then(setAvailability),reloadList()]);}}><FiRefreshCw aria-hidden="true"/></button>
+        <button type="button" className={styles.newButton} onClick={newConversation}><FiPlus aria-hidden="true"/> Nova conversa</button>
+      </div>
+    </header>
     <div className={styles.layout}>
-      <aside className={styles.sidebar} aria-label="Conversas anteriores"><h2>Suas conversas</h2>{sessions.length ? sessions.map(s => <button type="button" className={`${styles.historyItem} ${sessionId===s.id ? styles.active : ""}`} key={s.id} onClick={() => {void select(s.id);}}><FiMessageCircle aria-hidden="true" /><span><strong>{GOALS.find(g=>g.id===s.goal)?.label ?? s.goal}</strong><small>{new Date(s.updated_at).toLocaleString("pt-BR")}</small></span></button>) : <p className={styles.emptyHint}>As conversas desta organização aparecerão aqui.</p>}</aside>
+      <aside className={styles.sidebar} aria-label="Conversas anteriores">
+        <div className={styles.sidebarHeading}><h2>Conversas</h2><span>{sessions.length}</span></div>
+        {sessions.length ? sessions.map(s => <div className={styles.historyEntry} key={s.id}>
+          <button type="button" className={`${styles.historyItem} ${sessionId===s.id ? styles.active : ""}`} aria-current={sessionId===s.id ? "page" : undefined} onClick={() => {void select(s.id);}}>
+            <FiMessageCircle aria-hidden="true"/><span><strong>{s.title?.trim() || (GOALS.find(g=>g.id===s.goal)?.label ?? s.goal)}</strong><small>{new Date(s.updated_at).toLocaleString("pt-BR")}</small></span>
+          </button>
+          <button type="button" className={styles.historyDelete} title="Excluir conversa" aria-label={`Excluir conversa de ${new Date(s.updated_at).toLocaleString("pt-BR")}`} onClick={() => {void deleteConversation(s.id);}} disabled={submitting || building}><FiTrash2 aria-hidden="true"/></button>
+        </div>) : <p className={styles.emptyHint}>Suas conversas aparecerão aqui.</p>}
+        <p className={styles.historyPrivacy}><FiInfo aria-hidden="true"/> Cada conversa é privada para seu usuário nesta organização.</p>
+      </aside>
       <section className={styles.chatPanel} aria-label="Conversa com o CONG">
         <div className={styles.chatScroll}>
-          {!sessionId && <div className={styles.welcome}><img src={mascotHappy} alt="" className={styles.welcomeMascot}/><h2>Primeiro, sua ideia. Depois, seu projeto.</h2><p>Não é preciso conhecer programação. Você explica o que faz e o que precisa; eu faço apenas as perguntas que realmente mudam a solução.</p><div className={styles.goalGrid}>{GOALS.map(item => <button type="button" key={item.id} className={`${styles.goal} ${goal===item.id ? styles.selectedGoal : ""}`} onClick={() => setGoal(item.id)}><strong>{item.label}</strong><small>{item.description}</small></button>)}</div><div className={styles.example}>Exemplo: “Nossa ONG oferece aulas de reforço e precisamos organizar turmas, matrículas e mostrar nossos projetos.” Conte sua própria realidade — nada será criado antes da sua confirmação.</div></div>}
+          {!sessionId && <div className={styles.welcome}><img src={mascotHappy} alt="" className={styles.welcomeMascot}/><h2>O que vamos criar?</h2><p>Conte sua ideia do seu jeito. O CONG ajuda a transformá-la em um projeto que você pode revisar e editar.</p><div className={styles.goalGrid}>{GOALS.map(item => <button type="button" key={item.id} className={`${styles.goal} ${goal===item.id ? styles.selectedGoal : ""}`} onClick={() => setGoal(item.id)}><strong>{item.label}</strong><small>{item.description}</small></button>)}</div><div className={styles.example}>Exemplo: “Nossa ONG oferece aulas de reforço e precisamos organizar turmas, matrículas e mostrar nossos projetos.” Conte sua própria realidade — nada será criado antes da sua confirmação.</div></div>}
           {loading && <div className={styles.processing}>Carregando conversa...</div>}
           {current?.session.turns.map((turn,i) => <div key={`${i}-${turn.time}`} className={`${styles.message} ${turn.role === "usuario" ? styles.user : styles.assistant}`}>
             {turn.role === "assistente" && <img src={mascotHappy} alt="" className={styles.messageMascot}/>}
@@ -276,26 +317,35 @@ export default function AiAssistant() {
         {error && <div className={styles.error} role="alert">{error}</div>}
         <form className={styles.composer} onSubmit={submit}><label htmlFor="cong-ai-text">{status === "propose" ? "Peça uma alteração ou esclarecimento" : status === "clarify" ? "Sua resposta" : "Descreva sua necessidade"}</label><div className={styles.composerBox}><textarea ref={composerRef} id="cong-ai-text" rows={3} maxLength={sessionId ? 3500 : 6500} placeholder={status === "propose" ? "CONG, quero mudar uma parte do projeto..." : "Me conta. Estou ouvindo."} value={text} onChange={e => setText(e.target.value)} disabled={submitting || busy(status) || status === "cancelled"} onKeyDown={e => {if(e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault(); e.currentTarget.form?.requestSubmit();}}}/><button type="submit" disabled={submitting || busy(status) || status === "cancelled" || (sessionId ? !text.trim() : text.trim().length<12)} aria-label="Enviar mensagem"><FiSend aria-hidden="true" /></button></div><div className={styles.composerBottom}><span>Enter envia · Shift+Enter quebra linha · Converse como preferir</span>{busy(status) && <button type="button" onClick={() => {void action("cancel");}} disabled={submitting}>Cancelar tarefa</button>}</div></form>
       </section>
-      <aside className={styles.briefPanel} aria-label="Acompanhamento do projeto">
-        <div className={styles.briefTop}><FiFileText aria-hidden="true"/> Meu projeto</div>
-        <h2>{status === "propose" ? "Pronto para revisar" : sessionId ? "Estamos entendendo sua ideia" : "Cada ONG tem sua história"}</h2>
-        <p>{status === "propose" ? "Veja a proposta ao lado. Nada é publicado sem você confirmar." : "Tudo começa com o que você conta. O assistente não deve inventar a atuação da sua organização."}</p>
+      <aside id="cong-ai-understanding" className={`${styles.briefPanel} ${insightsOpen ? styles.insightsOpen : ""}`} aria-label="O que o CONG entendeu">
+        <button type="button" className={styles.insightClose} aria-label="Fechar entendimento" onClick={() => setInsightsOpen(false)}><FiX aria-hidden="true"/></button>
+        <div className={styles.briefTop}><FiClipboard aria-hidden="true"/> O que o CONG entendeu</div>
+        <p className={styles.understandingIntro}>Este é o resumo registrado pela IA sobre <strong>esta conversa</strong>. Confira os fatos e as suposições antes de criar seu projeto.</p>
+        <div className={styles.briefSection}><h3>Tipo de projeto</h3><span className={styles.briefTag}>{GOALS.find(g => g.id === (current?.session.goal ?? goal))?.label ?? "Projeto"}</span></div>
+        {current?.session.memory.summary?.trim() ? <div className={styles.briefSection}>
+          <div className={styles.briefSectionTitle}><h3>Resumo interpretado</h3><button type="button" disabled={busy(status) || submitting || !["clarify","propose"].includes(status ?? "")} onClick={() => correctUnderstanding("resumo", current?.session.memory.summary ?? "")}>Corrigir</button></div>
+          <p className={styles.memorySummary}>{current.session.memory.summary}</p>
+        </div> : null}
         <div className={styles.briefSection}>
-          <h3>Você está criando</h3>
-          <span className={styles.briefTag}>{GOALS.find(g => g.id === (current?.session.goal ?? goal))?.label ?? "Projeto"}</span>
+          <h3>Fatos identificados</h3>
+          {current?.session.memory.facts.length ? <ul className={styles.memoryList}>{current.session.memory.facts.map((fact, i) => <li key={`${fact.key}-${i}`}>
+            <div><strong>{fact.key}</strong><p>{fact.value}</p></div>
+            <button type="button" disabled={busy(status) || submitting || !["clarify","propose"].includes(status ?? "")} onClick={() => correctUnderstanding(fact.key, fact.value)}>Corrigir</button>
+          </li>)}</ul> : <p className={styles.briefEmpty}>Nenhum fato registrado ainda. O CONG deve usar apenas o que você informou.</p>}
         </div>
         <div className={styles.briefSection}>
-          <h3>O que você informou</h3>
-          {wordsFromUser.length ? wordsFromUser.slice(-3).map((entry, i) => <p className={styles.briefQuote} key={`${i}-${entry.slice(0,25)}`}>{entry.length > 190 ? `${entry.slice(0,190)}…` : entry}</p>) : <div className={styles.briefEmpty}>Suas próprias respostas aparecerão aqui, sem suposições.</div>}
+          <h3>Suposições da IA <span className={styles.unconfirmed}>Não confirmadas</span></h3>
+          {current?.session.memory.assumptions.length ? <ul className={styles.memoryList}>{current.session.memory.assumptions.map((assumption, i) => <li key={`${assumption}-${i}`}>
+            <p>{assumption}</p><button type="button" disabled={busy(status) || submitting || !["clarify","propose"].includes(status ?? "")} onClick={() => correctUnderstanding("suposição não confirmada", assumption)}>Corrigir</button>
+          </li>)}</ul> : <p className={styles.briefEmpty}>Nenhuma suposição registrada.</p>}
         </div>
-        {current?.session.plan && <div className={styles.briefSection}><h3>Rascunho da proposta</h3>
-          {current.session.plan.site && <p>{current.session.plan.site.pages.length} página(s) planejada(s) para o site</p>}
-          {current.session.plan.system && <p>{current.session.plan.system.modules.length} módulo(s) planejado(s) para o sistema</p>}
-          <p>Revise todas as decisões antes de criar.</p></div>}
-        <div className={styles.briefSection}><div className={styles.briefHint}>O CONG deve perguntar só o que muda seu projeto. Você pode corrigir qualquer informação a qualquer momento.</div>
-          <button className={styles.briefAction} type="button" onClick={focusComposer}>Escrever ou corrigir algo</button>
+        <div className={styles.briefSection}>
+          <h3>O que você escreveu</h3>
+          {wordsFromUser.length ? <p className={styles.briefQuote}>{wordsFromUser[wordsFromUser.length - 1]}</p> : <p className={styles.briefEmpty}>Sua ideia aparecerá aqui quando você começar a conversar.</p>}
+          {sessionId ? <button className={styles.briefAction} type="button" onClick={focusComposer}>Escrever outra correção</button> : null}
         </div>
+        <p className={styles.memoryDisclaimer}>Isto é o entendimento salvo pela IA, não seus pensamentos nem o raciocínio interno do modelo. Ao corrigir, a mensagem será adicionada à conversa para a IA revisar.</p>
       </aside>
     </div>
-  </main>;
+  </main>, document.body);
 }
