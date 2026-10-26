@@ -18,6 +18,13 @@ const GOALS: { id: AiGoal; label: string; description: string }[] = [
   { id: "system", label: "Sistema", description: "Organização interna" },
   { id: "site", label: "Site", description: "Presença institucional" },
 ];
+const STARTERS = [
+  { title: "Explorar possibilidades", description: "Entenda como a CONG pode ajudar", message: "Quais possibilidades a CONG oferece? Quero entender sites, sistemas, formulários, integrações e o que já está disponível, sem começar a criar agora.", icon: FiMessageCircle },
+  { title: "Tirar uma dúvida", description: "Pode perguntar qualquer coisa sobre a plataforma", message: "", icon: FiInfo },
+  { title: "Planejar um site", description: "Descubra a melhor presença para a ONG", message: "Quero planejar um site para minha organização e descobrir uma identidade visual própria.", icon: FiServer },
+  { title: "Organizar processos", description: "Construa um sistema adequado à rotina", message: "Quero estudar possibilidades para organizar os processos da minha organização usando os módulos da CONG.", icon: FiLayers },
+  { title: "Conectar recursos", description: "Site, sistema e formulários juntos", message: "Quais formas existem de conectar um site, um sistema interno e formulários na CONG? Primeiro, quero entender as possibilidades.", icon: FiArrowRight },
+];
 const busy = (status?: string) => status === "pending" || status === "processing";
 const errorText = (error: unknown) => error instanceof Error ? error.message : "Não foi possível concluir a solicitação.";
 
@@ -214,7 +221,23 @@ export default function AiAssistant() {
       </aside>
       <section className={styles.chatPanel} aria-label="Conversa com o CONG">
         <div className={styles.chatScroll}>
-          {!sessionId && <div className={styles.welcome}><img src={mascotHappy} alt="" className={styles.welcomeMascot}/><h2>O que vamos criar?</h2><p>Conte sua ideia do seu jeito. O CONG ajuda a transformá-la em um projeto que você pode revisar e editar.</p><div className={styles.goalGrid}>{GOALS.map(item => <button type="button" key={item.id} className={`${styles.goal} ${goal===item.id ? styles.selectedGoal : ""}`} onClick={() => setGoal(item.id)}><strong>{item.label}</strong><small>{item.description}</small></button>)}</div><div className={styles.example}>Exemplo: “Nossa ONG oferece aulas de reforço e precisamos organizar turmas, matrículas e mostrar nossos projetos.” Conte sua própria realidade — nada será criado antes da sua confirmação.</div></div>}
+          {!sessionId && <div className={styles.welcome}>
+            <div className={styles.welcomeIntroduction}>
+              <div className={styles.welcomePortrait}><img src={mascotHappy} alt="Mascote gorila da CONG" className={styles.welcomeMascot}/><span className={styles.portraitSparkle} aria-hidden="true">✦</span></div>
+              <div className={styles.welcomeText}><span className={styles.welcomeEyebrow}><span aria-hidden="true" className={styles.welcomeSignal}/> Seu parceiro de ideias</span>
+                <h2>Oi! Eu sou o CONG.</h2>
+                <p>Eu posso ouvir sua ideia, esclarecer dúvidas, explorar as possibilidades da plataforma e criar <strong>com você</strong> um site ou sistema que faça sentido para sua organização. Sem modelos engessados e sem pressa para adivinhar.</p>
+              </div>
+            </div>
+            <div className={styles.starterIntro}><strong>Como posso ajudar hoje?</strong><span>Escolha um caminho ou escreva do seu jeito.</span></div>
+            <div className={styles.starterGrid}>{STARTERS.map(item => <button type="button" className={styles.starterCard} key={item.title} onClick={() => { if (item.message) {void sendMessage(item.message);} else {focusComposer();} }} disabled={submitting}>
+              <span className={styles.starterIcon}><item.icon aria-hidden="true"/></span><span className={styles.starterText}><strong>{item.title}</strong><small>{item.description}</small></span><FiArrowRight className={styles.starterArrow} aria-hidden="true" />
+            </button>)}</div>
+            <details className={styles.creationOptions}><summary>Já sabe o que quer criar? <span>Escolher foco do projeto</span></summary>
+              <div className={styles.goalGrid}>{GOALS.map(item => <button type="button" key={item.id} className={`${styles.goal} ${goal===item.id ? styles.selectedGoal : ""}`} onClick={() => {setGoal(item.id);focusComposer();}}><strong>{item.label}</strong><small>{item.description}</small></button>)}</div>
+            </details>
+            <p className={styles.welcomeFootnote}>Nenhuma alteração será aplicada à sua organização sem confirmação. Também posso apenas conversar e orientar.</p>
+          </div>}
           {loading && <div className={styles.processing}>Carregando conversa...</div>}
           {current?.session.turns.map((turn,i) => <div key={`${i}-${turn.time}`} className={`${styles.message} ${turn.role === "usuario" ? styles.user : styles.assistant}`}>
             {turn.role === "assistente" && <img src={mascotHappy} alt="" className={styles.messageMascot}/>}
@@ -230,7 +253,11 @@ export default function AiAssistant() {
             <span>Já deu contexto suficiente? Você pode pedir que eu avance — sem inventar detalhes que faltam.</span>
             <div><button type="button" disabled={submitting} onClick={() => {void sendMessage("Quero avançar com as informações que já forneci. Prepare uma proposta personalizada somente se houver contexto suficiente; se faltar uma decisão indispensável, faça apenas essa pergunta. Não use modelos genéricos nem invente atividades.");}}><FiArrowRight aria-hidden="true"/> Avançar com o que contei</button></div>
           </div>}
-          {busy(status) && <div className={styles.processing}><img src={mascotThinking} alt="" className={styles.processingMascot} /> {status === "pending" ? "Já já eu continuo com você. Estou aguardando minha vez..." : "Estou organizando as ideias para o seu projeto..."}</div>}
+          {busy(status) && <div className={styles.activeThinking} role="status" aria-live="polite">
+            <span className={styles.thinkingPortrait}><img src={mascotThinking} alt=""/></span>
+            <span className={styles.thinkingCopy}><strong>{status === "pending" ? "Sua mensagem está na fila" : "CONG está preparando sua resposta"}</strong><small>{status === "pending" ? "O processamento começará assim que o agente estiver disponível." : "Analisando o contexto para orientar, perguntar ou propor apenas o que fizer sentido."}</small></span>
+            <span className={styles.thinkingDots} aria-hidden="true"><i/><i/><i/></span>
+          </div>}
           {status === "failed" && <div className={styles.warning}><FiXCircle aria-hidden="true" /> Não foi possível gerar a resposta ({current?.error_code || "erro de processamento"}). <button type="button" onClick={() => {void action("retry");}} disabled={submitting}>Tentar novamente</button></div>}
           {status === "cancelled" && <div className={styles.notice}>Esta conversa foi cancelada. Inicie outra conversa para continuar.</div>}
           {status === "propose" && current?.session.plan && <>
@@ -315,13 +342,13 @@ export default function AiAssistant() {
           <div ref={bottomRef} />
         </div>
         {error && <div className={styles.error} role="alert">{error}</div>}
-        <form className={styles.composer} onSubmit={submit}><label htmlFor="cong-ai-text">{status === "propose" ? "Peça uma alteração ou esclarecimento" : status === "clarify" ? "Sua resposta" : "Descreva sua necessidade"}</label><div className={styles.composerBox}><textarea ref={composerRef} id="cong-ai-text" rows={3} maxLength={sessionId ? 3500 : 6500} placeholder={status === "propose" ? "CONG, quero mudar uma parte do projeto..." : "Me conta. Estou ouvindo."} value={text} onChange={e => setText(e.target.value)} disabled={submitting || busy(status) || status === "cancelled"} onKeyDown={e => {if(e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault(); e.currentTarget.form?.requestSubmit();}}}/><button type="submit" disabled={submitting || busy(status) || status === "cancelled" || (sessionId ? !text.trim() : text.trim().length<12)} aria-label="Enviar mensagem"><FiSend aria-hidden="true" /></button></div><div className={styles.composerBottom}><span>Enter envia · Shift+Enter quebra linha · Converse como preferir</span>{busy(status) && <button type="button" onClick={() => {void action("cancel");}} disabled={submitting}>Cancelar tarefa</button>}</div></form>
+        <form className={styles.composer} onSubmit={submit}><label htmlFor="cong-ai-text">{status === "propose" ? "Peça uma alteração ou esclarecimento" : "Converse com o CONG"}</label><div className={styles.composerBox}><textarea ref={composerRef} id="cong-ai-text" rows={3} maxLength={sessionId ? 3500 : 6500} placeholder={status === "propose" ? "O que você quer revisar?" : "Pergunte, tire dúvidas ou conte o que gostaria de criar..."} value={text} onChange={e => setText(e.target.value)} disabled={submitting || busy(status) || status === "cancelled"} onKeyDown={e => {if(e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault(); e.currentTarget.form?.requestSubmit();}}}/><button type="submit" disabled={submitting || busy(status) || status === "cancelled" || !text.trim()} aria-label="Enviar mensagem"><FiSend aria-hidden="true" /></button></div><div className={styles.composerBottom}><span>Enter envia · Shift+Enter pula linha · Você não precisa começar um projeto para tirar dúvidas</span>{busy(status) && <button type="button" onClick={() => {void action("cancel");}} disabled={submitting}>Cancelar tarefa</button>}</div></form>
       </section>
       <aside id="cong-ai-understanding" className={`${styles.briefPanel} ${insightsOpen ? styles.insightsOpen : ""}`} aria-label="O que o CONG entendeu">
         <button type="button" className={styles.insightClose} aria-label="Fechar entendimento" onClick={() => setInsightsOpen(false)}><FiX aria-hidden="true"/></button>
         <div className={styles.briefTop}><FiClipboard aria-hidden="true"/> O que o CONG entendeu</div>
-        <p className={styles.understandingIntro}>Este é o resumo registrado pela IA sobre <strong>esta conversa</strong>. Confira os fatos e as suposições antes de criar seu projeto.</p>
-        <div className={styles.briefSection}><h3>Tipo de projeto</h3><span className={styles.briefTag}>{GOALS.find(g => g.id === (current?.session.goal ?? goal))?.label ?? "Projeto"}</span></div>
+        <p className={styles.understandingIntro}>{current?.metrics?.conversation_mode === "guidance" ? "Aqui você pode conferir o contexto da dúvida atual. Conversar e tirar dúvidas não cria nem modifica projetos." : "Este é o resumo registrado pela IA sobre esta conversa. Confira os fatos e as suposições antes de criar seu projeto."}</p>
+        <div className={styles.briefSection}><h3>Foco da conversa</h3><span className={styles.briefTag}>{current?.metrics?.conversation_mode === "guidance" ? "Orientação e dúvidas" : sessionId ? GOALS.find(g => g.id === (current?.session.goal ?? goal))?.label ?? "Projeto" : "Você escolhe"}</span></div>
         {current?.session.memory.summary?.trim() ? <div className={styles.briefSection}>
           <div className={styles.briefSectionTitle}><h3>Resumo interpretado</h3><button type="button" disabled={busy(status) || submitting || !["clarify","propose"].includes(status ?? "")} onClick={() => correctUnderstanding("resumo", current?.session.memory.summary ?? "")}>Corrigir</button></div>
           <p className={styles.memorySummary}>{current.session.memory.summary}</p>

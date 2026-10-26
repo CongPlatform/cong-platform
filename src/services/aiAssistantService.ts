@@ -30,7 +30,7 @@ export interface AiSession {
 }
 export interface AiSessionDetail {
   session: AiSession; last_job_status: string; last_result: AiProposal | null;
-  metrics: { coverage_status?: string; unmet_requirements?: string[]; ui_choices?: string[]; duration_ms?: number; model?: string } | null;
+  metrics: { coverage_status?: string; unmet_requirements?: string[]; ui_choices?: string[]; conversation_mode?: string; duration_ms?: number; model?: string } | null;
   error_code: string | null;
 }
 export interface AiAvailability { worker_online: boolean; model: string; busy: boolean; queue_size: number }
