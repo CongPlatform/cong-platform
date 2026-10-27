@@ -106,6 +106,24 @@ sessionRouter.use(authenticate,requireOrganizationContext);
 // Normal users without the study cookie are unaffected.
 async function enforceStudyCondition(req:Request,res:Response,next:import("express").NextFunction){
  if(process.env.STUDY_ENABLED!=="true")return next();
+ // Para identidades da pesquisa, a condicao vem da conta verificada no servidor.
+ // Omitir o cookie nao desativa o bloqueio sem IA.
+ if(process.env.STUDY_WORKSPACES_ENABLED==='true'){
+  try{
+   const userId=res.locals.authUser?.id;
+   const studyUser=await pool.query<{condition:string|null}>(`SELECT r.condition
+     FROM public.study_overlay_workspaces w
+     JOIN public.study_overlay_participants p ON p.id=w.participant_id
+     LEFT JOIN LATERAL (SELECT condition FROM public.study_overlay_runs
+       WHERE participant_id=p.id AND status='running' ORDER BY sequence_number DESC LIMIT 1) r ON true
+     WHERE w.auth_user_id=$1 AND p.status='active' AND p.session_expires_at>now()`,[userId]);
+   if(studyUser.rowCount){
+    if(studyUser.rows[0]?.condition!=='com_ia')return error(res,403,'IA indisponível para esta tarefa experimental.','STUDY_AI_DISABLED');
+    return next();
+   }
+  }catch(e){return sendError(res,e);}
+ }
+
  const token=req.headers.cookie?.split(";").map(v=>v.trim()).find(v=>v.startsWith("cong_study_ai_access="))?.slice("cong_study_ai_access=".length)??"";
  if(!token||token.length>256)return next();
  try{

@@ -1,6 +1,8 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { randomBytes, createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
 import pool from "../config/database.js";
+import {supabaseAdmin, createSupabaseAuthClient} from "../config/supabase.js";
+import { authenticate } from "../middlewares/authenticate.js";
 import { chooseAdditionalAssignment, type CountCell, type ScenarioUse } from "./allocation.js";
 
 const router=Router();
@@ -14,7 +16,7 @@ const adminKey=process.env.STUDY_OBSERVER_KEY || '';
 const enabled=process.env.STUDY_ENABLED==='true';
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 const cookieValue=(req:Request,key:string)=>req.headers.cookie?.split(';').map(c=>c.trim()).find(x=>x.startsWith(`${key}=`))?.slice(key.length+1)??'';
-const sessionCookieOptions={httpOnly:true,secure:process.env.NODE_ENV==='production'||process.env.VERCEL==='1',sameSite:'lax' as const,path:'/api/study',maxAge:24*3600*1000};
+const sessionCookieOptions={httpOnly:true,secure:process.env.NODE_ENV==='production'||process.env.VERCEL==='1',sameSite:'lax' as const,path:'/api/study',maxAge:72*3600*1000};
 const adminCookieOptions={...sessionCookieOptions,maxAge:8*3600*1000};
 const aiCookieOptions={...sessionCookieOptions,path:'/api/ai'};
 const fresh=()=>randomBytes(32).toString('base64url');
@@ -86,7 +88,7 @@ router.post('/handoff',async(req,res,next)=>{
    }
    await client.query('UPDATE public.study_overlay_slots SET claimed_at=now() WHERE participant_code=$1',[slot.participant_code]);
    const p=await client.query(`INSERT INTO public.study_overlay_participants(participant_code,source_participant_id,source_score,source_data,session_hash,session_expires_at)
-    VALUES($1,$2,$3,$4,$5,now()+interval '24 hours') RETURNING id`,[
+    VALUES($1,$2,$3,$4,$5,now()+interval '72 hours') RETURNING id`,[
      slot.participant_code,ticket.sourceId,typeof ticket.score==='number'?ticket.score:null,JSON.stringify(ticket.taskResults??{}),sessionHash
     ]);
    const id=p.rows[0].id;
@@ -98,9 +100,77 @@ router.post('/handoff',async(req,res,next)=>{
  }catch(e){if(e instanceof Error && /transfer|assinatura|expirad|inválid/i.test(e.message)){error(res,400,e.message);return;}next(e);}
 });
 
+// Acesso de pesquisa: UMA identidade Supabase + UMA organizacao por participante.
+// Nunca concede acesso anonimo a editores ou compartilha uma conta entre participantes.
+// Obrigatorio: migration study_overlay_workspaces + STUDY_WORKSPACES_ENABLED=true.
+router.post('/workspace/access',checkParticipant,async(req,res,next)=>{
+ if(process.env.STUDY_WORKSPACES_ENABLED!=='true')return error(res,503,'Ambientes individuais da pesquisa ainda não habilitados');
+ const domain=(process.env.STUDY_WORKSPACE_EMAIL_DOMAIN||'').trim().toLowerCase();
+ if(!/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(domain))return error(res,503,'Domínio técnico de participantes não configurado');
+ const p=await current(req);
+ if(!p || p.status!=='active')return error(res,403,'Participante não está ativo');
+ const cx=await pool.connect();
+ let createdAuthId:string|null=null;
+ try{
+  await cx.query('BEGIN');
+  // Isolamento de concorrencia: serializa somente requisicoes DESTE participante.
+  const active=await cx.query(`SELECT p.id,p.participant_code FROM public.study_overlay_participants p
+   WHERE p.id=$1 AND p.status='active' AND p.session_expires_at>now() FOR UPDATE`,[p.id]);
+  if(active.rowCount!==1){await cx.query('ROLLBACK');return error(res,403,'Sessão expirada');}
+  const run=await cx.query(`SELECT condition FROM public.study_overlay_runs
+   WHERE participant_id=$1 AND status IN ('assigned','running') ORDER BY sequence_number LIMIT 1`,[p.id]);
+  if(!run.rowCount){await cx.query('ROLLBACK');return error(res,409,'Não existe tarefa disponível');}
+  const ws=await cx.query(`SELECT auth_user_id,organization_id,email FROM public.study_overlay_workspaces
+   WHERE participant_id=$1`,[p.id]);
+  const password=randomBytes(36).toString('base64url')+'aA1!';
+  let authId:string,orgId:string,email:string;
+  if(!ws.rowCount){
+   // Nunca derive a identidade de codigo sequencial; use UUID aleatorio nao identificavel.
+   email=`tcc-${randomUUID()}@${domain}`;
+   const created=await supabaseAdmin.auth.admin.createUser({email,password,email_confirm:true,
+    app_metadata:{cong_study_workspace:true}});
+   if(created.error || !created.data.user)throw new Error('Falha ao preparar acesso individual da pesquisa');
+   createdAuthId=created.data.user.id;authId=createdAuthId;
+   const account=await cx.query(`INSERT INTO public.users
+    (auth_user_id,name,display_name,onboarding_step,onboarding_roles,onboarding_representations)
+    VALUES($1,$2,$2,'completed',ARRAY['organization']::text[],ARRAY['ngo']::text[]) RETURNING id`,
+    [authId,`Participante ${p.participant_code}`]);
+   const org=await cx.query(`INSERT INTO public.organizations (name,description,organization_type,settings)
+    VALUES($1,'Ambiente individual do experimento CONG','ngo',$2::jsonb) RETURNING id`,
+    [`Laboratório ${p.participant_code}`,JSON.stringify({studyExperiment:true,studyParticipantId:p.id})]);
+   orgId=org.rows[0].id;
+   const role=await cx.query(`SELECT id FROM public.roles WHERE code='organization_admin'
+    AND scope='organization' AND is_system=true LIMIT 1`);
+   if(role.rowCount!==1)throw new Error('Perfil administrativo de organização indisponível');
+   await cx.query(`INSERT INTO public.organization_users(organization_id,user_id,role_id,status,joined_at)
+    VALUES($1,$2,$3,'active',now())`,[orgId,account.rows[0].id,role.rows[0].id]);
+   await cx.query(`INSERT INTO public.study_overlay_workspaces(participant_id,auth_user_id,organization_id,email)
+    VALUES($1,$2,$3,$4)`,[p.id,authId,orgId,email]);
+  }else{
+   authId=ws.rows[0].auth_user_id;orgId=ws.rows[0].organization_id;email=ws.rows[0].email;
+   // Senha temporaria descartada apos a troca por tokens. Nao armazenar senhas em PostgreSQL.
+   const changed=await supabaseAdmin.auth.admin.updateUserById(authId,{password});
+   if(changed.error)throw new Error('Não foi possível renovar o acesso da pesquisa');
+  }
+  const login=await createSupabaseAuthClient().auth.signInWithPassword({email,password});
+  if(login.error || !login.data.session || login.data.user?.id!==authId)throw new Error('Não foi possível abrir a sessão de laboratório');
+  await cx.query('COMMIT');
+  res.setHeader('Cache-Control','no-store');
+  res.json({accessToken:login.data.session.access_token,
+   refreshToken:login.data.session.refresh_token,organizationId:orgId,
+   participantCode:p.participant_code});
+ }catch(e){
+  await cx.query('ROLLBACK').catch(()=>{});
+  if(createdAuthId)await supabaseAdmin.auth.admin.deleteUser(createdAuthId).catch(()=>{});
+  next(e);
+ }finally{cx.release();}
+});
+
 router.get('/me',checkParticipant,async(req,res,next)=>{
  try{
   const p=await current(req);
+  // Renovação progressiva para permitir retomar após fechar a aba.
+  await pool.query("UPDATE public.study_overlay_participants SET session_expires_at=GREATEST(session_expires_at,now()+interval '72 hours') WHERE id=$1",[p.id]);
   const r=await pool.query(`SELECT r.id,r.sequence_number,r.version,r.condition,r.status,r.started_at,r.submitted_at,r.reported_completed,r.difficulty,r.confidence,
    s.participant_code,s.group_code,s.cohort,s.family,s.scenario_code,c.ngo,
    CASE WHEN r.version='A' THEN c.prompt_a ELSE c.prompt_b END AS prompt
@@ -173,11 +243,122 @@ router.post('/observer/login',async(req,res,next)=>{
   res.cookie(ADMIN_COOKIE,token,adminCookieOptions).json({ok:true});
  }catch(e){next(e);}
 });
+
+// Segurança: limpeza destrutiva só com sessão de observador + token real do admin.
+// O e-mail jamais é aceito do corpo enviado pelo navegador.
+const RESET_ADMIN_EMAIL=(process.env.STUDY_RESET_ADMIN_EMAIL || 'kelvinpalka07@gmail.com').trim().toLowerCase();
+function checkResetAdmin(_req:Request,res:Response,next:NextFunction){
+ const email=String(res.locals.authUser?.email||'').trim().toLowerCase();
+ if(!email || email!==RESET_ADMIN_EMAIL){error(res,403,'Somente o administrador autorizado pode limpar a pesquisa');return;}
+ next();
+}
+router.post('/observer/reset',checkObserver,authenticate,checkResetAdmin,async(req,res,next)=>{
+ const mode=req.body?.mode;
+ if(!['simulations','all'].includes(mode)||req.body?.confirmation !== (mode==='all'?'REINICIAR PESQUISA':'APAGAR SIMULACOES') || req.body?.ackNoRecovery!==true){
+  return error(res,400,'Confirmação explícita necessária');
+ }
+ const client=await pool.connect();
+ try{
+  await client.query('BEGIN');
+  await client.query('SELECT pg_advisory_xact_lock(26023, 6071)');
+  const selected=mode==='all'
+   ?await client.query('SELECT id,participant_code FROM public.study_overlay_participants FOR UPDATE')
+   :await client.query("SELECT id,participant_code FROM public.study_overlay_participants WHERE source_data->>'__simulation'='local' FOR UPDATE");
+  const sandboxIds:string[]=[];
+  if(process.env.STUDY_WORKSPACES_ENABLED==='true' && selected.rows.length){
+   const selectedIds=selected.rows.map((row:{id:string})=>row.id);
+   const owned=await client.query(`SELECT auth_user_id,organization_id FROM public.study_overlay_workspaces
+     WHERE participant_id=ANY($1::uuid[]) FOR UPDATE`,[selectedIds]);
+   const orgIds=owned.rows.map((row:{organization_id:string})=>row.organization_id);
+   sandboxIds.push(...owned.rows.map((row:{auth_user_id:string})=>row.auth_user_id));
+   // So ambientes explicitamente marcados como experimentais podem ser eliminados.
+   if(orgIds.length){
+    const verified=await client.query(`SELECT id FROM public.organizations
+      WHERE id=ANY($1::uuid[]) AND settings->>'studyExperiment'='true'`,[orgIds]);
+    if(verified.rowCount!==orgIds.length)throw new Error('Isolamento dos ambientes de pesquisa inconsistente');
+    await client.query('UPDATE public.organizations SET active=false WHERE id=ANY($1::uuid[])',[orgIds]);
+   }
+   await client.query('DELETE FROM public.study_overlay_workspaces WHERE participant_id=ANY($1::uuid[])',[selectedIds]);
+   await client.query('UPDATE public.users SET active=false WHERE auth_user_id=ANY($1::uuid[])',[sandboxIds]);
+  }
+  const ids=selected.rows.map((p:{id:string})=>p.id);
+  const codes=selected.rows.map((p:{participant_code:string})=>p.participant_code);
+  if(ids.length){
+   await client.query('DELETE FROM public.study_overlay_events WHERE participant_id=ANY($1::uuid[])',[ids]);
+   await client.query('DELETE FROM public.study_overlay_feedback WHERE participant_id=ANY($1::uuid[])',[ids]);
+   await client.query('DELETE FROM public.study_overlay_runs WHERE participant_id=ANY($1::uuid[])',[ids]);
+   await client.query('DELETE FROM public.study_overlay_participants WHERE id=ANY($1::uuid[])',[ids]);
+  }
+  if(mode==='all'){
+   await client.query("DELETE FROM public.study_overlay_slots WHERE cohort='Adicional'");
+   await client.query('UPDATE public.study_overlay_slots SET claimed_at=NULL');
+   // Não tocar no catálogo dos cenários, contas, sites ou sistemas.
+  }else if(codes.length){
+   await client.query("DELETE FROM public.study_overlay_slots WHERE participant_code=ANY($1::text[]) AND cohort='Adicional'",[codes]);
+  }
+  await client.query('COMMIT');
+  // Inativamos os usuarios e as organizacoes na transacao para revogar acesso imediatamente.
+  // A exclusao de usuarios no Supabase ocorre depois do COMMIT.
+  // Se falhar, sinalizar pendencias, sem apagar contas de usuarios reais.
+  let pendingAuthCleanup=0;
+  for(const authId of sandboxIds){
+   const result=await supabaseAdmin.auth.admin.deleteUser(authId).catch(()=>({error:true}));
+   if(result.error)pendingAuthCleanup++;
+  }
+  res.json({ok:true,deletedParticipants:ids.length,mode,pendingAuthCleanup});
+ }catch(e){await client.query('ROLLBACK').catch(()=>{});next(e);}finally{client.release();}
+});
+
+// Ensaio local, nunca disponível na hospedagem: exige observador e flag explícita.
+function checkLocalSimulation(req:Request,res:Response,next:NextFunction){
+ const ip=req.socket.remoteAddress||'';
+ const localIp=ip==='::1'||ip==='127.0.0.1'||ip==='::ffff:127.0.0.1';
+ const origin=req.get('origin')||'';
+ const host=req.get('host')||'';
+ // O proxy Vite usa changeOrigin:true; o Host interno pode ser :3000 e o Origin :5173.
+ const isLocalOrigin=!origin||(()=>{try{
+  const u=new URL(origin);
+  return ['127.0.0.1','localhost','[::1]'].includes(u.hostname) &&
+   ['http:','https:'].includes(u.protocol) && ['3000','5173'].includes(u.port);
+ }catch{return false;}})();
+ const isLocalHost=/^(?:127\.0\.0\.1|localhost|\[::1\]):(?:3000|5173)$/.test(host);
+ if(process.env.NODE_ENV==='production'||process.env.STUDY_DEV_SIMULATION_ENABLED!=='true'||process.env.STUDY_DEV_SIMULATION_DB_ACK!=='LOCAL_ONLY'||!localIp||!isLocalOrigin||!isLocalHost){
+  error(res,404,'Simulação local indisponível');return;
+ }
+ next();
+}
+router.post('/observer/dev/simulate',checkObserver,checkLocalSimulation,async(_req,res,next)=>{
+ const client=await pool.connect();const session=fresh();
+ try{
+  await client.query('BEGIN');
+  await client.query('SELECT pg_advisory_xact_lock(26023, 6071)');
+  const scenario=await client.query('SELECT scenario_code,family FROM public.study_overlay_scenarios ORDER BY scenario_code LIMIT 1');
+  if(!scenario.rowCount){await client.query('ROLLBACK');return error(res,409,'Importe os cenários oficiais antes da simulação');}
+  const number=Number((await client.query('SELECT COALESCE(MAX(order_number),0)+1 AS n FROM public.study_overlay_slots')).rows[0].n);
+  if(!Number.isSafeInteger(number)||number<1)throw new Error('Alocação local inválida');
+  const code='P'+String(number).padStart(3,'0');
+  const {scenario_code,family}=scenario.rows[0];const group='G1';
+  await client.query(`INSERT INTO public.study_overlay_slots(participant_code,scenario_code,cohort,family,group_code,order_number,claimed_at,reused_scenario)
+    VALUES($1,$2,'Adicional',$3,$4,$5,now(),true)`,[code,scenario_code,family,group,number]);
+  const participant=await client.query(`INSERT INTO public.study_overlay_participants
+   (participant_code,source_participant_id,source_data,session_hash,session_expires_at)
+   VALUES($1,$2,$3,$4,now()+interval '72 hours') RETURNING id`,[code,randomUUID(),JSON.stringify({__simulation:'local'}),hash(session)]);
+  const id=participant.rows[0].id;
+  const simulationSchedule=runGroups[group];
+  if(!simulationSchedule)throw new Error('Grupo experimental sem configuração de tarefas');
+  for(const [i,[version,condition]] of simulationSchedule.entries()){
+   await client.query('INSERT INTO public.study_overlay_runs(participant_id,sequence_number,version,condition) VALUES($1,$2,$3,$4)',[id,i+1,version,condition]);
+  }
+  await client.query('COMMIT');
+  res.cookie(COOKIE,session,sessionCookieOptions).cookie(AI_COOKIE,session,aiCookieOptions).json({ok:true,participantCode:code,simulation:true});
+ }catch(e){await client.query('ROLLBACK').catch(()=>{});next(e);}finally{client.release();}
+});
+
 router.get('/observer/runs',checkObserver,async(_req,res,next)=>{
  try{
   const q=await pool.query(`SELECT r.id,r.sequence_number,r.version,r.condition,r.status,r.started_at,r.submitted_at,
     r.reported_completed,r.self_reported_help,r.difficulty,r.confidence,r.understood_result,r.reported_difficulty,r.observer_help_count,r.observer_error_count,
-    r.observer_criteria,r.observer_notes,r.technical_issue,p.participant_code,s.scenario_code,s.family,s.group_code,s.cohort,s.reused_scenario,
+    r.observer_criteria,r.observer_notes,r.technical_issue,p.participant_code,COALESCE(p.source_data->>'__simulation','')='local' AS is_simulation,s.scenario_code,s.family,s.group_code,s.cohort,s.reused_scenario,
     c.ngo,c.rubric FROM public.study_overlay_runs r
     JOIN public.study_overlay_participants p ON p.id=r.participant_id
     JOIN public.study_overlay_slots s ON s.participant_code=p.participant_code
@@ -221,7 +402,7 @@ router.get('/observer/export.csv',checkObserver,async(_req,res,next)=>{
        AND (SELECT count(*) FROM jsonb_array_elements(r.observer_criteria) v WHERE v='true'::jsonb)=6)
     END AS success_full_without_human
    FROM public.study_overlay_runs r JOIN public.study_overlay_participants p ON p.id=r.participant_id
-   JOIN public.study_overlay_slots s ON s.participant_code=p.participant_code ORDER BY s.order_number,r.sequence_number`);
+   JOIN public.study_overlay_slots s ON s.participant_code=p.participant_code WHERE COALESCE(p.source_data->>'__simulation','')<>'local' ORDER BY s.order_number,r.sequence_number`);
   const names=Object.keys(q.rows[0]??{participant_code:'',cohort:'',scenario_code:'',family:'',group_code:'',sequence_number:'',version:'',condition:'',status:'',started_at:'',submitted_at:'',total_wall_ms:'',reported_completed:'',self_reported_help:'',difficulty:'',confidence:'',observer_help_count:'',observer_error_count:'',observer_criteria:'',observer_notes:'',technical_issue:'',source_score:'',reused_scenario:'',score_0_6:'',success_full_without_human:''});
   // eslint-disable-next-line no-control-regex -- Controle ASCII intencional na sanitizacao de entrada.
   const esc=(v:unknown)=>{ const raw=v===null||v===undefined?'':typeof v==='object'?JSON.stringify(v):String(v); const safe=/^[\s\x00-\x1f]*[=+@-]/.test(raw)?`'${raw}`:raw; return `"${safe.replaceAll('"','""')}"`; };
@@ -233,7 +414,7 @@ router.get('/observer/feedback.csv',checkObserver,async(_req,res,next)=>{
  try{
   const q=await pool.query(`SELECT p.participant_code,f.questionnaire_version,f.submitted_at,f.answers
     FROM public.study_overlay_feedback f JOIN public.study_overlay_participants p ON p.id=f.participant_id
-    ORDER BY p.participant_code`);
+    WHERE COALESCE(p.source_data->>'__simulation','')<>'local' ORDER BY p.participant_code`);
   // eslint-disable-next-line no-control-regex -- Controle ASCII intencional na sanitizacao de entrada.
   const safe=(v:unknown)=>{const raw=String(v??'');return `"${(/^[\s\x00-\x1f]*[=+@-]/.test(raw)?"'"+raw:raw).replaceAll('"','""')}"`;};
   const names=['participant_code','questionnaire_version','submitted_at',...Array.from({length:10},(_,i)=>`Q${String(i+1).padStart(2,'0')}`),'dificuldade_aberta','mudaria_aberta'];
@@ -246,7 +427,7 @@ router.get('/observer/events.csv',checkObserver,async(_req,res,next)=>{
  try{
   const q=await pool.query(`SELECT p.participant_code,r.sequence_number,e.actor,e.event_type,e.details,e.created_at
     FROM public.study_overlay_events e JOIN public.study_overlay_participants p ON p.id=e.participant_id
-    LEFT JOIN public.study_overlay_runs r ON r.id=e.run_id ORDER BY e.created_at`);
+    LEFT JOIN public.study_overlay_runs r ON r.id=e.run_id WHERE COALESCE(p.source_data->>'__simulation','')<>'local' ORDER BY e.created_at`);
   const names=['participant_code','sequence_number','actor','event_type','details','created_at'];
   // eslint-disable-next-line no-control-regex -- Controle ASCII intencional na sanitizacao de entrada.
   const esc=(v:unknown)=>{const raw=String(v??'');return `"${(/^[\s\x00-\x1f]*[=+@-]/.test(raw)?"'"+raw:raw).replaceAll('"','""')}"`;};
