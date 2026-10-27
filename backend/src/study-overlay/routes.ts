@@ -332,12 +332,12 @@ router.post('/observer/dev/simulate',checkObserver,checkLocalSimulation,async(_r
  try{
   await client.query('BEGIN');
   await client.query('SELECT pg_advisory_xact_lock(26023, 6071)');
-  const scenario=await client.query('SELECT scenario_code,family FROM public.study_overlay_scenarios ORDER BY scenario_code LIMIT 1');
+  const scenario=await client.query('SELECT scenario_code,family FROM public.study_overlay_scenarios ORDER BY scenario_code');
   if(!scenario.rowCount){await client.query('ROLLBACK');return error(res,409,'Importe os cenários oficiais antes da simulação');}
   const number=Number((await client.query('SELECT COALESCE(MAX(order_number),0)+1 AS n FROM public.study_overlay_slots')).rows[0].n);
   if(!Number.isSafeInteger(number)||number<1)throw new Error('Alocação local inválida');
   const code='P'+String(number).padStart(3,'0');
-  const {scenario_code,family}=scenario.rows[0];const group='G1';
+  const {scenario_code,family}=scenario.rows[(number-1)%scenario.rows.length];const group=['G1','G2','G3','G4'][(number-1)%4]!;
   await client.query(`INSERT INTO public.study_overlay_slots(participant_code,scenario_code,cohort,family,group_code,order_number,claimed_at,reused_scenario)
     VALUES($1,$2,'Adicional',$3,$4,$5,now(),true)`,[code,scenario_code,family,group,number]);
   const participant=await client.query(`INSERT INTO public.study_overlay_participants
@@ -352,6 +352,14 @@ router.post('/observer/dev/simulate',checkObserver,checkLocalSimulation,async(_r
   await client.query('COMMIT');
   res.cookie(COOKIE,session,sessionCookieOptions).cookie(AI_COOKIE,session,aiCookieOptions).json({ok:true,participantCode:code,simulation:true});
  }catch(e){await client.query('ROLLBACK').catch(()=>{});next(e);}finally{client.release();}
+});
+
+// Roteiros oficiais importados: consulta para auditoria metodologica, sem alteracao.
+router.get('/observer/scenarios',checkObserver,async(_req,res,next)=>{
+ try{
+  const q=await pool.query('SELECT scenario_code,family,ngo,prompt_a,prompt_b,rubric FROM public.study_overlay_scenarios ORDER BY scenario_code');
+  res.json(q.rows);
+ }catch(e){next(e);}
 });
 
 router.get('/observer/runs',checkObserver,async(_req,res,next)=>{
@@ -417,7 +425,7 @@ router.get('/observer/feedback.csv',checkObserver,async(_req,res,next)=>{
     WHERE COALESCE(p.source_data->>'__simulation','')<>'local' ORDER BY p.participant_code`);
   // eslint-disable-next-line no-control-regex -- Controle ASCII intencional na sanitizacao de entrada.
   const safe=(v:unknown)=>{const raw=String(v??'');return `"${(/^[\s\x00-\x1f]*[=+@-]/.test(raw)?"'"+raw:raw).replaceAll('"','""')}"`;};
-  const names=['participant_code','questionnaire_version','submitted_at',...Array.from({length:10},(_,i)=>`Q${String(i+1).padStart(2,'0')}`),'dificuldade_aberta','mudaria_aberta'];
+  const names=['participant_code','questionnaire_version','submitted_at',...Array.from({length:10},(_,i)=>`Q${String(i+1).padStart(2,'0')}`),'dificuldade_aberta','mudaria_aberta','instrument_version'];
   const lines=q.rows.map(row=>names.map(name=>safe(name in row?row[name]:(row.answers??{})[name])).join(','));
   res.setHeader('Content-Type','text/csv; charset=utf-8');res.setHeader('Content-Disposition','attachment; filename="cong-study-feedback.csv"');
   res.send('\uFEFF'+[names.join(','),...lines].join('\r\n'));
