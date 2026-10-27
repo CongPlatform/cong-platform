@@ -6,6 +6,9 @@ import { chooseAdditionalAssignment, type CountCell, type ScenarioUse } from "./
 const router=Router();
 router.use((_req,res,next)=>{res.setHeader('Cache-Control','no-store');next();});
 const COOKIE='cong_study_session', ADMIN_COOKIE='cong_study_observer';
+// Mirror only for /api/ai so the assistant API can enforce the experimental condition.
+// The original study cookie remains scoped to /api/study.
+const AI_COOKIE='cong_study_ai_access';
 const bridgeSecret=process.env.STUDY_BRIDGE_SECRET || '';
 const adminKey=process.env.STUDY_OBSERVER_KEY || '';
 const enabled=process.env.STUDY_ENABLED==='true';
@@ -13,6 +16,7 @@ const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 const cookieValue=(req:Request,key:string)=>req.headers.cookie?.split(';').map(c=>c.trim()).find(x=>x.startsWith(`${key}=`))?.slice(key.length+1)??'';
 const sessionCookieOptions={httpOnly:true,secure:process.env.NODE_ENV==='production'||process.env.VERCEL==='1',sameSite:'lax' as const,path:'/api/study',maxAge:24*3600*1000};
 const adminCookieOptions={...sessionCookieOptions,maxAge:8*3600*1000};
+const aiCookieOptions={...sessionCookieOptions,path:'/api/ai'};
 const fresh=()=>randomBytes(32).toString('base64url');
 const safeEqual=(a:string,b:string)=>{const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length && timingSafeEqual(x,y);};
 const error=(res:Response,status:number,message:string)=>res.status(status).json({error:message});
@@ -39,7 +43,10 @@ async function observer(req:Request){
  const r=await pool.query('SELECT 1 FROM public.study_overlay_observer_sessions WHERE session_hash=$1 AND expires_at>now()',[hash(token)]);
  return r.rowCount===1;
 }
-async function checkParticipant(req:Request,res:Response,next:NextFunction){try{if(!await current(req)){error(res,401,'Sessão de pesquisa ausente ou expirada');return;}next();}catch(nextError){next(nextError);}}
+async function checkParticipant(req:Request,res:Response,next:NextFunction){try{if(!await current(req)){error(res,401,'Sessão de pesquisa ausente ou expirada');return;}
+  // Refresh the AI-scoped cookie even for participants admitted before this patch.
+  const token=cookieValue(req,COOKIE);if(token)res.cookie(AI_COOKIE,token,aiCookieOptions);
+  next();}catch(nextError){next(nextError);}}
 async function checkObserver(req:Request,res:Response,next:NextFunction){try{if(!await observer(req)){error(res,401,'Acesso do observador necessário');return;}next();}catch(nextError){next(nextError);}}
 if(!enabled){router.use((_req,res)=>{error(res,503,'Pesquisa desativada no servidor');});}
 
@@ -86,7 +93,7 @@ router.post('/handoff',async(req,res,next)=>{
    for(const [i,[version,condition]] of (runGroups[slot.group_code]??[]).entries()){
     await client.query('INSERT INTO public.study_overlay_runs(participant_id,sequence_number,version,condition) VALUES($1,$2,$3,$4)',[id,i+1,version,condition]);
    }
-   await client.query('COMMIT');res.cookie(COOKIE,session,sessionCookieOptions).json({ok:true});
+   await client.query('COMMIT');res.cookie(COOKIE,session,sessionCookieOptions).cookie(AI_COOKIE,session,aiCookieOptions).json({ok:true});
   }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e;}finally{client.release();}
  }catch(e){if(e instanceof Error && /transfer|assinatura|expirad|inválid/i.test(e.message)){error(res,400,e.message);return;}next(e);}
 });
@@ -156,7 +163,7 @@ router.post('/finish',checkParticipant,async(req,res,next)=>{
  }catch(e){next(e);}
 });
 router.post('/withdraw',checkParticipant,async(req,res,next)=>{
- try{const p=await current(req);await pool.query("UPDATE public.study_overlay_participants SET status='withdrawn' WHERE id=$1 AND status='active'",[p.id]);res.clearCookie(COOKIE,sessionCookieOptions).json({ok:true});}catch(e){next(e);}
+ try{const p=await current(req);await pool.query("UPDATE public.study_overlay_participants SET status='withdrawn' WHERE id=$1 AND status='active'",[p.id]);res.clearCookie(COOKIE,sessionCookieOptions).clearCookie(AI_COOKIE,aiCookieOptions).json({ok:true});}catch(e){next(e);}
 });
 
 router.post('/observer/login',async(req,res,next)=>{

@@ -16,26 +16,37 @@ import {
 } from "../operational/operationalService";
 import {
   createInstitutionalSite, createInstitutionalPage, getInstitutionalSite,
-  getInstitutionalTemplates, getInstitutionalVariants, addInstitutionalSection,
-  updateInstitutionalSection, deleteInstitutionalSection, updateInstitutionalSiteBrand, uploadInstitutionalMedia, type InstitutionalSite,
+  getInstitutionalVariants, addInstitutionalSection,
+  updateInstitutionalSection, deleteInstitutionalSection, type InstitutionalSite,
   type InstitutionalSectionType, type InstitutionalVariant, type InstitutionalLayoutNode,
 } from "../../services/institutionalService";
 import { createDefaultSectionContent } from "../../data/institutional/sectionCatalog";
 
 export type SiteLook = "human" | "impact" | "institutional";
-export type SitePalette = {id:string;label:string;description:string;primary:string;secondary:string;accent:string;background:string;text:string};
-export const SITE_PALETTES:SitePalette[] = [
- {id:"oceano",label:"Oceano",description:"Calma e movimento",primary:"#176B83",secondary:"#2A9D8F",accent:"#E9B44C",background:"#F4FAFA",text:"#173843"},
- {id:"terra",label:"Terra",description:"Calor e proximidade",primary:"#8D563F",secondary:"#C37A55",accent:"#E2AF62",background:"#FFF8EF",text:"#382B2B"},
- {id:"natureza",label:"Natureza",description:"Crescimento e equilíbrio",primary:"#317451",secondary:"#79A874",accent:"#D8AA55",background:"#F4FAF1",text:"#273B2E"},
- {id:"violeta",label:"Violeta",description:"Criatividade e expressão",primary:"#61489B",secondary:"#9883C8",accent:"#E4AB64",background:"#FAF7FF",text:"#302944"},
- {id:"grafite",label:"Grafite",description:"Simplicidade e contraste",primary:"#2C3947",secondary:"#5A7688",accent:"#D39B56",background:"#F5F7F8",text:"#1E2933"},
-];
 export const SITE_LOOKS: Array<{ id: SiteLook; label: string; description: string }> = [
   {id:"human",label:"Acolhedor",description:"Pessoas, histórias e proximidade"},
   {id:"impact",label:"Moderno",description:"Ações, campanhas e resultados reais"},
   {id:"institutional",label:"Institucional",description:"Seriedade, clareza e confiança"},
 ];
+// Tipos e opções usados pela tela de personalização do Estúdio CONG.
+// Estas cores são sugestões opcionais, não templates aplicados automaticamente.
+export type SitePalette = {
+  id: string;
+  label: string;
+  description: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  text: string;
+};
+export const SITE_PALETTES: SitePalette[] = [
+  { id: "acolher", label: "Acolhimento", description: "Suave e próxima", primary: "#305E88", secondary: "#73A898", accent: "#DCAC58", background: "#F7F9F7", text: "#203247" },
+  { id: "energia", label: "Vitalidade", description: "Viva e otimista", primary: "#246A5E", secondary: "#6DAE80", accent: "#E9AE42", background: "#F7F9F2", text: "#193C32" },
+  { id: "confianca", label: "Confiança", description: "Clara e institucional", primary: "#274C77", secondary: "#6F91AF", accent: "#DA9551", background: "#FAFBFD", text: "#24354A" },
+  { id: "expressiva", label: "Expressiva", description: "Criativa e acolhedora", primary: "#744A8F", secondary: "#B38DC9", accent: "#EAA96C", background: "#FBF8FC", text: "#392A47" },
+];
+
 export type BuildRecord = {
   organizationId: string;
   sessionId: string;
@@ -43,9 +54,6 @@ export type BuildRecord = {
   siteId: string | null;
   formIds: Record<string,string>;
   lastPlanSignature: string;
-  logoAssetId?:string|null;
-  lastLogoFingerprint?:string;
-  lastLook?:SiteLook;
   updatedAt: string;
 };
 export type BuildResult = { record: BuildRecord; warnings: string[]; modules: number; pages: number; forms: number };
@@ -128,7 +136,7 @@ function sectionType(sectionType:string):InstitutionalSectionType{
  switch(sectionType){
   case "hero":return "organization_intro";
   case "features":return "organization_about";
-  case "impact":return "impact_metrics";
+  case "impact":return "custom_content";
   case "cta":return "support_actions";
   case "contact":return "organization_contact";
   case "gallery":return "projects_showcase";
@@ -141,48 +149,49 @@ function variantOf(type:InstitutionalSectionType,variants:InstitutionalVariant[]
   ??variants.find(v=>v.sectionType===type);
 }
 function contentFor(type:InstitutionalSectionType,title:string,text:string,action:string){
- const content=createDefaultSectionContent(type);
- // Original native content keys, not the compact worker's section schema.
- if(type==="organization_intro")return {...content,eyebrow:"Nossa organização",title,description:text,
-   primaryAction:action?{label:action,href:"#"}:content.primaryAction};
- if(type==="organization_about")return {...content,eyebrow:"Conheça nosso trabalho",title,description:text};
- if(type==="projects_showcase"||type==="impact_metrics"||type==="support_actions"||type==="custom_content")
-  return {...content,title,description:text};
- if(type==="organization_contact")return {...content,title,description:text};
- return {...content,title,description:text};
-}
-async function writeSite(plan:NonNullable<AiPlan["site"]>,look:SiteLook,record:BuildRecord,report:(t:string)=>void,warnings:string[]){
- const templates=await getInstitutionalTemplates();
- const favorite=look==="human"?["Acolher","Sereno","Comunidade"]:look==="impact"?["Horizonte Editorial","Pulso","Território Vivo"]:["Essencial","Conexão","Horizonte Editorial"];
- const chosen=favorite.map(n=>templates.find(t=>t.name===n&&!t.isExample)).find(Boolean)
-  ??templates.find(t=>!t.isExample)??null;
- if(!record.siteId){
-  report("Criando site real com identidade visual " + SITE_LOOKS.find(s=>s.id===look)?.label + "...");
-  const site=await createInstitutionalSite({name:plan.name.slice(0,100),templateId:chosen?.id??null,
-   identityMode:chosen?"template":"organization"});
-  record.siteId=site.id;saveDraft(record);
-  // Templates may contain example social-impact figures. They must never be published as facts.
-  for(const page of site.pages)for(const section of page.sections){
-    if(section.sectionType==="impact_metrics"){
-      await deleteInstitutionalSection(section.id);
-      warnings.push("Indicadores demonstrativos do modelo foram retirados. Informe números reais antes de adicioná-los.");
-    }
-  }
+ // O catálogo fornece apenas a estrutura técnica exigida pelo editor. Não devem sobrar
+ // itens, números, depoimentos, imagens ou endereços demonstrativos como se fossem reais.
+ const base:Record<string,unknown>={...createDefaultSectionContent(type)};
+ for(const [key,value] of Object.entries(base)){
+   if(Array.isArray(value) && /^(items|projects|photos|images|metrics|stats|testimonials|partners|services|gallery|numbers|highlights|cards)$/i.test(key))base[key]=[];
+   // Não confundir os dados demonstrativos do catálogo com dados confirmados da ONG.
+   if(typeof value==="string" && /^(eyebrow|subtitle|caption|address|email|phone|whatsapp|location|contactText|image|imageUrl|imageAlt|alt|quote|author|website)$/i.test(key))base[key]="";
  }
+ const content={...base,title,description:text};
+ if(type==="organization_intro")return {...content,eyebrow:"",
+   // Sem destino validado o botão continua rascunho, não é ativado/publicado.
+   primaryAction:action?{label:action,href:"#"}:null};
+ if(type==="organization_about")return {...content,eyebrow:""};
+ return content;
+}
+async function writeSite(plan:NonNullable<AiPlan["site"]>,record:BuildRecord,report:(t:string)=>void,warnings:string[]){
+ // Criação livre: a IA determina páginas e seções, não um modelo institucional pré-selecionado.
+ // Os componentes do editor são reutilizados por funcionalidade, nunca como uma página-demo.
+ const freshSite=!record.siteId;
+ let originalSeedIds:string[]=[];
+ if(freshSite){
+  report("Criando um site em branco para a proposta personalizada...");
+  const created=await createInstitutionalSite({name:plan.name.slice(0,100),templateId:null,
+    identityMode:"custom"});
+  record.siteId=created.id;saveDraft(record);
+  originalSeedIds=created.pages.flatMap(page=>page.sections.filter(section=>section.sectionType!=="site_footer").map(section=>section.id));
+ }
+ const usedSeedIds=new Set<string>();
  const variants=await getInstitutionalVariants();
- let site=await getInstitutionalSite(record.siteId);
+ const confirmedSiteId=record.siteId;
+ if(!confirmedSiteId)throw new Error("Não foi possível identificar o site criado. Nenhuma alteração adicional foi aplicada.");
+ let site=await getInstitutionalSite(confirmedSiteId);
  for(const [index,pagePlan] of plan.pages.entries()){
   report(`Criando página ${index+1}/${plan.pages.length}: ${pagePlan.title}`);
   let page=site.pages.find(p=>p.slug===pagePlan.slug);
   if(!page){site=await createInstitutionalPage(site.id,{title:pagePlan.title,slug:pagePlan.slug});page=site.pages.find(p=>p.slug===pagePlan.slug);}
   if(!page){warnings.push(`Não foi possível localizar a página ${pagePlan.title}.`);continue;}
-  // Apply at most 4 native sections per page. Existing hand-edited sections are preserved.
-  for(const [i,section] of pagePlan.sections.slice(0,4).entries()){
+  // O próprio plano define quantas seções cada página precisa (até o limite validado).
+  // Os componentes do editor continuam nativos, mas o conteúdo não vem de templates.
+  for(const section of pagePlan.sections){
     const type=sectionType(section.type);
-    if(type==="impact_metrics"){
-      // No real numbers supplied. Avoid inventing social impact counters.
-      warnings.push(`A seção "${section.title}" exige indicadores reais antes de publicação.`);
-      continue;
+    if(section.type==="impact"){
+      warnings.push(`A seção "${section.title}" foi criada sem números de impacto não confirmados.`);
     }
     const matching=page.sections.find(s=>s.sectionType===type);
     if(matching){
@@ -190,8 +199,10 @@ async function writeSite(plan:NonNullable<AiPlan["site"]>,look:SiteLook,record:B
       const guide=matching.settings.contentGuidance;
       const aiOwned=guide&&typeof guide==="object"&&"source" in guide&&guide.source==="ai-confirmed-draft";
       if(!record.lastPlanSignature||aiOwned){
+        if(freshSite)usedSeedIds.add(matching.id);
         site=await updateInstitutionalSection(matching.id,{
-          content:{...matching.content,...contentFor(type,section.title,section.text,section.action_label)},
+          content:freshSite?contentFor(type,section.title,section.text,section.action_label)
+            :{...matching.content,...contentFor(type,section.title,section.text,section.action_label)},
           settings:{...matching.settings,contentGuidance:{source:"ai-confirmed-draft",needsReview:true}},
         });
         page=site.pages.find(p=>p.id===page?.id)??page;
@@ -204,8 +215,13 @@ async function writeSite(plan:NonNullable<AiPlan["site"]>,look:SiteLook,record:B
       content:contentFor(type,section.title,section.text,section.action_label),
       settings:{contentGuidance:{source:"ai-confirmed-draft",needsReview:true}}});
     page=site.pages.find(p=>p.id===page?.id)??page;
-    if(i>=3)break;
   }
+ }
+ // Evitar que os blocos exemplificativos criados automaticamente pelo editor
+ // apareçam como se fossem dados verdadeiros desta organização.
+ for(const seedId of originalSeedIds){
+  if(usedSeedIds.has(seedId))continue;
+  await deleteInstitutionalSection(seedId);
  }
  return site;
 }
@@ -215,7 +231,7 @@ function typeOfPublicField(field:AiField){
  if(field.type==="boolean")return "text"; // not eligible for connection
  return field.type;
 }
-function makeInferredForms(plan:AiPlan, turns:string[]):AiPublicForm[]{
+function makeLegacyInferredForms(plan:AiPlan, turns:string[]):AiPublicForm[]{
  const result=[...plan.connection.public_forms];
  if(result.length||!plan.system||!plan.site)return result;
  const modules=dedupeModules(plan.system.modules);
@@ -237,6 +253,27 @@ function makeInferredForms(plan:AiPlan, turns:string[]):AiPublicForm[]{
    fields,bindings:fields.map(f=>({form_field_key:f.key,module_field_key:f.key}))});
  }
  return result;
+}
+
+function makeInferredForms(plan:AiPlan, turns:string[]):AiPublicForm[]{
+ const existing=makeLegacyInferredForms(plan,turns);
+ if(existing.length||!plan.system||!plan.site||!plan.connection.link_system)return existing;
+ const request=ascii(turns.filter(Boolean).slice(-8).join(" "));
+ if(!/formular|inscri|cadastro|solicita|registr.*site|colet.*site/.test(request))return existing;
+ const modules=dedupeModules(plan.system.modules).filter(m=>m.fields.length>0&&blueprintOf(m)!=="forms");
+ if(!modules.length)return existing;
+ // O próprio plano (etapa receive) indica o receptor; não existe cadastro inventado.
+ const receiving=plan.system.workflow.find(w=>w.kind==="receive"&&modules.some(m=>m.alias===w.module_alias));
+ const target=receiving?modules.find(m=>m.alias===receiving.module_alias):modules.length===1?modules[0]:
+   modules.find(m=>/inscri|cadastro|solicit|registro/.test(ascii(m.name)));
+ if(!target)return existing; // Ambiguidade: revisão humana, sem mapeamento incorreto.
+ const fields=target.fields.filter(f=>f.type!=="boolean"&&(f.type!=="select"||f.options.length>=2)).slice(0,24);
+ if(!fields.length||target.fields.some(f=>f.required&&!fields.some(s=>s.key===f.key)))return existing;
+ const page=plan.site.pages.find(p=>/inscri|cadastro|formul|particip|contat/.test(ascii(p.slug)))??plan.site.pages[0];
+ if(!page)return existing;
+ return [{name:`Formulário de ${target.name}`.slice(0,110),page_slug:page.slug,
+   form_module_alias:"forms",target_module_alias:target.alias,fields,
+   bindings:fields.map(f=>({form_field_key:f.key,module_field_key:f.key}))}];
 }
 
 async function placeFormInSite(siteId:string,pageSlug:string,formId:string,title:string,warnings:string[]){
@@ -319,8 +356,13 @@ export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:str
  let record:BuildRecord=existingDraft(input.sessionId)??{
    organizationId:org,sessionId:input.sessionId,systemId:null,siteId:null,formIds:{},lastPlanSignature:"",updatedAt:"",
  };
- const warnings:string[]=[];
- const signature=JSON.stringify({plan:input.plan,look:input.look,palette:input.palette?.id||null,logo:input.logoFile?`${input.logoFile.name}:${input.logoFile.size}:${input.logoFile.lastModified}`:null});
+  const warnings:string[]=[];
+  // A criação livre deste construtor ainda não possui implementação de persistência
+  // de paleta/logotipo. Informar essa pendência explicitamente em vez de ignorar
+  // as escolhas visuais do usuário de forma silenciosa.
+  if(input.palette)warnings.push("A paleta escolhida aparece na prévia, mas precisa ser aplicada no editor do site após criar o rascunho.");
+  if(input.logoFile)warnings.push("O logotipo selecionado precisa ser enviado pelo editor do site após criar o rascunho.");
+ const signature=JSON.stringify(input.plan);
  if(record.lastPlanSignature===signature){
    input.report("Esse rascunho já foi montado. Não serão criados itens repetidos.");
    return {record,warnings,modules:0,pages:0,forms:Object.keys(record.formIds).length};
@@ -369,33 +411,7 @@ export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:str
    }
  }
  let site:InstitutionalSite|null=null;
- if(input.plan.site){
-   if(record.siteId&&record.lastLook&&record.lastLook!==input.look)warnings.push("O modelo visual escolhido na criação anterior permanece no rascunho. Para trocar a estrutura do modelo existente, use o editor do site.");
-   site=await writeSite(input.plan.site,input.look,record,input.report,warnings);
-   if(input.palette||input.logoFile){
-     input.report("Aplicando cores e identidade visual ao site...");
-     const fresh=await getInstitutionalSite(site.id);
-     let logoId=fresh.brand.logoAssetId;
-     if(input.logoFile){
-       if(!["image/png","image/jpeg","image/webp"].includes(input.logoFile.type)||input.logoFile.size>5_000_000)
-         throw new Error("Envie uma logo PNG, JPG, WebP ou SVG de até 5 MB.");
-       const logoFingerprint=`${input.logoFile.name}:${input.logoFile.size}:${input.logoFile.lastModified}`;
-       if(record.logoAssetId&&record.lastLogoFingerprint===logoFingerprint){logoId=record.logoAssetId;}
-       else {const uploaded=await uploadInstitutionalMedia(input.logoFile);logoId=uploaded.id;record.logoAssetId=logoId;record.lastLogoFingerprint=logoFingerprint;saveDraft(record);}
-     }
-     const p=input.palette;
-     await updateInstitutionalSiteBrand(site.id,{
-       logoAssetId:logoId,
-       primaryColor:p?.primary??fresh.brand.primaryColor,
-       secondaryColor:p?.secondary??fresh.brand.secondaryColor,
-       accentColor:p?.accent??fresh.brand.accentColor,
-       backgroundColor:p?.background??fresh.brand.backgroundColor,
-       textColor:p?.text??fresh.brand.textColor,
-       headingFont:fresh.brand.headingFont,bodyFont:fresh.brand.bodyFont,
-       ...(fresh.brand.designSystem?{designSystem:fresh.brand.designSystem}:{})
-     });
-   }
- }
+ if(input.plan.site){site=await writeSite(input.plan.site,record,input.report,warnings);}
  if(operational&&site){
    input.report("Associando site e sistema no construtor...");
    operational=await getOperationalSystem(operational.id);
@@ -406,6 +422,6 @@ export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:str
  if(input.plan.connection.link_system&&(!operational||!site))warnings.push("A conexão solicitada exige um site e um sistema.");
  if(input.plan.connection.link_system&&count===0&&Object.keys(record.formIds).length===0)
    warnings.push("Nenhum formulário conectado pôde ser gerado; abra o editor de formulários para concluir.");
- record={...record,lastPlanSignature:signature,lastLook:input.look,updatedAt:new Date().toISOString()};saveDraft(record);
+ record={...record,lastPlanSignature:signature,updatedAt:new Date().toISOString()};saveDraft(record);
  return {record,warnings,modules:operational?.modules.length??0,pages:site?.pages.length??0,forms:Object.keys(record.formIds).length};
 }

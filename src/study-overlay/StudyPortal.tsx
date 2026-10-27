@@ -27,7 +27,7 @@ export function StudyPortal(){
  const current=state?.runs.find(r=>r.status!=='submitted');
  const active=state?.runs.find(r=>r.status==='running');
  const start=()=>current&&action(()=>study(`/run/${current.sequence_number}/start`,{}));
- const finish=()=>active&&action(()=>study(`/run/${active.sequence_number}/finish`,form));
+ const finish=()=>active&&action(async()=>{await study(`/run/${active.sequence_number}/finish`,form);setForm({...empty});});
  const submitFinal=()=>action(async()=>{await study('/finish',{answers:final});setDone(true);});
  return <main className={styles.page}>
   <section className={styles.card}>
@@ -45,7 +45,11 @@ export function StudyPortal(){
        <button className={styles.primary} disabled={busy} onClick={start}>Iniciar execução {current.sequence_number}</button></>:
        <><p className={styles.clock} key={tick}>Tempo decorrido: {clock(current.started_at)}</p>
         <p>O painel flutuante acompanha você durante a navegação. Use somente o ambiente de demonstração autorizado pelo aplicador. Não inclua dados de pessoas reais.</p>
-        <Link className={styles.primaryLink} to={import.meta.env.VITE_STUDY_APP_PATH || "/app/comunidade"}>Abrir a CONG</Link>
+        <nav aria-label="Acessar os construtores da CONG" style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:16}}>
+          <Link className={styles.primaryLink} to="/app/sistemas">Abrir sistemas</Link>
+          <Link className={styles.primaryLink} to="/app/site-institucional">Abrir sites</Link>
+          {current.condition==='com_ia'&&<Link className={styles.primaryLink} to="/app/assistente-ia">Abrir assistente CONG</Link>}
+        </nav>
         <p className={styles.warning}>Acesse a área de Sistemas Operacionais da ONG fictícia disponibilizada pelo aplicador. A condição com/sem IA depende de configuração e validação técnica do ambiente; se uma ação do enunciado estiver indisponível, registre uma falha técnica. Não declare uma tarefa como concluída se não a realizou.</p>
         <h3>Encerrar execução</h3>
         <label className={styles.field}><span>Você conseguiu concluir a tarefa?</span><select value={String(form.completed)} onChange={e=>setForm(f=>({...f,completed:e.target.value==='true'}))}><option value="false">Não</option><option value="true">Sim, acredito que concluí</option></select></label>

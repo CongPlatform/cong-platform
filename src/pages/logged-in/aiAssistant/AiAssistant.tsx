@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { study, type State as StudyState } from "../../../study-overlay/client";
 import { Link } from "react-router-dom";
+import ModalMensagem from "../../../components/modalMensagem/ModalMensagem";
 import { listInstitutionalSites, getInstitutionalSite } from "../../../services/institutionalService";
 import { listOperationalSystems } from "../../../features/operational/operationalService";
 import { createPortal } from "react-dom";
@@ -7,7 +9,7 @@ import { useWorkspace } from "../../../contexts/workspace-context";
 import { buildAiDraft, existingDraft, SITE_LOOKS, SITE_PALETTES, type BuildResult, type SiteLook, type SitePalette } from "../../../features/aiBuilder/aiBuilder";
 import { FiAlertCircle, FiArrowRight, FiFileText, FiLayers, FiMessageCircle, FiPlus, FiRefreshCw, FiSend, FiServer, FiXCircle, FiImage, FiDroplet, FiEdit3, FiArrowLeft, FiTrash2, FiInfo, FiClipboard, FiX } from "react-icons/fi";
 import {
-  aiCancel, aiDelete, aiDetail, aiReply, aiRetry, aiSessions, aiStart, aiStatus, aiSaveMemory, aiRevokeProject,
+  aiCancel, aiDelete, aiDetail, aiReply, aiRetry, aiSessions, aiStart, aiStatus, aiSaveMemory, aiRevokeProject, aiInspectProject,
   type AiAvailability, type AiGoal, type AiMemory, type AiPlan, type AiSessionDetail, type AiSessionSummary, type AiProjectContext,
 } from "../../../services/aiAssistantService";
 import congMark from "../../../assets/brand/logo-mark.webp";
@@ -28,6 +30,9 @@ const STARTERS = [
   { title: "Conectar recursos", description: "Site, sistema e formulários juntos", message: "Quais formas existem de conectar um site, um sistema interno e formulários na CONG? Primeiro, quero entender as possibilidades.", icon: FiArrowRight },
 ];
 type RecentProject={id:string;kind:"site"|"system";title:string;updatedAt:string;moduleCount?:number};
+type ProjectPreview={status:"loading"|"ready"|"error";pages?:{title:string;sections:number}[]};
+const projectKey=(project:RecentProject)=>`${project.kind}:${project.id}`;
+const safeDate=(value:string)=>{const date=new Date(value);return Number.isNaN(date.getTime())?"Data não disponível":date.toLocaleDateString("pt-BR");};
 // O foco nasce da conversa e pode mudar; escolher uma modalidade é opcional.
 function inferGoal(message:string, previous:AiGoal):AiGoal{
  const normalized=message.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
@@ -38,7 +43,18 @@ function inferGoal(message:string, previous:AiGoal):AiGoal{
  return site&&system?"both":site?"site":system?"system":previous;
 }
 const busy = (status?: string) => status === "pending" || status === "processing";
-const errorText = (error: unknown) => error instanceof Error ? error.message : "Não foi possível concluir a solicitação.";
+// Códigos internos da API/modelo e mensagens de infraestrutura não devem aparecer na interface.
+// Detalhes técnicos continuam disponíveis no backend para diagnóstico.
+const errorText = (error: unknown) => {
+  const raw = error instanceof Error ? error.message : "";
+  if (/401|unauthorized|autentica(?:ção|cao)|sess[aã]o expirada/i.test(raw))
+    return "Sua sessão pode ter expirado. Entre novamente e tente outra vez.";
+  if (/403|forbidden|permiss[aã]o|acesso negado/i.test(raw))
+    return "Você não tem permissão para concluir esta ação neste projeto.";
+  if (/429|rate.?limit|muitas solicita[cç][oõ]es/i.test(raw))
+    return "Recebi muitos pedidos ao mesmo tempo. Tente novamente em instantes.";
+  return "Não consegui concluir isso agora. Sua conversa continua salva; tente novamente.";
+};
 
 function Proposal({ plan, coverage, missing }: { plan: AiPlan; coverage?: string; missing?: string[] }) {
   const [rawOpen, setRawOpen] = useState(false);
@@ -73,8 +89,19 @@ function ConversationalText({value}:{value:string}){
 }
 
 export default function AiAssistant() {
+  const [studyAiBlocked,setStudyAiBlocked] = useState<boolean|null>(import.meta.env.VITE_STUDY_ENABLED === "true" ? null : false);
+  useEffect(()=>{
+    if(import.meta.env.VITE_STUDY_ENABLED !== "true")return;
+    let active=true;
+    study<StudyState>("/me").then(result=>{
+      if(!active)return;
+      setStudyAiBlocked(result.runs.some(run=>run.status === "running" && run.condition === "sem_ia"));
+    }).catch(()=>{if(active)setStudyAiBlocked(false);});
+    return ()=>{active=false;};
+  },[]);
   const { workspace } = useWorkspace();
   const organizationName = workspace.kind === "organization" ? workspace.organization.name : "Organização";
+  const workspaceIdentity=workspace.kind === "organization" ? workspace.organization.name : "pessoal";
   const [look,setLook] = useState<SiteLook>("human");
   const [palette,setPalette] = useState<SitePalette|null>(null);
   const [customPalette,setCustomPalette] = useState<SitePalette>({id:"personalizada",label:"Minha paleta",description:"Criada aqui, para este projeto",primary:"#275b95",secondary:"#479c91",accent:"#e5a54c",background:"#f8fafc",text:"#203047"});
@@ -110,9 +137,12 @@ export default function AiAssistant() {
   const [savingMemory,setSavingMemory] = useState(false);
   const [recentProjects,setRecentProjects] = useState<RecentProject[]>([]);
   const [projectListOpen,setProjectListOpen] = useState(false);
+  const [projectListError,setProjectListError] = useState("");
+  const [projectPreviews,setProjectPreviews] = useState<Record<string,ProjectPreview>>({});
   const [projectBusy,setProjectBusy] = useState(false);
   const [projectConsent,setProjectConsent] = useState<AiProjectContext|null>(null);
   const [projectNotice,setProjectNotice] = useState("");
+  const [confirmAction,setConfirmAction] = useState<{kind:"delete";id:string}|{kind:"project";project:RecentProject}|{kind:"build"}|null>(null);
   const [text, setText] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -130,13 +160,13 @@ export default function AiAssistant() {
   const selectedRef = useRef<string | null>(null);
   const refresh = useCallback(async (id: string) => {
     const detail = await aiDetail(id);
-    if (selectedRef.current === id) {setCurrent(detail);if(detail.session.memory.projectContext!==undefined)setProjectConsent(detail.session.memory.projectContext??null);}
+    if (selectedRef.current === id) {setCurrent(detail);if(detail.session.memory.projectContext)setProjectConsent(detail.session.memory.projectContext);}
     return detail;
   }, []);
   const select = useCallback(async (id: string) => {
     const changingConversation=selectedRef.current!==id;
     selectedRef.current = id; setSessionId(id); setError(""); setLoading(true); setCurrent(null);setInsightsOpen(false);
-    setApproved(false);setBuildError("");setBuildProgress("");setBuildResult(null);setEditingMemory(null);setProjectConsent(null);setProjectListOpen(false);setProjectNotice("");
+    setApproved(false);setBuildError("");setBuildProgress("");setBuildResult(null);setEditingMemory(null);setProjectConsent(null);setProjectListOpen(false);setProjectListError("");setProjectNotice("");
     setExisting(Boolean(existingDraft(id)));
     if(changingConversation){setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError("");}
     try { await refresh(id); } catch (e) { setError(errorText(e)); } finally { setLoading(false); }
@@ -152,6 +182,20 @@ export default function AiAssistant() {
     });
     return () => { disposed = true; };
   }, []);
+  // Somente metadados de projetos que os endpoints autenticados permitem listar.
+  // A consulta não autoriza criação, edição ou publicação.
+  useEffect(() => {
+    let disposed=false;
+    void Promise.allSettled([listInstitutionalSites(),listOperationalSystems()]).then(([sites,systems])=>{
+      if(disposed)return;
+      const recent:RecentProject[]=[
+        ...(sites.status==="fulfilled"?sites.value.map(p=>({id:p.id,kind:"site" as const,title:p.name,updatedAt:p.updatedAt})):[]),
+        ...(systems.status==="fulfilled"?systems.value.map(p=>({id:p.id,kind:"system" as const,title:p.name,updatedAt:p.updatedAt,moduleCount:p.moduleCount})):[]),
+      ].sort((a,b)=>new Date(b.updatedAt).getTime()-new Date(a.updatedAt).getTime()).slice(0,24);
+      setRecentProjects(recent);
+    });
+    return ()=>{disposed=true};
+  },[workspaceIdentity]);
   useEffect(() => {
     if (!sessionId || !busy(current?.session.status)) return;
     let cancelled = false;
@@ -163,12 +207,65 @@ export default function AiAssistant() {
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [sessionId,current?.session.status,refresh,reloadList]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }); }, [current?.session.turns.length, current?.session.status]);
+  async function readonlyProjectContext(project:RecentProject):Promise<AiProjectContext>{
+    if(project.kind==="system"){
+      // Este serviço expõe contagem de módulos, não dados internos do sistema.
+      return {kind:"system",title:project.title,updated_at:project.updatedAt,
+        structure:JSON.stringify({nome:project.title,quantidade_de_modulos:project.moduleCount??null,
+          limite:"Os módulos internos e seus registros não foram obtidos por esta consulta. Não invente conteúdo."})};
+    }
+    const site=await getInstitutionalSite(project.id);
+    const pages=site.pages.slice(0,16).map(page=>({
+      titulo:page.title,
+      secoes:page.sections.slice(0,16).map(section=>{
+        const source=section as unknown as Record<string,unknown>;
+        // Apenas campos editoriais conhecidos; exclui respostas de formulários, autenticação e registros pessoais.
+        const details:Record<string,string>={tipo:section.sectionType};
+        for(const key of ["title","subtitle","description","text","content","actionLabel"]){
+          if(typeof source[key]==="string")details[key]=String(source[key]).slice(0,340);
+        }
+        return details;
+      }),
+    }));
+    return {kind:"site",title:project.title,updated_at:project.updatedAt,
+      structure:JSON.stringify({nome:project.title,paginas:pages,
+        limite:"Conteúdo editorial conhecido; sem renderização visual, sem dados de inscrições."}).slice(0,9500)};
+  }
+  function matchingProject(message:string):RecentProject|undefined{
+    const term=message.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+    const matches=recentProjects.filter(project=>term.includes(project.title.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()));
+    if(matches.length)return matches[0];
+    if(/\b(?:meu|meus|me|o|um)\s+(?:site|sites)\b|\bsite\b/.test(term))return recentProjects.find(p=>p.kind==="site");
+    if(/\b(?:meu|meus|o|um)\s+(?:sistema|sistemas)\b|\bsistema\b/.test(term))return recentProjects.find(p=>p.kind==="system");
+    return undefined;
+  }
   async function sendMessage(message:string) {
     if(!message.trim()||busy(current?.session.status)||submitting)return;
     setSubmitting(true); setError("");
     try {
       const inferredGoal=inferGoal(message,sessionId?(current?.session.goal??goal):goal);
-      const result = sessionId ? await aiReply(sessionId,message.trim(),projectConsent,inferredGoal) : await aiStart(inferredGoal,message.trim(),projectConsent);
+      let context=projectConsent;
+      // Ao citar um projeto, uso somente a leitura que a própria conta já possui.
+      // Nunca solicito consentimento de EDIÇÃO para uma consulta e nunca altero o projeto aqui.
+      const candidate=matchingProject(message);
+      const changeFocus=Boolean(candidate && context && !context.title.includes(candidate.title));
+      if(!context || changeFocus){
+        const project=candidate;
+        if(project){
+          try{
+            context=await readonlyProjectContext(project);
+            const normalized=message.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+            const other=recentProjects.find(p=>p.kind!==project.kind);
+            if(other && /site/.test(normalized) && /sistema/.test(normalized)){
+              const second=await readonlyProjectContext(other);
+              context={...context,title:`${context.title} + ${second.title}`.slice(0,150),
+                structure:JSON.stringify({projetos:[{tipo:project.kind,estrutura:context.structure},{tipo:other.kind,estrutura:second.structure}]}).slice(0,10000)};
+            }
+            setProjectConsent(context);
+          }catch{setProjectNotice("Não consegui ler esse projeto agora. Vou responder sem fingir que o examinei.");}
+        }
+      }
+      const result = sessionId ? await aiReply(sessionId,message.trim(),context,inferredGoal) : await aiStart(inferredGoal,message.trim(),context);
       setText("");
       await select(result.session_id);
       await reloadList();
@@ -193,7 +290,6 @@ export default function AiAssistant() {
   }
   async function deleteConversation(id: string) {
     if (submitting || building) return;
-    if (!window.confirm("Excluir esta conversa e o contexto registrado nela? Esta ação não pode ser desfeita. Rascunhos já criados nos editores da CONG não serão excluídos.")) return;
     setSubmitting(true); setError("");
     try {
       await aiDelete(id);
@@ -202,10 +298,9 @@ export default function AiAssistant() {
     } catch (e) { setError(errorText(e)); }
     finally { setSubmitting(false); }
   }
-  function newConversation() { setProjectConsent(null);setProjectListOpen(false);setProjectNotice("");setEditingMemory(null);setInsightsOpen(false);selectedRef.current = null; setSessionId(null); setCurrent(null); setError(""); setText("");setApproved(false);setBuildResult(null);setExisting(false);setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError(""); }
+  function newConversation() { setConfirmAction(null);setProjectConsent(null);setProjectListOpen(false);setProjectListError("");setProjectNotice("");setEditingMemory(null);setInsightsOpen(false);selectedRef.current = null; setSessionId(null); setCurrent(null); setError(""); setText("");setApproved(false);setBuildResult(null);setExisting(false);setPalette(null);setLogoFile(null);setLogoPreview("");setLogoError(""); }
   async function buildConfirmedDraft(){
     if(!sessionId || !approved || building || current?.session.status!=="propose" || !current.session.plan || current.metrics?.coverage_status==="needs_review" || Boolean(current.metrics?.unmet_requirements?.length))return;
-    if(!window.confirm("Criar ou atualizar rascunhos REAIS nos construtores da sua ONG? Nada será publicado ou ativado automaticamente."))return;
     setBuilding(true);setBuildError("");setBuildProgress("Preparando os construtores...");
     try{
       const plan=current.session.plan;
@@ -221,45 +316,80 @@ export default function AiAssistant() {
     }catch(e){setBuildError(errorText(e));setBuildProgress("Alguns recursos podem ter sido criados. Verifique os links e tente novamente na mesma sessão.");setExisting(Boolean(existingDraft(sessionId)));}
     finally{setBuilding(false);}
   }
+  const closeProjectPicker=useCallback(()=>setProjectListOpen(false),[]);
   async function findRecentProjects(){
-    setProjectBusy(true);setProjectNotice("");setProjectListOpen(true);
+    setProjectBusy(true);setProjectListError("");setProjectNotice("");setProjectListOpen(true);
     try{
-      const results=await Promise.allSettled([listInstitutionalSites(),listOperationalSystems()]);
-      const sites=results[0].status==="fulfilled" ? results[0].value : [];
-      const systems=results[1].status==="fulfilled" ? results[1].value : [];
-      const items:RecentProject[]=[
-        ...sites.map(site=>({id:site.id,kind:"site" as const,title:site.name,updatedAt:site.updatedAt})),
-        ...systems.map(system=>({id:system.id,kind:"system" as const,title:system.name,updatedAt:system.updatedAt,moduleCount:system.moduleCount})),
-      ].sort((a,b)=>new Date(b.updatedAt).getTime()-new Date(a.updatedAt).getTime()).slice(0,10);
+      const [sitesResult,systemsResult]=await Promise.allSettled([listInstitutionalSites(),listOperationalSystems()]);
+      const sites=sitesResult.status==="fulfilled"?sitesResult.value:[];
+      const systems=systemsResult.status==="fulfilled"?systemsResult.value:[];
+      // Reserve espaço para cada tipo: muitos sites recentes não podem esconder os sistemas.
+      const newest=(a:RecentProject,b:RecentProject)=>new Date(b.updatedAt).getTime()-new Date(a.updatedAt).getTime();
+      const siteProjects:RecentProject[]=sites.map((site):RecentProject=>({id:site.id,kind:"site",title:site.name,updatedAt:site.updatedAt})).sort(newest).slice(0,12);
+      const systemProjects:RecentProject[]=systems.map((system):RecentProject=>({id:system.id,kind:"system",title:system.name,updatedAt:system.updatedAt,moduleCount:system.moduleCount})).sort(newest).slice(0,12);
+      const items:RecentProject[]=[...siteProjects,...systemProjects].sort(newest);
       setRecentProjects(items);
-      if(!items.length)setProjectNotice("Nenhum projeto acessível foi encontrado nesta organização.");
-      else if(results.some(x=>x.status==="rejected"))setProjectNotice("Mostrei só os projetos que consegui consultar com sua permissão.");
-    }catch(e){setProjectNotice(errorText(e));}
-    finally{setProjectBusy(false)}
+      if(sitesResult.status==="rejected" && systemsResult.status==="rejected"){
+        setProjectListError("Não consegui carregar seus projetos. Confira a conexão e tente de novo.");
+      }else if(sitesResult.status==="rejected"){
+        setProjectListError("Consegui carregar os sistemas, mas a lista de sites está indisponível agora.");
+      }else if(systemsResult.status==="rejected"){
+        setProjectListError("Consegui carregar os sites, mas a lista de sistemas está indisponível agora.");
+      }
+    }catch{
+      setProjectListError("Não consegui carregar os projetos agora. Tente novamente.");
+    }finally{setProjectBusy(false)}
+  }
+  async function previewProject(project:RecentProject){
+    if(project.kind!=="site")return;
+    const key=projectKey(project);
+    if(projectPreviews[key])return;
+    setProjectPreviews(old=>({...old,[key]:{status:"loading"}}));
+    try{
+      const detail=await getInstitutionalSite(project.id);
+      const pages=detail.pages.slice(0,6).map(page=>({title:page.title,sections:page.sections.length}));
+      setProjectPreviews(old=>({...old,[key]:{status:"ready",pages}}));
+    }catch{
+      setProjectPreviews(old=>({...old,[key]:{status:"error"}}));
+    }
   }
   async function allowProject(project:RecentProject){
-    if(!window.confirm(`Permitir que o CONG consulte a estrutura resumida de “${project.title}” nesta conversa? Acesso de leitura, sem registros de beneficiários e sem alterar o projeto.`))return;
     setProjectBusy(true);setProjectNotice("");
     try{
-      let structure:string;
-      if(project.kind==="site"){
-        const site=await getInstitutionalSite(project.id);
-        // Compartilhe somente estrutura, nunca conteúdo sensível, leads ou registros do formulário.
-        structure=JSON.stringify({paginas:site.pages.slice(0,15).map(page=>({titulo:page.title,secoes:page.sections.slice(0,20).map(section=>section.sectionType)}))});
+      const context=await readonlyProjectContext(project);
+      setProjectConsent(context);
+      setProjectListOpen(false);
+      const recentRequest=current?.session.turns.filter(t=>t.role==="usuario").at(-1)?.text??"";
+      const shouldInspect=Boolean(sessionId && (current?.session.status==="clarify"||current?.session.status==="propose") && /\b(?:olha|analis\w*|avali\w*|revis\w*|examin\w*|explor\w*|o que acha|meu site|meu sistema)\b/i.test(recentRequest));
+      if(shouldInspect && sessionId){
+        setProjectNotice("Vou conferir a estrutura disponível. Ainda não vejo a aparência renderizada da página.");
+        const result=await aiInspectProject(sessionId,context);
+        await select(result.session_id); await reloadList();
       }else{
-        structure=JSON.stringify({modulos:project.moduleCount??"quantidade não disponível",detalhes:"Consulta restrita ao resumo do sistema; não inclui registros de pessoas ou dados internos."});
+        setProjectNotice(busy(current?.session.status)
+          ? "Projeto selecionado. Assim que eu terminar, posso analisar sua estrutura."
+          : "Já posso usar a estrutura que consegui consultar. Posso analisá-la agora.");
       }
-      setProjectConsent({kind:project.kind,title:project.title,updated_at:project.updatedAt,structure:structure.slice(0,2500)});
-      setProjectListOpen(false);setProjectNotice("Contexto pronto. Vou considerar a estrutura deste projeto na sua próxima mensagem, sem editá-lo.");
     }catch(e){setProjectNotice("Não consegui acessar esse projeto com suas permissões: "+errorText(e));}
     finally{setProjectBusy(false)}
   }
   async function revokeProject(){
     if(sessionId){
       setProjectBusy(true);
-      try{await aiRevokeProject(sessionId);setProjectConsent(null);await refresh(sessionId);setProjectNotice("A consulta foi revogada para as próximas respostas.");}
+      try{await aiRevokeProject(sessionId);setProjectConsent(null);await refresh(sessionId);setProjectNotice("Retirei este projeto do contexto desta conversa.");}
       catch(e){setProjectNotice(errorText(e));}finally{setProjectBusy(false)}
     }else{setProjectConsent(null);setProjectNotice("Contexto desativado.");}
+  }
+  async function inspectCurrentProject(){
+    if(!projectConsent || !sessionId || projectBusy || busy(current?.session.status))return;
+    setProjectBusy(true);setProjectNotice("");
+    try{
+      const result=await aiInspectProject(sessionId,projectConsent);
+      await select(result.session_id);
+      await reloadList();
+    }catch{
+      setProjectNotice("Não consegui analisar este projeto agora. Você pode continuar a conversa e tentar de novo.");
+    }finally{setProjectBusy(false)}
   }
   async function saveUnderstanding(){
     if(!sessionId||!editingMemory||savingMemory||busy(current?.session.status))return;
@@ -274,7 +404,13 @@ export default function AiAssistant() {
   const wordsFromUser = current?.session.turns.filter(t => t.role === "usuario").map(t => t.text) ?? [];
   const composerRef = useRef<HTMLTextAreaElement>(null);
   function focusComposer() { composerRef.current?.focus(); }
-  return createPortal(<main className={styles.page} data-cong-ai-studio="true" aria-label="Criar com o CONG">
+  if(studyAiBlocked===null)return <main style={{padding:32}} role="status">Conferindo a etapa da pesquisa…</main>;
+  if(studyAiBlocked)return <main style={{maxWidth:620,margin:"64px auto",padding:28,lineHeight:1.6}}>
+    <h1>Etapa sem assistência de IA</h1>
+    <p>Esta atividade deve ser realizada sem o assistente para que a comparação do estudo seja válida.</p>
+    <Link to="/pesquisa/entrar">Voltar à tarefa da pesquisa</Link>
+  </main>;
+  return createPortal(<><main className={styles.page} data-cong-ai-studio="true" aria-label="Criar com o CONG">
     <header className={styles.studioToolbar}>
       <div className={styles.studioIdentity}>
         <Link className={styles.backLink} to="/app/comunidade" title="Voltar à CONG"><FiArrowLeft aria-hidden="true"/><span>Voltar</span></Link>
@@ -298,7 +434,7 @@ export default function AiAssistant() {
           <button type="button" className={`${styles.historyItem} ${sessionId===s.id ? styles.active : ""}`} aria-current={sessionId===s.id ? "page" : undefined} onClick={() => {void select(s.id);}}>
             <FiMessageCircle aria-hidden="true"/><span><strong>{s.title?.trim() || (GOALS.find(g=>g.id===s.goal)?.label ?? s.goal)}</strong><small>{new Date(s.updated_at).toLocaleString("pt-BR")}</small></span>
           </button>
-          <button type="button" className={styles.historyDelete} title="Excluir conversa" aria-label={`Excluir conversa de ${new Date(s.updated_at).toLocaleString("pt-BR")}`} onClick={() => {void deleteConversation(s.id);}} disabled={submitting || building}><FiTrash2 aria-hidden="true"/></button>
+          <button type="button" className={styles.historyDelete} title="Excluir conversa" aria-label={`Excluir conversa de ${new Date(s.updated_at).toLocaleString("pt-BR")}`} onClick={() => setConfirmAction({kind:"delete",id:s.id})} disabled={submitting || building}><FiTrash2 aria-hidden="true"/></button>
         </div>) : <p className={styles.emptyHint}>Suas conversas aparecerão aqui.</p>}
         <p className={styles.historyPrivacy}><FiInfo aria-hidden="true"/> Cada conversa é privada para seu usuário nesta organização.</p>
       </aside>
@@ -308,8 +444,8 @@ export default function AiAssistant() {
             <div className={styles.welcomeIntroduction}>
               <div className={styles.welcomePortrait}><img src={mascotHappy} alt="Mascote gorila da CONG" className={styles.welcomeMascot}/><span className={styles.portraitSparkle} aria-hidden="true">✦</span></div>
               <div className={styles.welcomeText}><span className={styles.welcomeEyebrow}><span aria-hidden="true" className={styles.welcomeSignal}/> Opa! Cheguei.</span>
-                <h2>Oi, eu sou o CONG!</h2>
-                <p>Chega mais! Pode trazer uma dúvida, uma ideia meio bagunçada ou um projeto já começado. Eu te ajudo a encontrar o caminho — e, quando você quiser construir, a gente capricha juntos.</p>
+                <h2>Chega mais! Eu sou o CONG.</h2>
+                <p>Tem uma dúvida? Manda. Quer que eu dê uma olhada num projeto ou te ajude a criar algo do zero? Eu penso com você, sem pressa de sair construindo qualquer coisa.</p>
               </div>
             </div>
             <div className={styles.starterIntro}><strong>Como posso ajudar hoje?</strong><span>Escolha um caminho ou escreva do seu jeito.</span></div>
@@ -341,7 +477,7 @@ export default function AiAssistant() {
             <span className={styles.thinkingCopy}><strong>{status === "pending" ? "Já peguei sua mensagem!" : "Deixa comigo, tô juntando as ideias..."}</strong><small>{status === "pending" ? "Assim que chegar minha vez, te respondo." : "Só um instante, quero te ajudar direitinho."}</small></span>
             <span className={styles.thinkingDots} aria-hidden="true"><i/><i/><i/></span>
           </div>}
-          {status === "failed" && <div className={styles.warning}><FiXCircle aria-hidden="true" /> Não foi possível gerar a resposta ({current?.error_code || "erro de processamento"}). <button type="button" onClick={() => {void action("retry");}} disabled={submitting}>Tentar novamente</button></div>}
+          {status === "failed" && <div className={styles.warning}><FiXCircle aria-hidden="true" /> Ops! Não consegui concluir essa resposta. Sua conversa está salva. <button type="button" onClick={() => {void action("retry");}} disabled={submitting}>Tentar novamente</button></div>}
           {status === "cancelled" && <div className={styles.notice}>Esta conversa foi cancelada. Inicie outra conversa para continuar.</div>}
           {status === "propose" && current?.session.plan && <>
             <Proposal plan={current.session.plan} coverage={current.metrics?.coverage_status} missing={current.metrics?.unmet_requirements} />
@@ -401,7 +537,7 @@ export default function AiAssistant() {
               <label className={styles.buildConsent}><input type="checkbox" checked={approved} disabled={building} onChange={e=>setApproved(e.target.checked)}/>
                 Confirmo a criação de rascunhos reais na minha organização e entendo que precisarei revisá-los antes de ativar/publicar.
               </label>
-              <button type="button" className={styles.buildButton} onClick={()=>{void buildConfirmedDraft();}} disabled={!approved||building||current.metrics?.coverage_status==="needs_review"||Boolean(current.metrics?.unmet_requirements?.length)}>
+              <button type="button" className={styles.buildButton} onClick={()=>setConfirmAction({kind:"build"})} disabled={!approved||building||current.metrics?.coverage_status==="needs_review"||Boolean(current.metrics?.unmet_requirements?.length)}>
                 <FiLayers aria-hidden="true"/>{building?"Montando rascunhos...":current.metrics?.coverage_status==="needs_review"||Boolean(current.metrics?.unmet_requirements?.length)?"Resolva as pendências para construir":existing?"Atualizar rascunhos existentes":"Criar meus rascunhos"}
               </button>
               {existing && !buildResult && sessionId && (()=>{
@@ -442,12 +578,18 @@ export default function AiAssistant() {
           <h3>Estamos falando de</h3>
           <span className={styles.briefTag}>{!sessionId ? "Você decide" : isGuidance ? "Uma dúvida ou orientação" : current?.session.status === "propose" ? "Uma proposta para revisar" : "Conversando e descobrindo"}</span>
         </div>
+        {Boolean(current?.session.memory.currentFocus?.trim()) && !editingMemory && <div className={styles.briefSection}>
+          <h3>O que estamos resolvendo agora</h3>
+          <p className={styles.memorySummary}>{current?.session.memory.currentFocus}</p>
+          <small className={styles.memoryDisclaimer}>Resumo provisório. Você pode corrigir as informações abaixo.</small>
+        </div>}
         <div className={styles.briefSection}>
-          <h3>Seu projeto, com sua permissão</h3>
-          <p className={styles.briefEmpty}>Posso consultar as páginas do seu site ou as informações básicas do sistema. Você escolhe o que compartilhar.</p>
-          {projectConsent && <div className={styles.consentCard}><strong>{projectConsent.kind==="site"?"Site":"Sistema"}: {projectConsent.title}</strong><small>Acesso de leitura autorizado para esta conversa.</small><button type="button" disabled={projectBusy||busy(status)} onClick={()=>void revokeProject()}>Revogar acesso</button></div>}
-          <button type="button" className={styles.editMemoryButton} disabled={projectBusy||busy(status)} onClick={()=>void findRecentProjects()}>{projectBusy?"Consultando...":projectConsent?"Escolher outro projeto":"Consultar meus projetos recentes"}</button>
-          {projectListOpen && <div className={styles.projectChoices}>{recentProjects.map(item=><button type="button" key={`${item.kind}-${item.id}`} disabled={projectBusy||busy(status)} onClick={()=>void allowProject(item)}><strong>{item.title}</strong><small>{item.kind==="site"?"Site":"Sistema"} · {item.updatedAt?new Date(item.updatedAt).toLocaleDateString("pt-BR"):"Recentemente"}</small></button>)}</div>}
+          <h3>Projetos disponíveis para consulta</h3>
+          <p className={styles.briefEmpty}>Posso ler a estrutura dos projetos aos quais você já tem acesso nesta organização. Nada será alterado sem sua aprovação.</p>
+          {projectConsent && <div className={styles.consentCard}><strong>{projectConsent.kind==="site"?"Site":"Sistema"}: {projectConsent.title}</strong><small>Em foco nesta conversa · somente leitura. Edições exigem aprovação.</small>
+            {sessionId && (status==="clarify"||status==="propose") && <button type="button" disabled={projectBusy} onClick={()=>void inspectCurrentProject()}>Analisar este projeto</button>}
+            <button type="button" disabled={projectBusy||busy(status)} onClick={()=>void revokeProject()}>Retirar da conversa</button></div>}
+          <button type="button" className={styles.editMemoryButton} disabled={projectBusy} onClick={()=>void findRecentProjects()}><FiLayers aria-hidden="true"/> {projectBusy?"Buscando projetos...":projectConsent?"Escolher outro projeto":"Consultar meus sites e sistemas"}</button>
           {projectNotice && <p className={styles.projectNotice} role="status">{projectNotice}</p>}
         </div>
         {sessionId && !editingMemory && <button type="button" className={styles.editMemoryButton} disabled={busy(status)||savingMemory} onClick={()=>setEditingMemory({summary:current?.session.memory.summary??"",facts:[...(current?.session.memory.facts??[])].map(f=>({...f})),assumptions:[...(current?.session.memory.assumptions??[])]})}><FiEdit3 aria-hidden="true"/> Editar o que entendi</button>}
@@ -465,13 +607,90 @@ export default function AiAssistant() {
           <p className={styles.memoryDisclaimer}>Só o que você salvar aqui será marcado como confirmação sua. Essas informações serão usadas nas próximas respostas desta conversa.</p>
         </div> : <>
           {current?.session.memory.summary?.trim() ? <div className={styles.briefSection}><h3>O que entendi até aqui</h3><p className={styles.memorySummary}>{current.session.memory.summary}</p></div> : null}
-          <div className={styles.briefSection}><h3>Informações da conversa</h3>
-            {current?.session.memory.facts.length ? <ul className={styles.memoryList}>{current.session.memory.facts.map((fact,i)=><li key={`${fact.key}-${i}`}><div><strong>{fact.key}</strong><p>{fact.value}</p></div></li>)}</ul> : <p className={styles.briefEmpty}>Ainda não registrei informações suficientes. Tudo bem: podemos só conversar.</p>}
+          <div className={styles.briefSection}><h3>O que já sei pela conversa</h3>
+            {current?.session.memory.facts.length ? <ul className={styles.memoryList}>{current.session.memory.facts.map((fact,i)=><li key={`${fact.key}-${i}`}><div><strong>{fact.key}</strong><p>{fact.value}</p><small className={styles.factSource}>{current?.session.memory.verifiedFacts?.some(verified=>verified.key.toLowerCase()===fact.key.toLowerCase()) ? "Confirmado por você" : "Registrado a partir da conversa · ainda pode ser corrigido"}</small></div></li>)}</ul> : <p className={styles.briefEmpty}>Ainda não registrei informações suficientes. Tudo bem: podemos só conversar.</p>}
           </div>
           {Boolean(current?.session.memory.assumptions.length) && <div className={styles.briefSection}><h3>Ideias para confirmar <span className={styles.unconfirmed}>Hipóteses</span></h3><ul className={styles.memoryList}>{current?.session.memory.assumptions.map((assumption,i)=><li key={i}><p>{assumption}</p></li>)}</ul></div>}
           <p className={styles.memoryDisclaimer}>Isto é o contexto registrado da conversa, não o raciocínio privado do modelo. Nada aqui altera seu site ou sistema.</p>
         </>}
       </aside>
     </div>
-  </main>, document.body);
+  </main>
+  <ModalMensagem
+    aberto={projectListOpen}
+    tamanho="grande"
+    titulo="Escolha um projeto para analisar"
+    mostrarBotaoOk={false}
+    fecharAoClicarFora={!projectBusy}
+    onFechar={closeProjectPicker}
+    mensagem={<div className={styles.projectPicker}>
+      <p className={styles.projectPickerIntro}>Posso consultar, em modo de leitura, os projetos que sua conta já consegue abrir nesta organização. Para criar, editar ou publicar qualquer coisa, sempre pedirei sua aprovação.</p>
+      <div className={styles.projectPickerTop}>
+        <span>{recentProjects.length} projeto(s) encontrado(s)</span>
+        <button type="button" disabled={projectBusy} onClick={()=>void findRecentProjects()}><FiRefreshCw aria-hidden="true"/> Atualizar lista</button>
+      </div>
+      {projectBusy && <p className={styles.projectPickerState} role="status">Estou procurando seus projetos...</p>}
+      {projectListError && <p className={styles.projectPickerWarning} role="status">{projectListError}</p>}
+      {!projectBusy && !recentProjects.length && <p className={styles.projectPickerState}>Nenhum projeto disponível nesta organização. Confira se você está no espaço de trabalho correto.</p>}
+      {(["site","system"] as const).map(kind=>{
+        const projects=recentProjects.filter(item=>item.kind===kind);
+        return <section key={kind} className={styles.projectPickerGroup}>
+          <h3>{kind==="site"?"Meus sites":"Meus sistemas"}<span>{projects.length}</span></h3>
+          {!projects.length ? <p className={styles.projectPickerEmpty}>Nenhum {kind==="site"?"site":"sistema"} encontrado.</p> : <div className={styles.projectPickerGrid}>
+            {projects.map(project=>{
+              const preview=projectPreviews[projectKey(project)];
+              return <div key={projectKey(project)} className={styles.projectPickerCard}
+                onMouseEnter={()=>void previewProject(project)} onFocus={()=>void previewProject(project)}>
+                <button type="button" disabled={projectBusy} className={styles.projectPickerSelect}
+                  onClick={()=>{void allowProject(project)}}>
+                  <span className={styles.projectPickerIcon}>{project.kind==="site"?<FiServer aria-hidden="true"/>:<FiLayers aria-hidden="true"/>}</span>
+                  <span className={styles.projectPickerDetails}><strong>{project.title}</strong><small>{kind==="site"?"Site":"Sistema"} · Atualizado em {safeDate(project.updatedAt)}</small></span>
+                  <FiArrowRight aria-hidden="true" className={styles.projectPickerArrow}/>
+                </button>
+                <div className={styles.projectPickerPreview} aria-label={`Detalhes disponíveis de ${project.title}`}>
+                  {project.kind==="site" ? <>
+                    <strong>Estrutura do site</strong>
+                    {preview?.status==="loading" ? <p>Buscando páginas...</p> : preview?.status==="error" ? <p>Não consegui carregar as páginas agora.</p> : preview?.pages?.length ?
+                      <ul>{preview.pages.map((page,i)=><li key={`${i}-${page.title}`}><span>{page.title}</span><small>{page.sections} seção(ões)</small></li>)}</ul> :
+                      <p>Abra os detalhes para conferir as páginas disponíveis.</p>}
+                    <small className={styles.projectPickerCaution}>Prévia estrutural, não uma captura da aparência publicada.</small>
+                  </> : <>
+                    <strong>Resumo do sistema</strong>
+                    <p>{typeof project.moduleCount==="number"?`${project.moduleCount} módulo(s) cadastrados` : "A lista não informa a quantidade de módulos."}</p>
+                    <small className={styles.projectPickerCaution}>Os registros de pessoas e dados internos não são mostrados.</small>
+                  </>}
+                </div>
+              </div>;
+            })}
+          </div>}
+        </section>;
+      })}
+      <div className={styles.projectPickerFooter}><FiInfo aria-hidden="true"/> Selecionar abre a confirmação de acesso de leitura. O CONG não recebe seus dados pessoais nem altera o projeto.</div>
+    </div>}
+  />
+  <ModalMensagem
+    aberto={Boolean(confirmAction)}
+    tamanho="medio"
+    titulo={confirmAction?.kind==="delete" ? "Excluir conversa?" : confirmAction?.kind==="project" ? "Autorizar consulta do projeto?" : "Criar rascunhos editáveis?"}
+    mostrarBotaoOk={false}
+    fecharAoClicarFora={!submitting&&!building&&!projectBusy}
+    onFechar={()=>{if(!submitting&&!building&&!projectBusy)setConfirmAction(null)}}
+    mensagem={<div className={styles.confirmContent}>
+      <p>{confirmAction?.kind==="delete"
+        ? "Vou apagar esta conversa e seu contexto. Essa ação não pode ser desfeita, mas não apaga os projetos já criados."
+        : confirmAction?.kind==="project"
+        ? `Posso consultar a estrutura resumida de “${confirmAction.project.title}” nesta conversa? É um acesso de leitura, sem consultar cadastros de pessoas nem modificar o projeto. Você pode revogar depois.`
+        : "Vou criar ou atualizar rascunhos reais na CONG. Nada será publicado nem ativado automaticamente."}</p>
+      <div className={styles.confirmButtons}>
+        <button type="button" disabled={submitting||building||projectBusy} onClick={()=>setConfirmAction(null)}>Cancelar</button>
+        <button type="button" disabled={submitting||building||projectBusy} onClick={()=>{
+          const action=confirmAction;setConfirmAction(null);
+          if(action?.kind==="delete")void deleteConversation(action.id);
+          if(action?.kind==="project")void allowProject(action.project);
+          if(action?.kind==="build")void buildConfirmedDraft();
+        }}>{confirmAction?.kind==="delete"?"Excluir conversa":confirmAction?.kind==="project"?"Permitir leitura":"Criar rascunhos"}</button>
+      </div>
+    </div>}
+  />
+  </>, document.body);
 }
