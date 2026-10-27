@@ -28,17 +28,15 @@ const app = {
   setOperationalBrandSite:async (system,siteId)=>{log('linkDrafts');system.brandSiteId=siteId;return system;},
  },
  '../../services/institutionalService':{
-  createInstitutionalSite:async ({name,templateId})=>{log('createSite');assert.ok(templateId);state.site={id:uuid(),name,brand:{logoAssetId:null,primaryColor:'#222222',secondaryColor:'#333333',accentColor:'#444444',backgroundColor:'#ffffff',textColor:'#111111',headingFont:'system',bodyFont:'system'},pages:[{id:uuid(),slug:'inicio',sections:[]}]};return state.site;},
+  createInstitutionalSite:async ({name,templateId,identityMode})=>{log('createSite');assert.equal(templateId,null,'never use a preset template');assert.equal(identityMode,'custom');state.site={id:uuid(),name,pages:[{id:uuid(),slug:'inicio',sections:[{id:uuid(),sectionType:'organization_intro',settings:{},content:{title:'MODELO DEMONSTRATIVO'},layout:{type:'stack',gap:'medium',children:[]}},{id:uuid(),sectionType:'impact_metrics',settings:{},content:{title:'9999 atendimentos fictícios'},layout:{type:'stack',gap:'medium',children:[]}}]}]};return state.site;},
   createInstitutionalPage:async (_,page)=>{log('createPage');state.site.pages.push({id:uuid(),...page,sections:[]});return state.site;},
   getInstitutionalSite:async ()=>state.site,
-  uploadInstitutionalMedia:async ()=>{log('uploadLogo');return {id:uuid()};},
-  updateInstitutionalSiteBrand:async (_,data)=>{log('updateBrand');Object.assign(state.site.brand,data);return state.site.brand;},
-  getInstitutionalTemplates:async ()=>[{id:uuid(),name:'Acolher',isExample:false}],
   getInstitutionalVariants:async ()=>variants,
   addInstitutionalSection:async (pageId,data)=>{log('addSection');const page=state.site.pages.find(p=>p.id===pageId);page.sections.push({id:uuid(),sectionType:data.sectionType,content:data.content,settings:data.settings,layout:{type:'stack',gap:'medium',children:[]}});return state.site;},
+  deleteInstitutionalSection:async (sectionId)=>{log('deleteSeed');for(const page of state.site.pages)page.sections=page.sections.filter(s=>s.id!==sectionId);return state.site;},
   updateInstitutionalSection:async (sectionId,data)=>{log('updateSection');const section=state.site.pages.flatMap(p=>p.sections).find(s=>s.id===sectionId);Object.assign(section,data);return state.site;},
  },
- '../../data/institutional/sectionCatalog':{createDefaultSectionContent:()=>({title:'',description:''})},
+ '../../data/institutional/sectionCatalog':{createDefaultSectionContent:()=>({title:'Exemplo',description:'Texto de demonstração',email:'contato@exemplo.com',items:[{title:'Projeto inventado'}]})},
 };
 const sourcePath=path.resolve(__dirname,'../src/features/aiBuilder/aiBuilder.ts');
 const js=ts.transpileModule(fs.readFileSync(sourcePath,'utf8'),{fileName:sourcePath,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
@@ -55,7 +53,11 @@ const plan={system:{name:'Sistema Teste',description:'Controlar doações e volu
 (async()=>{
  const a=await builder.buildAiDraft({plan,sessionId:'SESSION_A',look:'human',turns:['Quero um site para receber doações de roupas e voluntários'],report:()=>{}});
  assert.equal(a.modules,2); assert.ok(a.record.siteId);assert.ok(a.record.systemId);assert.equal(a.forms,2);
- assert.ok(state.calls.includes('linkDrafts'));assert.ok(state.calls.some(c=>c.includes('/forms/')),'forms use native API');
+ assert.ok(state.calls.includes('linkDrafts'));assert.ok(!state.calls.includes('getTemplates'),'no global template selection');
+ assert.ok(!state.site.pages.flatMap(p=>p.sections).some(section=>JSON.stringify(section.content).includes('fictícios')),'seeded metrics removed');
+ assert.ok(state.calls.includes('deleteSeed'),'unused illustrative sections removed');
+ assert.ok(!JSON.stringify(state.site).includes('contato@exemplo.com'),'no dummy contact left in draft');
+ assert.ok(!JSON.stringify(state.site).includes('Projeto inventado'),'no sample showcase items left in draft');assert.ok(state.calls.some(c=>c.includes('/forms/')),'forms use native API');
  assert.ok(state.calls.includes('updateSection'),'native section receives actual cong_form layout override');
  assert.equal(state.site.publishedAt,undefined,'site remains unpublished');
  const before=state.calls.length;
@@ -64,23 +66,16 @@ const plan={system:{name:'Sistema Teste',description:'Controlar doações e volu
  const revised={...plan,system:{...plan.system,modules:[...plan.system.modules,{alias:'estoque',blueprint_key:'inventory',name:'Estoque de roupas',description:'Separar tamanhos',fields:[field('tamanho')]}]}};
  const c=await builder.buildAiDraft({plan:revised,sessionId:'SESSION_A',look:'human',turns:['Quero um site para receber doações de roupas e voluntários'],report:()=>{}});
  assert.equal(c.modules,3);assert.equal(c.record.systemId,a.record.systemId,'same system is updated');assert.equal(c.record.siteId,a.record.siteId,'same site is updated');
- const palette=builder.SITE_PALETTES.find(p=>p.id==='oceano');
- const logoFile={name:'identidade.png',size:1024,lastModified:1234,type:'image/png'};
- const d=await builder.buildAiDraft({plan:revised,sessionId:'SESSION_A',look:'human',palette,logoFile,
-   turns:['Quero um site para receber doações de roupas e voluntários'],report:()=>{}});
- assert.ok(d.record.siteId);assert.equal(state.site.brand.primaryColor,palette.primary);
- assert.equal(state.site.brand.secondaryColor,palette.secondary);
- assert.equal(state.site.brand.backgroundColor,palette.background);
- assert.equal(state.site.brand.textColor,palette.text);
- assert.equal(state.site.brand.logoAssetId,d.record.logoAssetId);
- assert.equal(state.calls.filter(c=>c==='uploadLogo').length,1);
- const afterBrand=state.calls.length;
- await builder.buildAiDraft({plan:revised,sessionId:'SESSION_A',look:'human',palette,logoFile,
-   turns:['Quero um site para receber doações de roupas e voluntários'],report:()=>{}});
- assert.equal(state.calls.length,afterBrand,'repeat brand application must not duplicate uploads or resources');
  console.log('PASS semantic module dedupe');
  console.log('PASS real draft creation + disabled mapped forms');
  console.log('PASS native site sections and site/system draft association');
+ const branding = await builder.buildAiDraft({
+   plan, sessionId:'SESSION_A', look:'human',
+   turns:['Quero um site para receber doações de roupas e voluntários'],
+   palette: builder.SITE_PALETTES[0], logoFile: {name:'marca.png'}, report:()=>{},
+ });
+ assert.ok(branding.warnings.some(w=>/paleta/i.test(w)),'palette choice must not be silently discarded');
+ assert.ok(branding.warnings.some(w=>/logotipo/i.test(w)),'logo choice must not be silently discarded');
+ console.log('PASS transparent warnings for palette/logo pending in editor');
  console.log('PASS idempotent retry and incremental revision');
- console.log('PASS real brand palette and logo persistence');
 })().catch(e=>{console.error(e);process.exitCode=1});

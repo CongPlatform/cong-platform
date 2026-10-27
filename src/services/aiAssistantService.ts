@@ -20,7 +20,7 @@ export interface AiPlan {
   connection: { link_system: boolean; public_forms: AiPublicForm[] };
   limitations: string[]; confirmations: string[];
 }
-export interface AiMemory { summary: string; facts: { key: string; value: string }[]; assumptions: string[]; verifiedFacts?: {key:string;value:string}[]; excludedFacts?: string[]; verifiedSummary?: string; projectContext?: AiProjectContext | null }
+export interface AiMemory { summary: string; facts: { key: string; value: string }[]; assumptions: string[]; verifiedFacts?: {key:string;value:string}[]; excludedFacts?: string[]; verifiedSummary?: string; currentFocus?: string; projectContext?: AiProjectContext | null }
 export interface AiProposal {
   schema_version: "cong.assistant.v2"; phase: AiPhase; reply: string; questions: string[];
   memory: AiMemory;
@@ -43,6 +43,7 @@ export const aiSessions = () => apiTenantGet<{ sessions: AiSessionSummary[] }>("
 export const aiDetail = (id: string) => apiTenantGet<AiSessionDetail>(`/ai/sessions/${encodeURIComponent(id)}`);
 export const aiStart = (goal: AiGoal, prompt: string, project_context?:AiProjectContext|null) => apiTenantPost<AiAccepted>("/ai/sessions", { goal, prompt, ...(project_context === undefined ? {} : {project_context}) });
 export const aiReply = (id: string, answer: string, project_context?:AiProjectContext|null, goal?:AiGoal) => apiTenantPost<AiAccepted>(`/ai/sessions/${encodeURIComponent(id)}/reply`, { answer, ...(project_context === undefined ? {} : {project_context}), ...(goal ? {goal} : {}) });
+export const aiInspectProject = (id:string, project_context:AiProjectContext) => apiTenantPost<AiAccepted>(`/ai/sessions/${encodeURIComponent(id)}/inspect-project`, {project_context});
 export const aiRetry = (id: string) => apiTenantPost<AiAccepted>(`/ai/sessions/${encodeURIComponent(id)}/retry`, {});
 export const aiCancel = (id: string) => apiTenantPost<{ ok: boolean }>(`/ai/sessions/${encodeURIComponent(id)}/cancel`, {});
 

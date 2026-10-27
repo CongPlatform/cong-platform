@@ -256,3 +256,80 @@
 .customPaletteToggle{font:inherit;font-size:12px;font-weight:770;border:1px solid #91aed2;background:#fff;color:#265a99;padding:9px 12px;border-radius:9px;cursor:pointer;justify-self:start}
 .customColorGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}.customColorGrid label{display:flex;flex-direction:column;gap:5px;min-width:0;color:#335476;font-size:11px;font-weight:700}.customColorGrid input{width:100%;height:39px;border:1px solid #d4e0ec;background:white;padding:3px;border-radius:8px;cursor:pointer}.customColorGrid small{font-size:10px;color:#67819c;font-weight:500}
 @media(max-width:700px){.customColorGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* v4.4 — confirmação integrada ao modal existente da CONG. */
+.confirmContent{display:grid;gap:18px;color:#253c56;font-size:14px;line-height:1.65}
+.confirmContent p{margin:0}
+.confirmButtons{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.confirmButtons button{border-radius:10px;border:1px solid #cad8e9;background:#fff;padding:10px 16px;color:#2d527b;font-weight:750;cursor:pointer}
+.confirmButtons button:last-child{background:#315eac;border-color:#315eac;color:#fff}
+.confirmButtons button:disabled{opacity:.5;cursor:wait}
+.confirmButtons button:focus-visible{outline:3px solid #9ac2f0;outline-offset:2px}
+
+.factSource{display:block;margin-top:5px;font-size:10px;line-height:1.45;color:#6a7b90}
+
+/* v4.5 — legibilidade do Estúdio, entendimento e seletor de projetos. */
+@media(min-width:1001px){
+  .page .layout{grid-template-columns:minmax(215px,240px) minmax(0,1fr) minmax(308px,340px)}
+  .page .briefPanel{padding:26px 23px 24px}
+}
+.page .briefPanel{background:#f8fafd;color:#243e5c}
+.page .briefTop{font-size:14px;letter-spacing:.015em;text-transform:none;font-weight:800;color:#234f86}
+.page .understandingIntro{font-size:14px!important;line-height:1.65!important;color:#4c657f!important;margin:13px 0 20px!important}
+.page .briefSection{border-color:#dfe8f2;margin-top:18px;padding-top:18px}
+.page .briefSection h3{font-size:12px;line-height:1.5;color:#446383;letter-spacing:.045em;margin-bottom:11px}
+.page .briefPanel p,.page .briefPanel .briefEmpty,.page .briefPanel .projectNotice{font-size:13px;line-height:1.65}
+.page .briefPanel .briefTag{font-size:12px;line-height:1.5;padding:8px 11px;border-radius:10px}
+.page .briefPanel .memorySummary{font-size:14px;line-height:1.7;color:#2d4b68}
+.page .memoryList{gap:10px}
+.page .memoryList li{border-radius:12px;padding:13px;background:white}
+.page .memoryList li strong{font-size:13px;line-height:1.5;color:#274c74}
+.page .memoryList li p{font-size:13px;line-height:1.65}
+.page .factSource,.page .memoryDisclaimer,.page .briefPanel .consentCard small{font-size:12px;line-height:1.6}
+.page .consentCard{padding:14px;gap:8px}
+.page .consentCard strong{font-size:14px;line-height:1.45}
+.page .editMemoryButton{font-size:13px;line-height:1.45;min-height:44px;padding:10px 12px}
+.page .historyItem strong{font-size:13px;line-height:1.45;max-width:172px}
+.page .historyItem small,.page .historyPrivacy{font-size:11px;line-height:1.5}
+.page .sidebarHeading h2{font-size:12px}
+.page .message.assistant .messageContent,.page .message.user .messageContent{font-size:14px;line-height:1.8}
+.page .messageLabel{font-size:11px}
+.page .composer textarea{font-size:14px}
+.page .composer label{font-size:13px}
+/* Picker usa o modal da CONG e mantém uma prévia estrutural honesta. */
+.projectPicker{color:#29415b;display:grid;gap:17px;font-size:14px;line-height:1.55;min-width:0;max-height:min(68vh,700px);overflow-y:auto;padding:2px 4px 6px 0}
+.projectPickerIntro{margin:0;color:#526c86;line-height:1.6}
+.projectPickerTop{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;font-weight:700;color:#58728e}
+.projectPickerTop button{display:flex;align-items:center;gap:7px;border:1px solid #cbdbea;background:#fff;color:#315e90;border-radius:10px;padding:9px 12px;cursor:pointer;font:inherit;font-size:12px}
+.projectPickerTop button:disabled{opacity:.55;cursor:wait}
+.projectPickerGroup{display:grid;gap:10px}
+.projectPickerGroup h3{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:#234d78;margin:3px 0 0}
+.projectPickerGroup h3 span{display:grid;place-items:center;font-size:11px;border-radius:99px;background:#eaf2fb;color:#51729c;min-width:24px;height:24px}
+.projectPickerEmpty,.projectPickerState{font-size:13px;margin:0;color:#69829b;background:#f6f9fc;border:1px dashed #d6e3f0;border-radius:12px;padding:13px}
+.projectPickerWarning{color:#905922;font-size:13px;margin:0;background:#fff7e9;border:1px solid #f1dfb9;border-radius:10px;padding:11px}
+.projectPickerGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.projectPickerCard{position:relative;min-width:0;border:1px solid #d5e3f1;border-radius:15px;background:#fff;transition:border-color .18s,box-shadow .18s}
+.projectPickerCard:hover,.projectPickerCard:focus-within{border-color:#6493cb;box-shadow:0 9px 25px rgba(37,81,141,.12);z-index:1}
+.projectPickerSelect{display:flex;align-items:center;gap:11px;width:100%;min-height:83px;border:0;background:transparent;cursor:pointer;padding:13px;text-align:left;font:inherit;color:inherit}
+.projectPickerSelect:disabled{cursor:wait;opacity:.55}
+.projectPickerIcon{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:12px;background:#edf4ff;color:#366bb0;font-size:20px}
+.projectPickerDetails{display:grid;flex:1;min-width:0;gap:6px}
+.projectPickerDetails strong{font-size:14px;line-height:1.35;font-weight:800;overflow-wrap:anywhere}
+.projectPickerDetails small{color:#64809b;line-height:1.5;font-size:12px}
+.projectPickerArrow{color:#6e95c2;flex:none}
+.projectPickerPreview{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);border:1px solid #b8d0eb;border-radius:12px;box-shadow:0 14px 26px rgba(27,64,107,.14);background:#fff;padding:12px 14px;z-index:4;max-height:260px;overflow:auto;min-width:0}
+.projectPickerCard:hover .projectPickerPreview,.projectPickerCard:focus-within .projectPickerPreview{display:block}
+.projectPickerPreview>strong{display:block;color:#254f7a;font-size:12px;margin-bottom:7px}
+.projectPickerPreview p{margin:3px 0;color:#5a728b;font-size:12px;line-height:1.5}
+.projectPickerPreview ul{padding:0;margin:0 0 8px;list-style:none;display:grid;gap:5px}
+.projectPickerPreview li{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12px;color:#385676;border-bottom:1px solid #f0f4f9;padding:4px 0}
+.projectPickerPreview li span{overflow-wrap:anywhere}
+.projectPickerPreview li small{white-space:nowrap;color:#7d91a8;font-size:11px}
+.projectPickerCaution{font-size:11px;line-height:1.5;color:#7a8ea3;display:block}
+.projectPickerFooter{display:flex;gap:9px;align-items:flex-start;border-top:1px solid #e6edf5;padding-top:13px;font-size:12px;color:#5a728b;line-height:1.55}
+.projectPickerFooter svg{flex:none;margin-top:2px}
+@media(max-width:650px){.projectPickerGrid{grid-template-columns:1fr}.projectPickerPreview{position:static;display:none;box-shadow:none;border:0;border-top:1px solid #e5edf5;border-radius:0}.projectPickerCard:hover .projectPickerPreview,.projectPickerCard:focus-within .projectPickerPreview{display:block}.projectPicker{max-height:65vh}}
+@media(prefers-reduced-motion:reduce){.projectPickerCard{transition:none}}
+
+/* A prévia expande dentro do cartão para não ser cortada pela rolagem do modal. */
+.projectPickerPreview{position:static;max-height:220px;box-shadow:none;border:0;border-top:1px solid #e6eef8;border-radius:0 0 12px 12px;background:#f9fbff}
