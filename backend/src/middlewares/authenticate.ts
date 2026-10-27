@@ -43,74 +43,29 @@ export async function authenticate(
     return;
   }
 
-  // Autenticação Supabase por si só não invalida sessões após desativar
-  // o perfil local. Bloqueie todas as rotas autenticadas imediatamente,
-  // exceto a finalização do login OAuth (que reativa APENAS autodesativações)
-  // e a operação de sair da sessão.
-  const allowAccountBootstrap =
-    req.originalUrl.startsWith("/api/auth/oauth/complete") ||
-    req.originalUrl.startsWith("/api/auth/logout");
-  if (!allowAccountBootstrap) {
-    try {
-      const local = await pool.query<{
-        active: boolean;
-        selfDeactivated: boolean;
-        status: "suspended" | "banned" | null;
-        suspendedUntil: Date | null;
-        reason: string | null;
-      }>(
-        `select u.active, (u.self_deactivated_at is not null) as "selfDeactivated", s.status, s.suspended_until as "suspendedUntil", s.reason
-          from public.users u
-          left join public.community_user_sanctions s on s.user_id = u.id
-          where u.auth_user_id = $1 limit 1`,
-        [data.user.id],
-      );
-      const access = local.rows[0];
-      if (access && !access.active) {
-        res.status(403).json({
-          error: access.selfDeactivated
-            ? "Sua conta está desativada. Entre novamente para reativá-la."
-            : "Esta conta não está ativa.",
-          code: access.selfDeactivated
-            ? "ACCOUNT_DEACTIVATED"
-            : "USER_INACTIVE",
-        });
-        return;
-      }
-      if (access?.status === "banned") {
-        res.status(403).json({
-          error: "Sua conta foi banida da CONG.",
-          code: "ACCOUNT_BANNED",
-          restriction: {
-            kind: "banned",
-            reason: access.reason ?? "Violação das regras da comunidade.",
-            until: null,
-          },
-        });
-        return;
-      }
-      if (
-        access?.status === "suspended" &&
-        access.suspendedUntil &&
-        new Date(access.suspendedUntil).getTime() > Date.now()
-      ) {
-        res.status(403).json({
-          error: "Sua conta está temporariamente suspensa.",
-          code: "ACCOUNT_SUSPENDED",
-          restriction: {
-            kind: "suspended",
-            reason: access.reason ?? "Violação das regras da comunidade.",
-            until: access.suspendedUntil,
-          },
-        });
-        return;
-      }
-    } catch (error) {
-      next(error);
+  // Identidade de pesquisa nao pode ser usada se o recurso for desabilitado,
+  // a pesquisa terminar ou o registro de vinculo for removido por um reset.
+  if(data.user.app_metadata?.cong_study_workspace===true){
+    if(process.env.STUDY_WORKSPACES_ENABLED!=='true'){
+      res.status(403).json({code:'STUDY_SESSION_EXPIRED',error:'Acesso experimental indisponível'});
       return;
     }
+    try{
+      const allowed=await pool.query<{allowed:boolean}>(`SELECT EXISTS(
+        SELECT 1 FROM public.study_overlay_workspaces w
+         JOIN public.study_overlay_participants p ON p.id=w.participant_id
+         JOIN public.organizations o ON o.id=w.organization_id
+         WHERE w.auth_user_id=$1 AND p.status='active' AND p.session_expires_at>now()
+          AND o.active=true) AS allowed`,[data.user.id]);
+      if(!allowed.rows[0]?.allowed){
+        res.status(403).json({code:'STUDY_SESSION_EXPIRED',error:'Sua sessão de pesquisa terminou'});
+        return;
+      }
+    }catch(nextError){next(nextError);return;}
   }
   res.locals.authUser = data.user;
+
   res.locals.accessToken = accessToken;
+
   next();
 }
