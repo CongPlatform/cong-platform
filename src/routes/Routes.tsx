@@ -1,4 +1,3 @@
-import { StudyDock } from "../study-overlay/StudyPortal";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
@@ -103,8 +102,6 @@ const DesignerAssets = lazy(
   () => import("../pages/logged-in/designerAssets/DesignerAssets"),
 );
 
-const StudyPortal = lazy(() => import("../study-overlay/StudyPortal").then(m => ({ default: m.StudyPortal })));
-const StudyObserver = lazy(() => import("../study-overlay/StudyObserver"));
 
 export default function AppRoutes() {
   const publicSiteSlug = institutionalSlugFromHostname(
@@ -116,8 +113,6 @@ export default function AppRoutes() {
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            <Route path="/pesquisa/observador" element={<StudyObserver />} />
-            <Route path="/pesquisa/*" element={<StudyPortal />} />
             <Route
               path="*"
               element={
@@ -137,8 +132,6 @@ export default function AppRoutes() {
       <PageTransitionProvider>
         <Suspense fallback={null}>
           <Routes>
-            <Route path="/pesquisa/observador" element={<StudyObserver />} />
-            <Route path="/pesquisa/*" element={<StudyPortal />} />
             {/* ==================================================
                 SITE INSTITUCIONAL
                 ================================================== */}
@@ -333,7 +326,6 @@ export default function AppRoutes() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-        <StudyDock />
       </PageTransitionProvider>
     </BrowserRouter>
   );

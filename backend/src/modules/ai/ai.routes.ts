@@ -101,44 +101,6 @@ async function enqueue(client:import("pg").PoolClient, session:SessionRow){
 const sessionRouter=Router();
 sessionRouter.use((_,res,next)=>{if(!enabled())return error(res,503,"IA indisponível neste ambiente.","AI_DISABLED");next()});
 sessionRouter.use(authenticate,requireOrganizationContext);
-// Research condition is enforced server-side, not merely hidden in the UI.
-// The study token is random, HTTP-only and mapped to an active participant in the DB.
-// Normal users without the study cookie are unaffected.
-async function enforceStudyCondition(req:Request,res:Response,next:import("express").NextFunction){
- if(process.env.STUDY_ENABLED!=="true")return next();
- // Para identidades da pesquisa, a condicao vem da conta verificada no servidor.
- // Omitir o cookie nao desativa o bloqueio sem IA.
- if(process.env.STUDY_WORKSPACES_ENABLED==='true'){
-  try{
-   const userId=res.locals.authUser?.id;
-   const studyUser=await pool.query<{condition:string|null}>(`SELECT r.condition
-     FROM public.study_overlay_workspaces w
-     JOIN public.study_overlay_participants p ON p.id=w.participant_id
-     LEFT JOIN LATERAL (SELECT condition FROM public.study_overlay_runs
-       WHERE participant_id=p.id AND status='running' ORDER BY sequence_number DESC LIMIT 1) r ON true
-     WHERE w.auth_user_id=$1 AND p.status='active' AND p.session_expires_at>now()`,[userId]);
-   if(studyUser.rowCount){
-    if(studyUser.rows[0]?.condition!=='com_ia')return error(res,403,'IA indisponível para esta tarefa experimental.','STUDY_AI_DISABLED');
-    return next();
-   }
-  }catch(e){return sendError(res,e);}
- }
-
- const token=req.headers.cookie?.split(";").map(v=>v.trim()).find(v=>v.startsWith("cong_study_ai_access="))?.slice("cong_study_ai_access=".length)??"";
- if(!token||token.length>256)return next();
- try{
-  const blocked=await pool.query<{condition:string}>(`SELECT r.condition
-    FROM public.study_overlay_participants p
-    JOIN public.study_overlay_runs r ON r.participant_id=p.id
-    WHERE p.session_hash=$1 AND p.session_expires_at>now()
-      AND p.status='active' AND r.status='running'
-    ORDER BY r.sequence_number DESC LIMIT 1`,[hash(token)]);
-  if(blocked.rows[0]?.condition==="sem_ia")return error(res,403,"A assistência de IA está desativada nesta etapa da pesquisa.","STUDY_AI_DISABLED");
-  next();
- }catch(e){sendError(res,e);}
-}
-
-sessionRouter.use(enforceStudyCondition);
 sessionRouter.get("/status",invoke(async(_,res)=>{
  const workers=await pool.query<{worker_id:string;model:string;busy:boolean}>("select worker_id,model,busy from public.ai_workers where last_seen_at>now()-interval '45 seconds' order by last_seen_at desc limit 1");
  res.json({worker_online:workers.rows.length>0,model:workers.rows[0]?.model??"",busy:workers.rows[0]?.busy??false,queue_size:await rowCount()});

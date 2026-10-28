@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { createSupabaseAuthClient } from "../config/supabase.js";
-import pool from "../config/database.js";
 
 export async function authenticate(
   req: Request,
@@ -43,26 +42,16 @@ export async function authenticate(
     return;
   }
 
-  // Identidade de pesquisa nao pode ser usada se o recurso for desabilitado,
-  // a pesquisa terminar ou o registro de vinculo for removido por um reset.
-  if(data.user.app_metadata?.cong_study_workspace===true){
-    if(process.env.STUDY_WORKSPACES_ENABLED!=='true'){
-      res.status(403).json({code:'STUDY_SESSION_EXPIRED',error:'Acesso experimental indisponível'});
-      return;
-    }
-    try{
-      const allowed=await pool.query<{allowed:boolean}>(`SELECT EXISTS(
-        SELECT 1 FROM public.study_overlay_workspaces w
-         JOIN public.study_overlay_participants p ON p.id=w.participant_id
-         JOIN public.organizations o ON o.id=w.organization_id
-         WHERE w.auth_user_id=$1 AND p.status='active' AND p.session_expires_at>now()
-          AND o.active=true) AS allowed`,[data.user.id]);
-      if(!allowed.rows[0]?.allowed){
-        res.status(403).json({code:'STUDY_SESSION_EXPIRED',error:'Sua sessão de pesquisa terminou'});
-        return;
-      }
-    }catch(nextError){next(nextError);return;}
+  // Contas temporarias geradas para a pesquisa permanecem bloqueadas.
+  // Nao dependemos mais das tabelas ou variaveis de ambiente do experimento.
+  if (data.user.app_metadata?.cong_study_workspace === true) {
+    res.status(403).json({
+      code: "STUDY_ACCOUNT_DISABLED",
+      error: "Esta conta temporaria da pesquisa nao esta mais disponivel.",
+    });
+    return;
   }
+
   res.locals.authUser = data.user;
 
   res.locals.accessToken = accessToken;
