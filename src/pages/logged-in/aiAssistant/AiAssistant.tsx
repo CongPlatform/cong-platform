@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { study, type State as StudyState } from "../../../study-overlay/client";
 import { Link } from "react-router-dom";
 import ModalMensagem from "../../../components/modalMensagem/ModalMensagem";
 import { listInstitutionalSites, getInstitutionalSite } from "../../../services/institutionalService";
@@ -89,16 +88,6 @@ function ConversationalText({value}:{value:string}){
 }
 
 export default function AiAssistant() {
-  const [studyAiBlocked,setStudyAiBlocked] = useState<boolean|null>(import.meta.env.VITE_STUDY_ENABLED === "true" ? null : false);
-  useEffect(()=>{
-    if(import.meta.env.VITE_STUDY_ENABLED !== "true")return;
-    let active=true;
-    study<StudyState>("/me").then(result=>{
-      if(!active)return;
-      setStudyAiBlocked(result.runs.some(run=>run.status === "running" && run.condition === "sem_ia"));
-    }).catch(()=>{if(active)setStudyAiBlocked(false);});
-    return ()=>{active=false;};
-  },[]);
   const { workspace } = useWorkspace();
   const organizationName = workspace.kind === "organization" ? workspace.organization.name : "Organização";
   const workspaceIdentity=workspace.kind === "organization" ? workspace.organization.name : "pessoal";
@@ -404,12 +393,6 @@ export default function AiAssistant() {
   const wordsFromUser = current?.session.turns.filter(t => t.role === "usuario").map(t => t.text) ?? [];
   const composerRef = useRef<HTMLTextAreaElement>(null);
   function focusComposer() { composerRef.current?.focus(); }
-  if(studyAiBlocked===null)return <main style={{padding:32}} role="status">Conferindo a etapa da pesquisa…</main>;
-  if(studyAiBlocked)return <main style={{maxWidth:620,margin:"64px auto",padding:28,lineHeight:1.6}}>
-    <h1>Etapa sem assistência de IA</h1>
-    <p>Esta atividade deve ser realizada sem o assistente para que a comparação do estudo seja válida.</p>
-    <Link to="/pesquisa/entrar">Voltar à tarefa da pesquisa</Link>
-  </main>;
   return createPortal(<><main className={styles.page} data-cong-ai-studio="true" aria-label="Criar com o CONG">
     <header className={styles.studioToolbar}>
       <div className={styles.studioIdentity}>
