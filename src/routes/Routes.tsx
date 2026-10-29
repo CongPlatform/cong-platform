@@ -9,6 +9,8 @@ import { PageTransitionProvider } from "../components/pageTransitionProvider/Pag
 import OrganizationProvider from "../contexts/OrganizationProvider";
 import WorkspaceProvider from "../contexts/WorkspaceProvider";
 import { institutionalSlugFromHostname } from "../utils/institutionalDomain";
+import { isAllowedAiEmail } from "../utils/aiAccess";
+import { useAuth } from "../contexts/auth-context";
 
 // ==================================================
 // LAYOUTS
@@ -82,6 +84,13 @@ const OperationalHome = lazy(() => import("../pages/logged-in/operational/Operat
 const OperationalWorkspace = lazy(() => import("../pages/logged-in/operational/OperationalWorkspace"));
 const OperationalPortal = lazy(() => import("../pages/operationalPortal/OperationalPortal"));
 const AiAssistant = lazy(() => import("../pages/logged-in/aiAssistant/AiAssistant"));
+
+function AiAssistantAuthorized() {
+  const { user } = useAuth();
+  return isAllowedAiEmail(user?.email)
+    ? <AiAssistant />
+    : <Navigate to="/app/comunidade" replace />;
+}
 const InstitutionalEditor = lazy(
   () => import("../pages/logged-in/institutional/InstitutionalEditor"),
 );
@@ -198,7 +207,7 @@ export default function AppRoutes() {
                 }
               >
                 <Route path="/app/sistemas" element={<WorkspaceRoute kind="organization" organizationType="ngo"><OperationalHome /></WorkspaceRoute>} />
-                <Route path="/app/assistente-ia" element={<WorkspaceRoute kind="organization" organizationType="ngo"><AiAssistant /></WorkspaceRoute>} />
+                <Route path="/app/assistente-ia" element={<WorkspaceRoute kind="organization" organizationType="ngo"><AiAssistantAuthorized /></WorkspaceRoute>} />
                 <Route path="/app/comunidade" element={<LoggedInCommunity />} />
                 <Route
                   path="/app/comunidade/minha-atividade"
