@@ -24,6 +24,7 @@ import {
 import { createDefaultSectionContent } from "../../data/institutional/sectionCatalog";
 import { findSiteComposition, settingsForComposition } from "../site-builder/compositions/compositionCatalog";
 import { auditInstitutionalSite } from "./siteQuality";
+import { createHybridComposition } from "./aiHybridLayouts";
 
 export type SiteLook = "human" | "impact" | "institutional";
 export const SITE_LOOKS: Array<{ id: SiteLook; label: string; description: string }> = [
@@ -875,7 +876,7 @@ export function editorialWarnings(plan:NonNullable<AiPlan["site"]>):string[]{
 }
 
 async function writeSite(plan:NonNullable<AiPlan["site"]>,record:BuildRecord,report:(t:string)=>void,warnings:string[], photo?:{id:string;url:string;query:string;page:number}|null,
- secondaryPhoto?:{id:string;url:string;query:string;page:number}|null,onSiteSnapshot?:(site:InstitutionalSite)=>void,turns:string[]=[],originalName?:string){
+ secondaryPhoto?:{id:string;url:string;query:string;page:number}|null,onSiteSnapshot?:(site:InstitutionalSite)=>void,turns:string[]=[],originalName?:string,look:SiteLook="human"){
  plan=composeSitePlan(plan);
  warnings.push(...editorialWarnings(plan));
  const freshSite=!record.siteId;
@@ -915,14 +916,21 @@ async function writeSite(plan:NonNullable<AiPlan["site"]>,record:BuildRecord,rep
      const content=contentFor(type,section,plan,turns);
      if(section.action_label.trim() && !actionHref(plan,section.action_label) && (type==="custom_content"||type==="organization_intro"))
        warnings.push(`O botão “${section.action_label}” em “${pagePlan.title}” não tem página de destino. Revise antes de publicar.`);
-     const composition=selectEditorialComposition(type,section,pagePlan.title,compositionsUsed);
+     // A IA pode montar composições autorais com elementos NATIVOS da CONG.
+     // Quando a composição híbrida não serve ao conteúdo, usa o acervo original.
+     // Não aceitamos HTML, scripts ou CSS arbitrário do modelo.
+     const hybrid=createHybridComposition({type,section,siteStyle:plan.style,
+       pageSlug:pagePlan.slug,pageIndex:index,sectionIndex,look});
+     const composition=hybrid?undefined:selectEditorialComposition(type,section,pagePlan.title,compositionsUsed);
      const availableVariant=sectionsVariant(type,variants,index,sectionIndex);
      const variant=composition ? (variants.find(v=>v.sectionType===type&&v.status==="published"&&v.visibility==="public"&&
        v.familyKey===composition.preferredFamily)??availableVariant) : availableVariant;
      if(!variant)throw new Error(`Não existe seção publicada compatível com "${section.title}" (${type}).`);
-     inputReportComposition(report,pagePlan.title,section.title,composition?.title??"Composição editorial personalizada");
+     inputReportComposition(report,pagePlan.title,section.title,hybrid?.title??composition?.title??"Composição editorial personalizada");
      const settings={contentGuidance:{source:"ai-confirmed-draft",needsReview:true},aiSectionKey:sectionKey,
        ...compositionStyle(type,variant,composition,index+sectionIndex),
+       ...(hybrid?{layoutOverride:hybrid.layout,sectionStyle:hybrid.sectionStyle,
+         compositionId:hybrid.id,visualStyle:"ai-hybrid-editorial",aiHybridLayoutVersion:1}:{}),
        ...(type==="custom_content"?{layoutOverride:freeSectionLayout(section,actionHref(plan,section.action_label),sectionIndex)}:{})};
      if(matching && matching.sectionType!==type &&
        (matching.settings.contentGuidance as {source?:string}|undefined)?.source==="ai-confirmed-draft"){
@@ -1242,7 +1250,7 @@ export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:str
    const cover=input.photo??await autoChoosePhoto(input.plan.site,false,input.report);
    const secondary=input.secondaryPhoto??await autoChoosePhoto(input.plan.site,true,input.report);
    if(!cover)warnings.push("A CONG não encontrou foto de capa no acervo. Adicione uma imagem no editor para concluir o visual.");
-   site=await writeSite(input.plan.site,record,input.report,warnings,cover,secondary,input.onSiteSnapshot,input.turns,input.sourceSiteName);
+   site=await writeSite(input.plan.site,record,input.report,warnings,cover,secondary,input.onSiteSnapshot,input.turns,input.sourceSiteName,input.look);
    if(site){
      await applyVisuals(site.id,input.palette,input.logoFile,input.look,input.report,warnings);
      input.onSiteSnapshot?.(await getInstitutionalSite(site.id));
