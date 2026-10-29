@@ -11,7 +11,7 @@ import { listOperationalSystems } from "../../../features/operational/operationa
 import { createPortal } from "react-dom";
 import { useWorkspace } from "../../../contexts/workspace-context";
 import { auditInstitutionalSiteWithForms, type SiteQualityReport } from "../../../features/aiBuilder/siteQuality";
-import { buildAiDraft, existingDraft, SITE_LOOKS, createProjectPalettes, editorialWarnings, suggestedStockQuery, suggestedSecondaryStockQuery, type BuildResult, type SiteLook, type SitePalette } from "../../../features/aiBuilder/aiBuilder";
+import { buildAiDraft, existingDraft, SITE_LOOKS, createProjectPalettes, editorialWarnings, suggestedStockQuery, suggestedSecondaryStockQuery, type BuildResult, type SiteLook, type SitePalette, type SiteCompositionMode } from "../../../features/aiBuilder/aiBuilder";
 import { FiAlertCircle, FiArrowRight, FiFileText, FiLayers, FiMessageCircle, FiPlus, FiRefreshCw, FiSend, FiServer, FiXCircle, FiImage, FiDroplet, FiEdit3, FiArrowLeft, FiTrash2, FiInfo, FiClipboard, FiX, FiGlobe, FiExternalLink, FiLink, FiCopy, FiBarChart2, FiDownload } from "react-icons/fi";
 import {
   aiCancel, aiDelete, aiDetail, aiReply, aiRetry, aiSessions, aiStart, aiStatus, aiSaveMemory, aiRevokeProject, aiInspectProject, aiGetTelemetry, aiTrackEvent,
@@ -171,6 +171,7 @@ export default function AiAssistant() {
   const organizationName = workspace.kind === "organization" ? workspace.organization.name : "Organização";
   const workspaceIdentity=workspace.kind === "organization" ? workspace.organization.name : "pessoal";
   const [look,setLook] = useState<SiteLook>("human");
+  const [compositionMode,setCompositionMode] = useState<SiteCompositionMode>("cong");
   const [palette,setPalette] = useState<SitePalette|null>(null);
   const [paletteSeed,setPaletteSeed] = useState(0);
   const [photoQuery,setPhotoQuery] = useState("");
@@ -522,7 +523,7 @@ export default function AiAssistant() {
         system:plan.system?{...plan.system,name:userSystemName}:null,
         site:plan.site?{...plan.site,name:userSiteName}:null};
       const result=await buildAiDraft({plan:adjusted,sessionId,sourceSiteName:plan.site?.name,
-        turns:current.session.turns.filter(t=>t.role==="usuario").map(t=>t.text),look,palette:activePalette,logoFile,
+        turns:current.session.turns.filter(t=>t.role==="usuario").map(t=>t.text),look,compositionMode,palette:activePalette,logoFile,
         photo:activeSelectedPhoto?{id:activeSelectedPhoto.id,url:activeSelectedPhoto.url,query:expectedPhotoQuery,page:1}:null,
         secondaryPhoto:activeSelectedSecondaryPhoto?{id:activeSelectedSecondaryPhoto.id,url:activeSelectedSecondaryPhoto.url,query:expectedSecondaryPhotoQuery,page:1}:null,
         onSiteSnapshot:setBuildSite,
@@ -735,6 +736,26 @@ export default function AiAssistant() {
               <h2>{current.session.plan.site?"Vamos escolher a cara do seu site?":"Vamos preparar seu sistema."}</h2>
               <p>Você poderá revisar tudo no editor depois. Só criarei o rascunho após sua confirmação.</p>
               {current.session.plan.site && <>
+                <div className={styles.paletteHead}>
+                  <strong><FiLayers aria-hidden="true"/> Como a CONG deve montar o site?</strong>
+                  <small>Escolha antes de criar. A IA usa os mesmos componentes editáveis nas duas opções.</small>
+                </div>
+                <div className={styles.lookGrid} role="radiogroup" aria-label="Usar templates da CONG">
+                  <label className={styles.lookCard} data-selected={compositionMode==="cong"}>
+                    <input type="radio" name="ai-composition-mode" checked={compositionMode==="cong"} onChange={()=>setCompositionMode("cong")} disabled={building}/>
+                    <span className={styles.lookCopy}>
+                      <strong>Usar templates CONG (recomendado)</strong>
+                      <small>Prioriza composições reais do catálogo: capas, seções editoriais, projetos e áreas de participação.</small>
+                    </span>
+                  </label>
+                  <label className={styles.lookCard} data-selected={compositionMode==="custom"}>
+                    <input type="radio" name="ai-composition-mode" checked={compositionMode==="custom"} onChange={()=>setCompositionMode("custom")} disabled={building}/>
+                    <span className={styles.lookCopy}>
+                      <strong>Criar layouts personalizados</strong>
+                      <small>Combina blocos nativos sem aplicar composições prontas do catálogo. Mantém a edição e a publicação da CONG.</small>
+                    </span>
+                  </label>
+                </div>
                 <strong>Qual aparência você prefere para o site?</strong>
                 <div className={styles.lookGrid} role="radiogroup" aria-label="Estilo do site">
                   {SITE_LOOKS.map(style => <label key={style.id} className={styles.lookCard} data-selected={look===style.id}>
