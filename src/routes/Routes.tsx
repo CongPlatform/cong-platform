@@ -75,7 +75,6 @@ const CommunityProfile = lazy(
 const CommunityModerationPage = lazy(
   () => import("../pages/logged-in/community/CommunityModerationPage"),
 );
-const Pending = lazy(() => import("../pages/pending/Pending"));
 const InstitutionalHome = lazy(
   () => import("../pages/logged-in/institutional/InstitutionalHome"),
 );
@@ -286,7 +285,7 @@ export default function AppRoutes() {
                     </WorkspaceRoute>
                   }
                 />
-                <Route path="/em-construcao" element={<Pending />} />
+                <Route path="/em-construcao" element={<Navigate to="/app/comunidade" replace />} />
               </Route>
 
               {/* ==================================================

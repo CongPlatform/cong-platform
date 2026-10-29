@@ -8,6 +8,7 @@ import { ApiError } from "../../services/api";
 import {publicPortalInfo} from "../../features/operational/operationalPortalService";
 import {institutionalRootDomain} from "../../utils/institutionalDomain";
 import {placedOperationalPieces} from "../../utils/institutionalOperational";
+import { applyPublicInstitutionalMetadata, buildPublicInstitutionalMetadata } from "../../utils/publicInstitutionalSeo";
 import {
   getPublicInstitutionalSite,
   type InstitutionalSite,
@@ -61,44 +62,30 @@ export default function PublicInstitutionalSite({
     };
   }, [slug]);
 
-  useEffect(() => {
-    if (!site) return;
-
-    const previousTitle = document.title;
-    const currentIcon =
-      document.querySelector<HTMLLinkElement>('link[rel~="icon"]');
-    const previousIconHref = currentIcon?.href ?? null;
-    let icon = currentIcon;
-    let createdIcon = false;
-
-    document.title = site.organization.name;
-
-    if (site.brand.logoAsset?.url) {
-      if (!icon) {
-        icon = document.createElement("link");
-        icon.rel = "icon";
-        document.head.appendChild(icon);
-        createdIcon = true;
-      }
-      icon.href = site.brand.logoAsset.url;
-    }
-
-    return () => {
-      document.title = previousTitle;
-      if (createdIcon && icon) {
-        icon.remove();
-      } else if (icon && previousIconHref) {
-        icon.href = previousIconHref;
-      }
-    };
-  }, [site]);
-
   const home = useMemo(() => {
     if (!site) return null;
     if (!pageSlug)
       return site.pages.find((page) => page.isHome) ?? site.pages[0] ?? null;
     return site.pages.find((page) => page.slug === pageSlug) ?? null;
   }, [site, pageSlug]);
+
+  useEffect(() => {
+    if (!site || !home) return;
+    const metadata = buildPublicInstitutionalMetadata(site, home, window.location.href);
+    const cleanupMetadata = applyPublicInstitutionalMetadata(metadata);
+
+    // The site icon belongs to this public organization only.
+    const icon = document.head.querySelector<HTMLLinkElement>('link[rel~="icon"]');
+    const oldHref = icon?.getAttribute("href") ?? null;
+    const logo = site.brand.logoAsset?.url;
+    if (icon && logo && (/^https?:\/\//i.test(logo) || logo.startsWith("/"))) {
+      icon.href = logo;
+    }
+    return () => {
+      cleanupMetadata();
+      if (icon && oldHref !== null) icon.setAttribute("href", oldHref);
+    };
+  }, [site, home]);
 
   if (loading) {
     return <main className={styles.state}><CongLoadingState variant="page" count={3} label="Preparando site"/></main>;
@@ -156,7 +143,7 @@ export default function PublicInstitutionalSite({
   return (
     <div onClickCapture={navigateInternalLink}>
       {portalAvailable&&!placed.hasLogin&&!hasHeaderLogin&&<div className={styles.portalAccess}><span>Área da organização</span><a href={portalHref}>Entrar com minha conta CONG <span aria-hidden="true">↗</span></a></div>}
-      <InstitutionalSiteView site={site} page={home} portalHref={portalHref} portalEnabled={portalAvailable} beforeFooter={<SiteConnectedForms slug={site.slug} page={home.slug} excludedFormIds={placed.formIds}/>} />
+      <InstitutionalSiteView site={site} page={home} publicAccessSlug={slug} portalHref={portalHref} portalEnabled={portalAvailable} beforeFooter={<SiteConnectedForms slug={slug} page={home.slug} excludedFormIds={placed.formIds}/>} />
     </div>
   );
 }

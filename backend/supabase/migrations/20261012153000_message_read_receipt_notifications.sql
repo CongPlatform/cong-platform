@@ -1,5 +1,4 @@
 begin;
-
 create or replace function public.notify_message_receipt_changed()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare user_auth_id uuid;
@@ -23,12 +22,10 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists cong_message_receipt_changed on public.message_conversation_participants;
 create trigger cong_message_receipt_changed
   after update of last_read_at on public.message_conversation_participants
   for each row
   when (new.last_read_at is distinct from old.last_read_at)
   execute function public.notify_message_receipt_changed();
-
 commit;

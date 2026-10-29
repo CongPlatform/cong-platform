@@ -1,7 +1,4 @@
 begin;
-
-
-
 create table if not exists public.operational_delivery_demands (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
@@ -25,7 +22,6 @@ do $$ begin
     create trigger operational_delivery_demands_updated before update on public.operational_delivery_demands for each row execute function public.set_updated_at();
   end if;
 end $$;
-
 create table if not exists public.operational_delivery_availability (
   organization_id uuid not null,
   system_id uuid not null,
@@ -39,7 +35,6 @@ create table if not exists public.operational_delivery_availability (
   primary key (organization_id,system_id,service_day,member_user_id),
   foreign key (organization_id,system_id) references public.operational_systems(organization_id,id) on delete cascade
 );
-
 create table if not exists public.operational_delivery_plans (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
@@ -52,7 +47,6 @@ create table if not exists public.operational_delivery_plans (
   foreign key (organization_id,system_id) references public.operational_systems(organization_id,id) on delete cascade
 );
 create index if not exists operational_delivery_plans_day_idx on public.operational_delivery_plans(organization_id,system_id,service_day,created_at desc);
-
 alter table public.operational_delivery_demands enable row level security;
 alter table public.operational_delivery_availability enable row level security;
 alter table public.operational_delivery_plans enable row level security;

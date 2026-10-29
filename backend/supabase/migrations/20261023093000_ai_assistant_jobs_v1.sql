@@ -53,4 +53,4 @@ alter table public.ai_sessions enable row level security;
 alter table public.ai_jobs enable row level security;
 alter table public.ai_workers enable row level security;
 revoke all on public.ai_sessions, public.ai_jobs, public.ai_workers from anon, authenticated;
--- O backend usa DATABASE_URL com privilégios próprios, e valida tenant/ator nas rotas.
+-- O backend usa DATABASE_URL com privilégios próprios, e valida tenant/ator nas rotas.;

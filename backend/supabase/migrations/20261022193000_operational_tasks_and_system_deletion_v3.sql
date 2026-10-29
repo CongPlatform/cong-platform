@@ -1,5 +1,4 @@
 begin;
-
 create table public.operational_tasks (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
@@ -24,7 +23,6 @@ create table public.operational_tasks (
 create index operational_tasks_org_system_idx on public.operational_tasks(organization_id,system_id,status,due_on) where archived_at is null;
 create index operational_tasks_assignee_idx on public.operational_tasks(organization_id,assignee_user_id) where archived_at is null;
 create trigger operational_tasks_updated before update on public.operational_tasks for each row execute function public.set_updated_at();
-
 create table public.operational_task_events (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
@@ -36,7 +34,6 @@ create table public.operational_task_events (
   foreign key (organization_id,system_id) references public.operational_systems(organization_id,id) on delete cascade
 );
 create index operational_task_events_history_idx on public.operational_task_events(organization_id,system_id,task_id,created_at desc);
-
 create table public.operational_system_deletions (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
@@ -48,10 +45,8 @@ create table public.operational_system_deletions (
   deleted_at timestamptz not null default now()
 );
 create index operational_system_deletions_org_idx on public.operational_system_deletions(organization_id,deleted_at desc);
-
 alter table public.operational_tasks enable row level security;
 alter table public.operational_task_events enable row level security;
 alter table public.operational_system_deletions enable row level security;
 revoke all on public.operational_tasks,public.operational_task_events,public.operational_system_deletions from anon,authenticated;
-
 commit;

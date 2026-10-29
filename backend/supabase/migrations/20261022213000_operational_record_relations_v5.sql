@@ -1,8 +1,6 @@
 begin;
-
 alter table public.operational_records
   add constraint operational_records_identity_v5 unique (organization_id,system_id,module_id,id);
-
 create table public.operational_record_links (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
@@ -19,11 +17,8 @@ create table public.operational_record_links (
   foreign key (organization_id,system_id,target_module_id,target_record_id)
     references public.operational_records(organization_id,system_id,module_id,id) on delete cascade
 );
-
 create index operational_record_links_target_v5
   on public.operational_record_links (organization_id,system_id,target_module_id,target_record_id);
-
 alter table public.operational_record_links enable row level security;
 revoke all on public.operational_record_links from anon, authenticated;
-
 commit;

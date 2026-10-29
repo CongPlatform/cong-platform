@@ -1,5 +1,4 @@
 begin;
-
 create table public.operational_site_portals (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
@@ -17,7 +16,6 @@ create table public.operational_site_portals (
 create index operational_site_portals_system_idx on public.operational_site_portals (organization_id,system_id);
 create trigger operational_site_portals_updated before update on public.operational_site_portals
 for each row execute function public.set_updated_at();
-
 create table public.operational_portal_members (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
@@ -30,7 +28,6 @@ create table public.operational_portal_members (
   foreign key (organization_id,portal_id) references public.operational_site_portals(organization_id,id) on delete cascade
 );
 create index operational_portal_members_user_idx on public.operational_portal_members (user_id,portal_id);
-
 create table public.operational_portal_requests (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,
@@ -48,7 +45,6 @@ create table public.operational_portal_requests (
 );
 create index operational_portal_requests_member_idx on public.operational_portal_requests (portal_id,user_id,created_at desc);
 create index operational_portal_requests_admin_idx on public.operational_portal_requests (portal_id,status,created_at desc);
-
 alter table public.operational_site_portals enable row level security;
 alter table public.operational_portal_members enable row level security;
 alter table public.operational_portal_requests enable row level security;

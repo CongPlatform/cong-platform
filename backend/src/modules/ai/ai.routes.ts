@@ -9,6 +9,7 @@ import { systemPrompt } from "./ai.prompt.js";
 import { validateProposal } from "./ai.contract.js";
 import { auditAiPlan } from "./ai.coverage.js";
 import { intentWithoutGeneration, explainProposal } from "./ai.intent.js";
+import telemetryRouter from "./ai.telemetry.js";
 
 const enabled = () => process.env.CONG_AI_ENABLED === "true";
 const workerSecret = () => process.env.CONG_AI_WORKER_TOKEN || "";
@@ -101,6 +102,7 @@ async function enqueue(client:import("pg").PoolClient, session:SessionRow){
 const sessionRouter=Router();
 sessionRouter.use((_,res,next)=>{if(!enabled())return error(res,503,"IA indisponível neste ambiente.","AI_DISABLED");next()});
 sessionRouter.use(authenticate,requireOrganizationContext);
+sessionRouter.use(telemetryRouter);
 sessionRouter.get("/status",invoke(async(_,res)=>{
  const workers=await pool.query<{worker_id:string;model:string;busy:boolean}>("select worker_id,model,busy from public.ai_workers where last_seen_at>now()-interval '45 seconds' order by last_seen_at desc limit 1");
  res.json({worker_online:workers.rows.length>0,model:workers.rows[0]?.model??"",busy:workers.rows[0]?.busy??false,queue_size:await rowCount()});

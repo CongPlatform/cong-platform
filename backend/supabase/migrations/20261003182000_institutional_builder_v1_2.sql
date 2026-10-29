@@ -1,8 +1,6 @@
 begin;
-
 alter table public.institutional_section_variants
   drop constraint if exists institutional_section_variants_section_type_check;
-
 alter table public.institutional_section_variants
   add constraint institutional_section_variants_section_type_check
   check (section_type in (
@@ -16,10 +14,8 @@ alter table public.institutional_section_variants
     'custom_content',
     'site_footer'
   ));
-
 alter table public.institutional_sections
   drop constraint if exists institutional_sections_section_type_check;
-
 alter table public.institutional_sections
   add constraint institutional_sections_section_type_check
   check (section_type in (
@@ -33,7 +29,6 @@ alter table public.institutional_sections
     'custom_content',
     'site_footer'
   ));
-
 insert into public.institutional_section_variants (
   id,
   section_type,
@@ -55,7 +50,6 @@ values
   ('a1000000-0000-4000-8000-000000000008', 'custom_content', 'Depoimentos', 'Destaque relatos curtos de pessoas ligadas à organização.', null, true, 'public', 'published'),
   ('a1000000-0000-4000-8000-000000000009', 'custom_content', 'Chamada em destaque', 'Uma chamada clara para doação, voluntariado, inscrição ou outro próximo passo.', null, true, 'public', 'published')
 on conflict (id) do nothing;
-
 insert into public.institutional_section_variant_versions (
   id,
   variant_id,
@@ -128,7 +122,6 @@ values
     '{"type":"stack","id":"cta-root","gap":"medium","align":"center","surface":"highlight","children":[{"type":"element","id":"cta-heading","elementType":"heading","value":"Convide para o próximo passo","presentation":"heading","style":{"size":"2xl","width":"100","color":"text","align":"center"}},{"type":"element","id":"cta-text","elementType":"text","value":"Explique em uma frase o que a pessoa pode fazer agora.","presentation":"body","style":{"size":"md","width":"75","color":"text","align":"center"}},{"type":"element","id":"cta-button","elementType":"button","value":{"label":"Quero participar","href":"#"},"presentation":"primaryAction","style":{"width":"auto","backgroundColor":"accent","color":"text","radius":"pill"}}]}'::jsonb
   )
 on conflict (id) do nothing;
-
 update public.institutional_templates as template
 set definition = jsonb_set(
   template.definition,
@@ -156,5 +149,4 @@ where template.is_system = true
     from jsonb_array_elements(coalesce(template.definition #> '{pages,0,sections}', '[]'::jsonb)) as section
     where section ->> 'sectionType' = 'site_footer'
   );
-
 commit;

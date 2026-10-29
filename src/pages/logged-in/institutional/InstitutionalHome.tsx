@@ -445,7 +445,7 @@ export default function InstitutionalHome() {
           site={previewSite}
           title={previewSite.name}
           actionLabel="Editar site"
-          publicUrl={previewSite.publishedAt && previewSite.isPrimary ? institutionalPublicUrl(previewSite.publicSlug) : null}
+          publicUrl={previewSite.publishedAt ? institutionalPublicUrl(previewSite.publicSlug) : null}
           onClose={() => setPreviewSite(null)}
           onAction={() => navigate(`/app/site-institucional/${previewSite.id}/editor`)}
         />
@@ -513,7 +513,7 @@ function SiteCard({
   onDelete: () => void;
   onUnpublish: () => void;
 }) {
-  const published = Boolean(site.publishedAt && site.isPrimary);
+  const published = Boolean(site.publishedAt);
   const publicUrl = institutionalPublicUrl(site.publicSlug);
 
   return (

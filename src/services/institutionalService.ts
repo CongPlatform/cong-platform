@@ -838,16 +838,23 @@ export async function uploadInstitutionalMedia(
   }).then((response) => response.asset);
 }
 
-export function publishInstitutionalSite(siteId: string): Promise<{
+export function canPublishAdditionalInstitutionalSites(): Promise<boolean> {
+  return apiTenantGet<{enabled:boolean}>("/institutional/sites/multi-publishing-access")
+    .then(response => response.enabled);
+}
+
+export function publishInstitutionalSite(siteId: string, options?: { publicSlug?: string; confirmReplace?: boolean; publishAsAdditional?: boolean }): Promise<{
   version: number;
   publishedAt: string;
+  publicSlug: string;
 }> {
   return apiTenantPost<{
     publication: {
       version: number;
       publishedAt: string;
+      publicSlug: string;
     };
-  }>(`/institutional/sites/${siteId}/publish`).then(
+  }>(`/institutional/sites/${siteId}/publish`, options ?? {}).then(
     (response) => response.publication,
   );
 }

@@ -4,7 +4,6 @@
 -- necessário para manter histórico de sites/organizações; a identidade Auth
 -- é removida pelo backend, e o FK não apaga conteúdo institucional em cascata.
 begin;
-
 alter table public.users add column if not exists deleted_at timestamptz;
 alter table public.users alter column auth_user_id drop not null;
 do $$
@@ -21,7 +20,6 @@ begin
 end $$;
 alter table public.users add constraint users_auth_user_id_fkey foreign key (auth_user_id)
   references auth.users(id) on delete set null;
-
 create table if not exists public.account_deletion_jobs (
   user_id uuid primary key references public.users(id) on delete cascade,
   auth_user_id uuid,

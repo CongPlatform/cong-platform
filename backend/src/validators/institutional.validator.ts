@@ -715,6 +715,17 @@ export const createInstitutionalSiteSchema = z
   })
   .strict();
 
+// Publicação assistida: URL escolhida conscientemente, jamais definida pelo modelo.
+// O slug pode corresponder ao dominio principal ou a um site adicional autorizado.
+export const publishInstitutionalSiteSchema = z.preprocess(
+  value => value == null ? {} : value,
+  z.object({
+    publicSlug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use letras minúsculas, números ou hífens.").min(3).max(45).optional(),
+    confirmReplace: z.boolean().optional(),
+    publishAsAdditional: z.boolean().optional(),
+  }).strict(),
+);
+
 export const renameInstitutionalSiteSchema = z
   .object({
     name: z.string().trim().min(2).max(100),

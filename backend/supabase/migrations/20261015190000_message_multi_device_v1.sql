@@ -1,5 +1,4 @@
 begin;
-
 -- A device has a distinct ECDH key. Legacy identity remains the primary device.
 -- Pending devices cannot receive future messages until proof-of-key approval.
 create table public.message_devices (
@@ -18,7 +17,6 @@ create index message_devices_user_status_idx on public.message_devices(user_id, 
 create unique index message_devices_key_unique on public.message_devices(user_id, (public_key::text)) where status <> 'revoked';
 alter table public.message_devices enable row level security;
 revoke all on public.message_devices from anon, authenticated;
-
 -- Migrated historical content is independently re-encrypted in the original browser.
 -- Never store decrypted text or user private keys on the server.
 create table public.message_device_history (
@@ -30,7 +28,6 @@ create table public.message_device_history (
 create index message_device_history_message_idx on public.message_device_history(message_id);
 alter table public.message_device_history enable row level security;
 revoke all on public.message_device_history from anon, authenticated;
-
 create or replace function public.prune_message_device_history()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
@@ -43,5 +40,4 @@ create trigger cong_message_device_history_prune after update of deleted_for_all
   on public.message_entries for each row
   when (new.deleted_for_all_at is distinct from old.deleted_for_all_at)
   execute function public.prune_message_device_history();
-
 commit;

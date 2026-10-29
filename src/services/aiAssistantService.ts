@@ -8,7 +8,7 @@ export interface AiTurn { role: "usuario" | "assistente"; text: string; time: st
 export interface AiField { key: string; label: string; type: string; required: boolean; help: string; options: string[] }
 export interface AiModule { alias: string; blueprint_key: string; name: string; description: string; fields: AiField[] }
 export interface AiWorkflow { kind: string; title: string; description: string; module_alias: string }
-export interface AiSection { type: string; title: string; text: string; action_label: string; linked_module_alias: string }
+export interface AiSection { type: string; title: string; text: string; action_label: string; linked_module_alias: string; items?: {title:string;description:string;kind?:string}[] }
 export interface AiPage { title: string; slug: string; sections: AiSection[] }
 export interface AiPublicForm {
   name: string; page_slug: string; form_module_alias: string; target_module_alias: string;
@@ -50,3 +50,16 @@ export const aiCancel = (id: string) => apiTenantPost<{ ok: boolean }>(`/ai/sess
 export const aiRevokeProject = (id:string) => apiTenantDelete<{ok:boolean}>(`/ai/sessions/${encodeURIComponent(id)}/project-context`);
 export const aiSaveMemory = (id: string, memory: Pick<AiMemory,"summary"|"facts"|"assumptions">) => apiTenantPatch<{memory:AiMemory}>(`/ai/sessions/${encodeURIComponent(id)}/memory`, memory);
 export const aiDelete = (id: string) => apiTenantDelete<{ok:boolean}>(`/ai/sessions/${encodeURIComponent(id)}`);
+
+// Telemetria de testes internos: não transmite prompts nem dados de pessoas atendidas.
+export type AiMetricEventKind="draft_started"|"draft_completed"|"draft_failed"|"manual_adjustment"|"revision_requested"|"review_opened"|"published";
+export type AiMetricEventInput={id:string;kind:AiMetricEventKind;run_id?:string|null;elapsed_ms?:number|null;pages_created?:number;modules_created?:number;forms_prepared?:number};
+export type AiMetricEvent={id:string;event_kind:AiMetricEventKind;run_id:string|null;elapsed_ms:number|null;pages_created:number|null;modules_created:number|null;forms_prepared:number|null;created_at:string};
+export type AiSessionTelemetry={
+ session_id:string;
+ summary:{ai_jobs:number;ai_completed:number;ai_failed:number;worker_attempts:number;draft_attempts:number;draft_completed:number;draft_failed:number;manual_adjustments:number;revision_requests:number;reviews:number;publications:number;build_elapsed_ms:number;build_timing_samples:number;input_tokens:number|null;output_tokens:number|null;token_coverage:number;estimated_usd:number|null;pricing_model:string|null;pricing_note:string};
+ jobs:Array<{status:string;attempts:number;created_at:string;updated_at:string;model:string|null;input_tokens:number|null;output_tokens:number|null;worker_duration_ms:number|null}>;
+ events:AiMetricEvent[];
+};
+export const aiGetTelemetry=(id:string)=>apiTenantGet<AiSessionTelemetry>(`/ai/sessions/${encodeURIComponent(id)}/telemetry`);
+export const aiTrackEvent=(id:string,event:AiMetricEventInput)=>apiTenantPost<{ok:boolean}>(`/ai/sessions/${encodeURIComponent(id)}/telemetry`,event);

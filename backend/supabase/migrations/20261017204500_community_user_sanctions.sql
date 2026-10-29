@@ -16,7 +16,6 @@ create index if not exists idx_community_user_sanctions_status
   on public.community_user_sanctions(status, suspended_until);
 alter table public.community_user_sanctions enable row level security;
 revoke all on public.community_user_sanctions from anon, authenticated;
-
 alter table public.community_moderation_actions
   drop constraint if exists community_moderation_actions_action_check;
 alter table public.community_moderation_actions

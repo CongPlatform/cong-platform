@@ -2,7 +2,6 @@
 -- This migration updates only institutional_templates.definition and does not
 -- change organization sites, private uploads or customized user templates.
 BEGIN;
-
 DO $repair$
 DECLARE
   current_template RECORD;
@@ -70,5 +69,4 @@ BEGIN
   END LOOP;
 END
 $repair$;
-
 COMMIT;

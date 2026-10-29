@@ -65,7 +65,8 @@ export async function publicForms(slug:string,pageSlug:string){
     join public.institutional_sites s on s.id=f.site_id and s.organization_id=f.organization_id
     join public.operational_systems os on os.id=f.system_id and os.organization_id=f.organization_id
     join public.organization_brand_profiles b on b.organization_id=s.organization_id
-    where (s.slug=$1 or b.public_slug=$1) and s.is_primary=true and f.site_id=os.brand_site_id and f.enabled=true and (f.page_slug=$2 or (f.page_slug='' and exists(select 1 from public.institutional_pages pg where pg.site_id=s.id and pg.is_home=true and pg.slug=$2))) and s.published_at is not null and os.status='active' order by f.created_at limit 12`,[slug,pageSlug]);
+    left join public.institutional_site_domains d on d.site_id=s.id
+    where (d.public_slug=$1 or ((s.slug=$1 or b.public_slug=$1) and s.is_primary=true)) and f.site_id=os.brand_site_id and f.enabled=true and (f.page_slug=$2 or (f.page_slug='' and exists(select 1 from public.institutional_pages pg where pg.site_id=s.id and pg.is_home=true and pg.slug=$2))) and s.published_at is not null and os.status='active' order by f.created_at limit 12`,[slug,pageSlug]);
   return rows.map(row=>({...row,fields:formFieldsSchema.parse(row.fields)}));
 }
 export async function publicFormSubmit(slug:string,formId:string,data:Record<string,unknown>){
@@ -73,7 +74,8 @@ export async function publicFormSubmit(slug:string,formId:string,data:Record<str
     join public.institutional_sites s on s.id=f.site_id and s.organization_id=f.organization_id
     join public.operational_systems os on os.id=f.system_id and os.organization_id=f.organization_id
     join public.organization_brand_profiles b on b.organization_id=s.organization_id
-    where (s.slug=$1 or b.public_slug=$1) and s.is_primary=true and f.site_id=os.brand_site_id and f.id=$2 and f.enabled=true and s.published_at is not null and os.status='active'`,[slug,formId]);
+    left join public.institutional_site_domains d on d.site_id=s.id
+    where (d.public_slug=$1 or ((s.slug=$1 or b.public_slug=$1) and s.is_primary=true)) and f.site_id=os.brand_site_id and f.id=$2 and f.enabled=true and s.published_at is not null and os.status='active'`,[slug,formId]);
   if(!rows.length)throw noForm();
   let clean:Record<string,string|number|null>;
   try{clean=parseFormSubmission(formFieldsSchema.parse(rows[0].fields),data);}catch(error){throw new AppError(error instanceof Error?error.message:"Dados inválidos.",400,"FORM_INVALID_INPUT");}
@@ -128,7 +130,8 @@ export async function publicPlacedForm(slug:string,formId:string){
     join public.institutional_sites site on site.id=f.site_id and site.organization_id=f.organization_id
     join public.operational_systems os on os.id=f.system_id and os.organization_id=f.organization_id
     join public.organization_brand_profiles b on b.organization_id=site.organization_id
-    where (site.slug=$1 or b.public_slug=$1) and site.is_primary=true and f.id=$2 and f.enabled=true and site.published_at is not null
+    left join public.institutional_site_domains d on d.site_id=site.id
+    where (d.public_slug=$1 or ((site.slug=$1 or b.public_slug=$1) and site.is_primary=true)) and f.id=$2 and f.enabled=true and site.published_at is not null
       and os.status='active' and os.brand_site_id=site.id limit 1`,[slug,formId]);
   if(!rows[0])throw noForm();
   return {...rows[0],fields:formFieldsSchema.parse(rows[0].fields)};
@@ -158,9 +161,12 @@ export async function activateFormOnSite(orgId:string,siteId:string,formId:strin
       where f.organization_id=$1 and f.id=$2 for update of f`,[orgId,formId]);
     if(!target.rowCount)throw noForm();
     const form=target.rows[0];
-    const site=await client.query(`select id from public.institutional_sites where id=$1 and organization_id=$2
-      and is_primary=true and published_at is not null`,[siteId,orgId]);
-    if(!site.rowCount)throw new AppError("Publique este site como principal antes de liberar o formulário.",409,"FORM_SITE_UNPUBLISHED");
+    const site=await client.query(`select s.id from public.institutional_sites s
+      where s.id=$1 and s.organization_id=$2 and s.published_at is not null
+        and (s.is_primary=true or exists (
+          select 1 from public.institutional_site_domains d
+          where d.site_id=s.id and d.organization_id=s.organization_id))`,[siteId,orgId]);
+    if(!site.rowCount)throw new AppError("Publique o site em um endereço da CONG antes de liberar o formulário.",409,"FORM_SITE_UNPUBLISHED");
     if(form.status!=="active")throw new AppError("Ative o sistema operacional antes de disponibilizar este formulário.",409,"FORM_SYSTEM_INACTIVE");
     if(form.brand_site_id!==siteId)throw new AppError("Vincule este site ao sistema em Identidade antes de disponibilizar o formulário.",409,"FORM_SYSTEM_SITE_MISMATCH");
     await client.query(`update public.operational_forms set site_id=$3,enabled=true,revision=revision+1

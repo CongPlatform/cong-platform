@@ -1,5 +1,4 @@
 begin;
-
 create table public.operational_step_rules (
   organization_id uuid not null,
   system_id uuid not null,
@@ -14,11 +13,8 @@ create table public.operational_step_rules (
   primary key (organization_id,system_id,step_id),
   foreign key (organization_id,system_id) references public.operational_systems(organization_id,id) on delete cascade
 );
-
 alter table public.operational_step_rules enable row level security;
 revoke all on public.operational_step_rules from anon,authenticated;
-
 alter table public.operational_events drop constraint operational_events_action_check;
 alter table public.operational_events add constraint operational_events_action_check check (action in ('system.created','system.updated','system.published','module.installed','module.schema_updated','record.created','record.updated','record.archived','plan.updated','automation.updated','step_rule.updated'));
-
 commit;
