@@ -2,7 +2,6 @@
 alter table public.message_conversations
   add column if not exists description varchar(500),
   add column if not exists avatar_path text;
-
 -- Send metadata refresh events whenever the group photo or description changes.
 drop trigger if exists cong_chat_conversation_updated on public.message_conversations;
 create trigger cong_chat_conversation_updated

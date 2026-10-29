@@ -2,7 +2,6 @@
 -- Nenhum dado de institutional_sites, institutional_pages ou institutional_sections e modificado.
 -- Cada link mantem label/href e recebe um UUID estavel apenas quando nao possui id.
 BEGIN;
-
 WITH target AS (
   SELECT id, definition #> '{pages,0,sections,0,content,links}' AS links
   FROM public.institutional_templates
@@ -40,17 +39,14 @@ FROM repaired
 WHERE template.id = repaired.id
   AND template.definition #> '{pages,0,sections,0,content,links}'
       IS DISTINCT FROM repaired.fixed_links;
-
 -- Duas proporcoes invalidas ('wide') no layout publicado.
 -- A representacao permitida equivalente e '16:9'.
 UPDATE public.institutional_section_variant_versions
 SET layout = jsonb_set(layout, '{children,2,style,imageAspect}', '"16:9"'::jsonb, false)
 WHERE id = '8a73a8d9-f7bc-525e-9b4c-928c6f2a7418'::uuid
   AND layout #>> '{children,2,style,imageAspect}' = 'wide';
-
 UPDATE public.institutional_section_variant_versions
 SET layout = jsonb_set(layout, '{children,3,style,imageAspect}', '"16:9"'::jsonb, false)
 WHERE id = '0e1e3e3f-4768-58a2-b6a0-43031feb3db0'::uuid
   AND layout #>> '{children,3,style,imageAspect}' = 'wide';
-
 COMMIT;

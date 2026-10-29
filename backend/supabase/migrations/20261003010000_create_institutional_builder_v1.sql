@@ -1,5 +1,4 @@
 begin;
-
 insert into public.permissions (code, name, description)
 values
   ('institutional.read', 'Visualizar site institucional', 'Permite visualizar e editar o rascunho conforme as demais permissões concedidas.'),
@@ -10,7 +9,6 @@ set
   name = excluded.name,
   description = excluded.description,
   updated_at = now();
-
 insert into public.role_permissions (role_id, permission_id)
 select r.id, p.id
 from public.roles r
@@ -19,7 +17,6 @@ where r.code in ('organization_admin', 'organization_representative')
   and r.is_system = true
   and p.code in ('institutional.read', 'institutional.edit', 'institutional.publish')
 on conflict do nothing;
-
 create table public.organization_media_assets (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
@@ -30,10 +27,8 @@ create table public.organization_media_assets (
   size_bytes integer not null check (size_bytes between 1 and 5242880),
   created_at timestamptz not null default now()
 );
-
 create index organization_media_assets_org_idx
   on public.organization_media_assets(organization_id, created_at desc);
-
 create table public.organization_brand_profiles (
   organization_id uuid primary key references public.organizations(id) on delete cascade,
   logo_asset_id uuid references public.organization_media_assets(id) on delete set null,
@@ -47,7 +42,6 @@ create table public.organization_brand_profiles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table public.institutional_section_variants (
   id uuid primary key default gen_random_uuid(),
   section_type text not null check (section_type in (
@@ -72,13 +66,10 @@ create table public.institutional_section_variants (
     or (is_system = false and owner_user_id is not null)
   )
 );
-
 create index institutional_section_variants_type_idx
   on public.institutional_section_variants(section_type, status, visibility);
-
 create index institutional_section_variants_owner_idx
   on public.institutional_section_variants(owner_user_id, updated_at desc);
-
 create table public.institutional_section_variant_versions (
   id uuid primary key default gen_random_uuid(),
   variant_id uuid not null references public.institutional_section_variants(id) on delete cascade,
@@ -88,7 +79,6 @@ create table public.institutional_section_variant_versions (
   created_at timestamptz not null default now(),
   unique (variant_id, version)
 );
-
 create table public.institutional_templates (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -106,10 +96,8 @@ create table public.institutional_templates (
     or (is_system = false and owner_user_id is not null)
   )
 );
-
 create index institutional_templates_catalog_idx
   on public.institutional_templates(status, visibility, category, created_at);
-
 create table public.institutional_sites (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null unique references public.organizations(id) on delete cascade,
@@ -119,7 +107,6 @@ create table public.institutional_sites (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table public.institutional_pages (
   id uuid primary key default gen_random_uuid(),
   site_id uuid not null references public.institutional_sites(id) on delete cascade,
@@ -132,11 +119,9 @@ create table public.institutional_pages (
   unique (site_id, slug),
   unique (site_id, position)
 );
-
 create unique index institutional_pages_single_home_idx
   on public.institutional_pages(site_id)
   where is_home = true;
-
 create table public.institutional_sections (
   id uuid primary key default gen_random_uuid(),
   page_id uuid not null references public.institutional_pages(id) on delete cascade,
@@ -158,10 +143,8 @@ create table public.institutional_sections (
   updated_at timestamptz not null default now(),
   unique (page_id, position)
 );
-
 create index institutional_sections_page_idx
   on public.institutional_sections(page_id, position);
-
 create table public.institutional_site_publications (
   id uuid primary key default gen_random_uuid(),
   site_id uuid not null references public.institutional_sites(id) on delete cascade,
@@ -171,34 +154,26 @@ create table public.institutional_site_publications (
   published_at timestamptz not null default now(),
   unique (site_id, version)
 );
-
 create index institutional_site_publications_latest_idx
   on public.institutional_site_publications(site_id, version desc);
-
 create trigger set_organization_brand_profiles_updated_at
 before update on public.organization_brand_profiles
 for each row execute function public.set_updated_at();
-
 create trigger set_institutional_section_variants_updated_at
 before update on public.institutional_section_variants
 for each row execute function public.set_updated_at();
-
 create trigger set_institutional_templates_updated_at
 before update on public.institutional_templates
 for each row execute function public.set_updated_at();
-
 create trigger set_institutional_sites_updated_at
 before update on public.institutional_sites
 for each row execute function public.set_updated_at();
-
 create trigger set_institutional_pages_updated_at
 before update on public.institutional_pages
 for each row execute function public.set_updated_at();
-
 create trigger set_institutional_sections_updated_at
 before update on public.institutional_sections
 for each row execute function public.set_updated_at();
-
 alter table public.organization_media_assets enable row level security;
 alter table public.organization_brand_profiles enable row level security;
 alter table public.institutional_section_variants enable row level security;
@@ -208,7 +183,6 @@ alter table public.institutional_sites enable row level security;
 alter table public.institutional_pages enable row level security;
 alter table public.institutional_sections enable row level security;
 alter table public.institutional_site_publications enable row level security;
-
 revoke all on table public.organization_media_assets from anon, authenticated;
 revoke all on table public.organization_brand_profiles from anon, authenticated;
 revoke all on table public.institutional_section_variants from anon, authenticated;
@@ -218,7 +192,6 @@ revoke all on table public.institutional_sites from anon, authenticated;
 revoke all on table public.institutional_pages from anon, authenticated;
 revoke all on table public.institutional_sections from anon, authenticated;
 revoke all on table public.institutional_site_publications from anon, authenticated;
-
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'institutional-media',
@@ -232,7 +205,6 @@ set
   public = false,
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
-
 insert into public.institutional_section_variants (
   id, section_type, name, description, is_system, visibility, status
 )
@@ -252,7 +224,6 @@ values
   ('1b59e0e9-c99e-49ea-bfbc-86ca0dec9145', 'organization_contact', 'Contato dividido', 'Informações de contato em duas colunas.', true, 'public', 'published'),
   ('94ecef98-96ed-4db1-9785-500c500db4d9', 'organization_contact', 'Contato centralizado', 'Informações de contato em uma composição centralizada.', true, 'public', 'published')
 on conflict (id) do nothing;
-
 insert into public.institutional_section_variant_versions (
   id, variant_id, version, status, layout
 )
@@ -356,7 +327,6 @@ values
     '{"type":"stack","gap":"medium","align":"center","children":[{"type":"slot","slot":"title","presentation":"heading"},{"type":"slot","slot":"description","presentation":"body"},{"type":"slot","slot":"email","presentation":"contactLink"},{"type":"slot","slot":"phone","presentation":"contactLink"},{"type":"slot","slot":"address","presentation":"contactLine"},{"type":"repeat","source":"socialLinks","columns":3,"gap":"small","item":{"type":"slot","slot":"url","presentation":"socialLink"}}]}'::jsonb
   )
 on conflict (id) do nothing;
-
 insert into public.institutional_templates (
   id, name, description, category, is_system, visibility, status, definition
 )
@@ -382,5 +352,4 @@ values
     '{"example":true,"pages":[{"title":"Home","slug":"home","isHome":true,"sections":[{"sectionType":"organization_intro","variantVersionId":"e0004189-dcb2-4125-9427-9dfe39581f8f","content":{"eyebrow":"Instituto Sementes · exemplo fictício","title":"Mais oportunidades para um futuro mais justo","description":"Educação, comunidade e meio ambiente caminhando juntos para transformar realidades.","image":null,"primaryAction":{"label":"Conheça nosso trabalho","href":"#projetos"},"secondaryAction":{"label":"Como ajudar","href":"#como-ajudar"}}},{"sectionType":"organization_about","variantVersionId":"8b0dc077-72f5-444e-bc28-b0bbf80d9346","content":{"eyebrow":"Quem somos","title":"Uma organização que acredita nas pessoas","description":"O Instituto Sementes é uma organização fictícia criada apenas para demonstrar a estrutura do editor da CONG. Substitua este texto pelas informações reais da sua organização.","image":null,"action":{"label":"Nossa história","href":"#quem-somos"}}},{"sectionType":"projects_showcase","variantVersionId":"5b9f66d2-37b9-4991-ab0f-264b955658fc","content":{"title":"Iniciativas que geram transformação","description":"Estes projetos são fictícios e servem somente como exemplo de preenchimento.","items":[{"id":"699a6abc-f608-4d21-8ac9-e8ef2bf36503","title":"Jovens em Movimento","description":"Apoio educacional para jovens em situação de vulnerabilidade.","category":"Educação","image":null,"action":null},{"id":"3ad82d90-9ecb-4a95-894e-d1bbf8dc7990","title":"Territórios Vivos","description":"Atividades comunitárias de educação ambiental.","category":"Meio ambiente","image":null,"action":null}] }},{"sectionType":"impact_metrics","variantVersionId":"339f526f-9f5e-4859-b72f-1e8810b9b738","content":{"title":"Resultados que inspiram","description":"Os números abaixo são fictícios. Troque-os por indicadores confirmados antes de publicar.","items":[{"id":"32fc5fd8-a7e5-42cc-a088-a59ecfe15437","value":"1.200+","label":"pessoas atendidas","period":"exemplo fictício","source":""},{"id":"6fba1c38-b4de-44fd-a02d-98a7ae23a88d","value":"15","label":"comunidades","period":"exemplo fictício","source":""},{"id":"55336769-a7c1-4d74-9ce7-59fc04e57b3e","value":"28","label":"projetos realizados","period":"exemplo fictício","source":""}] }},{"sectionType":"support_actions","variantVersionId":"680556fd-59a2-4c91-bc91-8c97e53b5612","content":{"title":"Faça parte","description":"Personalize estas opções conforme as formas reais de apoio da organização.","items":[{"id":"1dcaa125-b753-4892-993b-eb04b8ebba76","kind":"donate","title":"Doe","description":"Explique como as doações contribuem para o trabalho da organização.","action":null},{"id":"075f42b9-7bed-4be4-8aa8-32f020f9287e","kind":"volunteer","title":"Seja voluntário","description":"Apresente como funciona a participação voluntária.","action":null}] }},{"sectionType":"transparency","variantVersionId":"8c237dca-d82b-4373-b94e-a8af6f3a5a7a","content":{"title":"Transparência","description":"Organize documentos e informações que ajudem o público a compreender a atuação da organização.","items":[]}},{"sectionType":"organization_contact","variantVersionId":"7ec3c4d9-aea9-4cd9-8cb3-b9ad4879e215","content":{"title":"Fale com a gente","description":"Substitua pelos canais oficiais da organização.","email":"contato@exemplo.org","phone":"","whatsapp":"","address":"","hours":"","socialLinks":[]}}]}]}'::jsonb
   )
 on conflict (id) do nothing;
-
 commit;

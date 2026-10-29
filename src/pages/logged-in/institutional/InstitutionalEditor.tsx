@@ -1844,7 +1844,7 @@ export default function InstitutionalEditor() {
         </div>
       ) : null}
 
-      <ModalMensagem aberto={siteConnectionOpen} titulo="Conexões do site" tamanho="grande" mostrarBotaoOk={false} onFechar={() => setSiteConnectionOpen(false)} mensagem={<SiteSystemConnectionPanel siteId={site.id} siteName={site.name} published={Boolean(site.publishedAt && site.isPrimary)} onConnected={() => setSiteConnectionRevision(value => value + 1)}/>} />
+      <ModalMensagem aberto={siteConnectionOpen} titulo="Conexões do site" tamanho="grande" mostrarBotaoOk={false} onFechar={() => setSiteConnectionOpen(false)} mensagem={<SiteSystemConnectionPanel siteId={site.id} siteName={site.name} published={Boolean(site.publishedAt)} onConnected={() => setSiteConnectionRevision(value => value + 1)}/>} />
       <SitePagesBar
         pages={site.pages}
         selectedId={page.id}

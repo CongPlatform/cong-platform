@@ -9,7 +9,7 @@ type SiteContext={siteId:string;siteName:string;published:boolean;onConnected?:(
 type SystemContext={system:OperationalSystem;onSystem:(updated:OperationalSystem)=>void;siteId?:never;siteName?:never;published?:never;onConnected?:never};
 type Props=SiteContext|SystemContext;
 type PendingAction="link"|"move"|"remove"|null;
-const isReady=(site:InstitutionalSiteSummary)=>Boolean(site.publishedAt&&site.isPrimary);
+const isReady=(site:InstitutionalSiteSummary)=>Boolean(site.publishedAt);
 
 export default function SiteSystemConnectionPanel(props:Props){
   const key=typeof props.siteId==="string"?`site:${props.siteId}`:`system:${props.system.id}:${props.system.brandSiteId??""}`;

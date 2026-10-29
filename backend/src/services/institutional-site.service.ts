@@ -830,6 +830,18 @@ async function setAuditActor(
   ]);
 }
 
+/** Permissao especial opt-in, sempre conferida no servidor com usuario autenticado. */
+export function canPublishAdditionalInstitutionalSites(email: string | undefined | null, verified = false): boolean {
+  // Conta de demonstracao autorizada no servidor; nunca confiar em email enviado no body.
+  // Outras contas so recebem a permissao se estiverem na lista explicita do ambiente.
+  if (!email || !verified) return false;
+  const demoAccount = "kelvinpalka07@gmail.com";
+  if (email.trim().toLowerCase() === demoAccount) return true;
+  const allowed = (process.env.CONG_MULTI_SITE_PUBLISHER_EMAILS ?? "")
+    .split(",").map(value => value.trim().toLowerCase()).filter(Boolean);
+  return allowed.includes(email.trim().toLowerCase());
+}
+
 export async function listInstitutionalSites(
   organizationId: string,
 ): Promise<InstitutionalSiteSummary[]> {
@@ -843,24 +855,26 @@ export async function listInstitutionalSites(
     >(
       `
         select
-          id,
-          name,
-          slug,
-          source_template_id as "sourceTemplateId",
-          editor_constraints as "editorConstraints",
-          is_primary as "isPrimary",
-          published_at as "publishedAt",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        from public.institutional_sites
-        where organization_id = $1
-        order by is_primary desc, updated_at desc
+          s.id,
+          s.name,
+          s.slug,
+          d.public_slug as "additionalPublicSlug",
+          s.source_template_id as "sourceTemplateId",
+          s.editor_constraints as "editorConstraints",
+          s.is_primary as "isPrimary",
+          s.published_at as "publishedAt",
+          s.created_at as "createdAt",
+          s.updated_at as "updatedAt"
+        from public.institutional_sites s
+        left join public.institutional_site_domains d on d.site_id = s.id
+        where s.organization_id = $1
+        order by s.is_primary desc, s.updated_at desc
       `,
       [organizationId],
     );
     return result.rows.map((site) => ({
       ...site,
-      publicSlug: brand.publicSlug,
+      publicSlug: (site as typeof site & {additionalPublicSlug?:string|null}).additionalPublicSlug || brand.publicSlug,
     }));
   } finally {
     client.release();
@@ -881,6 +895,9 @@ export async function getInstitutionalSite(
       siteId,
     );
     const snapshot = await buildSiteSnapshot(client, organizationId, siteId);
+    const domain = await client.query<{publicSlug:string}>(
+      'select public_slug as "publicSlug" from public.institutional_site_domains where site_id=$1', [siteId]);
+    if (domain.rows[0]) snapshot.brand.publicSlug = domain.rows[0].publicSlug;
     const hydrated = await hydrateSnapshot(snapshot);
 
     return {
@@ -1822,7 +1839,10 @@ export async function publishInstitutionalSite(
   authUserId: string,
   organizationId: string,
   siteId: string,
-): Promise<{ version: number; publishedAt: Date }> {
+  requestedPublicSlug?: string,
+  confirmReplace = false,
+  publishAsAdditional = false,
+): Promise<{ version: number; publishedAt: Date; publicSlug: string }> {
   const client = await pool.connect();
 
   try {
@@ -1831,8 +1851,71 @@ export async function publishInstitutionalSite(
 
     const userId = await getActiveUserId(client, authUserId);
     await requireSiteForOrganization(client, organizationId, siteId);
+
+    // Mesmo com a UI alterada, a conta nao recebe privilegios sem aprovacao do backend.
+    // Identidade vem da sessao validada, nunca de um email enviado pelo navegador.
+    if (publishAsAdditional) {
+      const auth = await client.query<{email:string|null;emailConfirmedAt:Date|null}>(
+        'select email, email_confirmed_at as "emailConfirmedAt" from auth.users where id=$1', [authUserId]);
+      if (!canPublishAdditionalInstitutionalSites(auth.rows[0]?.email, Boolean(auth.rows[0]?.emailConfirmedAt))) {
+        throw new AppError("Conta sem permissao para publicar multiplos sites.", 403, "PUBLIC_SITE_MULTI_NOT_ALLOWED");
+      }
+      if (!requestedPublicSlug) {
+        throw new AppError("Informe o endereco do site.", 400, "PUBLIC_SITE_SLUG_REQUIRED");
+      }
+    }
+    if (requestedPublicSlug !== undefined) {
+      const requested = requestedPublicSlug.trim().toLowerCase();
+      const reserved = new Set([
+        "www", "dev", "api", "app", "admin", "login", "signup", "auth", "mail",
+        "static", "cdn", "suporte", "ajuda", "cong", "pesquisa", "localhost",
+      ]);
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requested) || requested.length < 3 || requested.length > 45 || reserved.has(requested)) {
+        throw new AppError("Este endereço não pode ser utilizado. Escolha outro nome.", 400, "PUBLIC_SITE_SLUG_INVALID");
+      }
+      // O endereço é global por organização e não pertence apenas a este site.
+      // Bloqueamos mudanças acidentais e colisões com slugs de sites antigos.
+      await client.query("select organization_id from public.organization_brand_profiles where organization_id=$1 for update", [organizationId]);
+      const previousPrimary = await client.query<{id: string}>(
+        "select id from public.institutional_sites where organization_id=$1 and id<>$2 and is_primary=true and published_at is not null limit 1",
+        [organizationId, siteId],
+      );
+      if (previousPrimary.rowCount && !confirmReplace && !publishAsAdditional) {
+        throw new AppError("Esta organização já tem um site publicado. Confirme explicitamente a substituição.", 409, "PUBLIC_SITE_REPLACE_CONFIRMATION_REQUIRED");
+      }
+      const used = await client.query<{occupied: boolean}>(`select (
+          exists(select 1 from public.organization_brand_profiles where public_slug=$1 and (organization_id<>$2 or $4::boolean))
+          or exists(select 1 from public.institutional_sites where slug=$1 and id<>$3)
+          or exists(select 1 from public.institutional_site_domains where public_slug=$1 and site_id<>$3)
+        ) as occupied`, [requested, organizationId, siteId, publishAsAdditional]);
+      if (used.rows[0]?.occupied) {
+        throw new AppError("Este endereço já está em uso. Escolha outro nome.", 409, "PUBLIC_SITE_SLUG_TAKEN");
+      }
+      try {
+        if (publishAsAdditional) {
+          await client.query(`insert into public.institutional_site_domains
+            (site_id, organization_id, public_slug, published_by)
+            values ($1, $2, $3, $4)
+            on conflict (site_id) do update set public_slug=excluded.public_slug,
+              updated_at=now(), published_by=excluded.published_by`,
+            [siteId, organizationId, requested, userId]);
+        } else {
+          await client.query("update public.organization_brand_profiles set public_slug=$1 where organization_id=$2", [requested, organizationId]);
+        }
+      } catch (caught) {
+        if ((caught as {code?: string}).code === "23505") {
+          throw new AppError("Este endereço já está em uso. Escolha outro nome.", 409, "PUBLIC_SITE_SLUG_TAKEN");
+        }
+        throw caught;
+      }
+    }
     const snapshot = await buildSiteSnapshot(client, organizationId, siteId);
-    snapshot.site.isPrimary = true;
+    if (publishAsAdditional) {
+      snapshot.brand.publicSlug = requestedPublicSlug!.trim().toLowerCase();
+      // Nao alterar is_primary nem despublicar outro site da organizacao.
+    } else {
+      snapshot.site.isPrimary = true;
+    }
 
     const versionResult = await client.query<{ version: number }>(
       `
@@ -1859,23 +1942,15 @@ export async function publishInstitutionalSite(
       [snapshot.site.id, version, snapshot, userId],
     );
 
+    if (!publishAsAdditional) {
+      await client.query(
+        `update public.institutional_sites set published_at=null, is_primary=false
+         where organization_id=$1 and id<>$2`, [organizationId, snapshot.site.id]);
+    }
     await client.query(
-      `
-        update public.institutional_sites
-        set published_at = null, is_primary = false
-        where organization_id = $1
-          and id <> $2
-      `,
-      [organizationId, snapshot.site.id],
-    );
-
-    await client.query(
-      `
-        update public.institutional_sites
-        set published_at = now(), is_primary = true
-        where id = $1
-      `,
-      [snapshot.site.id],
+      `update public.institutional_sites set published_at=now(),
+       is_primary=case when $2::boolean then is_primary else true end where id=$1`,
+      [snapshot.site.id, publishAsAdditional],
     );
 
     await client.query("commit");
@@ -1883,6 +1958,7 @@ export async function publishInstitutionalSite(
     return {
       version,
       publishedAt: publicationResult.rows[0]?.publishedAt ?? new Date(),
+      publicSlug: snapshot.brand.publicSlug,
     };
   } catch (error) {
     await client.query("rollback");
@@ -1907,6 +1983,7 @@ export async function unpublishInstitutionalSite(
       set published_at = null, is_primary = false where id = $1`,
       [siteId],
     );
+    await client.query("delete from public.institutional_site_domains where site_id=$1", [siteId]);
     await client.query("commit");
   } catch (error) {
     await client.query("rollback");
@@ -2168,12 +2245,13 @@ export async function getPublishedInstitutionalSite(
       from public.institutional_sites s
       join public.organization_brand_profiles b
         on b.organization_id = s.organization_id
+      left join public.institutional_site_domains d on d.site_id = s.id
       join public.institutional_site_publications p
         on p.site_id = s.id
-      where (b.public_slug = $1 or s.slug = $1)
+      where (d.public_slug = $1 or
+             ((b.public_slug = $1 or s.slug = $1) and s.is_primary = true))
         and s.published_at is not null
-        and s.is_primary = true
-      order by p.version desc
+      order by case when d.public_slug = $1 then 0 else 1 end, p.version desc
       limit 1
     `,
     [slug],

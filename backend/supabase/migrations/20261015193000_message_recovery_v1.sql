@@ -1,5 +1,4 @@
 begin;
-
 -- Only the client knows the recovery secret. Server stores its verifier and AES-GCM ciphertext.
 -- The verifier is derived from a 256-bit random code, never from a human password.
 create table public.message_recovery_settings (
@@ -21,7 +20,6 @@ alter table public.message_recovery_settings enable row level security;
 alter table public.message_recovery_entries enable row level security;
 revoke all on public.message_recovery_settings from anon, authenticated;
 revoke all on public.message_recovery_entries from anon, authenticated;
-
 -- Deletions for everyone must invalidate all recovery copies as well.
 create or replace function public.prune_message_recovery_entries()
 returns trigger language plpgsql security definer set search_path = '' as $$

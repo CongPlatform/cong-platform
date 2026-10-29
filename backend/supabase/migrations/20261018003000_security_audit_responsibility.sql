@@ -1,7 +1,6 @@
 -- CONG / Auditoria e responsabilização: executar APÓS account_safe_erasure.
 -- Acesso exclusivo pelo servidor. Identidade civil não é verificada por esta migration.
 begin;
-
 create table public.security_audit_events (
   id uuid primary key default gen_random_uuid(),
   occurred_at timestamptz not null default now(),
@@ -20,7 +19,6 @@ create index security_audit_events_time_idx on public.security_audit_events (occ
 create index security_audit_events_actor_idx on public.security_audit_events (actor_user_id, occurred_at desc);
 create index security_audit_events_subject_idx on public.security_audit_events (subject_user_id, occurred_at desc);
 create index security_audit_events_org_idx on public.security_audit_events (organization_id, occurred_at desc);
-
 -- Dados pessoais sob retenção excepcional, não expostos por endpoints comuns.
 -- Prazo inicial de 365 dias, sujeito à revisão jurídica e eventual preservação legal documentada.
 create table public.security_audit_identities (
@@ -32,7 +30,6 @@ create table public.security_audit_identities (
   retained_at timestamptz not null default now(),
   retained_until timestamptz not null default (now() + interval '365 days')
 );
-
 -- Evidência mínima no momento da denúncia: sobrevive à exclusão em cascata do post.
 -- report_id e original_target_id são identificadores históricos, SEM FK para alvos removíveis.
 create table public.security_report_evidence (
@@ -49,7 +46,6 @@ create table public.security_report_evidence (
   retained_until timestamptz not null default (now() + interval '365 days')
 );
 create index security_report_evidence_subject_idx on public.security_report_evidence(subject_user_id, captured_at desc);
-
 -- Decisões sobre denúncias cujo post original deixou de existir por exclusão.
 -- O caso continua investigável sem restaurar a conta excluída.
 create table public.security_archived_case_reviews (
@@ -59,7 +55,6 @@ create table public.security_archived_case_reviews (
   note text not null check (char_length(note) between 10 and 1200),
   reviewed_at timestamptz not null default now()
 );
-
 alter table public.security_audit_events enable row level security;
 alter table public.security_audit_identities enable row level security;
 alter table public.security_report_evidence enable row level security;
@@ -84,7 +79,6 @@ create trigger security_archived_case_reviews_immutable before update or delete 
   for each row execute function public.security_audit_immutable();
 create trigger security_audit_identities_immutable before update or delete on public.security_audit_identities
   for each row execute function public.security_audit_immutable();
-
 -- Contexto com identidade autenticada definida pelo serviço dentro da transação.
 -- Nunca usar um header ou user_id enviado pelo browser para preencher esse contexto.
 create or replace function public.security_audit_actor()
@@ -96,7 +90,6 @@ begin
 exception when invalid_text_representation then
   return null;
 end $$;
-
 -- Função genérica de auditoria para os registros administrativos atualmente existentes.
 -- Só persiste campos previamente permitidos: NUNCA dumps arbitrários de JSON,
 -- tokens, endereços, CNPJ ou conteúdo de doações. Hashes indicam alteração sem vazamento.
@@ -159,7 +152,6 @@ begin
   if tg_op = 'DELETE' then return old; end if;
   return new;
 end $$;
-
 create trigger audit_organizations after insert or update or delete on public.organizations
   for each row execute function public.security_audit_ngo_change();
 create trigger audit_organization_users after insert or update or delete on public.organization_users
@@ -174,7 +166,6 @@ create trigger audit_institutional_sections after insert or update or delete on 
   for each row execute function public.security_audit_ngo_change();
 create trigger audit_institutional_site_publications after insert on public.institutional_site_publications
   for each row execute function public.security_audit_ngo_change();
-
 -- Evidências são capturadas na criação da denúncia, antes de qualquer exclusão.
 create or replace function public.security_capture_community_report()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -210,7 +201,6 @@ begin
 end $$;
 create trigger security_report_captured after insert on public.community_reports
   for each row execute function public.security_capture_community_report();
-
 -- Só a auditoria administrativa conhece a identidade do moderador.
 create or replace function public.security_capture_moderation_action()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -230,7 +220,6 @@ begin
 end $$;
 create trigger security_moderation_action_captured after insert on public.community_moderation_actions
   for each row execute function public.security_capture_moderation_action();
-
 -- Dados anteriores à migration: preserva denúncias e ações que ainda existam,
 -- sem falsificar um registro completo de alterações históricas inexistentes.
 insert into public.security_report_evidence
@@ -247,7 +236,6 @@ left join public.community_posts p on p.id=r.post_id
 left join public.community_post_comments c on c.id=r.comment_id
 where coalesce(r.post_id,r.comment_id,r.reported_user_id) is not null
 on conflict(report_id) do nothing;
-
 insert into public.security_audit_events
   (occurred_at,event_type,entity_type,entity_id,actor_user_id,subject_user_id,after_state,context)
 select ma.created_at,'community_moderation.'||ma.action,'community_moderation_action',ma.id,
@@ -255,7 +243,6 @@ select ma.created_at,'community_moderation.'||ma.action,'community_moderation_ac
  jsonb_build_object('report_id',ma.report_id,'imported_historical',true)
 from public.community_moderation_actions ma
 left join public.security_report_evidence e on e.report_id=ma.report_id;
-
 -- Expurgo: função administrativa sem exposição ao cliente, a agendar APÓS
 -- aprovar política de retenção e garantias de preservação legal.
 create or replace function public.security_audit_purge_expired()
@@ -278,5 +265,4 @@ revoke all on function public.security_audit_purge_expired() from public, anon, 
 revoke all on function public.security_capture_community_report() from public, anon, authenticated;
 revoke all on function public.security_capture_moderation_action() from public, anon, authenticated;
 revoke all on function public.security_audit_ngo_change() from public, anon, authenticated;
-
 commit;

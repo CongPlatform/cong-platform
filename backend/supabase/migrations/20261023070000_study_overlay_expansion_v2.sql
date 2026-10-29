@@ -1,11 +1,11 @@
--- Executar SOMENTE no banco da CONG, DEPOIS de 20261023060000_study_overlay.sql.
+-- Executar SOMENTE no banco da CONG, DEPOIS de 20261023_study_overlay.sql.
 -- Não apaga qualquer slot, participante ou resposta já existente.
 BEGIN;
 DO $$
 DECLARE name text;
 BEGIN
   IF to_regclass('public.study_overlay_slots') IS NULL THEN
-    RAISE EXCEPTION 'Execute primeiro 20261023060000_study_overlay.sql no banco da CONG';
+    RAISE EXCEPTION 'Execute primeiro 20261023_study_overlay.sql no banco da CONG';
   END IF;
   -- Extensão P1000, P1001 ... (sem limite fixo de 3 dígitos).
   FOR name IN

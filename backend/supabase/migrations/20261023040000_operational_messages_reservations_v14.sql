@@ -1,5 +1,4 @@
 begin;
-
 create table public.operational_message_channels (
  id uuid primary key default gen_random_uuid(),
  organization_id uuid not null,
@@ -12,7 +11,6 @@ create table public.operational_message_channels (
  unique (organization_id,system_id,module_id,id),
  unique (module_id,name)
 );
-
 create table public.operational_channel_messages (
  id uuid primary key default gen_random_uuid(),
  organization_id uuid not null,
@@ -26,7 +24,6 @@ create table public.operational_channel_messages (
 );
 create index operational_channel_messages_feed_idx on public.operational_channel_messages (organization_id,system_id,module_id,channel_id,created_at desc);
 create index operational_channel_messages_rate_idx on public.operational_channel_messages (organization_id,system_id,author_auth_user_id,created_at desc);
-
 create table public.operational_reservation_resources (
  id uuid primary key default gen_random_uuid(),
  organization_id uuid not null,
@@ -39,7 +36,6 @@ create table public.operational_reservation_resources (
  foreign key (organization_id,system_id,module_id) references public.operational_modules(organization_id,system_id,id) on delete cascade,
  unique (organization_id,system_id,module_id,id)
 );
-
 create table public.operational_resource_reservations (
  id uuid primary key default gen_random_uuid(),
  organization_id uuid not null,
@@ -56,11 +52,9 @@ create table public.operational_resource_reservations (
  foreign key (organization_id,system_id,module_id,resource_id) references public.operational_reservation_resources(organization_id,system_id,module_id,id) on delete cascade
 );
 create index operational_resource_reservations_slot_idx on public.operational_resource_reservations (organization_id,system_id,module_id,resource_id,starts_at,ends_at) where cancelled_at is null;
-
 alter table public.operational_message_channels enable row level security;
 alter table public.operational_channel_messages enable row level security;
 alter table public.operational_reservation_resources enable row level security;
 alter table public.operational_resource_reservations enable row level security;
 revoke all on public.operational_message_channels,public.operational_channel_messages,public.operational_reservation_resources,public.operational_resource_reservations from anon,authenticated;
-
 commit;

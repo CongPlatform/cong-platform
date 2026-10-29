@@ -14,6 +14,7 @@ import {
   getPublishedInstitutionalSite,
   listInstitutionalSites,
   publishInstitutionalSite,
+  canPublishAdditionalInstitutionalSites,
   renameInstitutionalSite,
   unpublishInstitutionalSite,
   reorderInstitutionalSections,
@@ -620,6 +621,10 @@ export async function reorderSections(
   }
 }
 
+export async function getMultiPublishingAccess(_req: Request, res: Response): Promise<void> {
+  res.status(200).json({enabled:canPublishAdditionalInstitutionalSites(res.locals.authUser.email, Boolean(res.locals.authUser.email_confirmed_at))});
+}
+
 export async function publishSite(req: Request, res: Response): Promise<void> {
   try {
     const siteId = paramString(req, "siteId", "SITE_ID_REQUIRED");
@@ -627,6 +632,9 @@ export async function publishSite(req: Request, res: Response): Promise<void> {
       res.locals.authUser.id,
       res.locals.organizationContext.organizationId,
       siteId,
+      req.body.publicSlug,
+      req.body.confirmReplace === true,
+      req.body.publishAsAdditional === true,
     );
     res.status(201).json({ publication });
   } catch (error) {

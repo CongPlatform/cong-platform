@@ -17,7 +17,8 @@ const field = z.strictObject({
 const fields=z.array(field).max(32).superRefine((values,ctx)=>{if(new Set(values.map(v=>v.key)).size!==values.length)ctx.addIssue({code:"custom",message:"Campos repetidos"});});
 const module=z.strictObject({alias:fieldKey,blueprint_key:blueprint,name:z.string().trim().min(2).max(100),description:z.string().max(450),fields});
 const system=z.strictObject({name:z.string().trim().min(2).max(100),description:z.string().trim().min(4).max(700),modules:z.array(module).min(1).max(10),workflow:z.array(z.strictObject({kind:z.enum(["receive","review","prepare","assign","execute","monitor","custom"]),title:z.string().trim().min(2).max(100),description:z.string().trim().min(1).max(350),module_alias:fieldKey})).max(8)});
-const section=z.strictObject({type:z.enum(["hero","text","features","impact","cta","contact","form","faq","gallery"]),title:z.string().max(140),text:z.string().max(1100),action_label:z.string().max(80),linked_module_alias:z.string()});
+const section=z.strictObject({type:z.enum(["hero","text","features","impact","cta","contact","form","faq","gallery"]),title:z.string().max(140),text:z.string().max(2200),action_label:z.string().max(80),linked_module_alias:z.string(),
+ items:z.array(z.strictObject({title:z.string().trim().min(2).max(120),description:z.string().max(500),kind:z.string().max(40).optional()})).max(8).optional()});
 const page=z.strictObject({title:z.string().trim().min(2).max(100),slug,sections:z.array(section).min(1).max(12)});
 const site=z.strictObject({name:z.string().trim().min(2).max(100),audience:z.string().trim().min(2).max(220),style:z.string().trim().min(2).max(220),pages:z.array(page).min(1).max(8)});
 const publicForm=z.strictObject({name:z.string().trim().min(2).max(110),page_slug:slug,form_module_alias:fieldKey,target_module_alias:fieldKey,fields:z.array(field).min(1).max(24),bindings:z.array(z.strictObject({form_field_key:fieldKey,module_field_key:fieldKey}))});

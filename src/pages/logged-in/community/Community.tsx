@@ -1038,10 +1038,10 @@ export default function LoggedCommunity() {
     navigate(`/app/comunidade?post=${result.id}`);
   };
 
-  const navigateToPending = () => {
+  const navigateToMessages = () => {
     setMobileMenuOpen(false);
     setProfileMenuOpen(false);
-    navigate("/em-construcao");
+    navigate("/app/mensagens");
   };
 
   const handleSidebarNavigation = (label: string) => {
@@ -1058,7 +1058,7 @@ export default function LoggedCommunity() {
     }
 
     if (label === "Explorar") {
-      navigate("/em-construcao?feature=explorar");
+      changeFeedFilter("all");
       return;
     }
 
@@ -1088,7 +1088,7 @@ export default function LoggedCommunity() {
       return;
     }
 
-    navigateToPending();
+    navigate("/app/comunidade");
   };
 
   const openComposer = (kind: CommunityPostKind = "general") => {
@@ -1619,7 +1619,7 @@ export default function LoggedCommunity() {
             <button
               type="button"
               className={styles.topbarIconButton}
-              onClick={navigateToPending}
+              onClick={navigateToMessages}
               aria-label="Mensagens"
             >
               <FiMessageCircle />

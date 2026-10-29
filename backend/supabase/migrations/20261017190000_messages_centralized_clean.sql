@@ -1,11 +1,9 @@
 -- CONG chat v2. DESTRUCTIVE ONLY FOR MESSAGE DATA. Apply only after backing up the database.
 -- All legacy conversations are test data and are intentionally discarded, as authorized.
 begin;
-
 -- Remove legacy realtime access policies before retiring their SECURITY DEFINER helpers.
 drop policy if exists cong_conversation_realtime_read on realtime.messages;
 drop policy if exists cong_conversation_realtime_write on realtime.messages;
-
 -- Message-only tables. Accounts, organizations and their memberships are untouched.
 -- Also retire V9 experiments if they were applied in this environment.
 drop table if exists public.message_device_history cascade;
@@ -30,7 +28,6 @@ drop function if exists public.notify_message_deleted() cascade;
 drop function if exists public.notify_message_delivery_changed() cascade;
 drop function if exists public.notify_message_receipt_changed() cascade;
 drop function if exists public.can_access_message_realtime_topic(text) cascade;
-
 create table public.message_conversations (
   id uuid primary key default gen_random_uuid(),
   scope text not null check (scope in ('global','organization')),
@@ -51,7 +48,6 @@ create unique index message_direct_pair_unique on public.message_conversations(s
 create index message_conversations_scope_idx on public.message_conversations(scope, organization_id, updated_at desc);
 create trigger set_message_conversations_updated_at before update on public.message_conversations
   for each row execute function public.set_updated_at();
-
 create table public.message_conversation_participants (
   conversation_id uuid not null references public.message_conversations(id) on delete cascade,
   user_id uuid not null references public.users(id) on delete cascade,
@@ -62,7 +58,6 @@ create table public.message_conversation_participants (
   primary key(conversation_id, user_id)
 );
 create index message_participants_user_idx on public.message_conversation_participants(user_id, conversation_id);
-
 create table public.message_entries (
   id uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references public.message_conversations(id) on delete cascade,
@@ -77,7 +72,6 @@ create table public.message_entries (
   check (body <> '' or attachment_id is not null or deleted_for_all_at is not null)
 );
 create index message_entries_recent_idx on public.message_entries(conversation_id, created_at desc, id desc);
-
 create table public.message_hidden_entries (
   message_id uuid not null references public.message_entries(id) on delete cascade,
   user_id uuid not null references public.users(id) on delete cascade,
@@ -91,11 +85,9 @@ create table public.message_reactions (
   created_at timestamptz not null default now(),
   primary key(message_id,user_id,emoji)
 );
-
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
 values('cong-chat-files','cong-chat-files',false,26000000,null)
 on conflict(id) do update set public = false, file_size_limit=26000000, allowed_mime_types=null;
-
 create table public.message_attachments (
   id uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references public.message_conversations(id) on delete cascade,
@@ -109,7 +101,6 @@ create table public.message_attachments (
 );
 alter table public.message_entries add constraint message_entry_attachment_fk foreign key(attachment_id) references public.message_attachments(id) on delete set null;
 create index message_attachments_conversation_idx on public.message_attachments(conversation_id);
-
 -- API-only. No browser access to the message tables or the private storage bucket.
 do $$ declare t text; begin
   foreach t in array array['message_conversations','message_conversation_participants','message_entries',
@@ -118,7 +109,6 @@ do $$ declare t text; begin
     execute format('revoke all on public.%I from anon, authenticated',t);
   end loop;
 end $$;
-
 -- Realtime broadcasts contain *only IDs*, never content or attachment URLs.
 create or replace function public.cong_chat_notify_entry()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -139,7 +129,6 @@ create trigger cong_chat_entry_inserted after insert on public.message_entries
 create trigger cong_chat_entry_updated after update of deleted_for_all_at on public.message_entries
   for each row when (old.deleted_for_all_at is distinct from new.deleted_for_all_at)
   execute function public.cong_chat_notify_entry();
-
 create or replace function public.cong_chat_notify_conversation_update()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare aid uuid;
@@ -154,7 +143,6 @@ begin
 end; $$;
 create trigger cong_chat_conversation_updated after update of contact_status,title,updated_at on public.message_conversations
   for each row execute function public.cong_chat_notify_conversation_update();
-
 create or replace function public.cong_chat_notify_participant()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare aid uuid;
@@ -168,7 +156,6 @@ begin
 end; $$;
 create trigger cong_chat_participant_inserted after insert on public.message_conversation_participants
   for each row execute function public.cong_chat_notify_participant();
-
 -- Status, reactions and read receipts notify every participant to refresh.
 create or replace function public.cong_chat_notify_conversation()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -204,7 +191,6 @@ create trigger cong_chat_read_changed after update of last_read_at on public.mes
 create trigger cong_chat_delivery_changed after update of last_delivered_at on public.message_conversation_participants
   for each row when (old.last_delivered_at is distinct from new.last_delivered_at)
   execute function public.cong_chat_notify_conversation();
-
 -- Private presence/typing channels: authenticated, active group members only.
 create or replace function public.can_access_message_realtime_topic(channel_topic text)
 returns boolean language sql stable security definer set search_path = '' as $$

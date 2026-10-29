@@ -299,7 +299,11 @@ export default function LoggedInLayout() {
         to: "/em-construcao?feature=explorar",
       },
     ];
-  })().map((item) =>
+  })().flatMap((item) =>
+    item.to.includes("feature=projetos")
+      ? [{ ...item, to: "/app/comunidade?feed=projects" }]
+      : item.to.startsWith("/em-construcao") ? [] : [item],
+  ).map((item) =>
     item.to === "/app/mensagens"
       ? { ...item, badge: messageUnreadCount || undefined }
       : item,
@@ -560,6 +564,11 @@ export default function LoggedInLayout() {
       return location.pathname.startsWith("/app/design/variantes");
     }
 
+    if (item.to === "/app/comunidade?feed=projects") {
+      return location.pathname === "/app/comunidade" &&
+        new URLSearchParams(location.search).get("feed") === "projects";
+    }
+
     if (item.to.startsWith("/em-construcao")) {
       const expected = new URLSearchParams(item.to.split("?")[1] ?? "").get(
         "feature",
@@ -599,7 +608,7 @@ export default function LoggedInLayout() {
     }
 
     if (result.type === "event") {
-      navigate("/em-construcao?feature=eventos");
+      navigate(`/app/comunidade?event=${encodeURIComponent(result.id)}`);
       return;
     }
 
@@ -728,7 +737,7 @@ export default function LoggedInLayout() {
           </NavLink>
 
           <NavLink
-            to="/em-construcao"
+            to="/documentacao"
             className={styles.navigationItem}
             title={sidebarCollapsed ? "Ajuda" : undefined}
             onClick={closeMobileMenu}
@@ -902,7 +911,7 @@ export default function LoggedInLayout() {
 
             <TopbarAction
               label="Mensagens"
-              onClick={() => navigate("/em-construcao")}
+              onClick={() => navigate("/app/mensagens")}
             >
               <FiMessageCircle aria-hidden="true" />
             </TopbarAction>

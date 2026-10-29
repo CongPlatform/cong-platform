@@ -85,6 +85,7 @@ export default function InstitutionalSiteView({
   beforeFooter,
   portalHref = "",
   portalEnabled = false,
+  publicAccessSlug,
 }: {
   site: InstitutionalSite;
   page: InstitutionalPage;
@@ -165,6 +166,8 @@ export default function InstitutionalSiteView({
   beforeFooter?: ReactNode;
   portalHref?: string;
   portalEnabled?: boolean;
+  /** Public subdomain lookup slug, independent of the site's internal identifier. */
+  publicAccessSlug?: string;
 }) {
   const siteRef = useRef<HTMLDivElement>(null);
   const [designSectionId, setDesignSectionId] = useState<string | null>(null);
@@ -285,7 +288,7 @@ export default function InstitutionalSiteView({
   }
 
   return (
-    <CongSiteContext.Provider value={{editable:Boolean(editor),siteId:site.id,slug:site.slug,page:page.slug,portalHref,portalEnabled}}>
+    <CongSiteContext.Provider value={{editable:Boolean(editor),siteId:site.id,slug:publicAccessSlug??site.slug,page:page.slug,portalHref,portalEnabled}}>
     <div
       ref={siteRef}
       className={styles.site}
@@ -296,6 +299,7 @@ export default function InstitutionalSiteView({
       }
       data-cong-custom-body={resolveDesignSystem(brand).bodyFamily !== "legacy"}
     >
+      {!editor && <a className={styles.skipLink} href="#conteudo-principal">Ir para o conteúdo principal</a>}
       {globalHeader ? (
         editor ? (
           <SectionFrame
@@ -404,7 +408,7 @@ export default function InstitutionalSiteView({
         <header className={styles.header}>
           <a
             className={styles.brand}
-            href="#top"
+            href={editor ? "#top" : "#conteudo-principal"}
             onClick={editor ? (event) => event.preventDefault() : undefined}
           >
             {(brand.designSystem?.headerLogoVariant && brand.designSystem.headerLogoVariant !== "primary"
@@ -444,7 +448,8 @@ export default function InstitutionalSiteView({
       )}
 
       <main
-        id="top"
+        id={editor ? "top" : "conteudo-principal"}
+        tabIndex={editor ? undefined : -1}
         onClick={editor ? () => setDesignSectionId(null) : undefined}
         onDragOver={
           editor && onAddSectionType

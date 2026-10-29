@@ -6,7 +6,6 @@ insert into public.role_permissions(role_id,permission_id)
 select r.id,p.id from public.roles r cross join public.permissions p
 where r.code='organization_member' and r.scope='organization' and p.code='organization.read'
 on conflict do nothing;
-
 create table if not exists public.operational_access_roles (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null,

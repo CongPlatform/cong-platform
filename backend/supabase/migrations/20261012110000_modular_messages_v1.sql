@@ -1,5 +1,4 @@
 begin;
-
 -- CONG Messages v1: direct conversations and encryption performed ONLY on clients.
 -- No server-side plaintext or user private keys. All tables only via Express API.
 create table public.message_module_settings (
@@ -11,7 +10,6 @@ create table public.message_module_settings (
 );
 create trigger set_message_module_settings_updated_at before update on public.message_module_settings
   for each row execute function public.set_updated_at();
-
 -- One ECDH public key per account, one device at a time in v1.
 -- Changing it requires a signed-in explicit reset; old ciphertext remains inaccessible.
 create table public.message_identity_keys (
@@ -21,7 +19,6 @@ create table public.message_identity_keys (
   updated_at timestamptz not null default now(),
   check (jsonb_typeof(public_key) = 'object')
 );
-
 create table public.message_conversations (
   id uuid primary key default gen_random_uuid(),
   scope text not null check (scope in ('global', 'organization')),
@@ -42,7 +39,6 @@ create index message_conversations_organization_idx
   on public.message_conversations (organization_id, updated_at desc);
 create trigger set_message_conversations_updated_at before update on public.message_conversations
   for each row execute function public.set_updated_at();
-
 create table public.message_conversation_participants (
   conversation_id uuid not null references public.message_conversations(id) on delete cascade,
   user_id uuid not null references public.users(id) on delete cascade,
@@ -52,7 +48,6 @@ create table public.message_conversation_participants (
 );
 create index message_participants_user_idx
   on public.message_conversation_participants (user_id, conversation_id);
-
 -- Ciphertext-only message records. A unique client nonce supports safe retry.
 create table public.message_entries (
   id uuid primary key default gen_random_uuid(),
@@ -68,7 +63,6 @@ create table public.message_entries (
 );
 create index message_entries_history_idx
   on public.message_entries (conversation_id, created_at desc, id desc);
-
 -- API authentication and authorization are mandatory; JWT consumers cannot query tables directly.
 alter table public.message_module_settings enable row level security;
 alter table public.message_identity_keys enable row level security;
@@ -80,7 +74,6 @@ revoke all on public.message_identity_keys from anon, authenticated;
 revoke all on public.message_conversations from anon, authenticated;
 revoke all on public.message_conversation_participants from anon, authenticated;
 revoke all on public.message_entries from anon, authenticated;
-
 -- Realtime only broadcasts event metadata to the signed-in user's private channel.
 -- Never broadcast ciphertext or private keys. RLS restricts channels to the JWT subject.
 create policy "cong_private_message_notifications"
@@ -89,7 +82,6 @@ create policy "cong_private_message_notifications"
     realtime.messages.extension = 'broadcast'
     and (select realtime.topic()) = 'cong:message-user:' || (select auth.uid())::text
   );
-
 create or replace function public.notify_message_participants()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare user_auth_id uuid;
@@ -108,7 +100,6 @@ begin
 end; $$;
 create trigger cong_message_created after insert on public.message_entries
   for each row execute function public.notify_message_participants();
-
 -- Realtime also alerts recipients of newly created (still empty) conversations.
 create or replace function public.notify_conversation_participant()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -126,5 +117,4 @@ end; $$;
 create trigger cong_conversation_participant_created
   after insert on public.message_conversation_participants
   for each row execute function public.notify_conversation_participant();
-
 commit;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { searchStockMedia } from "../controllers/institutional-stock-media.controller.js";
+import { searchStockMedia, importStockMedia } from "../controllers/institutional-stock-media.controller.js";
 
 import {
   addSection,
@@ -28,6 +28,7 @@ import {
   publishDesignPaletteItem,
   publishImageFrameItem,
   publishSite,
+  getMultiPublishingAccess,
   publishVariant,
   unpublishSite,
   renameSite,
@@ -58,6 +59,7 @@ import {
   updateInstitutionalPageSchema,
   createVariantSchema,
   renameInstitutionalSiteSchema,
+  publishInstitutionalSiteSchema,
   reorderInstitutionalSectionsSchema,
   updateBrandProfileSchema,
   updateInstitutionalDesignPaletteSchema,
@@ -75,6 +77,8 @@ institutionalRouter.use("/site-access", institutionalMemberAccessRouter);
 institutionalRouter.get("/native-design-access", getNativeDesignAccess);
 institutionalRouter.get("/templates", listTemplates);
 institutionalRouter.get("/media/stock", searchStockMedia);
+institutionalRouter.post("/media/stock/import", requireOrganizationContext,
+  requireInstitutionalPermission("edit"), importStockMedia);
 institutionalRouter.get("/variants", listVariants);
 
 institutionalRouter.get("/design/palettes", listDesignPaletteItems);
@@ -187,10 +191,17 @@ institutionalRouter.patch(
   validateBody(renameInstitutionalSiteSchema),
   renameSite,
 );
+institutionalRouter.get(
+  "/sites/multi-publishing-access",
+  requireOrganizationContext,
+  requireInstitutionalPermission("publish"),
+  getMultiPublishingAccess,
+);
 institutionalRouter.post(
   "/sites/:siteId/publish",
   requireOrganizationContext,
   requireInstitutionalPermission("publish"),
+  validateBody(publishInstitutionalSiteSchema),
   publishSite,
 );
 institutionalRouter.post(

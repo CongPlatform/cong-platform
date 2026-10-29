@@ -1,5 +1,4 @@
 begin;
-
 create table public.operational_system_plans (
   organization_id uuid not null,
   system_id uuid not null,
@@ -12,11 +11,8 @@ create table public.operational_system_plans (
   primary key (organization_id,system_id),
   foreign key (organization_id,system_id) references public.operational_systems(organization_id,id) on delete cascade
 );
-
 alter table public.operational_events drop constraint operational_events_action_check;
 alter table public.operational_events add constraint operational_events_action_check check (action in ('system.created', 'system.updated', 'system.published', 'module.installed', 'module.schema_updated', 'record.created', 'record.updated', 'record.archived', 'plan.updated'));
-
 alter table public.operational_system_plans enable row level security;
 revoke all on public.operational_system_plans from anon,authenticated;
-
 commit;
