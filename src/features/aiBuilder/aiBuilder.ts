@@ -27,6 +27,8 @@ import { auditInstitutionalSite } from "./siteQuality";
 import { createHybridComposition } from "./aiHybridLayouts";
 
 export type SiteLook = "human" | "impact" | "institutional";
+/** Modo escolhido pela pessoa antes de criar/atualizar o rascunho. */
+export type SiteCompositionMode = "cong" | "custom";
 export const SITE_LOOKS: Array<{ id: SiteLook; label: string; description: string }> = [
   {id:"human",label:"Acolhedor",description:"Pessoas, histórias e proximidade"},
   {id:"impact",label:"Moderno",description:"Ações, campanhas e resultados reais"},
@@ -876,7 +878,7 @@ export function editorialWarnings(plan:NonNullable<AiPlan["site"]>):string[]{
 }
 
 async function writeSite(plan:NonNullable<AiPlan["site"]>,record:BuildRecord,report:(t:string)=>void,warnings:string[], photo?:{id:string;url:string;query:string;page:number}|null,
- secondaryPhoto?:{id:string;url:string;query:string;page:number}|null,onSiteSnapshot?:(site:InstitutionalSite)=>void,turns:string[]=[],originalName?:string,look:SiteLook="human"){
+ secondaryPhoto?:{id:string;url:string;query:string;page:number}|null,onSiteSnapshot?:(site:InstitutionalSite)=>void,turns:string[]=[],originalName?:string,look:SiteLook="human",compositionMode:SiteCompositionMode="cong"){
  plan=composeSitePlan(plan);
  warnings.push(...editorialWarnings(plan));
  const freshSite=!record.siteId;
@@ -916,12 +918,12 @@ async function writeSite(plan:NonNullable<AiPlan["site"]>,record:BuildRecord,rep
      const content=contentFor(type,section,plan,turns);
      if(section.action_label.trim() && !actionHref(plan,section.action_label) && (type==="custom_content"||type==="organization_intro"))
        warnings.push(`O botão “${section.action_label}” em “${pagePlan.title}” não tem página de destino. Revise antes de publicar.`);
-     // A IA pode montar composições autorais com elementos NATIVOS da CONG.
-     // Quando a composição híbrida não serve ao conteúdo, usa o acervo original.
-     // Não aceitamos HTML, scripts ou CSS arbitrário do modelo.
-     const hybrid=createHybridComposition({type,section,siteStyle:plan.style,
-       pageSlug:pagePlan.slug,pageIndex:index,sectionIndex,look});
-     const composition=hybrid?undefined:selectEditorialComposition(type,section,pagePlan.title,compositionsUsed);
+     // A escolha explícita prevalece. "CONG" usa o catálogo real de composições
+     // do editor; "personalizado" monta layouts nativos próprios quando o tipo
+     // suporta. Não executar código/HTML produzido pelo modelo.
+     const hybrid=compositionMode==="custom"?createHybridComposition({type,section,siteStyle:plan.style,
+       pageSlug:pagePlan.slug,pageIndex:index,sectionIndex,look}):null;
+     const composition=compositionMode==="cong"?selectEditorialComposition(type,section,pagePlan.title,compositionsUsed):undefined;
      const availableVariant=sectionsVariant(type,variants,index,sectionIndex);
      const variant=composition ? (variants.find(v=>v.sectionType===type&&v.status==="published"&&v.visibility==="public"&&
        v.familyKey===composition.preferredFamily)??availableVariant) : availableVariant;
@@ -964,8 +966,19 @@ async function writeSite(plan:NonNullable<AiPlan["site"]>,record:BuildRecord,rep
          const previousLayout=matching.settings.layoutOverride as InstitutionalLayoutNode|undefined;
          const nextLayout=settings.layoutOverride as InstitutionalLayoutNode|undefined;
          const restored=nextLayout?restoreLayoutImages(previousLayout,nextLayout):undefined;
+         // Trocar de modo precisa retirar o layout da montagem anterior; caso
+         // contrário, o layout híbrido sobrepõe silenciosamente o template CONG.
+         // Só fazemos isso para seções reconhecidamente geradas pela IA.
+         const previousSettings={...matching.settings};
+         if(aiOwned){
+           delete previousSettings.layoutOverride;
+           delete previousSettings.aiHybridLayoutVersion;
+           delete previousSettings.compositionId;
+           delete previousSettings.visualStyle;
+           delete previousSettings.sectionStyle;
+         }
          site=await updateInstitutionalSection(matching.id,{content:preserved,
-           settings:{...matching.settings,...settings,...(restored?{layoutOverride:restored}:{})},visible:true});
+           settings:{...previousSettings,...settings,...(restored?{layoutOverride:restored}:{})},visible:true});
        }
      }else{
        site=await addInstitutionalSection(page.id,{sectionType:type,variantVersionId:variant.versionId,content,settings});
@@ -1163,22 +1176,24 @@ async function applyVisuals(siteId:string, palette:SitePalette|null|undefined, l
 }
 
 export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:string[];look:SiteLook;
- palette?:SitePalette|null;logoFile?:File|null;photo?:{id:string;url:string;query:string;page:number}|null;
+ palette?:SitePalette|null;logoFile?:File|null;compositionMode?:SiteCompositionMode;photo?:{id:string;url:string;query:string;page:number}|null;
  secondaryPhoto?:{id:string;url:string;query:string;page:number}|null;sourceSiteName?:string;onSiteSnapshot?:(site:InstitutionalSite)=>void;report:(text:string)=>void}):Promise<BuildResult>{
  const {org}=key(input.sessionId);
  let record:BuildRecord=existingDraft(input.sessionId)??{
    organizationId:org,sessionId:input.sessionId,systemId:null,siteId:null,formIds:{},lastPlanSignature:"",updatedAt:"",
  };
   const warnings:string[]=[];
- const signature=JSON.stringify(input.plan);
+ // O modo visual faz parte da assinatura. Mudar a escolha reconstrói as
+ // seções da mesma sessão, sem criar outro site nem repetir módulos.
+ const signature=JSON.stringify({plan:input.plan,compositionMode:input.compositionMode??"cong"});
  // Uma assinatura salva não prova que houve conteúdo na Home. Corrige projetos
  // criados antes deste patch, sem criar outro site e sem exigir nova sessão.
  let alreadyComplete=false;
- if(record.lastPlanSignature===signature && record.siteId && input.plan.site && record.contentVersion===6){
+ if(record.lastPlanSignature===signature && record.siteId && input.plan.site && record.contentVersion===7){
    const saved=await getInstitutionalSite(record.siteId);
    alreadyComplete=isSitePlanRendered(saved,composeSitePlan(input.plan.site));
  }
- if(record.lastPlanSignature===signature && ((alreadyComplete&&record.contentVersion===6)||!input.plan.site)){
+ if(record.lastPlanSignature===signature && ((alreadyComplete&&record.contentVersion===7)||!input.plan.site)){
    input.report("Esse rascunho já foi montado. Não serão criados itens repetidos.");
    if(record.siteId){
      await applyVisuals(record.siteId,input.palette,input.logoFile,input.look,input.report,warnings);
@@ -1250,7 +1265,7 @@ export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:str
    const cover=input.photo??await autoChoosePhoto(input.plan.site,false,input.report);
    const secondary=input.secondaryPhoto??await autoChoosePhoto(input.plan.site,true,input.report);
    if(!cover)warnings.push("A CONG não encontrou foto de capa no acervo. Adicione uma imagem no editor para concluir o visual.");
-   site=await writeSite(input.plan.site,record,input.report,warnings,cover,secondary,input.onSiteSnapshot,input.turns,input.sourceSiteName,input.look);
+   site=await writeSite(input.plan.site,record,input.report,warnings,cover,secondary,input.onSiteSnapshot,input.turns,input.sourceSiteName,input.look,input.compositionMode??"cong");
    if(site){
      await applyVisuals(site.id,input.palette,input.logoFile,input.look,input.report,warnings);
      input.onSiteSnapshot?.(await getInstitutionalSite(site.id));
@@ -1272,6 +1287,6 @@ export async function buildAiDraft(input:{plan:AiPlan;sessionId:string;turns:str
    if(audit.blockers.length)warnings.push(`Auditoria: ${audit.blockers.length} pendência(s) impedem a publicação até revisão.`);
    for(const issue of [...audit.blockers,...audit.warnings].slice(0,12))warnings.push(`${issue.page?issue.page+": ":""}${issue.message}`);
  }
- record={...record,lastPlanSignature:signature,contentVersion:6,updatedAt:new Date().toISOString()};saveDraft(record);
+ record={...record,lastPlanSignature:signature,contentVersion:7,updatedAt:new Date().toISOString()};saveDraft(record);
  return {record,warnings,modules:operational?.modules.length??0,pages:site?.pages.length??0,forms:Object.keys(record.formIds).length};
 }
