@@ -178,6 +178,13 @@ institutionalRouter.post(
   validateBody(createInstitutionalSiteSchema),
   createSite,
 );
+// Rotas estaticas antes de /sites/:siteId: evita tratar o nome da rota como UUID.
+institutionalRouter.get(
+  "/sites/multi-publishing-access",
+  requireOrganizationContext,
+  requireInstitutionalPermission("publish"),
+  getMultiPublishingAccess,
+);
 institutionalRouter.get(
   "/sites/:siteId",
   requireOrganizationContext,
@@ -190,12 +197,6 @@ institutionalRouter.patch(
   requireInstitutionalPermission("edit"),
   validateBody(renameInstitutionalSiteSchema),
   renameSite,
-);
-institutionalRouter.get(
-  "/sites/multi-publishing-access",
-  requireOrganizationContext,
-  requireInstitutionalPermission("publish"),
-  getMultiPublishingAccess,
 );
 institutionalRouter.post(
   "/sites/:siteId/publish",

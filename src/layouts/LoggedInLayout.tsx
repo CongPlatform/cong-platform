@@ -55,6 +55,7 @@ import { useAuth } from "../contexts/auth-context";
 import { useWorkspace } from "../contexts/workspace-context";
 
 import { buildDefaultAvatarUrl } from "../utils/avatar";
+import { isAllowedAiEmail } from "../utils/aiAccess";
 
 import styles from "./LoggedInLayout.module.css";
 
@@ -219,7 +220,9 @@ export default function LoggedInLayout() {
           COMMUNITY_ITEM,
           MESSAGES_ITEM,
           { label: "Sites", icon: FiGlobe, to: "/app/site-institucional" },
-          { label: "Assistente IA", icon: FiCpu, to: "/app/assistente-ia" },
+          ...(isAllowedAiEmail(user?.email)
+            ? [{ label: "Assistente IA", icon: FiCpu, to: "/app/assistente-ia" }]
+            : []),
           {
             label: "Projetos",
             icon: FiFolder,
